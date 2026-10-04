@@ -163,9 +163,9 @@ const QR_CROP: (f32, f32, f32, f32) = (0.04, 0.04, 0.04, 0.04);
 const VOLUMEN_CROP: (f32, f32, f32, f32) = (0.08, 0.03, 0.08, 0.07);
 const COLOPHON_CROP: (f32, f32, f32, f32) = (0.10, 0.33, 0.10, 0.47);
 /// v1 p12 errata tail, below the prose and above the signature and folio.
-const MONITUM_A_CROP: (f32, f32, f32, f32) = (0.12, 0.75, 0.12, 0.05);
+const MONITUM_A_CROP: (f32, f32, f32, f32) = (0.13, 0.769, 0.185, 0.109);
 /// v1 p13 errata, without the running head or ornament.
-const MONITUM_B_CROP: (f32, f32, f32, f32) = (0.12, 0.10, 0.12, 0.34);
+const MONITUM_B_CROP: (f32, f32, f32, f32) = (0.18, 0.094, 0.14, 0.350);
 
 /// The embedded reproduction-notice (QR) scan for a source: source page 1.
 pub fn front_qr_name(source: usize) -> String {
