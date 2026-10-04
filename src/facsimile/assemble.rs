@@ -302,6 +302,36 @@ mod tests {
     }
 
     #[test]
+    fn tomus_one_embeds_monitum_errata_images() {
+        let first = volume_full(
+            1,
+            0,
+            true,
+            true,
+            "% PROSE MARKER\n",
+            vec![unit("a", &["x.png"])],
+        );
+        let doc = inner_document(&first, &Fonts::default());
+        let prose = doc.find("PROSE MARKER").unwrap();
+        let a = doc.find("front_monitum_a.png").unwrap();
+        let b = doc.find("front_monitum_b.png").unwrap();
+        let body = doc.find("{x.png}").unwrap();
+        assert!(prose < a && a < b && b < body);
+        for name in ["front_monitum_a.png", "front_monitum_b.png"] {
+            assert_eq!(doc.matches(name).count(), 1);
+        }
+        for vol in [
+            volume_full(2, 0, false, true, "", vec![]),
+            volume_full(3, 1, true, true, "% PRAEFATIO\n", vec![]),
+            volume_full(1, 0, true, false, "", vec![]),
+        ] {
+            let doc = inner_document(&vol, &Fonts::default());
+            assert!(!doc.contains("front_monitum_a.png"));
+            assert!(!doc.contains("front_monitum_b.png"));
+        }
+    }
+
+    #[test]
     fn facsimile_frontmatter_order() {
         let vol = volume_full(
             1,
