@@ -64,6 +64,14 @@ text. Prose typography is outside this plan's changes.
 
 Cargo's configured target directory is outside the writable workspace. Checks use
 `$env:CARGO_TARGET_DIR = "$PWD\target"` without changing the repository configuration.
-The focused prose, front-matter, reconciliation, volumes, and assembly tests pass;
-`cargo build`, clippy with warnings denied, and the formatting check pass for the
-crop-tuned implementation.
+The focused prose, front-matter, reconciliation, volumes, and assembly tests pass.
+The final gate for the crop-tuned implementation passes:
+
+- `cargo test`: 255 library tests and 5 facsimile CLI tests pass, with 4 existing
+  ignored library tests and no failures. Both full-source PDF detection tests run
+  and pass. The main-binary and documentation targets contain no tests.
+- `cargo clippy --all-targets -- -D warnings`: passes.
+- `cargo fmt --all --check`: passes, after applying `cargo fmt --all` during each
+  Rust step.
+- `cargo build`: passes.
+- `git diff --check`: passes.
