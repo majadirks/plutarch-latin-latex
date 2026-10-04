@@ -37,6 +37,9 @@ cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/
 # Re-detect the table even when the cache is present (keeps pinned hand edits).
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --redetect
 
+# Rebuild from source scans and cached front-matter prose without vision calls.
+cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --offline
+
 # A single unit, or a raw source page range, for a cheap test.
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --unit theseus --no-compile
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --pages v1:14-45 --no-compile
@@ -73,7 +76,10 @@ its `skip_top_bands` tweak) survives regeneration unchanged. See
 Praefatio, and derived title pages are full-width prose re-typeset to the trim
 measure. They are transcribed **once** and cached in `plutarch.frontmatter.tags.json`
 (same semantics as the body cache below); later builds read the cache and make zero
-network calls. `--retag` or a changed source re-runs the transcription. Only
+network calls when every required result is present. `--offline` reads a fresh
+cache without updating it, including when individual results are absent; missing
+or stale cached prose is skipped. It cannot be combined with `--retag` or
+`--review-lines`. `--retag` or a changed source re-runs the transcription. Only
 `FrontProse` pages are ever sent — no body page is. If no API key is configured on a
 first run, front-matter transcription is skipped with a warning and the body build
 still completes.

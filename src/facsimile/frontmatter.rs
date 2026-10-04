@@ -27,6 +27,17 @@ use crate::verify::reconcile_all;
 /// The committed, hand-editable front-matter cache.
 pub const SIDECAR: &str = "plutarch.frontmatter.tags.json";
 
+/// Read the existing prose cache for an offline build, preserving incomplete
+/// records and every cached transcription. A stale cache cannot supply prose.
+pub fn load_cached_front_matter(path: &Path, source_paths: &[PathBuf]) -> Result<Sidecar> {
+    let sidecar = Sidecar::load(path)?;
+    let sources: Vec<&Path> = source_paths.iter().map(PathBuf::as_path).collect();
+    if sidecar.is_source_stale(&sources) {
+        bail!("front-matter cache is stale; offline build cannot refresh it");
+    }
+    Ok(sidecar)
+}
+
 /// Whether the front-matter sidecar still needs an API call: a boundary page is
 /// unclassified, or a `FrontProse` page has no finalized transcription.
 pub fn work_remains(sidecar: &Sidecar) -> bool {
@@ -441,5 +452,30 @@ mod tests {
         .unwrap();
         assert_eq!(*vision.calls.borrow(), 0, "classified a fresh sidecar");
         assert_eq!(*backend.calls.borrow(), 0, "submitted a fresh sidecar");
+    }
+
+    #[test]
+    fn offline_cache_preserves_incomplete_records_without_writing() {
+        let dir = tempfile::tempdir().unwrap();
+        let source = dir.path().join("v1.pdf");
+        std::fs::write(&source, b"source bytes").unwrap();
+        let path = dir.path().join(SIDECAR);
+        let mut sc = sidecar(
+            3,
+            vec![
+                record(0, 1, PageRole::FrontProse, true),
+                record(0, 2, PageRole::FrontProse, false),
+            ],
+        );
+        sc.sources[0].file_sha256 = crate::render::file_hash(&source).unwrap();
+        sc.save(&path).unwrap();
+        let before = std::fs::read(&path).unwrap();
+        let cached = load_cached_front_matter(&path, std::slice::from_ref(&source)).unwrap();
+        assert!(cached.page(0, 1).unwrap().result.is_some());
+        assert!(cached.page(0, 2).unwrap().result.is_none());
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+        std::fs::write(&source, b"different source bytes").unwrap();
+        assert!(load_cached_front_matter(&path, &[source]).is_err());
+        assert_eq!(std::fs::read(&path).unwrap(), before);
     }
 }

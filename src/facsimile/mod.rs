@@ -47,6 +47,8 @@ pub struct FacsimileArgs {
     pub no_compile: bool,
     /// Re-transcribe the front matter even when its sidecar is fresh.
     pub retag: bool,
+    /// Read existing front-matter prose without invoking vision or updating its cache.
+    pub offline: bool,
     /// Detect the unit table, write/refresh `facsimile_units.json`, and exit.
     pub detect_units: bool,
     /// Re-detect the unit table from the sources even when the cache is present,
@@ -81,6 +83,9 @@ impl FacsimileArgs {
 /// emit the inner `.tex` per volume, and (unless `--no-compile`) compile and
 /// impose. Body rendering and image analysis are offline and deterministic.
 pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
+    if args.offline && (args.retag || args.review_lines) {
+        bail!("--offline cannot be combined with --retag or --review-lines");
+    }
     let source_paths = args.source_paths();
     let pdfs = [Pdf::open(&source_paths[0])?, Pdf::open(&source_paths[1])?];
     let page_words = |source: usize, page: u32| render::page_words(&source_paths[source], page);
@@ -416,7 +421,12 @@ fn fill_front_matter(
             Box::new(crate::llm::batch::ApiBatchBackend::new(client));
         Ok((vision, backend))
     };
-    let sidecar = match frontmatter::run_front_matter(source_paths, args.retag, &tracker, factory) {
+    let prose = if args.offline {
+        frontmatter::load_cached_front_matter(Path::new(frontmatter::SIDECAR), source_paths)
+    } else {
+        frontmatter::run_front_matter(source_paths, args.retag, &tracker, factory)
+    };
+    let sidecar = match prose {
         Ok(sidecar) => sidecar,
         Err(err) => {
             eprintln!("  front-matter prose skipped ({err}); volumes carry the scans but no re-typeset prose");
@@ -702,6 +712,7 @@ mod tests {
             units: PathBuf::from("facsimile_units.json"),
             no_compile: true,
             retag: false,
+            offline: false,
             detect_units: false,
             redetect: false,
             pages: None,
@@ -766,6 +777,7 @@ mod tests {
             units: PathBuf::from("facsimile_units.json"),
             no_compile: true,
             retag: false,
+            offline: false,
             detect_units: false,
             redetect: false,
             pages: Some("v1:14-16".to_string()),
