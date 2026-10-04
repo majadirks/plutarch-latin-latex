@@ -1,0 +1,6 @@
+# Keep Rust's build artifacts OUT of the OneDrive-synced tree. `target/` is ~1.4 GB
+# of churn that rewrites on every build and overwhelms OneDrive's sync engine, so it
+# is redirected to a local, non-synced location. Only source and the committed
+# sidecar sync; the build dir lives here instead.
+[build]
+target-dir = "C:/Users/majad/AppData/Local/plutarch-target"

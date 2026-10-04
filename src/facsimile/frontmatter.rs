@@ -1,0 +1,445 @@
+//! Front-matter transcription for the facsimile path. The body is reproduced as
+//! pixels, but the Monitum (v1), Praefatio (v2), and derived title pages are
+//! full-width prose that must be re-typeset to the trim measure. This reuses the
+//! transcription pipeline's stages — classification, Sonnet/Haiku transcription,
+//! Opus reconciliation — admitting **only** `FrontProse` pages, so no body page is
+//! ever sent to the API.
+//!
+//! The result is cached in `plutarch.frontmatter.tags.json` with the same semantics
+//! as the body cache: a complete, non-stale sidecar makes zero network calls, and
+//! human proofreading corrections edited into it are never regenerated over.
+
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
+
+use anyhow::{bail, Result};
+
+use crate::llm::batch::BatchBackend;
+use crate::llm::instrument::UsageTracker;
+use crate::llm::transcribe::{transcribe_all, DIVERGENCE_SIGNAL};
+use crate::llm::Vision;
+use crate::pages::{classify, is_boundary};
+use crate::pipeline::{load_or_init, scratch_dir};
+use crate::render::{render_page, Pdf, THUMBNAIL_DPI, TRANSCRIBE_DPI};
+use crate::tags::{PageRole, Sidecar};
+use crate::verify::reconcile_all;
+
+/// The committed, hand-editable front-matter cache.
+pub const SIDECAR: &str = "plutarch.frontmatter.tags.json";
+
+/// Whether the front-matter sidecar still needs an API call: a boundary page is
+/// unclassified, or a `FrontProse` page has no finalized transcription.
+pub fn work_remains(sidecar: &Sidecar) -> bool {
+    for (si, src) in sidecar.sources.iter().enumerate() {
+        for page in 1..=src.page_count {
+            if is_boundary(page, src.page_count) && sidecar.page(si, page).is_none() {
+                return true;
+            }
+        }
+    }
+    sidecar
+        .pages
+        .iter()
+        .any(|p| p.role == PageRole::FrontProse && p.result.is_none())
+}
+
+/// Classify the boundary regions, then transcribe and reconcile **only** the
+/// `FrontProse` pages. Body pages are excluded by `in_scope`, so none is rendered or
+/// sent; `render_thumb`/`render_full` are injected so tests run without poppler.
+pub fn transcribe_front_matter(
+    sidecar: &mut Sidecar,
+    sidecar_path: &Path,
+    tracker: &UsageTracker,
+    vision: &dyn Vision,
+    backend: &dyn BatchBackend,
+    render_thumb: impl Fn(usize, u32) -> Result<Vec<u8>>,
+    render_full: impl Fn(usize, u32) -> Result<Vec<u8>>,
+) -> Result<()> {
+    classify(vision, sidecar, tracker, &render_thumb)?;
+    sidecar.save(sidecar_path)?;
+
+    let front: HashSet<(usize, u32)> = sidecar
+        .pages
+        .iter()
+        .filter(|p| p.role == PageRole::FrontProse)
+        .map(|p| (p.source, p.source_page))
+        .collect();
+    let in_scope = |source: usize, page: u32| front.contains(&(source, page));
+    // Front matter transcribes no body pages; a body render here is a logic error.
+    let render_body = |source: usize, page: u32| -> Result<Vec<u8>> {
+        bail!("facsimile front matter must not render body page {source}:{page}")
+    };
+
+    transcribe_all(
+        backend,
+        sidecar,
+        tracker,
+        sidecar_path,
+        None,
+        in_scope,
+        DIVERGENCE_SIGNAL,
+        render_body,
+        &render_full,
+    )?;
+    reconcile_all(
+        backend,
+        sidecar,
+        tracker,
+        sidecar_path,
+        DIVERGENCE_SIGNAL,
+        render_body,
+        &render_full,
+        |_, _| Ok(None),
+    )?;
+    Ok(())
+}
+
+/// Load or build the front-matter sidecar, transcribing the front matter when work
+/// remains. `vision_factory` is called lazily — only when a boundary page is
+/// unclassified or a `FrontProse` page lacks a result — so a complete, non-stale
+/// cache constructs no client and makes zero network calls.
+pub fn run_front_matter(
+    source_paths: &[PathBuf],
+    retag: bool,
+    tracker: &UsageTracker,
+    vision_factory: impl FnOnce() -> Result<(Box<dyn Vision>, Box<dyn BatchBackend>)>,
+) -> Result<Sidecar> {
+    let sidecar_path = PathBuf::from(SIDECAR);
+    let mut sidecar = load_or_init(&sidecar_path, source_paths, retag)?;
+    if retag || work_remains(&sidecar) {
+        let (vision, backend) = vision_factory()?;
+        let paths = source_paths.to_vec();
+        let render_thumb = |source: usize, page: u32| -> Result<Vec<u8>> {
+            let png = render_page(&paths[source], page, THUMBNAIL_DPI, &scratch_dir())?;
+            std::fs::read(&png).map_err(Into::into)
+        };
+        let render_full = |source: usize, page: u32| -> Result<Vec<u8>> {
+            let png = render_page(&paths[source], page, TRANSCRIBE_DPI, &scratch_dir())?;
+            std::fs::read(&png).map_err(Into::into)
+        };
+        transcribe_front_matter(
+            &mut sidecar,
+            &sidecar_path,
+            tracker,
+            vision.as_ref(),
+            backend.as_ref(),
+            render_thumb,
+            render_full,
+        )?;
+    }
+    Ok(sidecar)
+}
+
+/// The `(source, page)` records re-typeset as the Monitum (Tomus I) and the
+/// Praefatio (v2's first tomus). Page-list-driven, so `front_prose_pages` emits
+/// exactly these and never the half-title or Volumen-title pages that share the
+/// `FrontProse` role. Confirmed by a real-eyes render of each page.
+pub const MONITUM_PAGES: [(usize, u32); 2] = [(0, 12), (0, 13)];
+pub const PRAEFATIO_PAGES: [(usize, u32); 4] = [(1, 14), (1, 15), (1, 16), (1, 17)];
+
+/// Edge fractions `(left, top, right, bottom)` cropped off each embedded front scan.
+/// Tuned after a real-eyes check of the compiled PDFs; adjust if a watermark remnant
+/// survives or type is over-cropped.
+const QR_CROP: (f32, f32, f32, f32) = (0.04, 0.04, 0.04, 0.04);
+const VOLUMEN_CROP: (f32, f32, f32, f32) = (0.08, 0.03, 0.08, 0.07);
+const COLOPHON_CROP: (f32, f32, f32, f32) = (0.10, 0.33, 0.10, 0.47);
+
+/// The embedded reproduction-notice (QR) scan for a source: source page 1.
+pub fn front_qr_name(source: usize) -> String {
+    format!("front_qr_s{source}.png")
+}
+
+/// The embedded engraved Volumen-title scan for a source.
+pub fn front_volumen_name(source: usize) -> String {
+    format!("front_volumen_s{source}.png")
+}
+
+/// The source page the engraved Volumen title sits on: v1 p10, v2 p12.
+pub fn front_volumen_page(source: usize) -> u32 {
+    if source == 0 {
+        10
+    } else {
+        12
+    }
+}
+
+/// The embedded printer's-colophon scan (v1 p9, Tomus I only).
+pub fn front_colophon_name() -> &'static str {
+    "front_colophon.png"
+}
+
+/// The pixel sub-rectangle of a `w×h` image left after removing the given edge
+/// fractions `(left, top, right, bottom)`.
+fn crop_rect(w: u32, h: u32, frac: (f32, f32, f32, f32)) -> (u32, u32, u32, u32) {
+    let (l, t, r, b) = frac;
+    let x = (w as f32 * l).round() as u32;
+    let y = (h as f32 * t).round() as u32;
+    let cw = ((w as f32 * (1.0 - l - r)).round() as u32).max(1);
+    let ch = ((h as f32 * (1.0 - t - b)).round() as u32).max(1);
+    (
+        x,
+        y,
+        cw.min(w.saturating_sub(x)).max(1),
+        ch.min(h.saturating_sub(y)).max(1),
+    )
+}
+
+/// Render one source page at transcription DPI, crop it to the fractional box, and
+/// write the named cropped PNG into `out_dir`. The uncropped render goes to a
+/// scratch dir so it does not linger among the build deliverables.
+fn render_and_crop(
+    pdf: &Pdf,
+    page: u32,
+    frac: (f32, f32, f32, f32),
+    name: &str,
+    out_dir: &Path,
+) -> Result<()> {
+    let png = render_page(&pdf.path, page, TRANSCRIBE_DPI, &scratch_dir())?;
+    let img = image::open(&png).map_err(|e| anyhow::anyhow!("decoding {}: {e}", png.display()))?;
+    let (x, y, cw, ch) = crop_rect(img.width(), img.height(), frac);
+    img.crop_imm(x, y, cw, ch).save(out_dir.join(name))?;
+    Ok(())
+}
+
+/// Render into `out_dir` the embedded front-matter scans a given tomus needs: the
+/// reproduction-notice (QR) page on every tomus, the engraved Volumen title on the
+/// first tomus of each source, and the printer's colophon on Tomus I. Each is
+/// cropped in Rust to a watermark-free box; no network is required.
+pub fn render_front_scans(
+    source: usize,
+    is_first_of_source: bool,
+    is_tomus_one: bool,
+    pdf: &Pdf,
+    out_dir: &Path,
+) -> Result<()> {
+    render_and_crop(pdf, 1, QR_CROP, &front_qr_name(source), out_dir)?;
+    if is_first_of_source {
+        render_and_crop(
+            pdf,
+            front_volumen_page(source),
+            VOLUMEN_CROP,
+            &front_volumen_name(source),
+            out_dir,
+        )?;
+    }
+    if is_tomus_one {
+        // The colophon is v1 p9; Tomus I is always source 0, so `pdf` is the v1 PDF.
+        render_and_crop(pdf, 9, COLOPHON_CROP, front_colophon_name(), out_dir)?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::llm::batch::{BatchOutcome, BatchRequest, BatchStatus};
+    use crate::llm::instrument::Usage;
+    use crate::llm::Completion;
+    use crate::tags::{PageRecord, PageStatus, SourcePdf};
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+
+    /// A batch backend that transcribes each submitted request with a fixed prose
+    /// reply and records which `(source, page)` ids it was asked for.
+    struct StubBackend {
+        chunks: RefCell<HashMap<String, Vec<String>>>,
+        submitted: RefCell<Vec<String>>,
+        calls: RefCell<usize>,
+    }
+
+    impl StubBackend {
+        fn new() -> Self {
+            StubBackend {
+                chunks: RefCell::new(HashMap::new()),
+                submitted: RefCell::new(Vec::new()),
+                calls: RefCell::new(0),
+            }
+        }
+    }
+
+    impl BatchBackend for StubBackend {
+        fn submit(&self, requests: &[BatchRequest]) -> Result<String> {
+            *self.calls.borrow_mut() += 1;
+            self.submitted
+                .borrow_mut()
+                .extend(requests.iter().map(|r| r.custom_id.clone()));
+            let id = format!("b{}", self.calls.borrow());
+            self.chunks.borrow_mut().insert(
+                id.clone(),
+                requests.iter().map(|r| r.custom_id.clone()).collect(),
+            );
+            Ok(id)
+        }
+
+        fn poll(&self, _batch_id: &str) -> Result<BatchStatus> {
+            Ok(BatchStatus::Ended)
+        }
+
+        fn results(&self, batch_id: &str) -> Result<HashMap<String, BatchOutcome>> {
+            let ids = self
+                .chunks
+                .borrow()
+                .get(batch_id)
+                .cloned()
+                .unwrap_or_default();
+            Ok(ids
+                .into_iter()
+                .map(|id| {
+                    (
+                        id,
+                        BatchOutcome::Ok(Completion {
+                            text: r#"{"blocks":[{"kind":"paragraph","text":"monitum prose transcribed faithfully"}]}"#.to_string(),
+                            usage: Usage {
+                                input_tokens: 10,
+                                output_tokens: 10,
+                            },
+                        }),
+                    )
+                })
+                .collect())
+        }
+    }
+
+    /// A vision classifier that records how many times it was called.
+    struct CountingVision {
+        calls: RefCell<usize>,
+    }
+
+    impl Vision for CountingVision {
+        fn classify(&self, _png_base64: &str) -> Result<(PageRole, Usage)> {
+            *self.calls.borrow_mut() += 1;
+            Ok((PageRole::FrontProse, Usage::default()))
+        }
+        fn review_line(&self, _png_base64: &str) -> Result<(crate::llm::LineVerdict, Usage)> {
+            Ok((crate::llm::LineVerdict::Body, Usage::default()))
+        }
+    }
+
+    fn record(source: usize, page: u32, role: PageRole, done: bool) -> PageRecord {
+        let result = done.then(|| crate::tags::PageDoc {
+            blocks: vec![crate::tags::Block {
+                kind: crate::tags::BlockKind::Paragraph,
+                roman: None,
+                section_no: None,
+                continues_previous: false,
+                text: "done".to_string(),
+            }],
+        });
+        PageRecord {
+            source,
+            source_page: page,
+            image_sha256: String::new(),
+            role,
+            pass_a: result.clone(),
+            pass_b: None,
+            status: if done {
+                PageStatus::Agreed
+            } else {
+                PageStatus::NotBody
+            },
+            flags: Vec::new(),
+            result,
+            result_model: None,
+        }
+    }
+
+    fn sidecar(page_count: u32, pages: Vec<PageRecord>) -> Sidecar {
+        Sidecar {
+            schema_version: crate::tags::SCHEMA_VERSION,
+            sources: vec![SourcePdf {
+                path: "v1.pdf".to_string(),
+                page_count,
+                file_sha256: "a".to_string(),
+            }],
+            front_matter: Default::default(),
+            pages,
+            lives: Vec::new(),
+            batches: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn crop_box_removes_fraction() {
+        // A 1000×2000 image with 10% off left/right and 25%/15% off top/bottom.
+        let (x, y, w, h) = crop_rect(1000, 2000, (0.10, 0.25, 0.10, 0.15));
+        assert_eq!((x, y), (100, 500));
+        assert_eq!(w, 800); // 1000 - 100 (left) - 100 (right)
+        assert_eq!(h, 1200); // 2000 - 500 (top) - 300 (bottom)
+                             // The sub-rectangle stays inside the image.
+        assert!(x + w <= 1000 && y + h <= 2000);
+    }
+
+    #[test]
+    fn frontmatter_only_transcribes_frontprose() {
+        // A classified source with one FrontProse and one Body page: only the
+        // FrontProse page may be transcribed.
+        let pages = vec![
+            record(0, 2, PageRole::FrontProse, false),
+            record(0, 3, PageRole::Body, false),
+        ];
+        let mut sc = sidecar(3, pages);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(SIDECAR);
+        let tracker = UsageTracker::new();
+        let backend = StubBackend::new();
+        let vision = CountingVision {
+            calls: RefCell::new(0),
+        };
+        transcribe_front_matter(
+            &mut sc,
+            &path,
+            &tracker,
+            &vision,
+            &backend,
+            |_, _| Ok(vec![1, 2, 3]),
+            |_, _| Ok(vec![4, 5, 6]),
+        )
+        .unwrap();
+        // No submitted request targets the body page (source 0, page 3).
+        assert!(
+            !backend
+                .submitted
+                .borrow()
+                .iter()
+                .any(|id| id.contains("_3")),
+            "a body page was submitted: {:?}",
+            backend.submitted.borrow()
+        );
+        // The FrontProse page is finalized; the Body page is untouched.
+        assert!(sc.page(0, 2).unwrap().result.is_some());
+        assert!(sc.page(0, 3).unwrap().result.is_none());
+        assert!(sc.page(0, 3).unwrap().pass_a.is_none());
+    }
+
+    #[test]
+    fn frontmatter_offline_when_sidecar_fresh() {
+        // Every page classified and the FrontProse page finalized: no classify call
+        // and no batch submission.
+        let pages = vec![
+            record(0, 1, PageRole::Skip, false),
+            record(0, 2, PageRole::FrontProse, true),
+            record(0, 3, PageRole::Body, false),
+        ];
+        assert!(!work_remains(&sidecar(3, pages.clone())));
+        let mut sc = sidecar(3, pages);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(SIDECAR);
+        let tracker = UsageTracker::new();
+        let backend = StubBackend::new();
+        let vision = CountingVision {
+            calls: RefCell::new(0),
+        };
+        transcribe_front_matter(
+            &mut sc,
+            &path,
+            &tracker,
+            &vision,
+            &backend,
+            |_, _| Ok(vec![1, 2, 3]),
+            |_, _| Ok(vec![4, 5, 6]),
+        )
+        .unwrap();
+        assert_eq!(*vision.calls.borrow(), 0, "classified a fresh sidecar");
+        assert_eq!(*backend.calls.borrow(), 0, "submitted a fresh sidecar");
+    }
+}

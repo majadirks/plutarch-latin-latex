@@ -1,0 +1,114 @@
+% Throwaway layout spike: trim-size (10.5 x 16 cm) single-column reader page in
+% Old Standard under lualatex, proving roman front matter / arabic body, inline
+% chapter+section numbering, a mixed Latin/Greek prose page, and offset verse.
+% Compile: lualatex inner_sample.tex
+\documentclass{book}
+
+\usepackage[paperwidth=10.5cm,paperheight=16cm,%
+            top=1cm,bottom=1cm,inner=1.2cm,outer=0.9cm]{geometry}
+
+\usepackage{fontspec}
+\setmainfont{OldStandard}[
+  Extension=.otf,
+  UprightFont=*-Regular,
+  BoldFont=*-Bold,
+  ItalicFont=*-Italic,
+  BoldItalicFont=*-BoldItalic]
+\AtBeginDocument{\fontsize{10}{13}\selectfont}
+
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+
+\fancypagestyle{folio}{%
+  \fancyhf{}%
+  \fancyfoot[LE]{\thepage}%
+  \fancyfoot[RO]{\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
+\pagestyle{folio}
+\renewcommand{\thepage}{\romannumeral\numexpr\value{page}-4\relax}
+
+\newcommand{\heading}[1]{{\centering\bfseries\large #1\par\bigskip}}
+\newcommand{\freshpage}{\clearpage\ifodd\value{page}\thispagestyle{empty}\hbox{}\clearpage\fi}
+\newcommand{\beginbodynumbering}{%
+  \xdef\bodyfirstpage{\number\value{page}}%
+  \gdef\thepage{\the\numexpr\value{page}-\bodyfirstpage+1\relax}%
+}
+
+\begin{document}
+
+% Two front flyleaves (four blank pages).
+\thispagestyle{empty}\null\clearpage
+\thispagestyle{empty}\null\clearpage
+\thispagestyle{empty}\null\clearpage
+\thispagestyle{empty}\null\clearpage
+
+% Re-typeset title page.
+\freshpage
+\thispagestyle{empty}
+\null\vfill
+\begin{center}
+  {\LARGE\bfseries PLUTARCHI VITAE}\\[1.5em]
+  {\large THEOD. D\OE HNER}\\[1em]
+  GR\AE CE ET LATINE\\[0.5em]
+  M DCCC LVII\\[2em]
+  TOMUS I
+\end{center}
+\vfill\clearpage
+
+% A Monitum-style page mixing Latin and polytonic Greek.
+\freshpage
+\heading{MONITUM}
+Haec editio Plutarchi uitas Graece et Latine exhibet. In hoc exemplari
+seruamus orthographiam antiquam: ſubláta uirtus, iidem, Iuppiter. Graecum
+fragmentum ita legitur: ἀρετὴ καὶ δόξα καὶ τιμή, quod Latine
+redditur ``uirtus et gloria et honor.''
+\clearpage
+
+% Volume label, then begin arabic body numbering.
+\freshpage
+\thispagestyle{empty}
+\null\vfill\begin{center}{\Huge\bfseries TOMUS I}\end{center}\vfill\clearpage
+\beginbodynumbering
+
+% First Life.
+\freshpage
+\heading{THESEUS}
+
+{\bfseries I.}~(1)~Sicut historici, amice Sosi Senecio, in describendis
+terris ea quae fugiunt eorum cognitionem in extremis partibus tabularum
+comprimunt, ita mihi liceat.
+
+(2)~Theseus igitur, cum ad eam aetatem peruenisset, Delphos profectus est.
+
+% Second Life with an embedded verse quotation.
+\freshpage
+\heading{ROMULUS}
+
+{\bfseries I.}~(1)~Magnum illud et celebre Romae nomen unde ortum sit
+ambigitur. Quidam carmen ueteris poetae de origine urbis canunt:
+
+\begin{verse}
+Roma, caput mundi, rerum maxima rerum, \\
+cui par est nihil et nihil secundum, \\
+te canimus patriae decus atque columen.
+\end{verse}
+
+(2)~Alii a Romulo conditore nomen deductum putant.
+
+% A Comparatio on a fresh page.
+\freshpage
+\heading{COMPARATIO THESEI ET ROMULI}
+
+Haec sunt quae de Theseo et Romulo memoratu digna uidentur. Vterque natus
+ad imperium, uterque uim cum iustitia miscuit.
+
+\clearpage
+% Two back flyleaves.
+\thispagestyle{empty}\null\clearpage
+\thispagestyle{empty}\null\clearpage
+\thispagestyle{empty}\null\clearpage
+\thispagestyle{empty}\null\clearpage
+
+\end{document}

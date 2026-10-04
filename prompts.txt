@@ -1,0 +1,82 @@
+ Consider the files ""C:\Users\majad\OneDrive\Documents\Latin\Plutarch\Ploutarchou_Bioi_v1.pdf" and
+  "C:\Users\majad\OneDrive\Documents\Latin\Plutarch\Ploutarchou_Bioi_v2.pdf". These PDFS contain the text of Plutarch's Lives in Latin translation, along with the Greek (typically two columns per page, one Latin paired with one Greek, though the introductory "Monitum" is Latin-only). I don't care about the Greek text at all. I want to create a script in Rust that will extract the Latin text and format it into a LaTeX file suitable for binding. Some requirements and constraints:
+
+- The OCR layer is not to be trusted. We should use AI vision to transcribe the Latin text using context and the Greek as a check on accuracy.
+- Preserve the paragraph and sentence numbering present in the original pdf
+- Front matter (Google QR code pages, title pages, dedication pages, "Monitum", and so forth) should be preserved. Skip scans of the marbling and blank pages, but insert blank pages as needed to keep page parity correct (eg "Montium" should start on an odd page).
+- Back matter (marbled pages and blank pages) is to be ignored.
+- We may use an Anthropic API key stored in a (gitignored) secrets.json file.
+- We should both output the final LaTeX and its PDF form.
+- The PDF should be printable for book binding: double-sided with signatures of eight sheets (32 pages).
+- Page numbers should be generated (roman numerals for front matter, Arabic for main text)
+- The volumes should include two blank leaves at the front and two blank leaves in the back
+- We will take two pdfs as inputs. We should output multiple PDF files, one for each output volume.
+- Aim for each volume to be 400 pages, with a maximum of 500 pages. Distribute as needed so volumes are of roughly equal length. Chapters (Lives) should never split volumes.
+- This implies that we need to identify where each Life begins and ends; these demarcations should be cached in the sidecar (described below)
+- Each new chapter (Life) should start a new page.
+- Each volume should have a generated page with its number ("TOMUS I", "TOMUS II", "TOMUS III", "TOMUS IV", "TOMUS V", etc.)
+- The PDF will be 8.5" x 11" (landscape, two-up) for printing on US Letter paper, but the text should be constrained to Loeb size (roughly 10.5 cm wide by 16 cm tall). The first recto of each signature should have "cut lines" showing where the page can be cut by a guillotine to fit that size.
+- The strategy here is to first generate the trim-size inner PDF first, read its real page count from the lualatex log, and then build an imposition wrapper to match exactly  (\includegraphics[page=N])
+-  Imposition formula: sheet i of a 32-page signature → outer side 34−2i | 2i−1, inner 2i | 33−2i, even pages left so gutters face the fold
+- Pad signatures with blank pages to a multiple of 32. 
+- Every sheet (not leaf - each sheet containing four printed leaves) will have fold lines on the outer/recto side (eg between 1|32, not 2|31) to show where the binder should fold inward and crease.
+- The fold lines will also contain sew marks: solid, circular bullets showing where to pierce the pages:
+	> Style: small solid dots (filled circles, radius \sewdot = 0.06 cm) placed along the center fold line, drawn on every outer/recto side only (same branch as the dotted fold line — so they appear between pages 1|32, not 2|31).
+	> Spacing / station layout (per fold):
+		- 2 kettle stitches — one a 72 pt margin (SEW_MARGIN_CM = 2.54 cm) in from each end of the fold.
+		- 2 tape supports (SEW_TAPES = 2), evenly spaced between the two kettle stitches.
+		- Each tape = two holes a 42 pt tape width apart (± 21 pt around the tape center; SEW_HALFTAPE_CM = 0.7408 cm).
+
+That's 6 dots per fold total (2 kettles + 2 tapes × 2 holes), symmetric about the vertical center.
+- We need LLM result caching and a sidecar that is committed to git: results of LLM calls will be cached in a committed <book>.tags.json sidecar, and normal builds are pure and make zero network calls.
+- Font: Old Standard (Alexey Kryukov). LaTeX access: \usepackage{oldstandard} (pdfLaTeX) or Old Standard TT via fontspec
+
+- See the project "C:\Users\majad\coding\bilingual_french_readers\bilingual_french_readers" for prior art and style guidance
+
+- What clarifying questions do you have? Once the task is clear we will come up with some high-level ideas for implementation and then write an implementation plan.
+
+
+-----------
+
+Write an implementation plan: 
+- Drop the "first title page" with the Greek/Latin title for the Volumen (Plutarch Operum Volumen Primum). 
+
+- The "second title page" is currently transcribed (IIAOYTAPXOY BIOI. PLUTARCHI VITÆ. SECUNDUM CODICES PARISINOS RECOGNOVIT, etc). Instead, let's just grab a png of that page (drop the Google watermark) and shrink it to size. Include this page in the first Tomus, and the corresponding page in the first tomus from Volumen 2. (I'll refer to this as the "Volumen Title Page")
+
+- We do not currently have the dedication. Let's grab a cropped image of that and include it - but after that "Volumen title page", rather than before (in the source pdf it comes before). The dedication should be on its own page, and in output Tomus Primus only.
+
+- Currently we have two pages reading "Tomus I". One is the first page with content; the other comes later (after the front matter). Keep the first, drop the second. But let's expand it. Rather than just "TOMUS I", that first page should be:
+
+" PLUTARCHI VITAE (ae ligature)
+SECUNDUM CODICES PARISINOS RECOGNOVIT
+THEODOR DOEHNER (oe ligature)
+TOMUS I
+
+(names of the lives; centered, separated by bullets; no comparationes named)
+
+EX LIBRIS
+MARTINEZ-DIRKS"
+
+all centered. Old STandard font. I'll refer to this as the "Tomus Title Page"
+
+- We do not currently have the Google QR code page. As with the Volumen Title Page, let's just directly embed this (scaled to size), directly after the Tomus Title Page.
+
+So the order of the front matter will be:
+Tomus Title Page (every tomus)
+Google QR Page (every tomus)
+Volumen Title Page (first tomus from each volumen)
+Dedication (Tomus I only)
+Monitum (Tomus I only) or Praefatio (first tomus from volumen 2)
+
+Other assorted issues to fix (diagnose and include fixes in the plan):
+- In pdf page 25 of "file:///C:/Users/majad/OneDrive/Documents/Latin/Plutarch/build_facsimile/tomus_1_inner.pdf", the lower margin is off - diagnose that and include a fix in the implementation plan for this and similar pages. Similar issue on pdf page 81, 127, and elsewhere.
+- pdf page 16 is a title page for the Vita, "Theseus". We don't need that as a standalone page. But on the first page of the life (and other lives / comparationes) itself let's remove the uniform header and format this as a large chapter title.
+- pdf page 23 is blank other than the header. A sentence starts on pdf page 22 and it ends on pdf page 24. We should avoid blank pages like this, especially pages that interrupt flowing text. Similar problematic blank at pdf page 37.
+-pdf page 515: a snip of the title and source page number are wrongly detected as prose text and included. This recurs elsewhere, eg in "C:\Users\majad\OneDrive\Documents\Latin\Plutarch\build_facsimile\tomus_7_inner.pdf" at pdf pages 10 and 18.
+- We are massively exceeding the target page count: we target 400 (max 500), but this pdf has 544 pages. Moving Pericles/Fabius/Comparatio to the next tomus would land us at 417 pages, which would be perfect. So our algorithm for deciding tomus boundaries seems to be off.
+- We don't need Greek titles for the lives. Latin titles are sufficient.
+-  I also notice the second page of the monitum from the source did not get transcribed in the output of Tomus 1, and a footnote ("Plutarchus. I") is rendered as though it were part of the prose.
+
+Note also: The source is the public-domain 1857 Didot edition, so faithful reproduction is the goal throughout, and there are no copyright issues here.
+
+Do you have clarifying questions?
