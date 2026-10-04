@@ -76,6 +76,75 @@ pub fn page_text(pdf: &Path, page: u32) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
+/// One OCR word with its page-fraction box (origin top-left, y down).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Word {
+    pub text: String,
+    pub x_min: f32,
+    pub y_min: f32,
+    pub x_max: f32,
+    pub y_max: f32,
+}
+
+/// Read normalized OCR boxes, returning no words when poppler or text is absent.
+pub fn page_words(pdf: &Path, page: u32) -> Result<Vec<Word>> {
+    let p = page.to_string();
+    let output = match Command::new(pdftotext_bin())
+        .args(["-bbox", "-enc", "UTF-8", "-f", &p, "-l", &p])
+        .arg(pdf)
+        .arg("-")
+        .output()
+    {
+        Ok(output) if output.status.success() => output,
+        _ => return Ok(Vec::new()),
+    };
+    Ok(parse_bbox(&String::from_utf8_lossy(&output.stdout)))
+}
+
+fn bbox_attr(tag: &str, name: &str) -> Option<f32> {
+    let prefix = format!("{name}=\"");
+    let value = tag.split_once(&prefix)?.1.split_once('"')?.0;
+    value.parse::<f32>().ok().filter(|v| v.is_finite())
+}
+
+fn parse_bbox(xml: &str) -> Vec<Word> {
+    let Some(page) = xml
+        .split_once("<page ")
+        .and_then(|(_, s)| s.split_once('>'))
+    else {
+        return Vec::new();
+    };
+    let Some((w, h)) = bbox_attr(page.0, "width").zip(bbox_attr(page.0, "height")) else {
+        return Vec::new();
+    };
+    if w <= 0.0 || h <= 0.0 {
+        return Vec::new();
+    }
+    page.1
+        .split("</page>")
+        .next()
+        .unwrap_or("")
+        .split("<word ")
+        .skip(1)
+        .filter_map(|s| {
+            let (tag, rest) = s.split_once('>')?;
+            let text = rest.split_once("</word>")?.0;
+            Some(Word {
+                text: text
+                    .replace("&lt;", "<")
+                    .replace("&gt;", ">")
+                    .replace("&quot;", "\"")
+                    .replace("&apos;", "'")
+                    .replace("&amp;", "&"),
+                x_min: bbox_attr(tag, "xMin")? / w,
+                y_min: bbox_attr(tag, "yMin")? / h,
+                x_max: bbox_attr(tag, "xMax")? / w,
+                y_max: bbox_attr(tag, "yMax")? / h,
+            })
+        })
+        .collect()
+}
+
 /// The per-page title candidate: from the first few non-empty lines, the ALL-CAPS
 /// title tokens (folio digits and punctuation-only tokens dropped), joined by
 /// spaces. On a body page this is the running head that names the current unit.
@@ -281,6 +350,29 @@ pub fn file_hash(path: &Path) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn page_words_parses_bbox_fractions() {
+        let words = parse_bbox(
+            r#"<page width="400" height="700"><word xMin="200" yMin="280" xMax="300" yMax="294">ROMULUS.</word><word xMin="210" yMin="320" xMax="250" yMax="334">Ingens</word></page>"#,
+        );
+        assert_eq!(words.len(), 2);
+        assert_eq!(words[0].text, "ROMULUS.");
+        assert_eq!(words[1].text, "Ingens");
+        assert!((words[0].y_min - 0.4).abs() < 1e-4);
+        assert_eq!(words[0].x_min, 0.5);
+        assert_eq!(words[0].x_max, 0.75);
+        assert!((words[1].y_max - 334.0 / 700.0).abs() < 1e-4);
+        assert!(parse_bbox("<page width=\"0\" height=\"700\">").is_empty());
+    }
+
+    #[test]
+    fn parse_bbox_unescapes_entities() {
+        let words = parse_bbox(
+            r#"<page width="1" height="1"><word xMin="0" yMin="0" xMax="1" yMax="1">R&amp;R &lt; &gt; &quot; &apos; &amp;lt;</word></page>"#,
+        );
+        assert_eq!(words[0].text, "R&R < > \" ' &lt;");
+    }
 
     #[test]
     fn parse_page_count_reads_pages_line() {
