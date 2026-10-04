@@ -194,10 +194,14 @@ pub fn unit_body_strips(
 
     // Pass A — band every page; no boundary trim yet.
     let mut pages: Vec<(GrayImage, Vec<Band>)> = Vec::new();
+    let mut source_pages = Vec::new();
     let mut skipped = 0u32;
     for page in range.unit.start_page..=range.end_page {
         match render_and_band(source, page, &render_fn) {
-            Ok((col, bands)) => pages.push((col, bands)),
+            Ok((col, bands)) => {
+                pages.push((col, bands));
+                source_pages.push(page);
+            }
             Err(e) => {
                 skipped += 1;
                 eprintln!(
@@ -221,9 +225,8 @@ pub fn unit_body_strips(
     // head / signature; a shared last page drops from the next unit's title down.
     // When the unit's one page is both first and shared-last, both boundary trims
     // apply to it.
-    let last_idx = pages.len().saturating_sub(1);
-    for (idx, (col, bands)) in pages.iter_mut().enumerate() {
-        if idx == 0 {
+    for (page, (col, bands)) in source_pages.into_iter().zip(pages.iter_mut()) {
+        if page == range.unit.start_page {
             *bands = drop_opening_bands(
                 col,
                 bands,
@@ -234,8 +237,8 @@ pub fn unit_body_strips(
         } else {
             *bands = drop_interior_running_head(col, bands, &metrics);
         }
-        if range.shared_tail && idx == last_idx {
-            *bands = drop_shared_tail(col, bands, &metrics);
+        if range.shared_tail && page == range.end_page {
+            *bands = drop_shared_tail(col, bands, range.tail_cut_frac, &metrics);
         }
     }
 
@@ -277,22 +280,35 @@ fn drop_interior_running_head(col: &GrayImage, bands: &[Band], m: &LineMetrics) 
         .collect();
     let med = median_gap(&gaps);
     let mut lo = 0usize;
-    let mut hi = bands.len();
     if (band_ink_span(col, &bands[0]) as f32) < short && gaps[0] as f32 > med {
         lo = 1;
     }
-    if hi - lo >= 3 {
-        let last = hi - 1;
-        let outlier = (band_ink_span(col, &bands[last]) as f32) < short
-            || matches!(
-                classify_band(col, &bands[last], m),
-                BandClass::Short | BandClass::Narrow
-            );
-        if outlier && gaps[last - 1] as f32 > med {
-            hi = last;
-        }
+    drop_trailing_furniture(col, &bands[lo..], m)
+}
+
+/// Drop a short or narrow final band detached by an above-median gap. The
+/// full-measure threshold also identifies furniture when metrics are unavailable.
+fn drop_trailing_furniture(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<Band> {
+    if bands.len() < 3 {
+        return bands.to_vec();
     }
-    bands[lo..hi].to_vec()
+    let gaps: Vec<i64> = bands
+        .windows(2)
+        .map(|w| w[1].top as i64 - w[0].bottom as i64)
+        .collect();
+    let last = bands.len() - 1;
+    let outlier = (band_ink_span(col, &bands[last]) as f32)
+        < BODY_LINE_SPAN_FRAC * col.width() as f32
+        || matches!(
+            classify_band(col, &bands[last], m),
+            BandClass::Short | BandClass::Narrow
+        );
+    let hi = if outlier && gaps[last - 1] as f32 > median_gap(&gaps) {
+        last
+    } else {
+        bands.len()
+    };
+    bands[..hi].to_vec()
 }
 
 /// Median of inter-band gaps, as f32.
@@ -360,9 +376,23 @@ fn drop_opening_bands(
 
 /// On a unit's shared last page, keep only the bands **above** the next unit's
 /// printed display title (dropping the title and the next unit's body below it).
-/// When no title is found the next unit began at the page top, so nothing from this
-/// page belongs to the previous unit and all of it is dropped.
-fn drop_shared_tail(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<Band> {
+/// A recorded title fraction drives the cut and a detached trailing separator is
+/// removed. Without a usable fraction, the title heuristic supplies the cut; if
+/// that finds no title, the page contributes no bands to this unit.
+fn drop_shared_tail(
+    col: &GrayImage,
+    bands: &[Band],
+    tail_cut_frac: Option<f32>,
+    m: &LineMetrics,
+) -> Vec<Band> {
+    if let Some(row) = tail_cut_frac.and_then(|frac| frac_row(frac, col.height(), m)) {
+        let kept: Vec<Band> = bands
+            .iter()
+            .copied()
+            .filter(|b| b.top + (b.bottom - b.top) / 2 < row)
+            .collect();
+        return drop_trailing_furniture(col, &kept, m);
+    }
     match find_title_band_from(col, bands, m) {
         Some(i) => bands[..i].to_vec(),
         None => Vec::new(),
@@ -1125,6 +1155,22 @@ mod tests {
         // The first page's opening (the narrow title) is dropped: its first kept band
         // is the first body line, well below the title's top at y≈4.
         assert!(pages[0].1[0].top > 20, "title not dropped on first page");
+
+        // Boundary coordinates belong to source pages, even if rendering fails.
+        let mut missing_boundaries = range.clone();
+        missing_boundaries.open_body_frac = Some(0.8);
+        missing_boundaries.tail_cut_frac = Some(0.2);
+        missing_boundaries.shared_tail = true;
+        let (surviving, _) = unit_body_strips(&missing_boundaries, |_, page| {
+            if page == 2 {
+                Ok(img.clone())
+            } else {
+                anyhow::bail!("unavailable page")
+            }
+        })
+        .unwrap();
+        assert_eq!(surviving.len(), 1);
+        assert_eq!(surviving[0].1, pages[1].1);
     }
 
     /// A page whose bands are `specs`, plus the metrics computed over it.
@@ -1372,9 +1418,62 @@ mod tests {
             (92, 100, 5, 95), // next body
         ];
         let (page, m) = page_and_metrics(110, w, &specs);
-        let kept = drop_shared_tail(&page.0, &page.1, &m);
+        let kept = drop_shared_tail(&page.0, &page.1, None, &m);
         assert_eq!(kept.len(), 3);
         assert_eq!(kept[2].top, 24);
+    }
+
+    #[test]
+    fn shared_tail_frac_keeps_prev_body_drops_separator() {
+        let (page, m) = opening_fraction_fixture(5, 95);
+        let kept = drop_shared_tail(&page.0, &page.1, Some(70.0 / 150.0), &m);
+        assert_eq!(kept, page.1[..3]);
+    }
+
+    #[test]
+    fn shared_tail_frac_keeps_short_attached_last_line() {
+        let (page, m) = page_and_metrics(
+            110,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (12, 20, 5, 95),
+                (24, 32, 40, 60),
+                (60, 70, 5, 95),
+                (80, 88, 5, 95),
+            ],
+        );
+        assert_eq!(
+            drop_shared_tail(&page.0, &page.1, Some(60.0 / 110.0), &m),
+            page.1[..3]
+        );
+        assert_eq!(
+            drop_shared_tail(&page.0, &page.1, Some(0.5), &LineMetrics::sentinel()),
+            drop_shared_tail(&page.0, &page.1, None, &LineMetrics::sentinel()),
+        );
+    }
+
+    #[test]
+    fn single_page_fraction_trims_both_ends() {
+        let (page, m) = page_and_metrics(
+            180,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (25, 35, 5, 95),
+                (50, 58, 5, 95),
+                (62, 70, 5, 95),
+                (74, 82, 5, 95),
+                (110, 112, 40, 60),
+                (130, 140, 5, 95),
+                (155, 163, 5, 95),
+            ],
+        );
+        let after_top = drop_opening_bands(&page.0, &page.1, None, Some(50.0 / 180.0), &m);
+        assert_eq!(
+            drop_shared_tail(&page.0, &after_top, Some(130.0 / 180.0), &m),
+            page.1[2..5]
+        );
     }
 
     #[test]
@@ -1409,7 +1508,7 @@ mod tests {
         ];
         let (page, m) = page_and_metrics(170, w, &specs);
         let after_top = drop_opening_bands(&page.0, &page.1, None, None, &m);
-        let kept = drop_shared_tail(&page.0, &after_top, &m);
+        let kept = drop_shared_tail(&page.0, &after_top, None, &m);
         assert_eq!(kept.len(), 2);
         assert_eq!(kept[0].top, 70);
         assert_eq!(kept[1].top, 82);
