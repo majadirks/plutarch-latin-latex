@@ -83,11 +83,12 @@ impl FacsimileArgs {
 pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
     let source_paths = args.source_paths();
     let pdfs = [Pdf::open(&source_paths[0])?, Pdf::open(&source_paths[1])?];
+    let page_words = |source: usize, page: u32| render::page_words(&source_paths[source], page);
     let page_text = |source: usize, page: u32| render::page_text(&source_paths[source], page);
 
     // `--detect-units` writes/refreshes the cache from the sources and exits.
     if args.detect_units {
-        let units = detect::load_or_detect(&args.units, &pdfs, true, page_text)?;
+        let units = detect::load_or_detect(&args.units, &pdfs, true, page_text, page_words)?;
         println!("Detected {} units -> {}", units.len(), args.units.display());
         for u in &units {
             println!(
@@ -112,7 +113,7 @@ pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
     let mut units = if args.pages.is_some() {
         Vec::new()
     } else {
-        detect::load_or_detect(&args.units, &pdfs, args.redetect, page_text)?
+        detect::load_or_detect(&args.units, &pdfs, args.redetect, page_text, page_words)?
     };
     let ranges = select_ranges(args, &last_body, &units)?;
 
