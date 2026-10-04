@@ -12,7 +12,7 @@ use anyhow::{bail, Context, Result};
 
 use super::corpus;
 use super::units::{self, Unit};
-use crate::render::{running_head, title_token, Pdf};
+use crate::render::{running_head, title_token, Pdf, Word};
 use crate::verify::fold;
 
 /// Tokens that carry no identifying weight: folded `cum`/`seu` and any token of two
@@ -45,6 +45,42 @@ pub fn tokens(s: &str) -> Vec<String> {
         .map(fold)
         .filter(|t| t.chars().count() > 2 && !STOP.contains(&t.as_str()))
         .collect()
+}
+
+const TITLE_TOP_ZONE_FRAC: f32 = 0.10;
+const TITLE_LINE_EPSILON: f32 = 0.012;
+
+/// Locate the known unit's printed title and first body line below top furniture.
+pub fn title_box(words: &[Word], unit: usize) -> Option<(f32, f32)> {
+    let wanted = tokens(corpus::corpus().get(unit)?.latin_title);
+    let mut kept: Vec<&Word> = words
+        .iter()
+        .filter(|w| w.x_min > 0.5 && w.y_min > TITLE_TOP_ZONE_FRAC && w.y_min.is_finite())
+        .collect();
+    kept.sort_by(|a, b| a.y_min.total_cmp(&b.y_min));
+    let mut lines: Vec<(f32, Vec<&Word>)> = Vec::new();
+    for word in kept {
+        if let Some((y, line)) = lines.last_mut() {
+            if word.y_min - *y < TITLE_LINE_EPSILON {
+                line.push(word);
+                continue;
+            }
+        }
+        lines.push((word.y_min, vec![word]));
+    }
+    let matches = |line: &(f32, Vec<&Word>)| {
+        line.1
+            .iter()
+            .filter_map(|w| title_token(&w.text))
+            .flat_map(|t| tokens(&t))
+            .any(|t| wanted.iter().any(|w| crate::assemble::token_matches(&t, w)))
+    };
+    let first = lines.iter().position(matches)?;
+    let mut body = first + 1;
+    while body < lines.len() && matches(&lines[body]) {
+        body += 1;
+    }
+    Some((lines[first].0, lines.get(body)?.0))
 }
 
 /// The corpus unit a page belongs to, from its running head. `None` when the head
@@ -357,6 +393,64 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn word(text: &str, x: f32, y: f32) -> Word {
+        Word {
+            text: text.into(),
+            x_min: x,
+            x_max: x + 0.1,
+            y_min: y,
+            y_max: y + 0.008,
+        }
+    }
+
+    #[test]
+    fn title_box_narrow_midpage() {
+        let words = vec![
+            word("ROMULUS", 0.6, 0.06),
+            word("tail", 0.6, 0.2),
+            word("ROMULUS.", 0.6, 0.39),
+            word("Ingens", 0.6, 0.43),
+        ];
+        assert_eq!(title_box(&words, id("romulus")), Some((0.39, 0.43)));
+    }
+
+    #[test]
+    fn title_box_wide_two_line() {
+        let words = vec![
+            word("COMPARATIO", 0.51, 0.765),
+            word("THESEI", 0.7, 0.766),
+            word("ROMULO.", 0.6, 0.787),
+            word("Habes", 0.6, 0.827),
+        ];
+        assert_eq!(
+            title_box(&words, id("comparatio_thesei_et_romuli")),
+            Some((0.765, 0.827))
+        );
+    }
+
+    #[test]
+    fn title_box_skips_left_greek_column() {
+        let words = vec![
+            word("ROMULUS", 0.1, 0.2),
+            word("body", 0.1, 0.24),
+            word("ROMULUS", 0.6, 0.39),
+            word("Ingens", 0.6, 0.43),
+        ];
+        assert_eq!(title_box(&words, id("romulus")), Some((0.39, 0.43)));
+    }
+
+    #[test]
+    fn title_box_none_when_absent() {
+        assert_eq!(
+            title_box(
+                &[word("Romulus", 0.6, 0.3), word("body", 0.6, 0.34)],
+                id("romulus")
+            ),
+            None
+        );
+        assert_eq!(title_box(&[word("ROMULUS", 0.6, 0.3)], id("romulus")), None);
+    }
 
     fn id(id: &str) -> usize {
         corpus::corpus().iter().position(|u| u.id == id).unwrap()
