@@ -1054,6 +1054,60 @@ mod tests {
     }
 
     #[test]
+    fn front_prose_pages_until_stops_at_sentinel() {
+        let sc = sidecar(
+            vec![
+                front_prose_page(
+                    0,
+                    12,
+                    vec![
+                        block(BlockKind::Paragraph, "Earlier significavit remains."),
+                        block(
+                            BlockKind::Paragraph,
+                            "Dœhnerus hæc mutanda esse significavit.",
+                        ),
+                        block(BlockKind::Paragraph, "ERRATA FIRST"),
+                        block(BlockKind::Paragraph, "ERRATA SECOND"),
+                    ],
+                ),
+                front_prose_page(0, 13, vec![block(BlockKind::Paragraph, "LATER PAGE")]),
+            ],
+            vec![],
+        );
+        let out = front_prose_pages_until(&sc, &[(0, 12), (0, 13)], "mutanda esse significavit.");
+        assert!(out.contains("Earlier significavit remains."));
+        assert!(out.contains("Dœhnerus hæc mutanda esse significavit."));
+        assert!(!out.contains("ERRATA"));
+        assert!(!out.contains("LATER PAGE"));
+        assert_eq!(out.matches("\\freshpage").count(), 1);
+        assert!(out.contains("\\markboth{}{}"));
+        assert!(out.ends_with("\\clearpage\n\n"));
+    }
+
+    #[test]
+    fn front_prose_pages_until_emits_all_when_sentinel_absent() {
+        let sc = sidecar(
+            vec![
+                front_prose_page(
+                    0,
+                    12,
+                    vec![
+                        block(BlockKind::Paragraph, "FIRST BLOCK"),
+                        block(BlockKind::Paragraph, "SECOND BLOCK"),
+                    ],
+                ),
+                front_prose_page(0, 13, vec![block(BlockKind::Paragraph, "LATER PAGE")]),
+            ],
+            vec![],
+        );
+        let pages = [(0, 11), (0, 12), (0, 13)];
+        assert_eq!(
+            front_prose_pages_until(&sc, &pages, "absent"),
+            front_prose_pages(&sc, &pages)
+        );
+    }
+
+    #[test]
     fn front_prose_pages_emits_only_listed() {
         let pages = vec![
             front_prose_page(0, 8, vec![block(BlockKind::Heading, "HALF TITLE P8")]),

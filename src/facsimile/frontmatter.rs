@@ -390,6 +390,61 @@ mod tests {
     }
 
     #[test]
+    fn work_remains_ignores_monitum_image_page() {
+        let mut pages: Vec<_> = (1..=13)
+            .map(|page| record(0, page, PageRole::Skip, false))
+            .collect();
+        pages[11] = record(0, 12, PageRole::FrontProse, true);
+        pages[12] = record(0, 13, PageRole::FrontProse, false);
+        let mut sc = sidecar(13, pages);
+        assert!(!work_remains(&sc));
+        sc.page_mut(0, 12).unwrap().result = None;
+        assert!(work_remains(&sc));
+    }
+
+    #[test]
+    fn transcribe_excludes_monitum_image_page() {
+        // A cached first pass on an image page must be excluded from reconciliation too.
+        for cached_pass in [false, true] {
+            let mut pages: Vec<_> = (1..=13)
+                .map(|page| record(0, page, PageRole::Skip, false))
+                .collect();
+            pages[11] = record(0, 12, PageRole::FrontProse, false);
+            pages[12] = record(0, 13, PageRole::FrontProse, cached_pass);
+            pages[12].result = None;
+            let mut sc = sidecar(13, pages);
+            let original = sc.page(0, 13).unwrap().clone();
+            let dir = tempfile::tempdir().unwrap();
+            let backend = StubBackend::new();
+            let vision = CountingVision {
+                calls: RefCell::new(0),
+            };
+            transcribe_front_matter(
+                &mut sc,
+                &dir.path().join(SIDECAR),
+                &UsageTracker::new(),
+                &vision,
+                &backend,
+                |_, _| panic!("classified a cached page"),
+                |source, page| {
+                    assert_eq!((source, page), (0, 12));
+                    Ok(vec![4, 5, 6])
+                },
+            )
+            .unwrap();
+            let ids = backend.submitted.borrow();
+            assert!(ids.iter().any(|id| id == "s_0_12"));
+            assert!(!ids.iter().any(|id| id.contains("_13")));
+            assert!(sc.page(0, 12).unwrap().result.is_some());
+            assert_eq!(
+                serde_json::to_value(sc.page(0, 13).unwrap()).unwrap(),
+                serde_json::to_value(original).unwrap()
+            );
+            assert!(!work_remains(&sc));
+        }
+    }
+
+    #[test]
     fn frontmatter_only_transcribes_frontprose() {
         // A classified source with one FrontProse and one Body page: only the
         // FrontProse page may be transcribed.
