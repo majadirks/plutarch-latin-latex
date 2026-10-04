@@ -85,6 +85,10 @@ pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts) -> String {
         }
         // The re-typeset Monitum / Praefatio prose (empty on other tomi).
         doc.push_str(&vol.prose);
+        if vol.tomus == 1 {
+            doc.push_str(&latex::embed_scan(frontmatter::front_monitum_a_name()));
+            doc.push_str(&latex::embed_scan(frontmatter::front_monitum_b_name()));
+        }
     }
 
     doc.push_str("\\beginbodynumbering\n\n");
