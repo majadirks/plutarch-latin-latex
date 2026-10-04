@@ -22,7 +22,7 @@ use crate::pages::{classify, is_boundary};
 use crate::pipeline::{load_or_init, scratch_dir};
 use crate::render::{render_page, Pdf, THUMBNAIL_DPI, TRANSCRIBE_DPI};
 use crate::tags::{PageRole, Sidecar};
-use crate::verify::reconcile_all;
+use crate::verify::reconcile_all_in_scope;
 
 /// The committed, hand-editable front-matter cache.
 pub const SIDECAR: &str = "plutarch.frontmatter.tags.json";
@@ -48,10 +48,11 @@ pub fn work_remains(sidecar: &Sidecar) -> bool {
             }
         }
     }
-    sidecar
-        .pages
-        .iter()
-        .any(|p| p.role == PageRole::FrontProse && p.result.is_none())
+    sidecar.pages.iter().any(|p| {
+        p.role == PageRole::FrontProse
+            && !MONITUM_IMAGE_PAGES.contains(&(p.source, p.source_page))
+            && p.result.is_none()
+    })
 }
 
 /// Classify the boundary regions, then transcribe and reconcile **only** the
@@ -72,7 +73,10 @@ pub fn transcribe_front_matter(
     let front: HashSet<(usize, u32)> = sidecar
         .pages
         .iter()
-        .filter(|p| p.role == PageRole::FrontProse)
+        .filter(|p| {
+            p.role == PageRole::FrontProse
+                && !MONITUM_IMAGE_PAGES.contains(&(p.source, p.source_page))
+        })
         .map(|p| (p.source, p.source_page))
         .collect();
     let in_scope = |source: usize, page: u32| front.contains(&(source, page));
@@ -92,7 +96,7 @@ pub fn transcribe_front_matter(
         render_body,
         &render_full,
     )?;
-    reconcile_all(
+    reconcile_all_in_scope(
         backend,
         sidecar,
         tracker,
@@ -101,6 +105,7 @@ pub fn transcribe_front_matter(
         render_body,
         &render_full,
         |_, _| Ok(None),
+        in_scope,
     )?;
     Ok(())
 }
@@ -148,6 +153,8 @@ pub fn run_front_matter(
 pub const MONITUM_PROSE_PAGES: [(usize, u32); 1] = [(0, 12)];
 /// Printed phrase in the final prose block, before the embedded errata.
 pub const MONITUM_PROSE_SENTINEL: &str = "mutanda esse significavit.";
+/// Source pages reproduced entirely as images, excluded from transcription.
+pub const MONITUM_IMAGE_PAGES: [(usize, u32); 1] = [(0, 13)];
 pub const PRAEFATIO_PAGES: [(usize, u32); 4] = [(1, 14), (1, 15), (1, 16), (1, 17)];
 
 /// Edge fractions `(left, top, right, bottom)` cropped off each embedded front scan.
