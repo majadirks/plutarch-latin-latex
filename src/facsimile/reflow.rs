@@ -224,7 +224,13 @@ pub fn unit_body_strips(
     let last_idx = pages.len().saturating_sub(1);
     for (idx, (col, bands)) in pages.iter_mut().enumerate() {
         if idx == 0 {
-            *bands = drop_opening_bands(col, bands, range.unit.skip_top_bands, &metrics);
+            *bands = drop_opening_bands(
+                col,
+                bands,
+                range.unit.skip_top_bands,
+                range.open_body_frac,
+                &metrics,
+            );
         } else {
             *bands = drop_interior_running_head(col, bands, &metrics);
         }
@@ -306,7 +312,7 @@ fn median_gap(gaps: &[i64]) -> f32 {
 
 /// Map a page-height fraction to a column row, less half a median line of
 /// tolerance. Missing metrics or invalid fractions leave the heuristic in charge.
-pub fn frac_row(frac: f32, col_h: u32, m: &LineMetrics) -> Option<u32> {
+fn frac_row(frac: f32, col_h: u32, m: &LineMetrics) -> Option<u32> {
     if m.is_sentinel() || !frac.is_finite() || !(0.0..=1.0).contains(&frac) {
         return None;
     }
@@ -314,7 +320,8 @@ pub fn frac_row(frac: f32, col_h: u32, m: &LineMetrics) -> Option<u32> {
 }
 
 /// Drop the leading opening bands of a unit's first page. The `skip_top_bands`
-/// override, when set, drops exactly that many bands. Otherwise, if the source's
+/// override, when set, drops exactly that many bands. A recorded body fraction
+/// keeps bands from the first body line downward. Without a usable fraction, if the source's
 /// printed display title is detected among the leading bands, every band up to and
 /// including it is dropped (the previous unit's tail on a shared page plus the
 /// printed title); failing that, every band above the first full-measure body line
@@ -323,11 +330,19 @@ fn drop_opening_bands(
     col: &GrayImage,
     bands: &[Band],
     skip_top_bands: Option<u32>,
+    open_body_frac: Option<f32>,
     m: &LineMetrics,
 ) -> Vec<Band> {
     match skip_top_bands {
         Some(n) => bands.iter().skip(n as usize).copied().collect(),
         None => {
+            if let Some(row) = open_body_frac.and_then(|frac| frac_row(frac, col.height(), m)) {
+                return bands
+                    .iter()
+                    .copied()
+                    .filter(|b| b.top + (b.bottom - b.top) / 2 >= row)
+                    .collect();
+            }
             if let Some(i) = find_title_band(col, bands, m) {
                 return bands[i + 1..].to_vec();
             }
@@ -758,7 +773,7 @@ mod tests {
         assert_eq!(bands.len(), 5);
         // With sentinel metrics the title heuristic is skipped, so this exercises the
         // full-measure-line fallback: both narrow leading bands are dropped.
-        let kept = drop_opening_bands(&img, &bands, None, &LineMetrics::sentinel());
+        let kept = drop_opening_bands(&img, &bands, None, None, &LineMetrics::sentinel());
         assert_eq!(kept.len(), 3);
         assert_eq!(kept[0].top, 30);
     }
@@ -778,7 +793,7 @@ mod tests {
         );
         let bands = line_bands(&img, 3);
         assert_eq!(bands.len(), 4);
-        let kept = drop_opening_bands(&img, &bands, Some(3), &LineMetrics::sentinel());
+        let kept = drop_opening_bands(&img, &bands, Some(3), Some(0.0), &LineMetrics::sentinel());
         assert_eq!(kept.len(), 1);
         assert_eq!(kept[0].top, 50);
     }
@@ -1278,9 +1293,71 @@ mod tests {
             (92, 100, 5, 95),
         ];
         let (page, m) = page_and_metrics(110, w, &specs);
-        let kept = drop_opening_bands(&page.0, &page.1, None, &m);
+        let kept = drop_opening_bands(&page.0, &page.1, None, None, &m);
         assert_eq!(kept.len(), 2);
         assert_eq!(kept[0].top, 80);
+    }
+
+    fn opening_fraction_fixture(title_left: u32, title_right: u32) -> (PageBands, LineMetrics) {
+        page_and_metrics(
+            150,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (12, 20, 5, 95),
+                (24, 32, 5, 95),
+                (50, 52, 40, 60),
+                (70, 80, title_left, title_right),
+                (100, 108, 5, 95),
+                (112, 120, 5, 95),
+                (124, 132, 5, 95),
+            ],
+        )
+    }
+
+    #[test]
+    fn opening_frac_drops_prev_tail_separator_title() {
+        let (page, m) = opening_fraction_fixture(40, 60);
+        let kept = drop_opening_bands(&page.0, &page.1, None, Some(100.0 / 150.0), &m);
+        assert_eq!(kept, page.1[5..]);
+    }
+
+    #[test]
+    fn opening_frac_handles_wide_title() {
+        let (page, m) = opening_fraction_fixture(5, 95);
+        let kept = drop_opening_bands(&page.0, &page.1, None, Some(100.0 / 150.0), &m);
+        assert_eq!(kept, page.1[5..]);
+        // A hand-authored band count takes precedence even with usable metrics.
+        assert_eq!(
+            drop_opening_bands(&page.0, &page.1, Some(2), Some(100.0 / 150.0), &m),
+            page.1[2..]
+        );
+    }
+
+    #[test]
+    fn opening_falls_back_to_heuristic_without_frac() {
+        let (page, m) = page_and_metrics(
+            110,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (12, 20, 5, 95),
+                (24, 32, 5, 95),
+                (60, 70, 40, 60),
+                (80, 88, 5, 95),
+                (92, 100, 5, 95),
+            ],
+        );
+        let kept = drop_opening_bands(&page.0, &page.1, None, None, &m);
+        assert_eq!(kept, page.1[4..]);
+        assert_eq!(
+            drop_opening_bands(&page.0, &page.1, None, Some(f32::NAN), &m),
+            kept
+        );
+        assert_eq!(
+            drop_opening_bands(&page.0, &page.1, None, Some(0.8), &LineMetrics::sentinel()),
+            drop_opening_bands(&page.0, &page.1, None, None, &LineMetrics::sentinel()),
+        );
     }
 
     #[test]
@@ -1331,7 +1408,7 @@ mod tests {
             (152, 160, 5, 95), // next body
         ];
         let (page, m) = page_and_metrics(170, w, &specs);
-        let after_top = drop_opening_bands(&page.0, &page.1, None, &m);
+        let after_top = drop_opening_bands(&page.0, &page.1, None, None, &m);
         let kept = drop_shared_tail(&page.0, &after_top, &m);
         assert_eq!(kept.len(), 2);
         assert_eq!(kept[0].top, 70);
