@@ -40,6 +40,9 @@ cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --redetect
 # A single unit, or a raw source page range, for a cheap test.
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --unit theseus --no-compile
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --pages v1:14-45 --no-compile
+
+# Purge the raster cache first, forcing every page to be re-rasterized.
+cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --clean-cache
 ```
 
 **Body.** Each page's Latin column is detected, sliced at inter-line whitespace, and
@@ -48,6 +51,11 @@ block, under a **typeset centered Latin running head** and the per-Tomus folio.
 Margins are inner / outer 1 cm, 1.5 cm above the running head, and 1.5 cm below the
 text. Each Life and Comparatio **opens fresh**, with its display title typeset from
 the unit table; Comparationes follow their pair.
+
+The reusable poppler rasters in `<out>/render_cache/` are preserved across runs by
+default. `--clean-cache` deletes that directory before building to reclaim its disk
+space or force a fresh rasterize, including for `--unit` / `--pages` runs; needed
+pages then refill the cache. `--detect-units` exits without purging the raster cache.
 
 **The unit table is auto-detected**, not hand-authored. The detector reads each
 page's embedded OCR text layer (`pdftotext`), traces the running head to segment the

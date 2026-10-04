@@ -57,6 +57,10 @@ struct Args {
     /// `review_notes` back into the unit table, then exit without building.
     #[arg(long)]
     review_lines: bool,
+
+    /// Delete <out>/render_cache/ before building, forcing a fresh rasterize.
+    #[arg(long)]
+    clean_cache: bool,
 }
 
 fn main() -> Result<()> {
@@ -73,6 +77,7 @@ fn main() -> Result<()> {
         pages: args.pages,
         unit: args.unit,
         review_lines: args.review_lines,
+        clean_cache: args.clean_cache,
     };
     run_facsimile(&facsimile_args)
 }
@@ -80,6 +85,23 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn facsimile_clean_cache_flag_parses() {
+        let base = [
+            "facsimile",
+            "--v1",
+            "v1.pdf",
+            "--v2",
+            "v2.pdf",
+            "--out",
+            "o",
+        ];
+        let args = Args::try_parse_from(base).unwrap();
+        assert!(!args.clean_cache);
+        let args = Args::try_parse_from(base.into_iter().chain(["--clean-cache"])).unwrap();
+        assert!(args.clean_cache);
+    }
 
     #[test]
     fn facsimile_run_args_parse() {
