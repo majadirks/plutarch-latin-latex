@@ -66,6 +66,10 @@ pub struct UnitRange {
     /// the bands above the next unit's printed title on that page; otherwise the
     /// whole `end_page` belongs to this unit.
     pub shared_tail: bool,
+    /// First body line on this unit's opening page, as a page-height fraction.
+    pub open_body_frac: Option<f32>,
+    /// Next unit's title on the shared tail page, as a page-height fraction.
+    pub tail_cut_frac: Option<f32>,
 }
 
 /// Load and validate the hand-authored `facsimile_units.json`.
@@ -142,6 +146,11 @@ pub fn ranges(units: &[Unit], source_last_body_page: &[u32]) -> Vec<UnitRange> {
             unit: unit.clone(),
             end_page,
             shared_tail,
+            open_body_frac: unit.body_top_frac,
+            tail_cut_frac: units
+                .get(i + 1)
+                .filter(|next| next.source == unit.source)
+                .and_then(|next| next.title_top_frac),
         });
     }
     out
@@ -290,5 +299,23 @@ mod tests {
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].end_page, 637);
         assert!(!ranges[0].shared_tail);
+    }
+
+    #[test]
+    fn ranges_carries_opening_and_same_source_tail_fractions() {
+        let mut first = unit("theseus", 0, 14);
+        first.body_top_frac = Some(0.3);
+        let mut next = unit("romulus", 0, 33);
+        next.title_top_frac = Some(0.39);
+        next.body_top_frac = Some(0.43);
+        let mut other_source = unit("nicias", 1, 18);
+        other_source.title_top_frac = Some(0.2);
+        let ranges = ranges(&[first, next, other_source], &[637, 713]);
+        assert_eq!(ranges[0].open_body_frac, Some(0.3));
+        assert_eq!(ranges[0].tail_cut_frac, Some(0.39));
+        assert_eq!(ranges[1].open_body_frac, Some(0.43));
+        assert_eq!(ranges[1].tail_cut_frac, None);
+        assert_eq!(ranges[2].open_body_frac, None);
+        assert_eq!(ranges[2].tail_cut_frac, None);
     }
 }

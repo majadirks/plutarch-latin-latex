@@ -157,6 +157,8 @@ mod tests {
             unit: units[0].clone(),
             end_page: 3,
             shared_tail: false,
+            open_body_frac: None,
+            tail_cut_frac: None,
         };
         let ran = review_lines_pass(
             false,

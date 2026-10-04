@@ -304,6 +304,15 @@ fn median_gap(gaps: &[i64]) -> f32 {
     }
 }
 
+/// Map a page-height fraction to a column row, less half a median line of
+/// tolerance. Missing metrics or invalid fractions leave the heuristic in charge.
+pub fn frac_row(frac: f32, col_h: u32, m: &LineMetrics) -> Option<u32> {
+    if m.is_sentinel() || !frac.is_finite() || !(0.0..=1.0).contains(&frac) {
+        return None;
+    }
+    Some(((frac * col_h as f32).round() as u32).saturating_sub(m.height_med / 2))
+}
+
 /// Drop the leading opening bands of a unit's first page. The `skip_top_bands`
 /// override, when set, drops exactly that many bands. Otherwise, if the source's
 /// printed display title is detected among the leading bands, every band up to and
@@ -664,6 +673,21 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn frac_row_maps_full_height_with_line_tolerance() {
+        let m = LineMetrics {
+            height_med: 8,
+            height_mad: 0,
+            width_med: 90,
+        };
+        assert_eq!(frac_row(0.39, 1000, &m), Some(386));
+        assert_eq!(frac_row(0.0, 1000, &m), Some(0));
+        assert_eq!(frac_row(0.39, 1000, &LineMetrics::sentinel()), None);
+        for frac in [f32::NAN, f32::INFINITY, -0.1, 1.1] {
+            assert_eq!(frac_row(frac, 1000, &m), None);
+        }
+    }
 
     /// A synthetic column image with the given row-bands filled dark across
     /// `[left, right)`; the rest is white.
@@ -1076,6 +1100,8 @@ mod tests {
             unit,
             end_page: 3,
             shared_tail: false,
+            open_body_frac: None,
+            tail_cut_frac: None,
         };
         let (pages, metrics) = unit_body_strips(&range, |_, _| Ok(img.clone())).unwrap();
         assert_eq!(pages.len(), 3);

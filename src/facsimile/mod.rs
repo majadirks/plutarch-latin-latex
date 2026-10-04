@@ -253,6 +253,8 @@ fn select_ranges(
             },
             end_page: end,
             shared_tail: false,
+            open_body_frac: None,
+            tail_cut_frac: None,
         }]);
     }
 
