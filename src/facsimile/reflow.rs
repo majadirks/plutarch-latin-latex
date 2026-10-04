@@ -302,7 +302,7 @@ fn drop_interior_running_head(col: &GrayImage, bands: &[Band], m: &LineMetrics) 
 /// full-measure threshold also identifies furniture when metrics are unavailable.
 fn drop_trailing_furniture(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<Band> {
     if bands.len() < 3 {
-        return bands.to_vec();
+        return drop_detached_rule(col, bands, m);
     }
     let gaps: Vec<i64> = bands
         .windows(2)
@@ -320,7 +320,63 @@ fn drop_trailing_furniture(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> 
     } else {
         bands.len()
     };
-    bands[..hi].to_vec()
+    drop_detached_rule(col, &bands[..hi], m)
+}
+
+/// Remove a thin detached rule even when gutter noise joins it to adjacent bands.
+/// A stronger row projection locates the rule; the cut stays in its preceding
+/// gap and preserves every source pixel above that gap.
+fn drop_detached_rule(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<Band> {
+    let Some(last) = bands.last() else {
+        return Vec::new();
+    };
+    if m.is_sentinel()
+        || !matches!(
+            classify_band(col, last, m),
+            BandClass::Short | BandClass::Tall
+        )
+    {
+        return bands.to_vec();
+    }
+    let top = bands[bands.len().saturating_sub(TITLE_SCAN_BANDS)].top;
+    let tail = image::imageops::crop_imm(col, 0, top, col.width(), last.bottom - top).to_image();
+    let rows = ink_profile_rows(&tail, INK_THRESHOLD);
+    // Projection peaks can carry less ink than the noisy strip containing them.
+    let min_ink = (minimum_ink(m).unwrap() / 4).max(SPECK_MIN_INK);
+    let peaks: Vec<Band> = line_bands(&tail, (m.width_med / 50).max(LINE_MIN_INK + 2))
+        .into_iter()
+        .filter(|b| {
+            rows[b.top as usize..b.bottom as usize]
+                .iter()
+                .map(|&n| n as u64)
+                .sum::<u64>()
+                >= min_ink
+        })
+        .collect();
+    if peaks.len() < 2 {
+        return bands.to_vec();
+    }
+    let rule = peaks.last().unwrap();
+    let previous = peaks[peaks.len() - 2];
+    let gap = rule.top.saturating_sub(previous.bottom);
+    let gaps: Vec<i64> = peaks
+        .windows(2)
+        .map(|w| w[1].top as i64 - w[0].bottom as i64)
+        .collect();
+    let thin = classify_band(&tail, rule, m) == BandClass::Short
+        && band_ink_span(&tail, rule) >= 4 * (rule.bottom - rule.top);
+    if !thin || gap < m.height_med / 2 || gap as f32 <= median_gap(&gaps) {
+        return bands.to_vec();
+    }
+    let cut = top + previous.bottom + gap / 2;
+    bands
+        .iter()
+        .filter(|b| b.top < cut)
+        .map(|b| Band {
+            top: b.top,
+            bottom: b.bottom.min(cut),
+        })
+        .collect()
 }
 
 /// Median of inter-band gaps, as f32.
@@ -1581,6 +1637,105 @@ mod tests {
         let (page, m) = opening_fraction_fixture(5, 95);
         let kept = drop_shared_tail(&page.0, &page.1, Some(70.0 / 150.0), &m);
         assert_eq!(kept, page.1[..3]);
+    }
+
+    #[test]
+    fn shared_tail_frac_removes_rule_connected_to_gutter_noise() {
+        let mut img = column(
+            150,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (12, 20, 5, 95),
+                (24, 32, 5, 95),
+                (60, 62, 40, 60),
+                (100, 110, 5, 95),
+                (125, 133, 5, 95),
+            ],
+        );
+        for y in 0..78 {
+            for x in 0..5 {
+                img.put_pixel(x, y, Luma([0]));
+            }
+        }
+        let bands = line_bands(&img, LINE_MIN_INK);
+        let m = LineMetrics {
+            height_med: 8,
+            height_mad: 0,
+            width_med: 90,
+        };
+        assert_eq!(bands[0], Band { top: 0, bottom: 78 });
+        let kept = drop_shared_tail(&img, &bands, Some(100.0 / 150.0), &m);
+        assert_eq!(kept, vec![Band { top: 0, bottom: 46 }]);
+        assert!(
+            kept[0].bottom > 32,
+            "the previous unit's final line must survive"
+        );
+    }
+
+    #[test]
+    fn trailing_rule_cleanup_preserves_real_line_and_sentinel() {
+        let mut img = column(
+            90,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (12, 20, 5, 95),
+                (24, 32, 5, 95),
+                (60, 68, 40, 60),
+            ],
+        );
+        for y in 0..78 {
+            for x in 0..5 {
+                img.put_pixel(x, y, Luma([0]));
+            }
+        }
+        let bands = line_bands(&img, LINE_MIN_INK);
+        let m = LineMetrics {
+            height_med: 8,
+            height_mad: 0,
+            width_med: 90,
+        };
+        assert_eq!(drop_trailing_furniture(&img, &bands, &m), bands);
+        assert_eq!(
+            drop_trailing_furniture(&img, &bands, &LineMetrics::sentinel()),
+            bands
+        );
+    }
+
+    #[test]
+    fn shared_tail_frac_removes_rule_smaller_than_strip_ink_floor() {
+        let mut img = column(
+            400,
+            1066,
+            &[
+                (0, 33, 80, 864),
+                (45, 78, 80, 864),
+                (90, 123, 80, 864),
+                (250, 257, 480, 544),
+                (350, 360, 80, 864),
+            ],
+        );
+        for y in 0..305 {
+            for x in 0..4 {
+                img.put_pixel(x, y, Luma([0]));
+            }
+        }
+        let bands = line_bands(&img, LINE_MIN_INK);
+        let m = LineMetrics {
+            height_med: 33,
+            height_mad: 1,
+            width_med: 784,
+        };
+        assert!(7 * 64 < minimum_ink(&m).unwrap());
+        let kept = drop_shared_tail(&img, &bands, Some(350.0 / 400.0), &m);
+        assert_eq!(
+            kept,
+            vec![Band {
+                top: 0,
+                bottom: 186
+            }]
+        );
     }
 
     #[test]
