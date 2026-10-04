@@ -1066,6 +1066,8 @@ mod tests {
             source: 0,
             start_page: 1,
             skip_top_bands: None,
+            title_top_frac: None,
+            body_top_frac: None,
             last_page: None,
             pinned: false,
             review_notes: None,

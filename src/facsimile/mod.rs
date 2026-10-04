@@ -244,6 +244,8 @@ fn select_ranges(
                 source,
                 start_page: start,
                 skip_top_bands: Some(0),
+                title_top_frac: None,
+                body_top_frac: None,
                 last_page: None,
                 pinned: false,
                 review_notes: None,

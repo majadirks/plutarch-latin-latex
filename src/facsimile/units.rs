@@ -13,7 +13,7 @@ use crate::tags::LifeKind;
 
 /// One Life or Comparatio: its titles, pairing group, source, and the source page
 /// its text opens on. End pages are derived in [`ranges`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Unit {
     pub id: String,
     pub latin_title: String,
@@ -31,6 +31,12 @@ pub struct Unit {
     /// reflow heuristic.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub skip_top_bands: Option<u32>,
+    /// Top of the printed title on the opening page, as a page-height fraction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title_top_frac: Option<f32>,
+    /// Top of the first body line on the opening page, as a page-height fraction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body_top_frac: Option<f32>,
     /// The inclusive last source body page of this unit, recorded by detection only
     /// on each source's final unit (whose end cannot be derived from a following
     /// unit's `start_page`). It excludes the back-matter/library pages the source
@@ -51,7 +57,7 @@ pub struct Unit {
 }
 
 /// A unit paired with the inclusive last source page of its body range.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UnitRange {
     pub unit: Unit,
     pub end_page: u32,
@@ -145,6 +151,20 @@ pub fn ranges(units: &[Unit], source_last_body_page: &[u32]) -> Vec<UnitRange> {
 mod tests {
     use super::*;
 
+    #[test]
+    fn unit_fraction_round_trip_and_legacy_defaults() {
+        let mut row = unit("romulus", 0, 33);
+        let legacy = serde_json::to_string(&row).unwrap();
+        assert!(!legacy.contains("top_frac"));
+        assert_eq!(serde_json::from_str::<Unit>(&legacy).unwrap(), row);
+        row.title_top_frac = Some(0.39);
+        row.body_top_frac = Some(0.43);
+        assert_eq!(
+            serde_json::from_str::<Unit>(&serde_json::to_string(&row).unwrap()).unwrap(),
+            row
+        );
+    }
+
     fn unit(id: &str, source: usize, start: u32) -> Unit {
         Unit {
             id: id.to_string(),
@@ -155,6 +175,8 @@ mod tests {
             source,
             start_page: start,
             skip_top_bands: None,
+            title_top_frac: None,
+            body_top_frac: None,
             last_page: None,
             pinned: false,
             review_notes: None,

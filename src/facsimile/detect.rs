@@ -279,6 +279,8 @@ pub fn units_from_runs(runs_v1: &[Run], runs_v2: &[Run]) -> Result<Vec<Unit>> {
                 source: cu.source,
                 start_page: run.start_page,
                 skip_top_bands: None,
+                title_top_frac: None,
+                body_top_frac: None,
                 last_page: None,
                 pinned: false,
                 review_notes: None,
