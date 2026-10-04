@@ -59,6 +59,9 @@ pub struct FacsimileArgs {
     /// Run the opt-in Claude Vision line review, writing pinned `skip_top_bands` /
     /// `review_notes` back into the unit table, then exit without building.
     pub review_lines: bool,
+    /// Delete `<out>/render_cache/` at the start of the run, forcing needed pages
+    /// to be re-rasterized. Off by default; the raster cache is otherwise preserved.
+    pub clean_cache: bool,
 }
 
 impl FacsimileArgs {
@@ -120,6 +123,9 @@ pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
     // restricted runs so a single-unit test does not wipe a full build.
     if !args.restricted() {
         clean_generated(&args.out)?;
+    }
+    if args.clean_cache {
+        clean_render_cache(&args.out)?;
     }
     let cache = args.out.join("render_cache");
     std::fs::create_dir_all(&cache).with_context(|| format!("creating {}", cache.display()))?;
@@ -474,6 +480,16 @@ fn clean_generated(out: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Delete `<out>/render_cache/` entirely (the poppler raster cache). A no-op when
+/// it does not exist, so `--clean-cache` is safe on a fresh output directory.
+fn clean_render_cache(out: &Path) -> Result<()> {
+    let cache = out.join("render_cache");
+    if cache.exists() {
+        std::fs::remove_dir_all(&cache).with_context(|| format!("removing {}", cache.display()))?;
+    }
+    Ok(())
+}
+
 /// Remove only the composed body / front-scan PNGs from `out`, keeping the
 /// `.tex`/`.pdf` deliverables and `render_cache/`.
 fn remove_composed_pngs(out: &Path) {
@@ -655,6 +671,20 @@ mod tests {
     }
 
     #[test]
+    fn clean_render_cache_removes_the_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        let cache = dir.path().join("render_cache");
+        std::fs::create_dir_all(cache.join("nested")).unwrap();
+        std::fs::write(cache.join("nested").join("page.png"), b"cache").unwrap();
+        std::fs::write(dir.path().join("notes.txt"), b"keep me").unwrap();
+
+        clean_render_cache(dir.path()).unwrap();
+        assert!(!cache.exists());
+        assert!(dir.path().join("notes.txt").exists());
+        clean_render_cache(dir.path()).unwrap();
+    }
+
+    #[test]
     fn start_cleanup_skipped_for_restricted() {
         // A restricted run must not wipe a sibling unit's PNGs. The start-of-run
         // cleanup is guarded by !restricted(), so a --unit run skips it.
@@ -672,6 +702,7 @@ mod tests {
             pages: None,
             unit: Some("romulus".to_string()),
             review_lines: false,
+            clean_cache: false,
         };
         assert!(args.restricted());
         if !args.restricted() {
@@ -735,6 +766,7 @@ mod tests {
             pages: Some("v1:14-16".to_string()),
             unit: None,
             review_lines: false,
+            clean_cache: false,
         };
         run_facsimile(&args).unwrap();
         // A body image and an imposition wrapper were produced offline.
