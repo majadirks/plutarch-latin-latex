@@ -33,6 +33,18 @@ const SCALE_PERCENTILE: f32 = 95.0;
 /// full-measure body line (not a centered title / short cross-reference).
 const BODY_LINE_SPAN_FRAC: f32 = 0.8;
 
+/// Minimum dark-pixel area for a strip, measured in source-column pixels.
+const SPECK_MIN_INK: u64 = 8;
+/// Ink-area floor relative to the typical line's bounding rectangle.
+const SPECK_INK_FRAC: f64 = 0.02;
+
+/// The negligible-ink threshold; absent metrics disable the filter.
+fn minimum_ink(m: &LineMetrics) -> Option<u64> {
+    (!m.is_sentinel())
+        .then(|| (SPECK_INK_FRAC * m.height_med as f64 * m.width_med as f64).ceil() as u64)
+        .map(|ink| ink.max(SPECK_MIN_INK))
+}
+
 // Trim geometry, in centimetres, matching the `geometry` options the facsimile
 // inner `.tex` uses (`inner_preamble` with the running head on): paper 10.5×16 cm,
 // `inner=1`, `outer=1` → `\textwidth = 8.5 cm`; `top=1.5` (above the running head),
@@ -486,9 +498,21 @@ fn scan_title_band(
 /// corresponds to that page's `j`-th band, so the two zip directly.
 fn strips_in_reading_order(pages: &[(GrayImage, Vec<Band>)], m: &LineMetrics) -> Vec<Strip> {
     let mut strips = Vec::new();
+    let min_ink = minimum_ink(m);
     for (i, (col, bands)) in pages.iter().enumerate() {
+        let rows = min_ink.map(|_| ink_profile_rows(col, INK_THRESHOLD));
         let cuts = cut_points(bands);
         for (j, w) in cuts.windows(2).enumerate() {
+            if let (Some(min_ink), Some(rows)) = (min_ink, &rows) {
+                let band = &bands[j];
+                let ink: u64 = rows[band.top as usize..band.bottom as usize]
+                    .iter()
+                    .map(|&ink| ink as u64)
+                    .sum();
+                if ink < min_ink {
+                    continue;
+                }
+            }
             strips.push(Strip {
                 page_img_index: i,
                 band: Band {
@@ -842,6 +866,72 @@ mod tests {
         let img = column(y, w, &specs);
         let bands = line_bands(&img, 3);
         (img, bands)
+    }
+
+    #[test]
+    fn compose_drops_speck_trailing_canvas() {
+        let mut page = page_with_lines(3);
+        let top = page.0.height() - 1;
+        for x in 5..8 {
+            page.0.put_pixel(x, top, Luma([0]));
+        }
+        page.1.push(Band {
+            top,
+            bottom: top + 1,
+        });
+        let m = line_metrics(std::slice::from_ref(&page));
+        let strips = strips_in_reading_order(std::slice::from_ref(&page), &m);
+        assert_eq!(strips.len(), 3);
+        assert_eq!(
+            strips_in_reading_order(std::slice::from_ref(&page), &LineMetrics::sentinel()).len(),
+            4
+        );
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 100,
+            tb_h: 100,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        let canvases = compose_pages(&[page], 1.0, &geom, 12, 12, &m);
+        assert_eq!(canvases.len(), 3);
+        for canvas in canvases {
+            let ink: u64 = ink_profile_rows(&canvas, INK_THRESHOLD)
+                .iter()
+                .map(|&n| n as u64)
+                .sum();
+            assert_eq!(ink, 8 * 90);
+        }
+    }
+
+    #[test]
+    fn compose_keeps_short_real_last_line() {
+        let mut page = page_with_lines(3);
+        let last = *page.1.last().unwrap();
+        for y in last.top..last.bottom {
+            for x in 25..95 {
+                page.0.put_pixel(x, y, Luma([255]));
+            }
+        }
+        let m = line_metrics(std::slice::from_ref(&page));
+        assert_eq!(
+            strips_in_reading_order(std::slice::from_ref(&page), &m).len(),
+            3
+        );
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 100,
+            tb_h: 100,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        let canvases = compose_pages(&[page], 1.0, &geom, 12, 12, &m);
+        assert_eq!(canvases.len(), 3);
+        let ink: u64 = ink_profile_rows(canvases.last().unwrap(), INK_THRESHOLD)
+            .iter()
+            .map(|&n| n as u64)
+            .sum();
+        assert_eq!(ink, 8 * 20);
     }
 
     #[test]
