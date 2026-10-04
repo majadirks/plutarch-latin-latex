@@ -435,7 +435,11 @@ fn fill_front_matter(
     };
     for vol in volumes.iter_mut() {
         vol.prose = if vol.tomus == 1 {
-            latex::front_prose_pages(&sidecar, &frontmatter::MONITUM_PAGES)
+            latex::front_prose_pages_until(
+                &sidecar,
+                &frontmatter::MONITUM_PROSE_PAGES,
+                frontmatter::MONITUM_PROSE_SENTINEL,
+            )
         } else if vol.is_first_of_source && vol.source == 1 {
             latex::front_prose_pages(&sidecar, &frontmatter::PRAEFATIO_PAGES)
         } else {

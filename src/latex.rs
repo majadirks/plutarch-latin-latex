@@ -324,11 +324,44 @@ pub(crate) fn front_prose_pages(sidecar: &Sidecar, pages: &[(usize, u32)]) -> St
 /// `\markboth{}{}` so the facsimile path's prose carries no stale Life running head;
 /// the transcription path passes `false`, keeping its golden bytes unchanged.
 fn front_prose_page(doc: &PageDoc, reset_running_head: bool) -> String {
+    front_prose_page_blocks(&doc.blocks, reset_running_head)
+}
+
+/// Render listed pages through the first block containing `sentinel`, preserving
+/// the cached text. Warn and emit all available blocks if the sentinel is absent.
+pub(crate) fn front_prose_pages_until(
+    sidecar: &Sidecar,
+    pages: &[(usize, u32)],
+    sentinel: &str,
+) -> String {
+    let mut out = String::new();
+    for &(source, page) in pages {
+        let Some(doc) = sidecar
+            .page(source, page)
+            .and_then(|record| record.result.as_ref())
+        else {
+            continue;
+        };
+        if let Some(idx) = doc
+            .blocks
+            .iter()
+            .position(|block| block.text.contains(sentinel))
+        {
+            out.push_str(&front_prose_page_blocks(&doc.blocks[..=idx], true));
+            return out;
+        }
+        out.push_str(&front_prose_page_blocks(&doc.blocks, true));
+    }
+    eprintln!("WARNING: front-prose sentinel not found: {sentinel:?}; emitting all available prose, which may duplicate embedded errata");
+    out
+}
+
+fn front_prose_page_blocks(blocks: &[Block], reset_running_head: bool) -> String {
     let mut out = String::from("% Re-typeset front-matter prose\n\\freshpage\n");
     if reset_running_head {
         out.push_str("\\markboth{}{}\n");
     }
-    out.push_str(&render_blocks(&doc.blocks));
+    out.push_str(&render_blocks(blocks));
     out.push_str("\\clearpage\n\n");
     out
 }

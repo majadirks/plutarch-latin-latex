@@ -145,7 +145,9 @@ pub fn run_front_matter(
 /// Praefatio (v2's first tomus). Page-list-driven, so `front_prose_pages` emits
 /// exactly these and never the half-title or Volumen-title pages that share the
 /// `FrontProse` role. Confirmed by a real-eyes render of each page.
-pub const MONITUM_PAGES: [(usize, u32); 2] = [(0, 12), (0, 13)];
+pub const MONITUM_PROSE_PAGES: [(usize, u32); 1] = [(0, 12)];
+/// Printed phrase in the final prose block, before the embedded errata.
+pub const MONITUM_PROSE_SENTINEL: &str = "mutanda esse significavit.";
 pub const PRAEFATIO_PAGES: [(usize, u32); 4] = [(1, 14), (1, 15), (1, 16), (1, 17)];
 
 /// Edge fractions `(left, top, right, bottom)` cropped off each embedded front scan.
