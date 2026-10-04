@@ -26,4 +26,5 @@ rustc-ice-*.txt
 
 *.pdf
 *.png
+*.zip
 secrets.json
