@@ -1,6 +1,7 @@
 //! Front-matter transcription for the facsimile path. The body is reproduced as
-//! pixels, but the Monitum (v1), Praefatio (v2), and derived title pages are
-//! full-width prose that must be re-typeset to the trim measure. This reuses the
+//! pixels, while the Monitum prose (v1), Praefatio (v2), and derived title pages are
+//! re-typeset to the trim measure. The Monitum errata are embedded source scans.
+//! This reuses the
 //! transcription pipeline's stages — classification, Sonnet/Haiku transcription,
 //! Opus reconciliation — admitting **only** `FrontProse` pages, so no body page is
 //! ever sent to the API.
@@ -39,7 +40,7 @@ pub fn load_cached_front_matter(path: &Path, source_paths: &[PathBuf]) -> Result
 }
 
 /// Whether the front-matter sidecar still needs an API call: a boundary page is
-/// unclassified, or a `FrontProse` page has no finalized transcription.
+/// unclassified, or a non-image `FrontProse` page has no finalized transcription.
 pub fn work_remains(sidecar: &Sidecar) -> bool {
     for (si, src) in sidecar.sources.iter().enumerate() {
         for page in 1..=src.page_count {
@@ -56,7 +57,7 @@ pub fn work_remains(sidecar: &Sidecar) -> bool {
 }
 
 /// Classify the boundary regions, then transcribe and reconcile **only** the
-/// `FrontProse` pages. Body pages are excluded by `in_scope`, so none is rendered or
+/// non-image `FrontProse` pages. Body pages are excluded by `in_scope`, so none is rendered or
 /// sent; `render_thumb`/`render_full` are injected so tests run without poppler.
 pub fn transcribe_front_matter(
     sidecar: &mut Sidecar,
@@ -112,7 +113,7 @@ pub fn transcribe_front_matter(
 
 /// Load or build the front-matter sidecar, transcribing the front matter when work
 /// remains. `vision_factory` is called lazily — only when a boundary page is
-/// unclassified or a `FrontProse` page lacks a result — so a complete, non-stale
+/// unclassified or a non-image `FrontProse` page lacks a result — so a complete, non-stale
 /// cache constructs no client and makes zero network calls.
 pub fn run_front_matter(
     source_paths: &[PathBuf],
@@ -146,15 +147,13 @@ pub fn run_front_matter(
     Ok(sidecar)
 }
 
-/// The `(source, page)` records re-typeset as the Monitum (Tomus I) and the
-/// Praefatio (v2's first tomus). Page-list-driven, so `front_prose_pages` emits
-/// exactly these and never the half-title or Volumen-title pages that share the
-/// `FrontProse` role. Confirmed by a real-eyes render of each page.
+/// Source page re-typeset through the Monitum prose sentinel, on Tomus I.
 pub const MONITUM_PROSE_PAGES: [(usize, u32); 1] = [(0, 12)];
 /// Printed phrase in the final prose block, before the embedded errata.
 pub const MONITUM_PROSE_SENTINEL: &str = "mutanda esse significavit.";
 /// Source pages reproduced entirely as images, excluded from transcription.
 pub const MONITUM_IMAGE_PAGES: [(usize, u32); 1] = [(0, 13)];
+/// Source pages re-typeset as the Praefatio, on v2's first tomus.
 pub const PRAEFATIO_PAGES: [(usize, u32); 4] = [(1, 14), (1, 15), (1, 16), (1, 17)];
 
 /// Edge fractions `(left, top, right, bottom)` cropped off each embedded front scan.
@@ -163,6 +162,10 @@ pub const PRAEFATIO_PAGES: [(usize, u32); 4] = [(1, 14), (1, 15), (1, 16), (1, 1
 const QR_CROP: (f32, f32, f32, f32) = (0.04, 0.04, 0.04, 0.04);
 const VOLUMEN_CROP: (f32, f32, f32, f32) = (0.08, 0.03, 0.08, 0.07);
 const COLOPHON_CROP: (f32, f32, f32, f32) = (0.10, 0.33, 0.10, 0.47);
+/// v1 p12 errata tail, below the prose and above the signature and folio.
+const MONITUM_A_CROP: (f32, f32, f32, f32) = (0.12, 0.75, 0.12, 0.05);
+/// v1 p13 errata, without the running head or ornament.
+const MONITUM_B_CROP: (f32, f32, f32, f32) = (0.12, 0.10, 0.12, 0.34);
 
 /// The embedded reproduction-notice (QR) scan for a source: source page 1.
 pub fn front_qr_name(source: usize) -> String {
@@ -186,6 +189,16 @@ pub fn front_volumen_page(source: usize) -> u32 {
 /// The embedded printer's-colophon scan (v1 p9, Tomus I only).
 pub fn front_colophon_name() -> &'static str {
     "front_colophon.png"
+}
+
+/// The embedded Monitum errata-tail scan (v1 p12), on Tomus I.
+pub fn front_monitum_a_name() -> &'static str {
+    "front_monitum_a.png"
+}
+
+/// The embedded Monitum errata scan (v1 p13), on Tomus I.
+pub fn front_monitum_b_name() -> &'static str {
+    "front_monitum_b.png"
 }
 
 /// The pixel sub-rectangle of a `w×h` image left after removing the given edge
@@ -223,7 +236,7 @@ fn render_and_crop(
 
 /// Render into `out_dir` the embedded front-matter scans a given tomus needs: the
 /// reproduction-notice (QR) page on every tomus, the engraved Volumen title on the
-/// first tomus of each source, and the printer's colophon on Tomus I. Each is
+/// first tomus of each source, and the printer's colophon and Monitum errata on Tomus I. Each is
 /// cropped in Rust to a watermark-free box; no network is required.
 pub fn render_front_scans(
     source: usize,
@@ -245,6 +258,8 @@ pub fn render_front_scans(
     if is_tomus_one {
         // The colophon is v1 p9; Tomus I is always source 0, so `pdf` is the v1 PDF.
         render_and_crop(pdf, 9, COLOPHON_CROP, front_colophon_name(), out_dir)?;
+        render_and_crop(pdf, 12, MONITUM_A_CROP, front_monitum_a_name(), out_dir)?;
+        render_and_crop(pdf, 13, MONITUM_B_CROP, front_monitum_b_name(), out_dir)?;
     }
     Ok(())
 }
