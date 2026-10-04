@@ -638,6 +638,17 @@ pub fn compose_pages(
     if !current.is_empty() {
         canvases.push(pack_canvas(&current, geom));
     }
+    if let Some(min_ink) = minimum_ink(metrics) {
+        // Pixel area scales by the square of the global linear scale.
+        let scaled_min = (min_ink as f64 * (scale as f64).powi(2)).ceil().max(1.0) as u64;
+        canvases.retain(|canvas| {
+            let ink: u64 = ink_profile_rows(canvas, INK_THRESHOLD)
+                .iter()
+                .map(|&n| n as u64)
+                .sum();
+            ink >= scaled_min
+        });
+    }
     canvases
 }
 
@@ -932,6 +943,58 @@ mod tests {
             .map(|&n| n as u64)
             .sum();
         assert_eq!(ink, 8 * 20);
+    }
+
+    #[test]
+    fn compose_drops_near_blank_split_canvases() {
+        let img = column(100, 100, &[(0, 8, 5, 95)]);
+        let pages = [(
+            img,
+            vec![Band {
+                top: 0,
+                bottom: 100,
+            }],
+        )];
+        let m = LineMetrics {
+            height_med: 8,
+            height_mad: 0,
+            width_med: 90,
+        };
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 100,
+            tb_h: 100,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        let canvases = compose_pages(&pages, 1.0, &geom, 20, 20, &m);
+        assert_eq!(canvases.len(), 1);
+        let ink: u64 = ink_profile_rows(&canvases[0], INK_THRESHOLD)
+            .iter()
+            .map(|&n| n as u64)
+            .sum();
+        assert_eq!(ink, 8 * 90);
+    }
+
+    #[test]
+    fn compose_canvas_ink_floor_tracks_global_scale() {
+        let (page, m) = page_and_metrics(8, 100, &[(0, 8, 5, 95)]);
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 10,
+            tb_h: 100,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        // After shrinking, the real line has less ink than the source-pixel floor.
+        let canvases = compose_pages(&[page], 0.1, &geom, 20, 20, &m);
+        assert_eq!(canvases.len(), 1);
+        assert!(
+            ink_profile_rows(&canvases[0], INK_THRESHOLD)
+                .iter()
+                .sum::<u32>()
+                > 0
+        );
     }
 
     #[test]
