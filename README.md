@@ -84,6 +84,9 @@ the title pages and therefore the plate.
 **Body.** Each page's Latin column is detected, sliced at inter-line whitespace, and
 reflowed (whole source lines repaginated at one **global** scale) into the trim text
 block, under a **typeset centered Latin running head** and the per-Tomus folio.
+Conservative cleanup excludes isolated dividers and verified source watermarks,
+running heads, and scan-edge noise while preserving Latin pixels. Ambiguous
+dividers remain; the cached source rasters stay pristine.
 Margins are inner / outer 1 cm, 1.5 cm above the running head, and 1.5 cm below the
 text. Each nonempty Life and Comparatio **opens on a recto** (an odd physical book
 page), with its display title typeset above the first body image; Comparationes

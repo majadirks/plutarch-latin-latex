@@ -1934,6 +1934,16 @@ mod tests {
                     .unwrap();
             }
             let c = detect_latin_column(&img).unwrap();
+            let ledger: serde_json::Value =
+                serde_json::from_str(include_str!("fixtures/artifact_source_trace.json")).unwrap();
+            let expected = ledger["divider_components"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|entry| entry["page"].as_u64() == Some(page as u64))
+                .unwrap();
+            assert_eq!(c.left, expected["crop_edges"][0].as_u64().unwrap() as u32);
+            assert_eq!(c.right, expected["crop_edges"][1].as_u64().unwrap() as u32);
             let cropped = crop_column(&img, &c);
             assert!(c.left < c.right);
             assert_eq!(cropped.height(), img.height());
@@ -2034,7 +2044,14 @@ mod tests {
             &[(10, 20, 0, 90), (50, 60, 0, 90), (80, 90, 0, 90)],
         );
         img.put_pixel(30, 45, Luma([220]));
-        apply_source_furniture_mask(&small_mask(), &mut img);
+        let original = img.clone();
+        apply_source_furniture_mask(
+            &SourceFurnitureMask {
+                bottom: 0.5,
+                ..small_mask()
+            },
+            &mut img,
+        );
         let bands = line_bands(&img, LINE_MIN_INK);
         let pages = vec![(img, bands)];
         let m = line_metrics(&pages);
@@ -2049,6 +2066,11 @@ mod tests {
         assert_eq!(output.len(), 1);
         assert!(output[0].pixels().all(|p| p.0[0] != 220));
         assert_eq!(output[0].get_pixel(30, 35).0[0], 255);
+        for y in [10..20, 50..60, 80..90].into_iter().flatten() {
+            for x in 0..100 {
+                assert_eq!(output[0].get_pixel(x, y - 10), original.get_pixel(x, y));
+            }
+        }
     }
 
     /// Compare full-resolution pixels, including faint type, outside verified masks.
