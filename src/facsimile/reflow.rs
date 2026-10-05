@@ -847,6 +847,53 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 mod tests {
     use super::*;
 
+    fn assert_source_endpoint(range: &UnitRange, endpoint: u32) {
+        assert_eq!(
+            range.end_page, endpoint,
+            "reviewed inclusive final source page"
+        );
+        assert_eq!(range.unit.last_page, Some(endpoint));
+        assert!(!range.shared_tail);
+        assert_eq!(range.tail_cut_frac, None);
+    }
+
+    fn assert_ocr_landmark(source: usize, page: u32, text: &str, retained: &PageBands) {
+        let pdf = std::path::PathBuf::from(format!("Ploutarchou_Bioi_v{}.pdf", source + 1));
+        let words = crate::render::page_words(&pdf, page).unwrap();
+        assert!(!words.is_empty(), "actual source OCR boxes required");
+        let word = words
+            .iter()
+            .find(|w| w.x_max > 0.5 && w.text.contains(text))
+            .unwrap_or_else(|| panic!("source {source} page {page} OCR landmark {text:?} absent"));
+        let top = (word.y_min * retained.0.height() as f32) as u32;
+        let bottom = (word.y_max * retained.0.height() as f32).ceil() as u32;
+        assert!(
+            retained.1.iter().any(|b| b.top < bottom && b.bottom > top),
+            "retained OCR landmark {text:?}"
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler"]
+    fn cimon_lucullus_final_source_page_survives_reflow() {
+        let range = operational_range("comparatio_cimonis_et_luculli");
+        let mut old = range.clone();
+        old.end_page = 636;
+        old.unit.last_page = Some(636);
+        assert!(
+            std::panic::catch_unwind(|| assert_source_endpoint(&old, 637)).is_err(),
+            "old endpoint must fail"
+        );
+        assert_source_endpoint(&range, 637);
+        let (pages, m) = traced_real_unit(&range);
+        let last = &pages[(637 - range.unit.start_page) as usize];
+        for landmark in ["tulerunt", "Lucullus", "fuisse."] {
+            assert_ocr_landmark(0, 637, landmark, last);
+        }
+        save_retained_crop("cimon_lucullus_final", last);
+        verify_real_composition(&range.unit.id, &pages, &m);
+    }
+
     #[test]
     fn unit_body_strips_requests_inclusive_final_page() {
         for (id, source, start, end) in [
