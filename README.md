@@ -26,6 +26,30 @@ and imposed US Letter PDFs.
 
 ## The facsimile path
 
+For a full PDF build on this Windows checkout, run the following from the project
+root in PowerShell. MiKTeX must be installed with the `oldstandard` package; the
+explicit executable path avoids relying on `PATH`. The command uses the cached
+front-matter prose and compiles all eight tomi, including their printing wrappers.
+
+```powershell
+$env:PLUTARCH_LUALATEX = "$env:LOCALAPPDATA\Programs\MiKTeX\miktex\bin\x64\lualatex.exe"
+& $env:PLUTARCH_LUALATEX --version
+if ($LASTEXITCODE -ne 0) { throw "LuaLaTeX is unavailable; fix the MiKTeX path or installation before building." }
+cargo run --release --bin facsimile --target-dir target -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_v2.pdf --out build_facsimile/ --offline
+if ($LASTEXITCODE -ne 0) { throw "The facsimile build failed; inspect the error above." }
+Get-ChildItem build_facsimile/tomus*.pdf
+```
+
+The completed build produces `tomus_1_inner.pdf` through `tomus_8_inner.pdf` (book
+pages) and `tomus_1.pdf` through `tomus_8.pdf` (imposed US Letter printing PDFs).
+If MiKTeX is installed elsewhere, change `PLUTARCH_LUALATEX` accordingly. When
+running through Codex's restricted filesystem sandbox, allow the build access to
+the MiKTeX installation and its package/font caches. If LuaLaTeX cannot be invoked,
+the generator can finish successfully with LaTeX files alone and print
+`lualatex not run`; that message means the PDF build has not completed. Confirm
+that all sixteen PDFs exist after the run. Re-run the generator after fixing
+LuaLaTeX so it derives each printing wrapper from the compiled inner page count.
+
 ```sh
 # Detect the unit table from the sources and write facsimile_units.json, then exit.
 cargo run --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_v2.pdf \
