@@ -826,9 +826,14 @@ fn scale_strip(img: &GrayImage, band: &Band, scale: f32) -> Option<GrayImage> {
         return None;
     }
     let raw = image::imageops::crop_imm(img, 0, band.top, img.width(), h).to_image();
+    Some(resize_line_image(&raw, scale))
+}
+
+/// Resize a complete line with rounded dimensions and a shared resampling filter.
+pub(crate) fn resize_line_image(raw: &GrayImage, scale: f32) -> GrayImage {
     let sw = ((raw.width() as f32 * scale).round() as u32).max(1);
     let sh = ((raw.height() as f32 * scale).round() as u32).max(1);
-    Some(image::imageops::resize(&raw, sw, sh, FilterType::Lanczos3))
+    image::imageops::resize(raw, sw, sh, FilterType::Lanczos3)
 }
 
 /// The minimum fill-split piece height in scaled (trim) px: half a scaled typical
@@ -900,6 +905,11 @@ fn lowest_ink_row_in(rows: &[u32], lo: u32, hi: u32) -> Option<u32> {
 /// type keeps a safety margin inside the text block. Canvas height is the top inset
 /// plus the strip heights; the bottom margin falls out of the frame below.
 fn pack_canvas(strips: &[GrayImage], geom: &TrimGeom) -> GrayImage {
+    place_line_images(strips, geom)
+}
+
+/// Place whole line images in order on a canvas of their actual occupied height.
+pub(crate) fn place_line_images(strips: &[GrayImage], geom: &TrimGeom) -> GrayImage {
     let content_h: u32 = strips.iter().map(|s| s.height()).sum();
     let height = geom.pad_y + content_h;
     let mut canvas = GrayImage::from_pixel(geom.tb_w, height.max(1), Luma([255]));
@@ -918,6 +928,44 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn shared_line_primitives_preserve_body_pixels() {
+        use super::*;
+        for scale in [0.37, 0.71, 1.2] {
+            let raw = GrayImage::from_fn(83, 47, |x, y| Luma([((x * 13 + y * 19) % 256) as u8]));
+            let expected = image::imageops::resize(
+                &raw,
+                (83.0_f32 * scale).round() as u32,
+                (47.0_f32 * scale).round() as u32,
+                FilterType::Lanczos3,
+            );
+            assert_eq!(resize_line_image(&raw, scale), expected);
+            assert_eq!(
+                scale_strip(&raw, &Band { top: 0, bottom: 47 }, scale).unwrap(),
+                expected
+            );
+            let strips = vec![expected.clone(), expected];
+            let geom = TrimGeom {
+                dpi: 300,
+                tb_w: 110,
+                tb_h: 300,
+                pad_x: 4,
+                pad_y: 7,
+            };
+            let mut old = GrayImage::from_pixel(
+                geom.tb_w,
+                7 + strips.iter().map(|s| s.height()).sum::<u32>(),
+                Luma([255]),
+            );
+            let mut y = 7;
+            for strip in &strips {
+                image::imageops::overlay(&mut old, strip, 4, y);
+                y += i64::from(strip.height());
+            }
+            assert_eq!(place_line_images(&strips, &geom), old);
+            assert_eq!(pack_canvas(&strips, &geom), old);
+        }
+    }
     use super::*;
 
     #[test]

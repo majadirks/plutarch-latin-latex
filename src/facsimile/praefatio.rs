@@ -6,6 +6,7 @@ use image::{GrayImage, Luma};
 use super::frontmatter::PraefatioRegions;
 use super::lines::{cut_points, line_bands, Band};
 use super::metrics::{line_metrics, median_u32};
+use super::reflow::{place_line_images, resize_line_image, TrimGeom, BODY_DPI};
 
 /// Maximum blank-row gap joining isolated accents to their printed baseline.
 const ACCENT_JOIN_GAP_FRAC: f64 = 0.001;
@@ -170,11 +171,300 @@ pub(crate) fn join_errata_pages(
     Ok(first)
 }
 
+/// Minimum page count, then minimum load range, then earliest break vector.
+pub(crate) fn balanced_errata_breaks(
+    heights: &[u32],
+    pad_y: u32,
+    budget: u32,
+) -> Result<Vec<usize>> {
+    if heights.is_empty() {
+        bail!("praefatio: no errata lines to compose");
+    }
+    let mut prefix = vec![0u64];
+    let mut groups = 1;
+    let mut current = u64::from(pad_y);
+    for &height in heights {
+        if height == 0 || u64::from(height) + u64::from(pad_y) > u64::from(budget) {
+            bail!("praefatio: line height {height} cannot fit budget {budget}");
+        }
+        prefix.push(prefix.last().unwrap() + u64::from(height));
+        if current + u64::from(height) > u64::from(budget) {
+            groups += 1;
+            current = u64::from(pad_y);
+        }
+        current += u64::from(height);
+    }
+    let n = heights.len();
+    let load = |start: usize, end: usize| prefix[end] - prefix[start] + u64::from(pad_y);
+    let mut loads = Vec::new();
+    for start in 0..n {
+        for end in start + 1..=n {
+            let value = load(start, end);
+            if value <= u64::from(budget) {
+                loads.push(value);
+            }
+        }
+    }
+    loads.sort_unstable();
+    loads.dedup();
+    let mut ranges = Vec::new();
+    for (i, &low) in loads.iter().enumerate() {
+        for &high in &loads[i..] {
+            ranges.push((high - low, low, high));
+        }
+    }
+    ranges.sort_unstable();
+    let mut best: Option<Vec<usize>> = None;
+    let mut best_difference = None;
+    for (difference, low, high) in ranges {
+        if best_difference.is_some_and(|d| difference > d) {
+            break;
+        }
+        let mut can = vec![vec![false; n + 1]; groups + 1];
+        can[0][n] = true;
+        for remaining in 1..=groups {
+            for start in (0..n).rev() {
+                can[remaining][start] = (start + 1..=n).any(|end| {
+                    let value = load(start, end);
+                    value >= low && value <= high && can[remaining - 1][end]
+                });
+            }
+        }
+        if !can[groups][0] {
+            continue;
+        }
+        let mut ends = Vec::new();
+        let mut start = 0;
+        for remaining in (1..=groups).rev() {
+            let end = (start + 1..=n)
+                .find(|&end| {
+                    let value = load(start, end);
+                    value >= low && value <= high && can[remaining - 1][end]
+                })
+                .unwrap();
+            ends.push(end);
+            start = end;
+        }
+        if best.as_ref().is_none_or(|b| ends < *b) {
+            best = Some(ends);
+        }
+        best_difference = Some(difference);
+    }
+    best.ok_or_else(|| anyhow::anyhow!("praefatio: no feasible whole-line partition"))
+}
+
+pub(crate) fn compose_errata_pages(
+    lines: &[ErrataLine],
+    geom: &TrimGeom,
+) -> Result<Vec<GrayImage>> {
+    let width = lines.iter().map(|l| l.image.width()).max().unwrap_or(0);
+    if width == 0 {
+        bail!("praefatio: empty source column");
+    }
+    for line in lines {
+        if line.image.width() == 0 || line.image.height() == 0 {
+            bail!(
+                "praefatio source 1, source page {}, line {}: empty line image",
+                line.source_page,
+                line.line_index
+            );
+        }
+    }
+    let scale = geom.content_width() as f32 / width as f32;
+    let strips: Vec<_> = lines
+        .iter()
+        .map(|l| resize_line_image(&l.image, scale))
+        .collect();
+    for (line, strip) in lines.iter().zip(&strips) {
+        if strip.height().saturating_add(geom.pad_y) > geom.body_budget()
+            || strip.width() > geom.content_width()
+        {
+            bail!("praefatio source 1, source page {}, line {} ({:?}): scaled line cannot fit the image budget", line.source_page, line.line_index, line.source_rect);
+        }
+    }
+    let ends = balanced_errata_breaks(
+        &strips.iter().map(|s| s.height()).collect::<Vec<_>>(),
+        geom.pad_y,
+        geom.body_budget(),
+    )?;
+    let mut start = 0;
+    Ok(ends
+        .into_iter()
+        .map(|end| {
+            let canvas = place_line_images(&strips[start..end], geom);
+            start = end;
+            canvas
+        })
+        .collect())
+}
+
+pub(crate) fn render_praefatio_errata(
+    pdf: &crate::render::Pdf,
+    out_dir: &std::path::Path,
+) -> Result<Vec<String>> {
+    let mut pages = Vec::new();
+    for page in [15, 16] {
+        let png = crate::render::render_page(
+            &pdf.path,
+            page,
+            crate::render::TRANSCRIBE_DPI,
+            &crate::pipeline::scratch_dir(),
+        )?;
+        let image = image::open(png)?.to_luma8();
+        let regions = super::frontmatter::praefatio_regions(image.width(), image.height(), page)?;
+        pages.push(extract_errata_lines(page, &image, regions)?);
+    }
+    let second = pages.pop().unwrap();
+    let lines = join_errata_pages(pages.pop().unwrap(), second)?;
+    let geom = TrimGeom::new(BODY_DPI);
+    let canvases = compose_errata_pages(&lines, &geom)?;
+    eprintln!(
+        "  Praefatio: {} lines, scale {:.6}, image heights {:?}",
+        lines.len(),
+        geom.content_width() as f32 / lines.iter().map(|l| l.image.width()).max().unwrap() as f32,
+        canvases.iter().map(|c| c.height()).collect::<Vec<_>>()
+    );
+    std::fs::create_dir_all(out_dir)?;
+    canvases
+        .iter()
+        .enumerate()
+        .map(|(i, canvas)| {
+            let name = format!("front_praefatio_errata_{:03}.png", i + 1);
+            canvas.save(out_dir.join(&name))?;
+            Ok(name)
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::columns::INK_THRESHOLD;
     use super::super::frontmatter::praefatio_regions;
     use super::*;
+
+    fn packing_lines(heights: &[u32], widths: &[u32]) -> Vec<ErrataLine> {
+        heights
+            .iter()
+            .enumerate()
+            .map(|(i, &h)| ErrataLine {
+                image: GrayImage::from_pixel(widths[i], h, Luma([20 + i as u8])),
+                source_page: if i < 2 { 15 } else { 16 },
+                line_index: i + 1,
+                source_rect: (0, 0, widths[i], h),
+            })
+            .collect()
+    }
+
+    fn small_geom() -> TrimGeom {
+        TrimGeom {
+            dpi: 1,
+            tb_w: 20,
+            tb_h: 31,
+            pad_x: 0,
+            pad_y: 1,
+        }
+    }
+
+    #[test]
+    fn praefatio_errata_uses_one_scale() {
+        let lines = packing_lines(&[10, 10], &[40, 20]);
+        let canvases = compose_errata_pages(&lines, &small_geom()).unwrap();
+        assert_eq!(canvases.len(), 1);
+        assert_eq!(canvases[0].dimensions(), (20, 11));
+        assert_eq!(canvases[0].get_pixel(15, 8)[0], 255);
+        assert_eq!(canvases[0].get_pixel(5, 8)[0], 21);
+    }
+
+    #[test]
+    fn praefatio_errata_balances_pages_without_splitting_lines() {
+        assert_eq!(
+            balanced_errata_breaks(&[9, 9, 9, 9, 9], 1, 31).unwrap(),
+            vec![2, 5]
+        );
+        let canvases =
+            compose_errata_pages(&packing_lines(&[9; 5], &[20; 5]), &small_geom()).unwrap();
+        assert_eq!(
+            canvases.iter().map(|c| c.height()).collect::<Vec<_>>(),
+            [19, 28]
+        );
+    }
+
+    #[test]
+    fn praefatio_errata_packs_across_source_page_boundary() {
+        let canvases =
+            compose_errata_pages(&packing_lines(&[5; 4], &[20; 4]), &small_geom()).unwrap();
+        assert_eq!(canvases.len(), 1);
+        for i in 0..4 {
+            assert_eq!(canvases[0].get_pixel(0, 1 + i * 5)[0], 20 + i as u8);
+        }
+    }
+
+    #[test]
+    fn praefatio_errata_has_no_empty_canvas() {
+        assert!(compose_errata_pages(&[], &small_geom()).is_err());
+        assert!(compose_errata_pages(&packing_lines(&[0], &[20]), &small_geom()).is_err());
+        assert_eq!(balanced_errata_breaks(&[30, 30], 1, 31).unwrap(), [1, 2]);
+    }
+
+    #[test]
+    fn praefatio_errata_rejects_oversized_line() {
+        let err = compose_errata_pages(&packing_lines(&[31], &[20]), &small_geom()).unwrap_err();
+        assert!(err.to_string().contains("source page 15, line 1"));
+    }
+
+    #[test]
+    fn praefatio_errata_budget_uses_rounded_strip_heights() {
+        let mut geom = small_geom();
+        geom.tb_h = 4;
+        geom.pad_y = 0;
+        let canvases = compose_errata_pages(&packing_lines(&[3; 3], &[40; 3]), &geom).unwrap();
+        assert_eq!(
+            canvases.iter().map(|c| c.height()).collect::<Vec<_>>(),
+            [2, 4]
+        );
+    }
+
+    #[test]
+    fn praefatio_errata_partition_matches_exhaustive_optimum() {
+        for n in 1..=7 {
+            for seed in 0..40 {
+                let heights: Vec<_> = (0..n)
+                    .map(|i| 1 + ((seed * 7 + i * 3 + i * i) % 9) as u32)
+                    .collect();
+                let mut optimum = None;
+                for mask in 0..(1usize << (n - 1)) {
+                    let mut ends: Vec<_> =
+                        (1..n).filter(|&end| mask & (1 << (end - 1)) != 0).collect();
+                    ends.push(n);
+                    let mut start = 0;
+                    let loads: Vec<_> = ends
+                        .iter()
+                        .map(|&end| {
+                            let value = 1 + heights[start..end].iter().sum::<u32>();
+                            start = end;
+                            value
+                        })
+                        .collect();
+                    if loads.iter().any(|&l| l > 15) {
+                        continue;
+                    }
+                    let candidate = (
+                        ends.len(),
+                        loads.iter().max().unwrap() - loads.iter().min().unwrap(),
+                        ends,
+                    );
+                    if optimum.as_ref().is_none_or(|b| candidate < *b) {
+                        optimum = Some(candidate);
+                    }
+                }
+                assert_eq!(
+                    balanced_errata_breaks(&heights, 1, 15).unwrap(),
+                    optimum.unwrap().2,
+                    "{heights:?}"
+                );
+            }
+        }
+    }
 
     fn fixture(page: u32) -> (GrayImage, PraefatioRegions) {
         let mut im = GrayImage::from_pixel(200, 1000, Luma([255]));

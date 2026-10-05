@@ -582,3 +582,90 @@ x=795; the source-page join adds one median normal gap, split across the two
 adjacent strips. Five synthetic extraction/coverage/order tests and the real
 source inventory test passed. Formatting and clippy passed; the full suite is
 checked before committing. Preparatory extraction remains test-only.
+Steps 1.1–3.1 verification: commits `844ca5f`, `c1bbc99`, `08377fd`, and
+`ec19977` contain the reviewed regions, cloned migration, pure transcription
+policies, and bounded editorial extractor respectively. The initial worktree
+was clean. The starting full suite passed with 319 library tests and 5 CLI tests
+(14 ignored). The complete mixed p15 finalized paragraph remained active until
+the hybrid renderer and policy integration were connected.
+
+Step 3.2: shared `resize_line_image` and `place_line_images` primitives preserve
+body fixture pixels exactly, including rounded dimensions, Lanczos3, offsets,
+and actual canvas height. The editorial compositor scales each strip once,
+uses the widest source-column canvas, and chooses the minimum-page partition
+with the minimum load range and lexicographically earliest breaks. Exhaustive
+small-fixture comparisons verify the objective and tie rule. The real extract
+has 55 lines (16 from p15 and 39 from p16), common scale 0.705056, and two
+1004-pixel-wide canvases with heights 1192 and 1154. No source-page separator or
+additional strip spacing is introduced. Both full-resolution canvases and their
+trim-page renders were compared with source pages 15 and 16: the horizontal
+boundary excludes `Ages.`, the source-page join preserves ordinary spacing,
+and all accents, short lines, and the last editorial period are present.
+
+Step 4.1: the prepared regions, masks, exclusions, and validators are active in
+production. Both API stages receive the identical prepared p15 PNG; the mock
+integration test forces actual arbitration through a synthetic numbering gap.
+Legacy candidates fail before rendering, classification, any API request, or
+sidecar mutation. Valid finalized p15 prose and its historical candidates remain
+unchanged while another page is processed. Source 1 p16 is excluded from both
+stages and finalized prose validation. An emitting Praefatio requires all three
+finalized prose pages and image names; assignment builds every string before
+mutating any volume. Other and restricted volumes do not reference these assets.
+The complete-cache test makes client construction panic if attempted, and passes.
+A whole-sidecar comparison against HEAD permits exactly the finalized p15 suffix
+removal and proves that its retained prefix is byte-for-byte exact; candidates,
+p16, continuation, hashes, and verification evidence are unchanged. README now
+describes the hybrid and offline requirements. The measured six-page section
+sets `PRAEFATIO_PAGES_EST` to 6. The QA build began with the previous estimate;
+`praefatio_full_build_matches_current_volume_estimate` confirms that all eight
+emitted volume memberships match the final estimate, so the generated documents
+retain the final code's grouping.
+
+Step 5.1: `cargo fmt --all`, `cargo fmt --all --check`,
+`cargo clippy --target-dir target --all-targets -- -D warnings`,
+`cargo build --target-dir target`, and the full `cargo test --target-dir target`
+passed: 336 library tests and 5 CLI tests, with 18 ignored. Both required ignored
+compiled tests passed against the final code. They verify consecutive content
+pages, intact image dimensions, recto body alignment, folio 2, and a maximum
+budget canvas's bottom ink within the printable margin. The real-section preview
+and final-volume-membership ignored checks passed too.
+
+The full offline release build completed in
+`build_facsimile/praefatio_hybrid_check`, preserving the original output directory.
+Existing source raster caches were copied into its separate cache to avoid
+unnecessary rasterization. All eight inner and imposed PDFs compiled:
+
+| Tomus | Inner pages | Imposed pages |
+| --- | ---: | ---: |
+| I | 416 | 208 |
+| II | 448 | 224 |
+| III | 416 | 208 |
+| IV | 128 | 64 |
+| V | 384 | 192 |
+| VI | 384 | 192 |
+| VII | 448 | 224 |
+| VIII | 320 | 160 |
+
+Praefatio occupies physical Tomus V pages 12–17: opening prose 12–14,
+corrigenda images 15–16, closing prose and separate dateline 17. The title and
+prose sentinel each occur once in extracted selectable text. There is no blank
+inside the section. Page 18 is the intentional first-Life alignment blank;
+Nicias opens on recto 19 and the next body page carries folio 2. Every section
+page and its neighbors were rendered. The six final section rasters are
+pixel-identical to the individually inspected real-section preview. Tomus V has
+no overfull boxes or missing-character warnings. Ordinary underfull warnings
+remain for loose prose lines and ragged page ends; the natural space after the
+opening prose is not a fixed-height canvas or vertical centering artifact.
+The two composed image pages preserve the reviewed 55-line inventory, including
+the p15→p16 join. Imposed sheet side 16 was inspected with image page 16 and
+closing prose page 17. Monitum retains one prose page at physical 14, both crops
+together at 15, one alignment blank at 16, and Theseus on recto 17; these renders
+were inspected too.
+
+Successful compilation removed the new `front_praefatio_errata_*.png` assets;
+the uncompiled `build_facsimile/praefatio_section_preview` retains both assets.
+Generated PDFs, PNGs, previews, and logs are ignored. The UTF-8 build log and
+verification logs are under `tmp/praefatio/`. Task-scoped `git diff --check`
+passed; unrelated concurrent `prompts.txt` edits were left untouched. Physical
+print-size assessment remains available to the human reviewer using the inner
+and imposed PDFs.
