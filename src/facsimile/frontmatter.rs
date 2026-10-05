@@ -370,6 +370,35 @@ mod tests {
     }
 
     #[test]
+    fn praefatio_cache_migration_preserves_prefix_and_candidates() {
+        let original = committed_praefatio();
+        let mut migrated = original.clone();
+        let old = &original
+            .page(1, 15)
+            .unwrap()
+            .result
+            .as_ref()
+            .unwrap()
+            .blocks[0]
+            .text;
+        assert_eq!(old.matches(PRAEFATIO_PROSE_SENTINEL).count(), 1);
+        let end = old.find(PRAEFATIO_PROSE_SENTINEL).unwrap() + PRAEFATIO_PROSE_SENTINEL.len();
+        let record = migrated.page_mut(1, 15).unwrap();
+        record.result.as_mut().unwrap().blocks[0].text.truncate(end);
+        assert!(record.result.as_ref().unwrap().blocks[0].continues_previous);
+        let mut expected = serde_json::to_value(&original).unwrap();
+        let index = original
+            .pages
+            .iter()
+            .position(|p| (p.source, p.source_page) == (1, 15))
+            .unwrap();
+        expected["pages"][index]["result"]["blocks"][0]["text"] = old[..end].into();
+        assert_eq!(serde_json::to_value(&migrated).unwrap(), expected);
+        assert!(old[end..].starts_with(" c. III, 5"));
+        println!("Reviewed p15 prefix: {}", &old[..end]);
+    }
+
+    #[test]
     fn praefatio_cache_has_one_display_heading() {
         let sc = committed_praefatio();
         let headings: Vec<_> = PRAEFATIO_PAGES

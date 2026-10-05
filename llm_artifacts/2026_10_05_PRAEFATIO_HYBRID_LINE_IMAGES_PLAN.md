@@ -547,4 +547,13 @@ head, folio and Google watermark. Preview paths: `tmp/praefatio/transition.png`
 and `tmp/praefatio/annotated-15.png`, `annotated-16.png`.
 The definitions remain test-only until integration. Formatting, clippy with
 warnings denied, and both region tests passed. The complete test suite is also
-run before committing this step.
+passed (306 library tests, 5 CLI tests; 13 ignored).
+
+Step 1.2: the cloned cache edit preserves the exact byte prefix through the
+unique `Ita, ut in duarum vitarum exemplis consistam, Ages.` sentinel. The
+removed suffix begins ` c. III, 5`; the transition preview confirms that it
+belongs to the right-hand image portion of the same printed row. A whole-sidecar
+JSON comparison permits exactly that finalized-text edit and proves preservation
+of continuation, candidates, hashes, page 16 and all remaining evidence. The
+committed cache remains unchanged. Formatting, clippy and cache tests passed;
+the complete suite is run for this step as well.
