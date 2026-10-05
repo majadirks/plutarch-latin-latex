@@ -2433,6 +2433,203 @@ mod tests {
         println!("retained crop: {}", path.display());
     }
 
+    /// A test-only record of one source page after the inner-tomi repairs (duplicate
+    /// exclusion, furniture masking, and interior-whitespace compaction). Every row is
+    /// an **original** (full-source) coordinate; the retained-image row is derived with
+    /// [`RetainedSourcePageTrace::map_row`]. A skipped page (a verified whole-page
+    /// duplicate) has `retained_index: None` and contributes no retained image, so its
+    /// index must never be reconstructed as `page - start_page`.
+    #[derive(Clone, serde::Serialize)]
+    struct RetainedSourcePageTrace {
+        source: usize,
+        page: u32,
+        /// Position in the retained `pages` vector, or `None` for a skipped page.
+        retained_index: Option<usize>,
+        /// Original `[left, right)` Latin-column crop edges.
+        crop: [u32; 2],
+        /// Retained body bands in original-source row coordinates.
+        bands: Vec<[u32; 2]>,
+        /// Half-open `[top, bottom)` row intervals deleted by masking/compaction, in
+        /// original-source coordinates. Must be sorted and non-overlapping.
+        deleted_rows: Vec<[u32; 2]>,
+    }
+
+    impl RetainedSourcePageTrace {
+        /// Map an original-source row to its row in the retained (compacted) image, or
+        /// `None` when the row itself was deleted. Subtracts the total height of every
+        /// deletion interval ending at or before `row`; a row inside a deletion
+        /// interval has no mapped coordinate. `deleted_rows` must be sorted ascending.
+        fn map_row(&self, row: u32) -> Option<u32> {
+            let mut shift = 0u32;
+            for &[top, bottom] in &self.deleted_rows {
+                if bottom <= row {
+                    shift += bottom - top;
+                } else if top <= row {
+                    return None;
+                } else {
+                    break;
+                }
+            }
+            Some(row - shift)
+        }
+    }
+
+    /// Look a retained page up by identity. The one shared lookup used by the
+    /// duplication, mask, and compaction regressions — never `page - start_page`.
+    fn retained_page(
+        traces: &[RetainedSourcePageTrace],
+        source: usize,
+        page: u32,
+    ) -> Option<&RetainedSourcePageTrace> {
+        traces.iter().find(|t| t.source == source && t.page == page)
+    }
+
+    #[test]
+    fn repair_trace_maps_skipped_pages_and_deleted_rows() {
+        let traces = vec![
+            // A retained page with no deletions: an identity mapping.
+            RetainedSourcePageTrace {
+                source: 1,
+                page: 17,
+                retained_index: Some(0),
+                crop: [100, 900],
+                bands: vec![[200, 240]],
+                deleted_rows: vec![],
+            },
+            // A verified duplicate whole page, skipped: no retained index at all.
+            RetainedSourcePageTrace {
+                source: 1,
+                page: 21,
+                retained_index: None,
+                crop: [100, 900],
+                bands: vec![],
+                deleted_rows: vec![],
+            },
+            // An interior watermark band and a footer tail deleted in original coords.
+            RetainedSourcePageTrace {
+                source: 0,
+                page: 227,
+                retained_index: Some(1),
+                crop: [1040, 1950],
+                bands: vec![[300, 340], [1800, 1840]],
+                deleted_rows: vec![[1500, 1700], [2600, 2900]],
+            },
+        ];
+        // A skipped page is found by identity and carries no retained index.
+        assert_eq!(retained_page(&traces, 1, 21).unwrap().retained_index, None);
+        // Identity mapping for a page with no deletions.
+        let clean = retained_page(&traces, 1, 17).unwrap();
+        assert_eq!(clean.map_row(220), Some(220));
+        // Deleted-row semantics on the masked page.
+        let p = retained_page(&traces, 0, 227).unwrap();
+        assert_eq!(p.map_row(300), Some(300));
+        assert_eq!(p.map_row(1499), Some(1499));
+        assert_eq!(p.map_row(1500), None, "inclusive top of a deletion");
+        assert_eq!(p.map_row(1600), None);
+        assert_eq!(p.map_row(1699), None);
+        assert_eq!(p.map_row(1700), Some(1500), "shift by the 200-row deletion");
+        assert_eq!(p.map_row(1800), Some(1600));
+        assert_eq!(p.map_row(2599), Some(2399));
+        assert_eq!(p.map_row(2700), None, "inside the second deletion");
+        assert_eq!(p.map_row(2900), Some(2400), "shift by 200 + 300 rows");
+        // Every field participates (crop/bands are read by the evidence tracer).
+        assert_eq!(p.crop, [1040, 1950]);
+        assert_eq!(p.bands.len(), 2);
+        assert_eq!(p.page, 227);
+    }
+
+    #[test]
+    fn inner_tomi_repair_ledger_has_expected_shape() {
+        let ledger: serde_json::Value =
+            serde_json::from_str(include_str!("fixtures/inner_tomi_repair_source_trace.json"))
+                .expect("committed repair ledger parses");
+        assert!(ledger["description"].is_string());
+        assert!(ledger["schema"]["repair_record"].is_array());
+        assert!(
+            ledger["repairs"].is_array(),
+            "repairs is the list of reviewed, frozen repair records"
+        );
+        // Every present repair record must carry the mandatory diagnostic keys, so a
+        // guessed or half-filled record cannot slip in unnoticed.
+        for repair in ledger["repairs"].as_array().unwrap() {
+            for key in [
+                "finding_ids",
+                "unit_id",
+                "source",
+                "source_page",
+                "disposition",
+                "preservation_boundary",
+            ] {
+                assert!(!repair[key].is_null(), "repair record missing {key}");
+            }
+        }
+    }
+
+    /// Render a representative source window with the production render/band path and
+    /// write its retained-page traces and column crops under `tmp/`. This establishes
+    /// the shared diagnostic helper on a small window; steps 1.1A–1.1C populate the
+    /// full per-finding decisions into the committed ledger. Deletions are left empty
+    /// here — a before-repair trace proves the mapping/lookup contract on real pixels
+    /// without authorizing any erasure.
+    fn save_representative_repair_trace(
+        group: &str,
+        pages: &[(usize, u32)],
+    ) -> Vec<RetainedSourcePageTrace> {
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs");
+        std::fs::create_dir_all(dir).unwrap();
+        let mut traces = Vec::new();
+        for (retained_index, &(source, page)) in pages.iter().enumerate() {
+            let image = real_source_image(source, page);
+            let column = detect_latin_column(&image).unwrap();
+            let (col, bands) = render_and_band(source, page, &|_, _| Ok(image.clone())).unwrap();
+            col.save(dir.join(format!("{group}-s{source}-p{page:04}-column.png")))
+                .unwrap();
+            let trace = RetainedSourcePageTrace {
+                source,
+                page,
+                retained_index: Some(retained_index),
+                crop: [column.left, column.right],
+                bands: bands.iter().map(|b| [b.top, b.bottom]).collect(),
+                deleted_rows: Vec::new(),
+            };
+            // The before-repair trace maps every retained band row to itself.
+            for b in &trace.bands {
+                assert_eq!(trace.map_row(b[0]), Some(b[0]));
+            }
+            traces.push(trace);
+        }
+        let path = dir.join(format!("{group}.json"));
+        std::fs::write(&path, serde_json::to_vec_pretty(&traces).unwrap()).unwrap();
+        println!("representative repair trace: {}", path.display());
+        traces
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler; populates D1/D2 diagnosis"]
+    fn inner_tomi_duplicate_source_trace() {
+        // Representative window: the Agis opening (v2) whose VII/17-24 occurrences are
+        // compared in step 1.1A, plus the Eumenes/comparison seam (v2).
+        let traces = save_representative_repair_trace("duplicate", &[(1, 88), (1, 102), (1, 363)]);
+        assert_eq!(
+            retained_page(&traces, 1, 363).unwrap().retained_index,
+            Some(2)
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler; populates Timoleon/Coriolanus diagnosis"]
+    fn inner_tomi_timoleon_coriolanus_source_trace() {
+        let traces = save_representative_repair_trace("timoleon_coriolanus", &[(0, 268), (0, 295)]);
+        assert!(retained_page(&traces, 0, 295).is_some());
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler; populates Brutus/remaining diagnosis"]
+    fn inner_tomi_remaining_source_trace() {
+        let traces = save_representative_repair_trace("remaining", &[(1, 596)]);
+        assert!(retained_page(&traces, 1, 596).is_some());
+    }
+
     fn two_line_boundary_fixture() -> (Vec<UnitRange>, GrayImage) {
         let mut cato = operational_range("cato_major").unit;
         let mut comparison = operational_range("comparatio_aristidis_et_catonis").unit;

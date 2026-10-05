@@ -1,0 +1,33 @@
+{
+  "description": "Durable numeric ledger for the inner-tomi minimal repairs (2026-10-05 plan). Coordinates are half-open, source index zero based, PDF page one based. Mask/compaction rows are recorded in original (full-source) coordinates; retained-image rows are derived with the shared RetainedSourcePageTrace::map_row contract (subtract the height of every deletion interval ending at or before the row). This ledger records only reviewed decisions: an empty `repairs` list means no repair has yet been measured and frozen. Tests must read reviewed expectations from this committed file and must never regenerate and accept their own expected values during a regression run.",
+  "schema": {
+    "repair_record": [
+      "finding_ids: [string]",
+      "unit_id: string",
+      "source: usize (0 = v1, 1 = v2)",
+      "source_page: u32 (1-based physical source PDF page)",
+      "raster: [width, height] (production BODY_DPI raster dimensions)",
+      "crop_edges: [left, right] (original Latin-column crop, original coordinates)",
+      "bands: [[top, bottom]] (retained body bands, original coordinates)",
+      "adjacent_prose: {above: string, below: string} (exact Latin landmarks framing the repair)",
+      "disposition: 'mask' | 'row_exclusion' | 'duplicate_page' | 'boundary_pin' | 'retain'",
+      "mask_rectangles: [[left, top, right, bottom]] (normalized half-open, when disposition = mask)",
+      "row_exclusions: [[top, bottom]] (normalized half-open original rows, when disposition = row_exclusion)",
+      "preservation_boundary: string (why the erase/exclusion removes no Latin)",
+      "copied_height: {before: u32, after: u32} (measured copied blank rows)",
+      "neighbor_gap: u32 (ordinary neighboring-line gap in original rows)",
+      "final_seam_spacing: u32 (proposed retained seam rows)"
+    ],
+    "duplicate_record_extra": [
+      "occurrences: [[source_page]] (every repeated-scan occurrence)",
+      "retain_sequence: [source_page] (the source-page sequence to keep)"
+    ]
+  },
+  "scale": {
+    "baseline": null,
+    "final": null,
+    "width_sampling_ranges": null,
+    "note": "global_scale_for samples raw rendered columns across the ranges and applies no furniture masks or duplicate exclusions. Record the measured baseline and final production scale here once a diagnostic trace has run; a material change triggers the narrow resolution specified in Phase 1."
+  },
+  "repairs": []
+}
