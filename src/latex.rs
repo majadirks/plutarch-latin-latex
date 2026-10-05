@@ -439,6 +439,34 @@ pub(crate) fn embed_scan(name: &str) -> String {
     )
 }
 
+/// Two consecutive front-matter crops in one measured, centered page box.
+/// Zero-depth images keep the stack depth zero, so resizebox scales its full height.
+#[allow(dead_code)]
+pub(crate) fn embed_scan_pair(first: &str, second: &str) -> String {
+    format!(
+        "% Embedded front-matter scan pair\n\
+         \\clearpage\n\
+         \\thispagestyle{{empty}}\n\
+         \\begingroup\n\
+         \\setbox0=\\vbox{{%\n\
+         \\offinterlineskip\n\
+         \\hbox{{\\includegraphics[width=\\textwidth]{{{first}}}}}%\n\
+         \\vskip 2mm\n\
+         \\hbox{{\\includegraphics[width=\\textwidth]{{{second}}}}}%\n\
+         }}%\n\
+         \\dimen0=\\dimexpr\\textheight-\\baselineskip\\relax\n\
+         \\noindent\\makebox[\\textwidth][c]{{%\n\
+         \\ifdim\\dimexpr\\ht0+\\dp0\\relax>\\dimen0%\n\
+         \\resizebox{{!}}{{\\dimen0}}{{\\copy0}}%\n\
+         \\else%\n\
+         \\copy0%\n\
+         \\fi%\n\
+         }}\\par\n\
+         \\endgroup\n\
+         \\clearpage\n\n",
+    )
+}
+
 /// The `TOMUS N` label page.
 pub(crate) fn tomus_label(tomus: usize) -> String {
     let roman = to_roman(tomus as u32);
@@ -1040,6 +1068,38 @@ mod tests {
         assert!(page.contains("EX LIBRIS"));
         assert!(page.contains("MARTINEZ-DIRKS"));
         assert_eq!(page.matches("TOMUS ").count(), 1);
+    }
+
+    #[test]
+    fn embed_scan_pair_preserves_order_and_single_page() {
+        let s = embed_scan_pair("first.png", "second.png");
+        assert_eq!(s.matches("first.png").count(), 1);
+        assert_eq!(s.matches("second.png").count(), 1);
+        assert!(s.find("first.png").unwrap() < s.find("second.png").unwrap());
+        assert_eq!(s.matches("\\clearpage").count(), 2);
+        assert!(s.contains("\\thispagestyle{empty}"));
+        assert!(!s.contains("\\freshpage"));
+        assert!(!s.contains("{center}"));
+    }
+
+    #[test]
+    fn embed_scan_pair_measures_and_shrinks_the_shared_box() {
+        let s = embed_scan_pair("first.png", "second.png");
+        for expected in [
+            "\\setbox0=\\vbox{%",
+            "\\offinterlineskip",
+            "\\hbox{\\includegraphics[width=\\textwidth]{first.png}}%",
+            "\\hbox{\\includegraphics[width=\\textwidth]{second.png}}%",
+            "\\vskip 2mm",
+            "\\dimen0=\\dimexpr\\textheight-\\baselineskip\\relax",
+            "\\ifdim\\dimexpr\\ht0+\\dp0\\relax>\\dimen0%",
+            "\\resizebox{!}{\\dimen0}{\\copy0}%",
+            "\\else%\n\\copy0%",
+            "\\noindent\\makebox[\\textwidth][c]{%",
+            "}\\par\n\\endgroup",
+        ] {
+            assert!(s.contains(expected), "missing {expected}: {s}");
+        }
     }
 
     #[test]
