@@ -2086,6 +2086,10 @@ mod tests {
     #[test]
     #[ignore = "requires source PDFs and production-DPI renders"]
     fn reported_watermark_pages_preserve_adjacent_lines() {
+        let range = operational_range("fabius_maximus");
+        let (unit_pages, metrics) =
+            unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+        let unit_strips = strips_in_reading_order(&unit_pages, &metrics);
         for (page, end, next, first) in [
             (
                 233,
@@ -2114,6 +2118,87 @@ mod tests {
                 render_and_band(0, next, &|s, p| Ok(real_source_image(s, p))).unwrap();
             assert!(following.contains(&first));
             assert!(col.height() > end);
+            let index = (page - range.unit.start_page) as usize;
+            let current = &unit_pages[index];
+            let following = &unit_pages[index + 1];
+            assert_eq!(current.1.last().unwrap().bottom, end);
+            assert!(following.1.contains(&first));
+            let copied = unit_strips
+                .iter()
+                .filter(|s| s.page_img_index == index)
+                .collect::<Vec<_>>();
+            assert_eq!(copied.last().unwrap().band.bottom, end);
+            assert!(copied.iter().all(|s| s.band.bottom <= end));
+            let old_end = if page == 233 { 2953 } else { 3013 };
+            assert_eq!(old_end - end, if page == 233 { 329 } else { 391 });
+            let gaps = current
+                .1
+                .windows(2)
+                .map(|w| w[1].top - w[0].bottom)
+                .filter(|&g| g > 0)
+                .collect::<Vec<_>>();
+            assert_eq!(median_u32(&gaps), if page == 233 { 14 } else { 18 });
+            let original_next = real_source_image(0, next);
+            let next_column = detect_latin_column(&original_next).unwrap();
+            for y in first.top..first.bottom {
+                for x in 0..following.0.width() {
+                    assert_eq!(
+                        following.0.get_pixel(x, y),
+                        original_next.get_pixel(x + next_column.left, y)
+                    );
+                }
+            }
+            let seam_pages = vec![
+                (
+                    current.0.clone(),
+                    current
+                        .1
+                        .iter()
+                        .rev()
+                        .take(2)
+                        .copied()
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .rev()
+                        .collect(),
+                ),
+                (
+                    following.0.clone(),
+                    following.1.iter().take(2).copied().collect(),
+                ),
+            ];
+            let geom = TrimGeom {
+                dpi: 300,
+                tb_w: current.0.width().max(following.0.width()),
+                tb_h: 2000,
+                pad_x: 0,
+                pad_y: 0,
+            };
+            let seam = assert_scaled_stream(&seam_pages, &metrics, 1.0, &geom, 2000, 2000);
+            let dir = std::path::Path::new("tmp/pdfs/facsimile_artifact_cleanup");
+            seam[0]
+                .save(dir.join(format!("watermark-{page}-{next}-after-seam.png")))
+                .unwrap();
+            let original = real_source_image(0, page);
+            let original_column = detect_latin_column(&original).unwrap();
+            let before_pages = vec![
+                (
+                    crop_column(&original, &original_column),
+                    vec![Band {
+                        top: end - 100,
+                        bottom: old_end,
+                    }],
+                ),
+                (following.0.clone(), vec![first]),
+            ];
+            let before = compose_pages(&before_pages, 1.0, &geom, 2000, 2000, &metrics);
+            before[0]
+                .save(dir.join(format!("watermark-{page}-{next}-before-seam.png")))
+                .unwrap();
+            println!(
+                "source {page}: endpoint {old_end} -> {end}, {} rows removed, zero footer padding",
+                old_end - end
+            );
         }
     }
     fn assert_header_units(page: u32, ids: &[&str], first: Band) {
@@ -2152,6 +2237,139 @@ mod tests {
                 bottom: 302,
             },
         );
+    }
+    fn masked_tail_fixture() -> (GrayImage, Vec<PageBands>, LineMetrics) {
+        let mut raw = column(
+            400,
+            200,
+            &[
+                (60, 80, 20, 170),
+                (100, 120, 20, 170),
+                (170, 190, 20, 170),
+                (220, 240, 20, 170),
+            ],
+        );
+        for y in 220..400 {
+            for x in 196..200 {
+                raw.put_pixel(x, y, Luma([0]));
+            }
+        }
+        for y in 390..400 {
+            for x in 0..200 {
+                raw.put_pixel(x, y, Luma([0]));
+            }
+        }
+        for y in 280..300 {
+            for x in 100..160 {
+                raw.put_pixel(x, y, Luma([220]));
+            }
+        }
+        let mut cleaned = raw.clone();
+        for mask in [
+            SourceFurnitureMask {
+                left: 0.98,
+                top: 0.0,
+                right: 1.0,
+                bottom: 1.0,
+                ..small_mask()
+            },
+            SourceFurnitureMask {
+                left: 0.0,
+                top: 0.975,
+                right: 1.0,
+                bottom: 1.0,
+                ..small_mask()
+            },
+            SourceFurnitureMask {
+                left: 0.5,
+                top: 0.7,
+                right: 0.8,
+                bottom: 0.75,
+                ..small_mask()
+            },
+        ] {
+            apply_source_furniture_mask(&mask, &mut cleaned);
+        }
+        let bands = line_bands(&cleaned, LINE_MIN_INK);
+        let kept = drop_furniture(&bands, cleaned.height());
+        let bands = retain_early_aligned_body_bands(&cleaned, &bands, &kept);
+        let pages = vec![(cleaned, bands)];
+        let m = line_metrics(&pages);
+        (raw, pages, m)
+    }
+    #[test]
+    fn masked_tail_cut_points_exclude_furniture_rows() {
+        let (raw, pages, m) = masked_tail_fixture();
+        assert_eq!(line_bands(&raw, LINE_MIN_INK).last().unwrap().bottom, 400);
+        assert_eq!(
+            pages[0].1,
+            vec![
+                Band {
+                    top: 60,
+                    bottom: 80
+                },
+                Band {
+                    top: 100,
+                    bottom: 120
+                },
+                Band {
+                    top: 170,
+                    bottom: 190
+                },
+                Band {
+                    top: 220,
+                    bottom: 240
+                }
+            ]
+        );
+        let strips = strips_in_reading_order(&pages, &m);
+        assert_eq!(strips.last().unwrap().band.bottom, 240);
+        assert_eq!(
+            strips
+                .iter()
+                .map(|s| s.band.bottom - s.band.top)
+                .sum::<u32>(),
+            180
+        );
+    }
+    #[test]
+    fn watermark_cleanup_removes_pixels_and_space() {
+        let (raw, pages, m) = masked_tail_fixture();
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 200,
+            tb_h: 500,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        let output = compose_pages(&pages, 1.0, &geom, 500, 500, &m);
+        assert_eq!(output.len(), 1);
+        assert_eq!(output[0].height(), 180);
+        assert_eq!(400 - 60 - output[0].height(), 160);
+        assert!(output[0].pixels().all(|p| p.0[0] != 220));
+        for y in 60..240 {
+            for x in 0..196 {
+                assert_eq!(output[0].get_pixel(x, y - 60), raw.get_pixel(x, y));
+            }
+        }
+    }
+    #[test]
+    fn watermark_cleanup_preserves_unrelated_paragraph_gap() {
+        let (raw, pages, m) = masked_tail_fixture();
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 200,
+            tb_h: 500,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        let output = compose_pages(&pages, 1.0, &geom, 500, 500, &m);
+        assert_eq!(pages[0].1[2].top - pages[0].1[1].bottom, 50);
+        for y in 120..170 {
+            for x in 0..196 {
+                assert_eq!(output[0].get_pixel(x, y - 60), raw.get_pixel(x, y));
+            }
+        }
     }
     fn operational_range(id: &str) -> UnitRange {
         let units =
