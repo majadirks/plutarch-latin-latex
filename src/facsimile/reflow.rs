@@ -1519,6 +1519,242 @@ mod tests {
         save_retained_crop("lysander", &pages[(551 - range.unit.start_page) as usize]);
     }
 
+    #[test]
+    #[ignore = "requires source PDFs, Poppler, and production-DPI renders"]
+    fn facsimile_artifact_source_trace() {
+        let dir = std::path::Path::new("tmp/pdfs/facsimile_artifact_cleanup");
+        std::fs::create_dir_all(dir).unwrap();
+        artifact_mask_measurements(dir);
+        let bands_json =
+            |bands: &[Band]| bands.iter().map(|b| [b.top, b.bottom]).collect::<Vec<_>>();
+        for id in [
+            "romulus",
+            "comparatio_thesei_et_romuli",
+            "fabius_maximus",
+            "comparatio_periclis_et_fabii",
+            "marcius_coriolanus",
+        ] {
+            let range = operational_range(id);
+            let before = std::cell::RefCell::new(Vec::new());
+            let (pages, metrics) = unit_body_strips(&range, |source, page| {
+                let image = real_source_image(source, page);
+                let edges = detect_latin_column(&image).unwrap();
+                assert!(edges.left < edges.right && edges.right <= image.width());
+                let col = crop_column(&image, &edges);
+                let raw = line_bands(&col, LINE_MIN_INK);
+                let (_, pass_a) = render_and_band(source, page, &|s, p| {
+                    assert_eq!((s, p), (source, page));
+                    Ok(image.clone())
+                })
+                .unwrap();
+                col.save(dir.join(format!("{id}-s{source}-p{page:04}-column.png")))
+                    .unwrap();
+                before.borrow_mut().push(serde_json::json!({
+                    "source": source, "page": page, "source_dimensions": image.dimensions(),
+                    "crop_edges": [edges.left, edges.right], "raw_bands": bands_json(&raw),
+                    "pass_a_bands": bands_json(&pass_a),
+                }));
+                Ok(image)
+            })
+            .unwrap();
+            assert_eq!(
+                pages.len(),
+                (range.end_page - range.unit.start_page + 1) as usize
+            );
+            let geom = TrimGeom::default();
+            let widths = pages.iter().map(|p| p.0.width()).collect::<Vec<_>>();
+            let scale = global_scale(&widths, geom.content_width());
+            let canvases = compose_pages(
+                &pages,
+                scale,
+                &geom,
+                geom.first_body_budget(),
+                geom.body_budget(),
+                &metrics,
+            );
+            let mut canvas_end = 0u64;
+            let canvas_ranges = canvases
+                .iter()
+                .enumerate()
+                .map(|(index, canvas)| {
+                    canvas
+                        .save(dir.join(format!("{id}-canvas-{index:03}.png")))
+                        .unwrap();
+                    let start = canvas_end;
+                    canvas_end += u64::from(canvas.height());
+                    (index, start, canvas_end)
+                })
+                .collect::<Vec<_>>();
+            let mut stream_row = 0u64;
+            let strips = strips_in_reading_order(&pages, &metrics).iter().map(|strip| {
+                let image = &pages[strip.page_img_index].0;
+                assert!(strip.band.top < strip.band.bottom && strip.band.bottom <= image.height());
+                let scaled = scale_strip(image, &strip.band, scale).unwrap();
+                let start = stream_row;
+                stream_row += u64::from(scaled.height());
+                serde_json::json!({
+                    "source": range.unit.source,
+                    "page": range.unit.start_page + strip.page_img_index as u32,
+                    "interval": [strip.band.top, strip.band.bottom],
+                    "scaled_stream_rows": [start, stream_row],
+                    "canvas_indices": canvas_ranges.iter().filter(|(_, lo, hi)| *lo < stream_row && *hi > start).map(|(i, _, _)| *i).collect::<Vec<_>>(),
+                })
+            }).collect::<Vec<_>>();
+            assert_eq!(
+                stream_row, canvas_end,
+                "composition preserves the traced row stream"
+            );
+            let mut records = before.into_inner();
+            for (record, (_, bands)) in records.iter_mut().zip(&pages) {
+                record["pass_b_bands"] = serde_json::json!(bands_json(bands));
+            }
+            let path = dir.join(format!("{id}.json"));
+            std::fs::write(
+                &path,
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "dpi": BODY_DPI, "scale": scale,
+                    "scale_scope": "diagnostic unit column widths",
+                    "pages": records, "strips": strips,
+                }))
+                .unwrap(),
+            )
+            .unwrap();
+            println!("artifact trace: {}", path.display());
+        }
+    }
+
+    fn artifact_mask_measurements(dir: &std::path::Path) {
+        let mut evidence = Vec::new();
+        for (page, rectangles) in [
+            (
+                233,
+                vec![
+                    [1180, 2870, 1605, 2980],
+                    [0, 2980, 1954, 3005],
+                    [1920, 0, 1954, 3005],
+                ],
+            ),
+            (
+                235,
+                vec![
+                    [1180, 2880, 1605, 2985],
+                    [0, 2985, 1969, 3013],
+                    [1920, 0, 1969, 3013],
+                ],
+            ),
+            (240, vec![[550, 210, 1260, 270], [1630, 210, 1730, 275]]),
+            (
+                284,
+                vec![
+                    [680, 190, 1150, 245],
+                    [1630, 190, 1730, 245],
+                    [1970, 0, 2002, 2988],
+                ],
+            ),
+            (56, vec![[946, 2445, 1000, 2630]]),
+        ] {
+            let original = real_source_image(0, page);
+            let column = detect_latin_column(&original).unwrap();
+            let raw_col = crop_column(&original, &column);
+            let raw = line_bands(&raw_col, LINE_MIN_INK);
+            let mut cleaned = original.clone();
+            for &[left, top, right, bottom] in &rectangles {
+                assert!(left < right && right <= original.width());
+                assert!(top < bottom && bottom <= original.height());
+                for y in top..bottom {
+                    for x in left..right {
+                        cleaned.put_pixel(x, y, Luma([255]));
+                    }
+                }
+                image::imageops::crop_imm(&original, left, top, right - left, bottom - top)
+                    .to_image()
+                    .save(dir.join(format!("s0-p{page:04}-rect-{left}-{top}.png")))
+                    .unwrap();
+            }
+            // Fixed crop edges isolate the effect of the candidate masks on banding.
+            let cleaned_col = crop_column(&cleaned, &column);
+            let rebanded = line_bands(&cleaned_col, LINE_MIN_INK);
+            let kept = drop_furniture(&rebanded, cleaned_col.height());
+            let kept = retain_early_aligned_body_bands(&cleaned_col, &rebanded, &kept);
+            let metrics = line_metrics(&[(cleaned_col.clone(), kept.clone())]);
+            let kept = drop_interior_running_head(&cleaned_col, &kept, &metrics);
+            let bands_json =
+                |bands: &[Band]| bands.iter().map(|b| [b.top, b.bottom]).collect::<Vec<_>>();
+            let gaps = rebanded
+                .windows(2)
+                .filter_map(|w| {
+                    let gap = w[1].top.saturating_sub(w[0].bottom);
+                    (gap > 0).then_some(gap)
+                })
+                .collect::<Vec<_>>();
+            cleaned_col
+                .save(dir.join(format!("s0-p{page:04}-candidate-masked-column.png")))
+                .unwrap();
+            evidence.push(serde_json::json!({
+                "source": 0, "page": page, "dimensions": original.dimensions(),
+                "crop_edges": [column.left, column.right], "candidate_rectangles": rectangles,
+                "raw_bands": bands_json(&raw), "masked_raw_bands": bands_json(&rebanded),
+                "masked_positive_gap_median": median_u32(&gaps),
+                "masked_cut_points": cut_points(&rebanded),
+                "masked_retained_bands": bands_json(&kept),
+                "masked_retained_cut_points": cut_points(&kept),
+            }));
+        }
+        std::fs::write(
+            dir.join("candidate-mask-measurements.json"),
+            serde_json::to_string_pretty(&evidence).unwrap(),
+        )
+        .unwrap();
+        let mut components = Vec::new();
+        for page in [51, 56, 59] {
+            let image = real_source_image(0, page);
+            let column = detect_latin_column(&image).unwrap();
+            let width = 48u32.min(column.right - column.left);
+            let height = image.height();
+            let mut visited = vec![false; (width * height) as usize];
+            for y in 0..height {
+                for x in 0..width {
+                    let index = (y * width + x) as usize;
+                    if visited[index] || image.get_pixel(column.left + x, y).0[0] > INK_THRESHOLD {
+                        continue;
+                    }
+                    visited[index] = true;
+                    let mut pending = vec![(x, y)];
+                    let (mut left, mut right, mut top, mut bottom) = (x, x + 1, y, y + 1);
+                    while let Some((cx, cy)) = pending.pop() {
+                        left = left.min(cx);
+                        right = right.max(cx + 1);
+                        top = top.min(cy);
+                        bottom = bottom.max(cy + 1);
+                        for ny in cy.saturating_sub(1)..=(cy + 1).min(height - 1) {
+                            for nx in cx.saturating_sub(1)..=(cx + 1).min(width - 1) {
+                                let index = (ny * width + nx) as usize;
+                                if !visited[index]
+                                    && image.get_pixel(column.left + nx, ny).0[0] <= INK_THRESHOLD
+                                {
+                                    visited[index] = true;
+                                    pending.push((nx, ny));
+                                }
+                            }
+                        }
+                    }
+                    if bottom - top >= 150.max(height / 20) {
+                        components.push(serde_json::json!({
+                            "source": 0, "page": page, "crop_edges": [column.left, column.right],
+                            "component_rectangle": [column.left + left, top, column.left + right, bottom],
+                            "touches_search_right_edge": right == width,
+                        }));
+                    }
+                }
+            }
+        }
+        std::fs::write(
+            dir.join("divider-components.json"),
+            serde_json::to_string_pretty(&components).unwrap(),
+        )
+        .unwrap();
+    }
+
     fn operational_range(id: &str) -> UnitRange {
         let units =
             crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))
