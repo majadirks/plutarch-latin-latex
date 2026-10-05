@@ -107,7 +107,17 @@ masking and image extraction. LaTeX `\clearpage` advances to the next page witho
 parity padding; `\freshpage` and `\unitrecto` can add a blank. Image-page height
 must represent actual ink and line spacing, not a full blank source-page canvas.
 
-## Phase 1 — Define regions and migrate the finalized cache (Suggested implementer: Opus)
+## Phase 1 — Define regions and prepare the cache migration (Suggested implementer: Opus)
+
+Phases 1–3 prepare and test helpers without changing the active cache, API scope,
+validator, or document assignment. Step 4.1 activates those changes together with
+the finalized-cache migration and existing-test updates. Every preparatory step
+must leave the current complete Praefatio output and full test suite passing.
+Behavior-preserving extraction of shared body-image primitives in step 3.2 may
+run in production immediately; its pixel-equality tests must prove no output change.
+Keep unused preparatory definitions under temporary `#[cfg(test)]` gates until
+step 4.1 connects them to production; do not suppress dead-code warnings or copy
+helpers into a second implementation. Remove those gates when activating callers.
 
 ### 1.1 Pin down one shared source-region specification
 
@@ -138,70 +148,109 @@ and `cargo test --target-dir target praefatio_regions`.
 box with the PDF: the last prose period, first corrigendum, final editorial line,
 and every accent must be included in the appropriate region; furniture excluded.
 
-### 1.2 Make the prose boundary a deliberate cache edit
+### 1.2 Prepare the deliberate prose-boundary cache edit
 
-Edit only source 1 page 15's finalized `result.blocks[0].text` in
-`plutarch.frontmatter.tags.json`: preserve its exact prefix through the unique
-sentinel and remove the following corrigenda suffix. Keep `continues_previous`
-true. Do not change the prefix's spelling, ligatures, spacing or punctuation.
-Retain page 16's historical record and every candidate pass, image hash and
-verification record. They cease to be emitted, rather than being deleted.
-Record the exact cache edit and its source-image justification in this plan.
-Do not silently trim strings inside a LaTeX renderer.
+Calculate and review the exact proposed edit to source 1 page 15's finalized
+`result.blocks[0].text`, but leave `plutarch.frontmatter.tags.json` unchanged in
+this step. In a test-only cloned sidecar, preserve the exact prefix through the
+unique sentinel and remove the following corrigenda suffix. Keep
+`continues_previous` true. Do not change spelling, ligatures, spacing or
+punctuation. Retain page 16's record and every candidate pass, image hash and
+verification record. Step 4.1 applies this edit to the committed cache together
+with the replacement image renderer, so no intermediate build loses corrigenda.
+Record the proposed boundary and its source-image justification in this plan.
+Do not introduce a runtime trimming helper or silently trim strings in LaTeX.
 
-Update committed-cache tests in `frontmatter.rs`: add
-`praefatio_cache_opening_ends_at_ages`, and preserve heading/continuation checks
-for p14, p15 and p17. Historical page-16 tests may continue to verify that its
-retained record ends at the source period, but must not imply it remains prose.
+Add `praefatio_cache_migration_preserves_prefix_and_candidates` in
+`frontmatter.rs`, exercising the test-only edited clone. Preserve current
+committed-cache tests and output expectations until step 4.1. That step adds
+`praefatio_cache_opening_ends_at_ages` against the migrated committed cache and
+preserves heading/continuation checks for p14, p15 and p17. Historical p16 tests
+may continue to verify its retained ending without implying it remains prose.
 
 **LLM verification:** Parse the JSON, assert the new finalized text equals the
-old prefix byte-for-byte and candidate passes remain equal. Run `cargo fmt --all`,
+old prefix byte-for-byte and candidate passes remain equal in the clone; assert
+the committed cache has no diff. Run `cargo fmt --all`,
 `cargo fmt --all --check`, `cargo clippy --target-dir target --all-targets -- -D warnings`,
-and `cargo test --target-dir target praefatio_cache`; inspect the cache diff.
+`cargo test --target-dir target praefatio_cache`, and
+`cargo test --target-dir target`; inspect the proposed prefix and unchanged cache.
 
 **Human verification:** Read the preserved p15 prose against the source through
 `Ages.` and confirm the removal changes representation, not editorial content.
 
-## Phase 2 — Scope transcription and validation (Suggested implementer: Sonnet)
+## Phase 2 — Prepare transcription and validation policies (Suggested implementer: Sonnet)
 
-### 2.1 Exclude image-only pages and mask mixed p15 for both API stages
+### 2.1 Prepare image exclusions, mixed-page masking and legacy-cache protection
 
 Add `is_front_image_page(source,page)` in `frontmatter.rs`, combining the Monitum
-and Praefatio image-only lists. Use it in both `work_remains` and the transcription
-scope filter so classification as `FrontProse` cannot admit p16 to transcription
-or reconciliation. Keep p15 in scope. Add
+and Praefatio image-only lists. Test this predicate now; connect it to
+`work_remains` and the transcription scope filter in step 4.1 so classification
+as `FrontProse` cannot admit p16 to either API stage. Keep p15 in scope. Add
 `prepare_front_prose_image(source,page,bytes) -> Result<Vec<u8>>`: return other
 pages unchanged; decode p15, white out all pixels below the transition line and
 the transition-line portion at/after `errata_start_x`, then encode PNG. Use the
 shared region specification. Preserve the prose portion of that row, including
-`Ages.`. Mask furniture consistently with the existing front-prose prompt.
+`Ages.`. White out pixels outside the shared p15 editorial-body rectangle as
+well, excluding the running head, folio and watermark. Keep original dimensions;
+the complementary first-row masks must neither erase nor duplicate glyph ink.
 
-Wrap the injected `render_full` inside `transcribe_front_matter` once, and pass
-that prepared renderer to both `transcribe_all` and `reconcile_all_in_scope`.
+In step 4.1, wrap the injected `render_full` inside `transcribe_front_matter`
+once, and pass that prepared renderer to both `transcribe_all` and
+`reconcile_all_in_scope`.
 This keeps hashing and arbitration tied to the identical masked image and makes
 mock-renderer tests exercise the actual policy. Do not create another API path or
 add a Praefatio-specific model prompt. A finalized cache result must not trigger
 retranscription merely because input masking has changed. Explicit retagging
 uses masked images and records their new hashes through existing machinery.
 
-Restrict `validate_praefatio_results` to opening and closing prose pages. Add a
+Prepare `validate_praefatio_prose_results`, checking opening and closing pages;
+step 4.1 makes the existing `validate_praefatio_results` delegate to it. Add a
 boundary validator requiring a unique sentinel at the end of p15's finalized
 prose whenever that result is present. Reject an un-migrated full mixed paragraph
 with actionable source/page/block context; never warn and emit its suffix.
 Preserve incomplete-cache behavior for absent records, but if a Praefatio is to be
 emitted, require all three finalized prose pages in Phase 4 rather than silently
-producing an image-only or incomplete section.
+producing an image-only or incomplete section. Existing p16 rejection tests
+retain their present expectations until the integration step.
+
+Add `validate_praefatio_candidate_state(sidecar) -> Result<()>`. For source 1
+p15 with no finalized `result`, reject any retained `pass_a` or `pass_b` whose
+block stream does not contain exactly one sentinel ending the final nonempty
+prose block with no subsequent nonempty blocks. Do not trim, promote, remove or
+rewrite those candidates. If a finalized result exists, this guard leaves its
+historical candidates alone; the finalized-prose validator checks the result.
+Missing candidates are permitted for fresh masked-image transcription.
+Extract `validate_praefatio_prose_boundary(doc)` for the sentinel rule and reuse
+it in both candidate-state and finalized-prose validation.
+
+In step 4.1, invoke the candidate guard in `run_front_matter` after `load_or_init`
+and before the lazy vision factory, and in `transcribe_front_matter` before
+classification or either API stage, including direct/test callers. A legacy
+candidate must never be fed to masked-image arbitration or copied into a new
+result by free reconciliation. Return source/page context and two explicit
+recovery options: restore a reviewed finalized prose prefix in the cache, or
+deliberately regenerate using `--retag`. Explain that the existing `--retag`
+resets the entire front-matter sidecar and discards its corrections and candidate
+evidence; advise preserving a copy first. Do not invoke retagging automatically.
+This guard defines recoverable behavior without another ingestion path or schema.
 
 **LLM verification:** Add `work_remains_ignores_praefatio_image_page`,
 `transcribe_and_reconcile_exclude_praefatio_image_page`,
 `praefatio_mask_preserves_prose_and_removes_errata`,
-`praefatio_validation_rejects_unmigrated_mixed_result`, and
-`praefatio_validation_ignores_image_only_result`. Use synthetic PNGs and mock API
-backends; prove both stages receive the same prepared image. Preserve existing
+`praefatio_validation_rejects_unmigrated_mixed_result`,
+`praefatio_validation_ignores_image_only_result`,
+`praefatio_missing_result_rejects_legacy_candidates_before_api`, and
+`praefatio_valid_result_preserves_candidates_when_other_page_needs_work`.
+In this preparatory step, exercise new pure policy helpers and a test-only
+prepared-renderer closure without changing production callers. Step 4.1 wires
+mock-backend integration tests proving both stages receive the same prepared
+image, legacy candidates fail before any API call or sidecar mutation, and a
+valid finalized prefix and its candidates remain byte-for-byte unchanged while
+another page is processed. Preserve existing
 Monitum exclusion and lazy-client tests. Run `cargo fmt --all`,
 `cargo fmt --all --check`, `cargo clippy --target-dir target --all-targets -- -D warnings`,
-`cargo test --target-dir target praefatio`, and
-`cargo test --target-dir target work_remains`.
+`cargo test --target-dir target praefatio`,
+`cargo test --target-dir target work_remains`, and `cargo test --target-dir target`.
 
 **Human verification:** Inspect the actual prepared p15 image: its final Latin
 word remains complete, no corrigendum is visible, and its transcription prompt
@@ -212,31 +261,67 @@ still preserves original orthography. Review a rejection message.
 ### 3.1 Build a bounded editorial-line extractor
 
 Add `src/facsimile/praefatio.rs` and declare it in `src/facsimile/mod.rs`.
-Implement `extract_errata_lines(page, image, regions) -> Result<Vec<GrayImage>>`.
+Define `ErrataLine { image: GrayImage, source_page: u32, line_index: usize,
+source_rect: (u32,u32,u32,u32) }`; source index is always 1, `line_index` is
+one-based within each source page, and `source_rect` records the full-page
+`(x,y,width,height)` crop before the first-line horizontal relocation. For that
+first strip the rectangle starts at `errata_start_x` and excludes the prose
+portion. The image
+contains surrounding half-gaps defined below. Implement
+`extract_errata_lines(page, image, regions) -> Result<Vec<ErrataLine>>`.
 Use the explicit full editorial-column bounds, not `detect_latin_column`.
 Reuse `lines::line_bands`, `lines::cut_points`, `columns::INK_THRESHOLD`, and
 `metrics::line_metrics` for projection/cut calculations. Restrict p15 to the
 transition line and rows below it; retain only the right-hand corrigenda portion
 of the first line. Place that portion at the left of a white canvas of the same
 column width as subsequent lines. Subsequent lines preserve source indentation.
-Page 16 contributes every body line. Concatenate p15 then p16, with no artificial
-source-page separator or extra gap.
+Page 16 contributes every body line. Mask the first row's prose portion before
+band detection or ink-coverage checks, using the shared transition-line bounds.
+Concatenate p15 then p16 with the normal line gap specified below and no added
+source-page separator.
 
 Do not apply `drop_furniture`, body-title heuristics, narrow-line deletion, or
 minimum-ink rejection to these already bounded regions. Projection fragments
 from isolated accents must be grouped with their printed baseline before using
-mid-gap cuts. Tune grouping on actual rendered pages and expose its threshold in
-one definition. Fail with source/page context on empty extraction or ambiguous
-merged baselines; do not silently omit a line. Keep a debug preview showing
-numbered line boxes so the implementer and human can audit completeness.
+mid-gap cuts. Compute raw bands with `line_bands(region, 0)` so every row with
+dark ink is represented. Add one tuned normalized `ACCENT_JOIN_GAP_FRAC`
+constant, converted to pixels using full source-page height. Merge successive
+raw bands whose separating blank gap is at most that threshold, transitively.
+Choose the threshold by inspecting p15 and p16 at 300 DPI and record it alongside
+the region coordinates. It must join isolated accents while keeping neighboring
+printed baselines separate; do not use `line_metrics` before grouping to infer it.
+
+If no such threshold works, or the preview has a merged baseline, missing line,
+or uncertain grouping, use reviewed normalized per-line vertical ink intervals
+for the affected page, stored alongside the shared region definitions. Convert
+them with the same rounding rule; require disjoint, ordered intervals, exactly
+one visually verified printed line per interval, and coverage of all dark pixels
+in the selected region. Record the reviewed line inventory and whether each page
+uses automatic grouping or explicit intervals. Empty extraction, overlap, or
+uncovered ink is an error with source/page/line context, never silent deletion.
+
+Use `cut_points` on the grouped ink intervals. Each strip carries the whitespace
+up to the adjacent mid-gap cuts; do not add an independent gap between those
+strips. To make the p15→p16 join match ordinary spacing, compute
+`join_gap_px` as `metrics::median_u32` over the blank gaps between grouped lines
+within the two pages. Add `floor(join_gap_px/2)` white rows after p15's final
+strip and the remaining rows before p16's first strip. Do not include a source
+footer or header in that gap. This padding becomes part of the two `image`s;
+`source_rect` remains the original crop. No gap is added again by the packer.
+Keep a debug preview and inventory showing source page, line index, crop rectangle
+and grouping mode for every strip.
 
 **LLM verification:** Add `praefatio_first_errata_line_excludes_ages`,
 `praefatio_line_extraction_preserves_accents_and_short_lines`, and
 `praefatio_errata_preserves_source_page_order`. Synthetic tests must account for
-all dark pixels inside selected regions, with none from the prose half-row or
-furniture. Run `cargo fmt --all`, `cargo fmt --all --check`,
-`cargo clippy --target-dir target --all-targets -- -D warnings`, and
-`cargo test --target-dir target praefatio`.
+all dark pixels inside selected regions exactly once before resampling, with
+none from the prose half-row or furniture. Add
+`praefatio_reviewed_intervals_reject_overlap_and_uncovered_ink` and
+`praefatio_page_join_adds_one_normal_gap`. Check line identity separately from
+ink conservation: preserving pixels alone does not prove correct grouping.
+Run `cargo fmt --all`, `cargo fmt --all --check`,
+`cargo clippy --target-dir target --all-targets -- -D warnings`,
+`cargo test --target-dir target praefatio`, and `cargo test --target-dir target`.
 
 **Human verification:** Compare numbered crops row by row against both source
 pages, including the page join and last line. Confirm accents and descenders are
@@ -245,22 +330,47 @@ attached to their lines and no content is duplicated or missing.
 ### 3.2 Pack balanced image pages with one scale and actual content heights
 
 Implement `compose_errata_pages(lines, geom) -> Result<Vec<GrayImage>>` in the
-new module. Reuse `TrimGeom::new(BODY_DPI)` and its body height budget. Use one
-global scale bounded by `geom.content_width() / maximum_source_column_width`;
+new module, accepting `&[ErrataLine]`. Reuse `TrimGeom::new(BODY_DPI)` and set
+`budget = geom.body_budget()`, including its existing bottom slack. Fix one
+global scale to `geom.content_width() as f32 / maximum_source_column_width as f32`;
 the p95 body scale alone can overflow an unusually wide line. Preserve aspect
-ratios and a consistent source-derived interline gap. Do not scale individual
-short lines to full width. Do not use body-header allowance.
+ratios and the half-gaps already present in each strip. Add no other line spacing.
+Do not scale individual short lines to full width. Do not use body-header allowance.
 
-Extract reusable image scaling/placement primitives from `reflow.rs` if needed,
-with body behavior unchanged. Do not call `compose_pages` unchanged: its filtering
-and tall-strip cuts can lose editorial material. Share low-level mechanics;
+Extract `pub(crate) fn resize_line_image(raw: &GrayImage, scale: f32) -> GrayImage`
+from `reflow.rs::scale_strip`, preserving its rounded dimensions (minimum one
+pixel) and `FilterType::Lanczos3`. Make `scale_strip` crop then call that helper.
+Extract `pub(crate) fn place_line_images(strips: &[GrayImage], geom: &TrimGeom)
+-> GrayImage` from `pack_canvas`, preserving its width, actual height, white
+background, offsets and placement order; make `pack_canvas` delegate to it.
+The editorial compositor must use both helpers, not copy their resize or overlay
+loops. Body output must remain pixel-identical in representative fixtures.
+Do not call `compose_pages` unchanged: its filtering and tall-strip cuts can
+lose editorial material. Share low-level mechanics;
 keep the bounded editorial preservation policy explicit.
 
-Find the minimum page count that fits whole scaled lines into the safe height
-budget. Partition the ordered lines into that many contiguous groups, choosing
-breaks to minimize differences in occupied page heights subject to the budget.
-Use deterministic tie breaking (earlier break). Never split a baseline to fill
-space or stretch vertical gaps to fill a page. If a line cannot fit an empty page,
+Resize once at the fixed scale, then calculate all loads from the final rounded
+image heights, including carried half-gaps and join padding. For a group define
+`load = geom.pad_y + sum(strip.height())`, matching `place_line_images` exactly;
+require `load <= budget` and every rounded width within the usable measure.
+Greedily fill ordered whole strips to find the minimum page count. For that
+fixed count, choose contiguous nonempty groups minimizing
+`max(group_loads) - min(group_loads)` over all feasible partitions. On ties choose
+the lexicographically smallest vector of exclusive end indices, excluding the
+fixed final end. Implement `balanced_errata_breaks(heights, pad_y, budget)`:
+build prefix sums and the sorted unique feasible loads of every nonempty
+contiguous group. Enumerate candidate `[low,high]` load bounds from that set in
+increasing `high-low` order. For each range use a dynamic-programming table
+`can_finish(start, groups_remaining)` whose transitions try every exclusive end
+index with a group load in range and enough lines left for the remaining groups.
+Base case: zero groups succeeds exactly at the end of the line list. Reconstruct
+the lexicographically earliest feasible break vector by trying end indices in
+ascending order. Evaluate every range at the first feasible difference and choose
+the smallest resulting vector; then stop. This bounded search is appropriate
+for this short extract, avoids enumerating all partitions, and defines the exact
+objective. Compare its result with exhaustive partition enumeration on small
+fixtures. Never split a baseline to fill space or stretch vertical gaps to fill
+a page. If a line cannot fit an empty page,
 return an error with its source identity instead of clipping. Each output canvas
 has the text-block width and its group's actual occupied height. This balances a
 short tail without changing type size or order. Save assets as
@@ -270,12 +380,16 @@ short tail without changing type size or order. Save assets as
 **LLM verification:** Add `praefatio_errata_uses_one_scale`,
 `praefatio_errata_balances_pages_without_splitting_lines`,
 `praefatio_errata_packs_across_source_page_boundary`,
-`praefatio_errata_has_no_empty_canvas`, and
-`praefatio_errata_rejects_oversized_line`. Verify pixel bounds, stable ordering,
-line-count conservation, and deterministic breaks. Run `cargo fmt --all`,
+`praefatio_errata_has_no_empty_canvas`,
+`praefatio_errata_rejects_oversized_line`,
+`praefatio_errata_partition_matches_exhaustive_optimum`,
+`praefatio_errata_budget_uses_rounded_strip_heights`, and
+`shared_line_primitives_preserve_body_pixels`. Verify pixel bounds, stable ordering,
+line-count conservation, deterministic breaks and retained source identities for
+oversized-line errors. Run `cargo fmt --all`,
 `cargo fmt --all --check`, `cargo clippy --target-dir target --all-targets -- -D warnings`,
-`cargo test --target-dir target praefatio`, and
-`cargo test --target-dir target facsimile::reflow`.
+`cargo test --target-dir target praefatio`,
+`cargo test --target-dir target facsimile::reflow`, and `cargo test --target-dir target`.
 
 **Human verification:** Read every composed image at intended print size, compare
 Greek readability with Monitum, and confirm no page has a tiny tail caused by the
@@ -284,6 +398,13 @@ source-page boundary. Record actual scale, line count, heights and page count.
 ## Phase 4 — Compose the hybrid section and preserve book structure (Suggested implementer: Opus)
 
 ### 4.1 Integrate ordered assets and one section frame
+
+Activate the prepared helpers and policies from steps 1.1–3.2, removing temporary
+test-only gates. In this same step apply the reviewed finalized p15 cache edit
+from step 1.2, connect the image exclusions, masked renderer and pre-API candidate
+guard from step 2.1, switch finalized validation to opening/closing pages, and
+enable the complete hybrid document renderer. Do not leave a completed step or
+commit with the shortened active cache and the old all-prose renderer.
 
 Add `praefatio_errata_images: Vec<String>` to `FacsimileVolume`; initialize it
 empty in every constructor and test fixture. In `fill_front_matter`, render these
@@ -320,7 +441,17 @@ it need not have another Praefatio-specific rendering branch. Correct the field
 documentation to say that `prose` can contain the composed hybrid section.
 
 Update obsolete page-16-as-prose tests in `mod.rs`, `frontmatter.rs` and
-`latex.rs`. Review `src/volumes.rs`'s Praefatio overhead estimate against actual
+`latex.rs` here, alongside activation. Specifically change
+`assign_front_prose_composes_finalized_praefatio` to expect the Latin prefix,
+ordered image names and closing prose, rather than `consentiente ipso Plutarcho`.
+Move the injected protocol marker in
+`assign_front_prose_rejects_poisoned_praefatio_without_mutating_volumes` from
+p16 to emitted p17; retain a separate test proving historical p16 contamination
+is ignored. Supply image names in eligible fixtures and add the committed-cache
+`praefatio_cache_opening_ends_at_ages` assertion. Run the Phase 2 integration tests
+against actual production callers. Confirm the only cache change is the reviewed
+p15 finalized suffix removal, with all candidates and p16 evidence intact.
+Review `src/volumes.rs`'s Praefatio overhead estimate against actual
 new pagination; adjust its estimate/comment only if warranted. Update README's
 front-matter strategy and offline requirements in place. Keep previous artifacts.
 
@@ -335,8 +466,8 @@ absent, the closing prose follows the last image, and one heading/head reset is
 emitted. Run `cargo fmt --all`, `cargo fmt --all --check`,
 `cargo clippy --target-dir target --all-targets -- -D warnings`,
 `cargo test --target-dir target praefatio`,
-`cargo test --target-dir target assign_front_prose`, and
-`cargo test --target-dir target monitum`.
+`cargo test --target-dir target assign_front_prose`,
+`cargo test --target-dir target monitum`, and `cargo test --target-dir target`.
 
 **Human verification:** Read the generated section source, identifying its three
 parts and consecutive breaks. Confirm no page furniture or image-era Greek is
@@ -352,8 +483,12 @@ Add an ignored integration test
 Use synthetic opening/closing prose and several unequal-height image pages to
 verify physical adjacency, no blank inside the hybrid section, intact image
 dimensions, first-Life recto alignment, and folio 2 on the second body page.
-Do not hard-code the real Praefatio's physical starting page. Run this test when
-the local tools are available; a string-only assertion cannot prove pagination.
+Do not hard-code the real Praefatio's physical starting page. Add a second ignored
+compiled test, `praefatio_hybrid_compile_fits_maximum_image_budget`, with an errata
+canvas whose height equals `TrimGeom::body_budget()` and width equals `tb_w`.
+Verify that it stays on one content page, retains bottom ink inside the printable
+margin, and introduces no extra page from TeX line-box height. Run both tests when
+the local tools are available; string-only assertions cannot prove pagination.
 
 Run all local gates:
 
@@ -364,6 +499,7 @@ cargo clippy --target-dir target --all-targets -- -D warnings
 cargo test --target-dir target
 cargo build --target-dir target
 cargo test --target-dir target praefatio_hybrid_compile_has_consecutive_content_pages -- --ignored --nocapture
+cargo test --target-dir target praefatio_hybrid_compile_fits_maximum_image_budget -- --ignored --nocapture
 ```
 
 Use a separate output directory, preserving existing generated readers:
@@ -402,6 +538,10 @@ Confirm body numbering and imposition remain suitable for printing.
 
 Not implemented. Planning inspection found the shared-line boundary on p15,
 confirmed the single mixed finalized p15 block, and identified existing line,
-geometry, continuation, validation and recto-start helpers to reuse. Fill this
+geometry, continuation, validation and recto-start helpers to reuse. The reviewed
+contract keeps cache migration and active policy changes together in step 4.1,
+rejects legacy candidates before API work, retains line provenance, defines
+accent grouping and half-gap spacing, specifies deterministic balanced packing,
+and requires shared image primitives and maximum-height compiled coverage. Fill this
 section during implementation with the tuned region coordinates, exact cache
 edit, verification commands/results, line inventory and rendered output paths.
