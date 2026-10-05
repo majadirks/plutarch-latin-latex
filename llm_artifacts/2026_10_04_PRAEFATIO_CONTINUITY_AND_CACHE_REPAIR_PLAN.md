@@ -105,3 +105,5 @@ Read the entire rebuilt praefatio alongside source pages 14–17, focusing on th
 # Implementation record
 
 2026-10-04, step 1.1: visually verified source pages 14–17. Removed finalized running-head blocks from pages 15 and 17, marked the page-15 and page-16 paragraph continuations, and removed the non-source suffix after the terminal period on page 16. Original candidate passes remain intact. Cache edits preserve UTF-8 and all preceding text. Review corrections specify the changed head-reset assertion, empty-document gaps, and a pure prose-assignment test seam. Rust checks use --target-dir target because the configured external target directory is inaccessible in the sandbox.
+
+2026-10-04, step 2.1: listed prose now shares append_blocks continuation assembly and renders one section. Missing records, missing results, and empty documents break continuation. Updated both affected existing tests and added five section/continuity tests. Formatting, clippy, front-prose tests, and the body continuation regression passed using the workspace target directory.
