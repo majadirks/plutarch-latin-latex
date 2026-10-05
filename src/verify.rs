@@ -372,11 +372,38 @@ pub fn reconcile_all(
     render_full: impl Fn(usize, u32) -> Result<Vec<u8>>,
     ocr: impl Fn(usize, u32) -> Result<Option<String>>,
 ) -> Result<()> {
+    reconcile_all_in_scope(
+        backend,
+        sidecar,
+        tracker,
+        sidecar_path,
+        divergence_signal,
+        render_body,
+        render_full,
+        ocr,
+        |_, _| true,
+    )
+}
+
+/// Reconcile unfinished transcriptions within the caller's page scope.
+#[allow(clippy::too_many_arguments)]
+pub fn reconcile_all_in_scope(
+    backend: &dyn BatchBackend,
+    sidecar: &mut Sidecar,
+    tracker: &UsageTracker,
+    sidecar_path: &Path,
+    divergence_signal: bool,
+    render_body: impl Fn(usize, u32) -> Result<Vec<u8>>,
+    render_full: impl Fn(usize, u32) -> Result<Vec<u8>>,
+    ocr: impl Fn(usize, u32) -> Result<Option<String>>,
+    in_scope: impl Fn(usize, u32) -> bool,
+) -> Result<()> {
     let targets: Vec<(usize, u32)> = sidecar
         .pages
         .iter()
         .filter(|p| {
             matches!(p.role, PageRole::Body | PageRole::FrontProse)
+                && in_scope(p.source, p.source_page)
                 && p.pass_a.is_some()
                 && p.result.is_none()
         })

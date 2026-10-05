@@ -6,7 +6,9 @@
     "kind": "life",
     "group": 1,
     "source": 0,
-    "start_page": 14
+    "start_page": 14,
+    "title_top_frac": 0.2336182,
+    "body_top_frac": 0.25611064
   },
   {
     "id": "romulus",
@@ -15,7 +17,9 @@
     "kind": "life",
     "group": 1,
     "source": 0,
-    "start_page": 33
+    "start_page": 33,
+    "title_top_frac": 0.39054102,
+    "body_top_frac": 0.4197704
   },
   {
     "id": "comparatio_thesei_et_romuli",
@@ -24,7 +28,9 @@
     "kind": "comparatio",
     "group": 1,
     "source": 0,
-    "start_page": 56
+    "start_page": 56,
+    "title_top_frac": 0.76541734,
+    "body_top_frac": 0.8271848
   },
   {
     "id": "lycurgus",
@@ -33,7 +39,9 @@
     "kind": "life",
     "group": 2,
     "source": 0,
-    "start_page": 60
+    "start_page": 60,
+    "title_top_frac": 0.10648588,
+    "body_top_frac": 0.13824812
   },
   {
     "id": "numa",
@@ -42,7 +50,11 @@
     "kind": "life",
     "group": 2,
     "source": 0,
-    "start_page": 84
+    "start_page": 84,
+    "title_top_frac": 0.09479839,
+    "body_top_frac": 0.13464767,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v1 page 84; first body line below its complete title block."
   },
   {
     "id": "comparatio_lycurgi_et_numae",
@@ -51,7 +63,9 @@
     "kind": "comparatio",
     "group": 2,
     "source": 0,
-    "start_page": 102
+    "start_page": 102,
+    "title_top_frac": 0.7616045,
+    "body_top_frac": 0.80743355
   },
   {
     "id": "solon",
@@ -60,7 +74,9 @@
     "kind": "life",
     "group": 3,
     "source": 0,
-    "start_page": 107
+    "start_page": 107,
+    "title_top_frac": 0.10076723,
+    "body_top_frac": 0.12664881
   },
   {
     "id": "poplicola",
@@ -69,7 +85,9 @@
     "kind": "life",
     "group": 3,
     "source": 0,
-    "start_page": 129
+    "start_page": 129,
+    "title_top_frac": 0.110961795,
+    "body_top_frac": 0.13251565
   },
   {
     "id": "comparatio_solonis_et_poplicolae",
@@ -78,7 +96,9 @@
     "kind": "comparatio",
     "group": 3,
     "source": 0,
-    "start_page": 144
+    "start_page": 144,
+    "title_top_frac": 0.10794556,
+    "body_top_frac": 0.15922113
   },
   {
     "id": "themistocles",
@@ -87,7 +107,9 @@
     "kind": "life",
     "group": 4,
     "source": 0,
-    "start_page": 146
+    "start_page": 146,
+    "title_top_frac": 0.5213661,
+    "body_top_frac": 0.54562026
   },
   {
     "id": "camillus",
@@ -96,7 +118,9 @@
     "kind": "life",
     "group": 4,
     "source": 0,
-    "start_page": 167
+    "start_page": 167,
+    "title_top_frac": 0.19785774,
+    "body_top_frac": 0.22501904
   },
   {
     "id": "pericles",
@@ -105,7 +129,9 @@
     "kind": "life",
     "group": 5,
     "source": 0,
-    "start_page": 195
+    "start_page": 195,
+    "title_top_frac": 0.2181381,
+    "body_top_frac": 0.24862625
   },
   {
     "id": "fabius_maximus",
@@ -114,7 +140,11 @@
     "kind": "life",
     "group": 5,
     "source": 0,
-    "start_page": 221
+    "start_page": 221,
+    "title_top_frac": 0.09245621,
+    "body_top_frac": 0.12970093,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v1 page 221; first body line below its complete title block."
   },
   {
     "id": "comparatio_periclis_et_fabii",
@@ -123,7 +153,9 @@
     "kind": "comparatio",
     "group": 5,
     "source": 0,
-    "start_page": 240
+    "start_page": 240,
+    "title_top_frac": 0.47339684,
+    "body_top_frac": 0.5258476
   },
   {
     "id": "alcibiades",
@@ -132,7 +164,9 @@
     "kind": "life",
     "group": 6,
     "source": 0,
-    "start_page": 242
+    "start_page": 242,
+    "title_top_frac": 0.44770694,
+    "body_top_frac": 0.47399327
   },
   {
     "id": "marcius_coriolanus",
@@ -141,7 +175,11 @@
     "kind": "life",
     "group": 6,
     "source": 0,
-    "start_page": 270
+    "start_page": 268,
+    "title_top_frac": 0.54827356,
+    "body_top_frac": 0.57299703,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v1 page 268; first body line below its complete title block."
   },
   {
     "id": "comparatio_alcibiadis_et_coriolani",
@@ -150,7 +188,9 @@
     "kind": "comparatio",
     "group": 6,
     "source": 0,
-    "start_page": 292
+    "start_page": 292,
+    "title_top_frac": 0.2744181,
+    "body_top_frac": 0.32606637
   },
   {
     "id": "timoleon",
@@ -159,7 +199,11 @@
     "kind": "life",
     "group": 7,
     "source": 0,
-    "start_page": 295
+    "start_page": 295,
+    "title_top_frac": 0.09047457,
+    "body_top_frac": 0.11858972,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v1 page 295; first body line below its complete title block."
   },
   {
     "id": "aemilius_paulus",
@@ -168,7 +212,9 @@
     "kind": "life",
     "group": 7,
     "source": 0,
-    "start_page": 318
+    "start_page": 318,
+    "title_top_frac": 0.63382995,
+    "body_top_frac": 0.65742636
   },
   {
     "id": "comparatio_timoleontis_et_aemilii",
@@ -177,7 +223,11 @@
     "kind": "comparatio",
     "group": 7,
     "source": 0,
-    "start_page": 344
+    "start_page": 343,
+    "title_top_frac": 0.51578474,
+    "body_top_frac": 0.6159139,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v1 page 343; first body line below its complete title block."
   },
   {
     "id": "pelopidas",
@@ -186,7 +236,11 @@
     "kind": "life",
     "group": 8,
     "source": 0,
-    "start_page": 345
+    "start_page": 345,
+    "title_top_frac": 0.091573566,
+    "body_top_frac": 0.11519855,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v1 page 345; first body line below its complete title block."
   },
   {
     "id": "marcellus",
@@ -195,7 +249,9 @@
     "kind": "life",
     "group": 8,
     "source": 0,
-    "start_page": 369
+    "start_page": 369,
+    "title_top_frac": 0.10106985,
+    "body_top_frac": 0.13485363
   },
   {
     "id": "comparatio_pelopidae_et_marcelli",
@@ -204,7 +260,11 @@
     "kind": "comparatio",
     "group": 8,
     "source": 0,
-    "start_page": 392
+    "start_page": 391,
+    "title_top_frac": 0.096119225,
+    "body_top_frac": 0.14315088,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v1 page 391; first body line below its complete title block."
   },
   {
     "id": "aristides",
@@ -213,7 +273,9 @@
     "kind": "life",
     "group": 9,
     "source": 0,
-    "start_page": 393
+    "start_page": 393,
+    "title_top_frac": 0.22914529,
+    "body_top_frac": 0.2567261
   },
   {
     "id": "cato_major",
@@ -222,7 +284,9 @@
     "kind": "life",
     "group": 9,
     "source": 0,
-    "start_page": 414
+    "start_page": 414,
+    "title_top_frac": 0.17576417,
+    "body_top_frac": 0.19829804
   },
   {
     "id": "comparatio_aristidis_et_catonis",
@@ -231,7 +295,9 @@
     "kind": "comparatio",
     "group": 9,
     "source": 0,
-    "start_page": 434
+    "start_page": 434,
+    "title_top_frac": 0.57787454,
+    "body_top_frac": 0.6090118
   },
   {
     "id": "philopoemen",
@@ -240,7 +306,11 @@
     "kind": "life",
     "group": 10,
     "source": 0,
-    "start_page": 439
+    "start_page": 439,
+    "title_top_frac": 0.09282318,
+    "body_top_frac": 0.11669082,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v1 page 439; first body line below its complete title block."
   },
   {
     "id": "flamininus",
@@ -249,7 +319,9 @@
     "kind": "life",
     "group": 10,
     "source": 0,
-    "start_page": 454
+    "start_page": 453,
+    "title_top_frac": 0.6817429,
+    "body_top_frac": 0.7115817
   },
   {
     "id": "comparatio_philopoemenis_et_flaminini",
@@ -258,7 +330,9 @@
     "kind": "comparatio",
     "group": 10,
     "source": 0,
-    "start_page": 468
+    "start_page": 468,
+    "title_top_frac": 0.5742935,
+    "body_top_frac": 0.62491655
   },
   {
     "id": "pyrrhus",
@@ -267,7 +341,9 @@
     "kind": "life",
     "group": 11,
     "source": 0,
-    "start_page": 470
+    "start_page": 470,
+    "title_top_frac": 0.10792966,
+    "body_top_frac": 0.14545172
   },
   {
     "id": "caius_marius",
@@ -276,7 +352,9 @@
     "kind": "life",
     "group": 11,
     "source": 0,
-    "start_page": 497
+    "start_page": 497,
+    "title_top_frac": 0.6444838,
+    "body_top_frac": 0.6734424
   },
   {
     "id": "lysander",
@@ -285,7 +363,9 @@
     "kind": "life",
     "group": 12,
     "source": 0,
-    "start_page": 531
+    "start_page": 531,
+    "title_top_frac": 0.11617838,
+    "body_top_frac": 0.16302034
   },
   {
     "id": "sylla",
@@ -294,7 +374,9 @@
     "kind": "life",
     "group": 12,
     "source": 0,
-    "start_page": 552
+    "start_page": 552,
+    "title_top_frac": 0.10871479,
+    "body_top_frac": 0.14590748
   },
   {
     "id": "comparatio_lysandri_et_syllae",
@@ -303,7 +385,11 @@
     "kind": "comparatio",
     "group": 12,
     "source": 0,
-    "start_page": 582
+    "start_page": 581,
+    "title_top_frac": 0.46028143,
+    "body_top_frac": 0.5114363,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v1 page 581; first body line below its complete title block."
   },
   {
     "id": "cimon",
@@ -312,7 +398,9 @@
     "kind": "life",
     "group": 13,
     "source": 0,
-    "start_page": 585
+    "start_page": 585,
+    "title_top_frac": 0.11867553,
+    "body_top_frac": 0.16399677
   },
   {
     "id": "lucullus",
@@ -321,7 +409,9 @@
     "kind": "life",
     "group": 13,
     "source": 0,
-    "start_page": 600
+    "start_page": 600,
+    "title_top_frac": 0.23497266,
+    "body_top_frac": 0.26773167
   },
   {
     "id": "comparatio_cimonis_et_luculli",
@@ -330,8 +420,12 @@
     "kind": "comparatio",
     "group": 13,
     "source": 0,
-    "start_page": 636,
-    "last_page": 636
+    "start_page": 635,
+    "title_top_frac": 0.1084784,
+    "body_top_frac": 0.16192225,
+    "last_page": 636,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v1 page 635; first body line below its complete title block."
   },
   {
     "id": "nicias",
@@ -340,7 +434,9 @@
     "kind": "life",
     "group": 14,
     "source": 1,
-    "start_page": 18
+    "start_page": 18,
+    "title_top_frac": 0.24553105,
+    "body_top_frac": 0.27663866
   },
   {
     "id": "crassus",
@@ -349,7 +445,11 @@
     "kind": "life",
     "group": 14,
     "source": 1,
-    "start_page": 42
+    "start_page": 41,
+    "title_top_frac": 0.39193168,
+    "body_top_frac": 0.42523235,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 41; first body line below its complete title block."
   },
   {
     "id": "comparatio_niciae_et_crassi",
@@ -358,7 +458,11 @@
     "kind": "comparatio",
     "group": 14,
     "source": 1,
-    "start_page": 67
+    "start_page": 67,
+    "title_top_frac": 0.54695386,
+    "body_top_frac": 0.6035101,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 67; first body line below its complete title block."
   },
   {
     "id": "sertorius",
@@ -367,7 +471,11 @@
     "kind": "life",
     "group": 15,
     "source": 1,
-    "start_page": 71
+    "start_page": 71,
+    "title_top_frac": 0.09560723,
+    "body_top_frac": 0.13084331,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 71; first body line below its complete title block."
   },
   {
     "id": "eumenes",
@@ -376,7 +484,9 @@
     "kind": "life",
     "group": 15,
     "source": 1,
-    "start_page": 88
+    "start_page": 88,
+    "title_top_frac": 0.38198614,
+    "body_top_frac": 0.4143123
   },
   {
     "id": "comparatio_sertorii_et_eumenis",
@@ -385,7 +495,9 @@
     "kind": "comparatio",
     "group": 15,
     "source": 1,
-    "start_page": 102
+    "start_page": 102,
+    "title_top_frac": 0.60377216,
+    "body_top_frac": 0.67253566
   },
   {
     "id": "agesilaus",
@@ -394,7 +506,11 @@
     "kind": "life",
     "group": 16,
     "source": 1,
-    "start_page": 106
+    "start_page": 106,
+    "title_top_frac": 0.05977234,
+    "body_top_frac": 0.1267103,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 106; first body line below its complete title block."
   },
   {
     "id": "pompeius",
@@ -403,7 +519,9 @@
     "kind": "life",
     "group": 16,
     "source": 1,
-    "start_page": 137
+    "start_page": 137,
+    "title_top_frac": 0.37492642,
+    "body_top_frac": 0.41481218
   },
   {
     "id": "comparatio_agesilai_et_pompeii",
@@ -412,7 +530,9 @@
     "kind": "comparatio",
     "group": 16,
     "source": 1,
-    "start_page": 188
+    "start_page": 188,
+    "title_top_frac": 0.6986568,
+    "body_top_frac": 0.7597797
   },
   {
     "id": "alexander",
@@ -421,7 +541,11 @@
     "kind": "life",
     "group": 17,
     "source": 1,
-    "start_page": 192
+    "start_page": 192,
+    "title_top_frac": 0.092748776,
+    "body_top_frac": 0.13249417,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 192; first body line below its complete title block."
   },
   {
     "id": "iulius_caesar",
@@ -430,7 +554,9 @@
     "kind": "life",
     "group": 17,
     "source": 1,
-    "start_page": 245
+    "start_page": 245,
+    "title_top_frac": 0.1006576,
+    "body_top_frac": 0.13715972
   },
   {
     "id": "phocion",
@@ -439,7 +565,11 @@
     "kind": "life",
     "group": 18,
     "source": 1,
-    "start_page": 286
+    "start_page": 286,
+    "title_top_frac": 0.096243806,
+    "body_top_frac": 0.12495126,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 286; first body line below its complete title block."
   },
   {
     "id": "cato_minor",
@@ -448,7 +578,11 @@
     "kind": "life",
     "group": 18,
     "source": 1,
-    "start_page": 309
+    "start_page": 309,
+    "title_top_frac": 0.09866118,
+    "body_top_frac": 0.12468305,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 309; first body line below its complete title block."
   },
   {
     "id": "agis",
@@ -457,7 +591,9 @@
     "kind": "life",
     "group": 19,
     "source": 1,
-    "start_page": 363
+    "start_page": 363,
+    "title_top_frac": 0.27278346,
+    "body_top_frac": 0.33413664
   },
   {
     "id": "cleomenes",
@@ -466,7 +602,9 @@
     "kind": "life",
     "group": 19,
     "source": 1,
-    "start_page": 379
+    "start_page": 379,
+    "title_top_frac": 0.10188459,
+    "body_top_frac": 0.14679036
   },
   {
     "id": "tiberius_gracchus",
@@ -475,7 +613,9 @@
     "kind": "life",
     "group": 19,
     "source": 1,
-    "start_page": 402
+    "start_page": 402,
+    "title_top_frac": 0.21486157,
+    "body_top_frac": 0.25107536
   },
   {
     "id": "caius_gracchus",
@@ -484,7 +624,9 @@
     "kind": "life",
     "group": 19,
     "source": 1,
-    "start_page": 415
+    "start_page": 415,
+    "title_top_frac": 0.101281814,
+    "body_top_frac": 0.14075355
   },
   {
     "id": "comparatio_agidis_cleomenis_et_gracchorum",
@@ -493,7 +635,11 @@
     "kind": "comparatio",
     "group": 19,
     "source": 1,
-    "start_page": 426
+    "start_page": 425,
+    "title_top_frac": 0.5874953,
+    "body_top_frac": 0.67766595,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 425; first body line below its complete title block."
   },
   {
     "id": "demosthenes",
@@ -502,7 +648,11 @@
     "kind": "life",
     "group": 20,
     "source": 1,
-    "start_page": 429
+    "start_page": 429,
+    "title_top_frac": 0.09776087,
+    "body_top_frac": 0.13364592,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 429; first body line below its complete title block."
   },
   {
     "id": "cicero",
@@ -511,7 +661,9 @@
     "kind": "life",
     "group": 20,
     "source": 1,
-    "start_page": 446
+    "start_page": 446,
+    "title_top_frac": 0.60810024,
+    "body_top_frac": 0.6372378
   },
   {
     "id": "comparatio_demosthenis_et_ciceronis",
@@ -520,7 +672,9 @@
     "kind": "comparatio",
     "group": 20,
     "source": 1,
-    "start_page": 478
+    "start_page": 478,
+    "title_top_frac": 0.54861104,
+    "body_top_frac": 0.63695496
   },
   {
     "id": "demetrius",
@@ -529,7 +683,9 @@
     "kind": "life",
     "group": 21,
     "source": 1,
-    "start_page": 482
+    "start_page": 482,
+    "title_top_frac": 0.10330873,
+    "body_top_frac": 0.1415875
   },
   {
     "id": "antonius",
@@ -538,7 +694,9 @@
     "kind": "life",
     "group": 21,
     "source": 1,
-    "start_page": 513
+    "start_page": 513,
+    "title_top_frac": 0.48679578,
+    "body_top_frac": 0.5177523
   },
   {
     "id": "comparatio_demetrii_et_antonii",
@@ -547,7 +705,11 @@
     "kind": "comparatio",
     "group": 21,
     "source": 1,
-    "start_page": 563
+    "start_page": 563,
+    "title_top_frac": 0.2109522,
+    "body_top_frac": 0.2649482,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 563; first body line below its complete title block."
   },
   {
     "id": "dio",
@@ -556,7 +718,9 @@
     "kind": "life",
     "group": 22,
     "source": 1,
-    "start_page": 566
+    "start_page": 566,
+    "title_top_frac": 0.10940774,
+    "body_top_frac": 0.15018469
   },
   {
     "id": "brutus",
@@ -565,7 +729,9 @@
     "kind": "life",
     "group": 22,
     "source": 1,
-    "start_page": 596
+    "start_page": 596,
+    "title_top_frac": 0.2732966,
+    "body_top_frac": 0.30550042
   },
   {
     "id": "comparatio_dionis_et_bruti",
@@ -574,7 +740,9 @@
     "kind": "comparatio",
     "group": 22,
     "source": 1,
-    "start_page": 626
+    "start_page": 626,
+    "title_top_frac": 0.4031585,
+    "body_top_frac": 0.46011558
   },
   {
     "id": "artoxerxes",
@@ -583,7 +751,9 @@
     "kind": "life",
     "group": 23,
     "source": 1,
-    "start_page": 629
+    "start_page": 629,
+    "title_top_frac": 0.104543865,
+    "body_top_frac": 0.15246719
   },
   {
     "id": "aratus",
@@ -592,7 +762,9 @@
     "kind": "life",
     "group": 24,
     "source": 1,
-    "start_page": 647
+    "start_page": 647,
+    "title_top_frac": 0.38437912,
+    "body_top_frac": 0.41665015
   },
   {
     "id": "galba",
@@ -601,7 +773,9 @@
     "kind": "life",
     "group": 25,
     "source": 1,
-    "start_page": 680
+    "start_page": 680,
+    "title_top_frac": 0.114785366,
+    "body_top_frac": 0.14932388
   },
   {
     "id": "otho",
@@ -610,7 +784,11 @@
     "kind": "life",
     "group": 26,
     "source": 1,
-    "start_page": 698,
-    "last_page": 704
+    "start_page": 696,
+    "title_top_frac": 0.106995836,
+    "body_top_frac": 0.14487474,
+    "last_page": 704,
+    "pinned": true,
+    "review_notes": "Source bbox and scan checked: printed title on v2 page 696; first body line below its complete title block."
   }
 ]

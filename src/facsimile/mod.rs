@@ -47,6 +47,8 @@ pub struct FacsimileArgs {
     pub no_compile: bool,
     /// Re-transcribe the front matter even when its sidecar is fresh.
     pub retag: bool,
+    /// Read existing front-matter prose without invoking vision or updating its cache.
+    pub offline: bool,
     /// Detect the unit table, write/refresh `facsimile_units.json`, and exit.
     pub detect_units: bool,
     /// Re-detect the unit table from the sources even when the cache is present,
@@ -81,13 +83,17 @@ impl FacsimileArgs {
 /// emit the inner `.tex` per volume, and (unless `--no-compile`) compile and
 /// impose. Body rendering and image analysis are offline and deterministic.
 pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
+    if args.offline && (args.retag || args.review_lines) {
+        bail!("--offline cannot be combined with --retag or --review-lines");
+    }
     let source_paths = args.source_paths();
     let pdfs = [Pdf::open(&source_paths[0])?, Pdf::open(&source_paths[1])?];
+    let page_words = |source: usize, page: u32| render::page_words(&source_paths[source], page);
     let page_text = |source: usize, page: u32| render::page_text(&source_paths[source], page);
 
     // `--detect-units` writes/refreshes the cache from the sources and exits.
     if args.detect_units {
-        let units = detect::load_or_detect(&args.units, &pdfs, true, page_text)?;
+        let units = detect::load_or_detect(&args.units, &pdfs, true, page_text, page_words)?;
         println!("Detected {} units -> {}", units.len(), args.units.display());
         for u in &units {
             println!(
@@ -112,7 +118,7 @@ pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
     let mut units = if args.pages.is_some() {
         Vec::new()
     } else {
-        detect::load_or_detect(&args.units, &pdfs, args.redetect, page_text)?
+        detect::load_or_detect(&args.units, &pdfs, args.redetect, page_text, page_words)?
     };
     let ranges = select_ranges(args, &last_body, &units)?;
 
@@ -244,12 +250,16 @@ fn select_ranges(
                 source,
                 start_page: start,
                 skip_top_bands: Some(0),
+                title_top_frac: None,
+                body_top_frac: None,
                 last_page: None,
                 pinned: false,
                 review_notes: None,
             },
             end_page: end,
             shared_tail: false,
+            open_body_frac: None,
+            tail_cut_frac: None,
         }]);
     }
 
@@ -411,7 +421,12 @@ fn fill_front_matter(
             Box::new(crate::llm::batch::ApiBatchBackend::new(client));
         Ok((vision, backend))
     };
-    let sidecar = match frontmatter::run_front_matter(source_paths, args.retag, &tracker, factory) {
+    let prose = if args.offline {
+        frontmatter::load_cached_front_matter(Path::new(frontmatter::SIDECAR), source_paths)
+    } else {
+        frontmatter::run_front_matter(source_paths, args.retag, &tracker, factory)
+    };
+    let sidecar = match prose {
         Ok(sidecar) => sidecar,
         Err(err) => {
             eprintln!("  front-matter prose skipped ({err}); volumes carry the scans but no re-typeset prose");
@@ -420,7 +435,11 @@ fn fill_front_matter(
     };
     for vol in volumes.iter_mut() {
         vol.prose = if vol.tomus == 1 {
-            latex::front_prose_pages(&sidecar, &frontmatter::MONITUM_PAGES)
+            latex::front_prose_pages_until(
+                &sidecar,
+                &frontmatter::MONITUM_PROSE_PAGES,
+                frontmatter::MONITUM_PROSE_SENTINEL,
+            )
         } else if vol.is_first_of_source && vol.source == 1 {
             latex::front_prose_pages(&sidecar, &frontmatter::PRAEFATIO_PAGES)
         } else {
@@ -697,6 +716,7 @@ mod tests {
             units: PathBuf::from("facsimile_units.json"),
             no_compile: true,
             retag: false,
+            offline: false,
             detect_units: false,
             redetect: false,
             pages: None,
@@ -761,6 +781,7 @@ mod tests {
             units: PathBuf::from("facsimile_units.json"),
             no_compile: true,
             retag: false,
+            offline: false,
             detect_units: false,
             redetect: false,
             pages: Some("v1:14-16".to_string()),

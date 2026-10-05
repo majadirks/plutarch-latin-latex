@@ -85,12 +85,19 @@ pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts) -> String {
         }
         // The re-typeset Monitum / Praefatio prose (empty on other tomi).
         doc.push_str(&vol.prose);
+        if vol.tomus == 1 {
+            doc.push_str(&latex::embed_scan_pair(
+                frontmatter::front_monitum_a_name(),
+                frontmatter::front_monitum_b_name(),
+            ));
+        }
     }
 
     doc.push_str("\\beginbodynumbering\n\n");
 
-    for unit in &vol.units {
-        doc.push_str(&unit_block(unit));
+    for (index, unit) in vol.units.iter().enumerate() {
+        let force_parity_start = !(index == 0 && vol.emit_front_matter && vol.tomus == 1);
+        doc.push_str(&unit_block(unit, force_parity_start));
     }
 
     doc.push_str("\\clearpage\n");
@@ -101,14 +108,18 @@ pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts) -> String {
     doc
 }
 
-/// One unit: a fresh page with the running head set to the Latin name, then one body
+/// One unit: a parity start or consecutive page with the running head set to the Latin name, then one body
 /// image per page. There is no standalone title page; the unit's first body page
 /// opens with a large centered inline chapter header (the Latin title only) and
 /// carries no running head, while later pages keep the centered Latin running head.
-fn unit_block(unit: &PlacedUnit) -> String {
+fn unit_block(unit: &PlacedUnit, force_parity_start: bool) -> String {
     let latin = latex::escape_latex(&unit.latin_title);
     let mut out = String::new();
-    out.push_str("\\freshpage\n");
+    out.push_str(if force_parity_start {
+        "\\freshpage\n"
+    } else {
+        "\\clearpage\n"
+    });
     // The running head on every body page of this unit is its Latin name.
     out.push_str(&format!("\\markboth{{{latin}}}{{{latin}}}\n"));
     let mut images = unit.image_names.iter();
@@ -171,7 +182,7 @@ mod tests {
 
     #[test]
     fn inner_tex_includes_one_image_per_page() {
-        let vol = volume(vec![unit(
+        let mut vol = volume(vec![unit(
             "theseus",
             &[
                 "facsimile_theseus_1.png",
@@ -179,6 +190,7 @@ mod tests {
                 "facsimile_theseus_3.png",
             ],
         )]);
+        vol.emit_front_matter = false;
         let doc = inner_document(&vol, &Fonts::default());
         let images = doc.matches("\\includegraphics[width=\\textwidth]").count();
         assert_eq!(images, 3);
@@ -190,10 +202,11 @@ mod tests {
 
     #[test]
     fn inner_tex_starts_each_unit_fresh_page() {
-        let vol = volume(vec![
+        let mut vol = volume(vec![
             unit("theseus", &["facsimile_theseus_1.png"]),
             unit("romulus", &["facsimile_romulus_1.png"]),
         ]);
+        vol.emit_front_matter = false;
         let doc = inner_document(&vol, &Fonts::default());
         // A fresh page opens each unit (the preamble also *defines* \freshpage, so
         // count the unit openings via the \freshpage + \markboth pairing).
@@ -298,6 +311,82 @@ mod tests {
     }
 
     #[test]
+    fn tomus_one_embeds_monitum_errata_images() {
+        let first = volume_full(
+            1,
+            0,
+            true,
+            true,
+            "% PROSE MARKER\n",
+            vec![unit("a", &["x.png"])],
+        );
+        let doc = inner_document(&first, &Fonts::default());
+        assert_eq!(doc.matches("% Embedded front-matter scan pair").count(), 1);
+        let pair_start = doc.find("% Embedded front-matter scan pair").unwrap();
+        let pair_end = doc[pair_start..].find("\\beginbodynumbering").unwrap() + pair_start;
+        assert_eq!(doc[pair_start..pair_end].matches("\\clearpage").count(), 2);
+        let prose = doc.find("PROSE MARKER").unwrap();
+        let a = doc.find("front_monitum_a.png").unwrap();
+        let b = doc.find("front_monitum_b.png").unwrap();
+        let body = doc.find("{x.png}").unwrap();
+        assert!(prose < a && a < b && b < body);
+        for name in ["front_monitum_a.png", "front_monitum_b.png"] {
+            assert_eq!(doc.matches(name).count(), 1);
+        }
+        for vol in [
+            volume_full(2, 0, false, true, "", vec![]),
+            volume_full(3, 1, true, true, "% PRAEFATIO\n", vec![]),
+            volume_full(1, 0, true, false, "", vec![]),
+        ] {
+            let doc = inner_document(&vol, &Fonts::default());
+            assert!(!doc.contains("front_monitum_a.png"));
+            assert!(!doc.contains("front_monitum_b.png"));
+        }
+    }
+
+    #[test]
+    fn monitum_errata_and_first_body_use_consecutive_pages() {
+        let vol = volume_full(
+            1,
+            0,
+            true,
+            true,
+            "% PROSE MARKER\n",
+            vec![
+                unit("theseus", &["first.png"]),
+                unit("romulus", &["second.png"]),
+            ],
+        );
+        let doc = inner_document(&vol, &Fonts::default());
+        let prose = doc.find("% PROSE MARKER").unwrap();
+        let first = doc.find("{first.png}").unwrap();
+        assert!(!doc[prose..first].contains("\\freshpage"));
+        assert!(doc[prose..first].contains("\\clearpage\n\\markboth{THESEUS}"));
+        assert!(doc[first..].contains("\\freshpage\n\\markboth{ROMULUS}"));
+    }
+
+    #[test]
+    fn first_body_keeps_parity_start_without_monitum() {
+        for vol in [
+            volume_full(2, 0, false, true, "", vec![unit("theseus", &["x.png"])]),
+            volume_full(1, 0, true, false, "", vec![unit("theseus", &["x.png"])]),
+        ] {
+            let doc = inner_document(&vol, &Fonts::default());
+            assert!(doc.contains("\\freshpage\n\\markboth{THESEUS}"));
+        }
+    }
+
+    #[test]
+    fn monitum_without_cached_prose_still_uses_consecutive_pages() {
+        let vol = volume_full(1, 0, true, true, "", vec![unit("theseus", &["x.png"])]);
+        let doc = inner_document(&vol, &Fonts::default());
+        let pair = doc.find("% Embedded front-matter scan pair").unwrap();
+        let body = doc.find("{x.png}").unwrap();
+        assert!(!doc[pair..body].contains("\\freshpage"));
+        assert!(doc[pair..body].contains("\\clearpage\n\\markboth{THESEUS}"));
+    }
+
+    #[test]
     fn facsimile_frontmatter_order() {
         let vol = volume_full(
             1,
@@ -374,7 +463,7 @@ mod tests {
 
     #[test]
     fn unit_block_has_no_standalone_title_page() {
-        let out = unit_block(&unit("theseus", &["f1.png", "f2.png"]));
+        let out = unit_block(&unit("theseus", &["f1.png", "f2.png"]), true);
         // The old standalone title page was `\heading{…}\clearpage`; now the heading
         // sits directly above the first image, with no intervening page break.
         assert!(!out.contains("\\heading{THESEUS}\n\\clearpage"));
@@ -385,7 +474,7 @@ mod tests {
 
     #[test]
     fn unit_first_page_suppresses_running_head() {
-        let out = unit_block(&unit("theseus", &["f1.png", "f2.png", "f3.png"]));
+        let out = unit_block(&unit("theseus", &["f1.png", "f2.png", "f3.png"]), true);
         // Only the first body page suppresses the running head.
         assert_eq!(out.matches("\\thispagestyle{empty}").count(), 1);
         // The suppression precedes the first image, not the later ones.
@@ -397,11 +486,198 @@ mod tests {
 
     #[test]
     fn unit_header_is_latin_only() {
-        let out = unit_block(&unit("theseus", &["f1.png"]));
+        let out = unit_block(&unit("theseus", &["f1.png"]), true);
         assert!(out.contains("\\heading{THESEUS}"));
         // No Greek title is emitted.
         assert!(!out.contains("ΘΗΣΕΥΣ"));
         assert!(!out.contains("\\\\"));
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs, cached front matter, Poppler, and MiKTeX"]
+    fn monitum_combined_compile_has_adjacent_content_pages() {
+        use crate::{compile, render};
+        use std::process::Command;
+
+        assert!(render::pdftotext_available(), "pdftotext is required");
+        let dir = tempfile::tempdir().unwrap();
+        let sources = [
+            PathBuf::from("Ploutarchou_Bioi_v1.pdf"),
+            PathBuf::from("Ploutarchou_Bioi_v2.pdf"),
+        ];
+        let cache =
+            frontmatter::load_cached_front_matter(Path::new(frontmatter::SIDECAR), &sources)
+                .expect("load real front-matter cache read-only");
+        let prose = latex::front_prose_pages_until(
+            &cache,
+            &frontmatter::MONITUM_PROSE_PAGES,
+            frontmatter::MONITUM_PROSE_SENTINEL,
+        );
+        let pdf = render::Pdf::open(&sources[0]).expect("open v1 source PDF");
+        frontmatter::render_front_scans(0, true, true, &pdf, dir.path())
+            .expect("render real front scans");
+        let body = image::GrayImage::from_fn(300, 100, |x, y| {
+            image::Luma([if (10..290).contains(&x) && (10..90).contains(&y) {
+                0
+            } else {
+                255
+            }])
+        });
+        for name in ["theseus_first.png", "theseus_second.png"] {
+            body.save(dir.path().join(name)).unwrap();
+        }
+        let vol = volume_full(
+            1,
+            0,
+            true,
+            true,
+            &prose,
+            vec![unit(
+                "theseus",
+                &["theseus_first.png", "theseus_second.png"],
+            )],
+        );
+        write_inner(&vol, dir.path(), &Fonts::default()).unwrap();
+        compile::compile(dir.path(), "tomus_1_inner.tex", compile::INNER_PASSES)
+            .unwrap_or_else(|e| panic!("compile in {}: {e:#}", dir.path().display()));
+        let page_count = compile::inner_page_count(dir.path(), "tomus_1_inner").unwrap();
+        let inner_pdf = dir.path().join("tomus_1_inner.pdf");
+        let pages: Vec<String> = (1..=page_count)
+            .map(|page| {
+                render::page_text(&inner_pdf, page).unwrap_or_else(|e| {
+                    panic!("extract page {page} of {}: {e:#}", inner_pdf.display())
+                })
+            })
+            .collect();
+        let prose_pages: Vec<usize> = pages
+            .iter()
+            .enumerate()
+            .filter_map(|(i, text)| {
+                let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
+                normalized
+                    .contains(frontmatter::MONITUM_PROSE_SENTINEL)
+                    .then_some(i + 1)
+            })
+            .collect();
+        assert_eq!(
+            prose_pages.len(),
+            1,
+            "sentinel pages {prose_pages:?} in {}",
+            inner_pdf.display()
+        );
+        let prose_page = prose_pages[0];
+        let body_page = pages
+            .iter()
+            .enumerate()
+            .skip(prose_page)
+            .find_map(|(i, text)| text.contains("THESEUS").then_some(i + 1))
+            .unwrap_or_else(|| {
+                panic!(
+                    "no THESEUS after page {prose_page} in {}",
+                    inner_pdf.display()
+                )
+            });
+        assert_eq!(
+            body_page,
+            prose_page + 2,
+            "body adjacency in {}",
+            inner_pdf.display()
+        );
+        assert!(
+            !pages[body_page - 1].lines().any(|line| {
+                let line = line.trim();
+                !line.is_empty() && line.chars().all(|c| c.is_ascii_digit())
+            }),
+            "opening page {body_page} has a folio in {}",
+            inner_pdf.display()
+        );
+        assert!(
+            pages[body_page].contains("THESEUS")
+                && pages[body_page].lines().any(|l| l.trim() == "2"),
+            "second body page {} lacks running head/folio 2 in {}: {:?}",
+            body_page + 1,
+            inner_pdf.display(),
+            pages[body_page]
+        );
+
+        let dimensions: Vec<_> = [
+            frontmatter::front_monitum_a_name(),
+            frontmatter::front_monitum_b_name(),
+        ]
+        .iter()
+        .map(|name| image::image_dimensions(dir.path().join(name)).unwrap())
+        .collect();
+        assert_ne!(dimensions[0], dimensions[1]);
+        let output = Command::new(
+            std::env::var("PLUTARCH_PDFIMAGES").unwrap_or_else(|_| "pdfimages".into()),
+        )
+        .arg("-list")
+        .arg(&inner_pdf)
+        .output()
+        .unwrap_or_else(|e| panic!("pdfimages on {}: {e}", inner_pdf.display()));
+        let listing = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            output.status.success(),
+            "pdfimages on {}: {listing}\n{}",
+            inner_pdf.display(),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        for (width, height) in dimensions {
+            let matches: Vec<u32> = listing
+                .lines()
+                .filter_map(|line| {
+                    let fields: Vec<_> = line.split_whitespace().collect();
+                    if fields.len() < 5 || fields[2] != "image" {
+                        return None;
+                    }
+                    let page = fields[0].parse::<u32>().ok()?;
+                    fields[1].parse::<u32>().ok()?;
+                    (fields[3].parse::<u32>().ok()? == width
+                        && fields[4].parse::<u32>().ok()? == height)
+                        .then_some(page)
+                })
+                .collect();
+            assert_eq!(
+                matches,
+                vec![(prose_page + 1) as u32],
+                "crop {width}x{height} in {}:\n{listing}",
+                inner_pdf.display()
+            );
+        }
+        let rendered = render::render_page(
+            &inner_pdf,
+            (prose_page + 1) as u32,
+            100,
+            &dir.path().join("renders"),
+        )
+        .unwrap_or_else(|e| {
+            panic!(
+                "render errata page {} of {}: {e:#}",
+                prose_page + 1,
+                inner_pdf.display()
+            )
+        });
+        let image = image::open(&rendered).unwrap().to_luma8();
+        for (start, end) in [
+            (0, image.height() / 2),
+            (image.height() / 2, image.height()),
+        ] {
+            let dark = image
+                .enumerate_pixels()
+                .filter(|(_, y, pixel)| *y >= start && *y < end && pixel[0] < 128)
+                .count();
+            let total = u64::from(image.width()) * u64::from(end - start);
+            assert!(
+                dark as u64 * 100 >= total,
+                "insufficient ink in rows {start}..{end} of {}",
+                rendered.display()
+            );
+        }
+        println!(
+            "Verified {} pages: prose {prose_page}, errata {}, body {body_page}, next body folio 2",
+            page_count,
+            prose_page + 1
+        );
     }
 
     #[test]

@@ -1,6 +1,7 @@
 //! Front-matter transcription for the facsimile path. The body is reproduced as
-//! pixels, but the Monitum (v1), Praefatio (v2), and derived title pages are
-//! full-width prose that must be re-typeset to the trim measure. This reuses the
+//! pixels, while the Monitum prose (v1), Praefatio (v2), and derived title pages are
+//! re-typeset to the trim measure. The Monitum errata are embedded source scans.
+//! This reuses the
 //! transcription pipeline's stages — classification, Sonnet/Haiku transcription,
 //! Opus reconciliation — admitting **only** `FrontProse` pages, so no body page is
 //! ever sent to the API.
@@ -22,13 +23,24 @@ use crate::pages::{classify, is_boundary};
 use crate::pipeline::{load_or_init, scratch_dir};
 use crate::render::{render_page, Pdf, THUMBNAIL_DPI, TRANSCRIBE_DPI};
 use crate::tags::{PageRole, Sidecar};
-use crate::verify::reconcile_all;
+use crate::verify::reconcile_all_in_scope;
 
 /// The committed, hand-editable front-matter cache.
 pub const SIDECAR: &str = "plutarch.frontmatter.tags.json";
 
+/// Read the existing prose cache for an offline build, preserving incomplete
+/// records and every cached transcription. A stale cache cannot supply prose.
+pub fn load_cached_front_matter(path: &Path, source_paths: &[PathBuf]) -> Result<Sidecar> {
+    let sidecar = Sidecar::load(path)?;
+    let sources: Vec<&Path> = source_paths.iter().map(PathBuf::as_path).collect();
+    if sidecar.is_source_stale(&sources) {
+        bail!("front-matter cache is stale; offline build cannot refresh it");
+    }
+    Ok(sidecar)
+}
+
 /// Whether the front-matter sidecar still needs an API call: a boundary page is
-/// unclassified, or a `FrontProse` page has no finalized transcription.
+/// unclassified, or a non-image `FrontProse` page has no finalized transcription.
 pub fn work_remains(sidecar: &Sidecar) -> bool {
     for (si, src) in sidecar.sources.iter().enumerate() {
         for page in 1..=src.page_count {
@@ -37,14 +49,15 @@ pub fn work_remains(sidecar: &Sidecar) -> bool {
             }
         }
     }
-    sidecar
-        .pages
-        .iter()
-        .any(|p| p.role == PageRole::FrontProse && p.result.is_none())
+    sidecar.pages.iter().any(|p| {
+        p.role == PageRole::FrontProse
+            && !MONITUM_IMAGE_PAGES.contains(&(p.source, p.source_page))
+            && p.result.is_none()
+    })
 }
 
 /// Classify the boundary regions, then transcribe and reconcile **only** the
-/// `FrontProse` pages. Body pages are excluded by `in_scope`, so none is rendered or
+/// non-image `FrontProse` pages. Body pages are excluded by `in_scope`, so none is rendered or
 /// sent; `render_thumb`/`render_full` are injected so tests run without poppler.
 pub fn transcribe_front_matter(
     sidecar: &mut Sidecar,
@@ -61,7 +74,10 @@ pub fn transcribe_front_matter(
     let front: HashSet<(usize, u32)> = sidecar
         .pages
         .iter()
-        .filter(|p| p.role == PageRole::FrontProse)
+        .filter(|p| {
+            p.role == PageRole::FrontProse
+                && !MONITUM_IMAGE_PAGES.contains(&(p.source, p.source_page))
+        })
         .map(|p| (p.source, p.source_page))
         .collect();
     let in_scope = |source: usize, page: u32| front.contains(&(source, page));
@@ -81,7 +97,7 @@ pub fn transcribe_front_matter(
         render_body,
         &render_full,
     )?;
-    reconcile_all(
+    reconcile_all_in_scope(
         backend,
         sidecar,
         tracker,
@@ -90,13 +106,14 @@ pub fn transcribe_front_matter(
         render_body,
         &render_full,
         |_, _| Ok(None),
+        in_scope,
     )?;
     Ok(())
 }
 
 /// Load or build the front-matter sidecar, transcribing the front matter when work
 /// remains. `vision_factory` is called lazily — only when a boundary page is
-/// unclassified or a `FrontProse` page lacks a result — so a complete, non-stale
+/// unclassified or a non-image `FrontProse` page lacks a result — so a complete, non-stale
 /// cache constructs no client and makes zero network calls.
 pub fn run_front_matter(
     source_paths: &[PathBuf],
@@ -130,11 +147,13 @@ pub fn run_front_matter(
     Ok(sidecar)
 }
 
-/// The `(source, page)` records re-typeset as the Monitum (Tomus I) and the
-/// Praefatio (v2's first tomus). Page-list-driven, so `front_prose_pages` emits
-/// exactly these and never the half-title or Volumen-title pages that share the
-/// `FrontProse` role. Confirmed by a real-eyes render of each page.
-pub const MONITUM_PAGES: [(usize, u32); 2] = [(0, 12), (0, 13)];
+/// Source page re-typeset through the Monitum prose sentinel, on Tomus I.
+pub const MONITUM_PROSE_PAGES: [(usize, u32); 1] = [(0, 12)];
+/// Printed phrase in the final prose block, before the embedded errata.
+pub const MONITUM_PROSE_SENTINEL: &str = "mutanda esse significavit.";
+/// Source pages reproduced entirely as images, excluded from transcription.
+pub const MONITUM_IMAGE_PAGES: [(usize, u32); 1] = [(0, 13)];
+/// Source pages re-typeset as the Praefatio, on v2's first tomus.
 pub const PRAEFATIO_PAGES: [(usize, u32); 4] = [(1, 14), (1, 15), (1, 16), (1, 17)];
 
 /// Edge fractions `(left, top, right, bottom)` cropped off each embedded front scan.
@@ -143,6 +162,10 @@ pub const PRAEFATIO_PAGES: [(usize, u32); 4] = [(1, 14), (1, 15), (1, 16), (1, 1
 const QR_CROP: (f32, f32, f32, f32) = (0.04, 0.04, 0.04, 0.04);
 const VOLUMEN_CROP: (f32, f32, f32, f32) = (0.08, 0.03, 0.08, 0.07);
 const COLOPHON_CROP: (f32, f32, f32, f32) = (0.10, 0.33, 0.10, 0.47);
+/// v1 p12 errata tail, below the prose and above the signature and folio.
+const MONITUM_A_CROP: (f32, f32, f32, f32) = (0.13, 0.769, 0.185, 0.109);
+/// v1 p13 errata, without the running head or ornament.
+const MONITUM_B_CROP: (f32, f32, f32, f32) = (0.18, 0.094, 0.14, 0.350);
 
 /// The embedded reproduction-notice (QR) scan for a source: source page 1.
 pub fn front_qr_name(source: usize) -> String {
@@ -166,6 +189,16 @@ pub fn front_volumen_page(source: usize) -> u32 {
 /// The embedded printer's-colophon scan (v1 p9, Tomus I only).
 pub fn front_colophon_name() -> &'static str {
     "front_colophon.png"
+}
+
+/// The embedded Monitum errata-tail scan (v1 p12), on Tomus I.
+pub fn front_monitum_a_name() -> &'static str {
+    "front_monitum_a.png"
+}
+
+/// The embedded Monitum errata scan (v1 p13), on Tomus I.
+pub fn front_monitum_b_name() -> &'static str {
+    "front_monitum_b.png"
 }
 
 /// The pixel sub-rectangle of a `w×h` image left after removing the given edge
@@ -203,7 +236,7 @@ fn render_and_crop(
 
 /// Render into `out_dir` the embedded front-matter scans a given tomus needs: the
 /// reproduction-notice (QR) page on every tomus, the engraved Volumen title on the
-/// first tomus of each source, and the printer's colophon on Tomus I. Each is
+/// first tomus of each source, and the printer's colophon and Monitum errata on Tomus I. Each is
 /// cropped in Rust to a watermark-free box; no network is required.
 pub fn render_front_scans(
     source: usize,
@@ -225,6 +258,8 @@ pub fn render_front_scans(
     if is_tomus_one {
         // The colophon is v1 p9; Tomus I is always source 0, so `pdf` is the v1 PDF.
         render_and_crop(pdf, 9, COLOPHON_CROP, front_colophon_name(), out_dir)?;
+        render_and_crop(pdf, 12, MONITUM_A_CROP, front_monitum_a_name(), out_dir)?;
+        render_and_crop(pdf, 13, MONITUM_B_CROP, front_monitum_b_name(), out_dir)?;
     }
     Ok(())
 }
@@ -370,6 +405,61 @@ mod tests {
     }
 
     #[test]
+    fn work_remains_ignores_monitum_image_page() {
+        let mut pages: Vec<_> = (1..=13)
+            .map(|page| record(0, page, PageRole::Skip, false))
+            .collect();
+        pages[11] = record(0, 12, PageRole::FrontProse, true);
+        pages[12] = record(0, 13, PageRole::FrontProse, false);
+        let mut sc = sidecar(13, pages);
+        assert!(!work_remains(&sc));
+        sc.page_mut(0, 12).unwrap().result = None;
+        assert!(work_remains(&sc));
+    }
+
+    #[test]
+    fn transcribe_excludes_monitum_image_page() {
+        // A cached first pass on an image page must be excluded from reconciliation too.
+        for cached_pass in [false, true] {
+            let mut pages: Vec<_> = (1..=13)
+                .map(|page| record(0, page, PageRole::Skip, false))
+                .collect();
+            pages[11] = record(0, 12, PageRole::FrontProse, false);
+            pages[12] = record(0, 13, PageRole::FrontProse, cached_pass);
+            pages[12].result = None;
+            let mut sc = sidecar(13, pages);
+            let original = sc.page(0, 13).unwrap().clone();
+            let dir = tempfile::tempdir().unwrap();
+            let backend = StubBackend::new();
+            let vision = CountingVision {
+                calls: RefCell::new(0),
+            };
+            transcribe_front_matter(
+                &mut sc,
+                &dir.path().join(SIDECAR),
+                &UsageTracker::new(),
+                &vision,
+                &backend,
+                |_, _| panic!("classified a cached page"),
+                |source, page| {
+                    assert_eq!((source, page), (0, 12));
+                    Ok(vec![4, 5, 6])
+                },
+            )
+            .unwrap();
+            let ids = backend.submitted.borrow();
+            assert!(ids.iter().any(|id| id == "s_0_12"));
+            assert!(!ids.iter().any(|id| id.contains("_13")));
+            assert!(sc.page(0, 12).unwrap().result.is_some());
+            assert_eq!(
+                serde_json::to_value(sc.page(0, 13).unwrap()).unwrap(),
+                serde_json::to_value(original).unwrap()
+            );
+            assert!(!work_remains(&sc));
+        }
+    }
+
+    #[test]
     fn frontmatter_only_transcribes_frontprose() {
         // A classified source with one FrontProse and one Body page: only the
         // FrontProse page may be transcribed.
@@ -441,5 +531,30 @@ mod tests {
         .unwrap();
         assert_eq!(*vision.calls.borrow(), 0, "classified a fresh sidecar");
         assert_eq!(*backend.calls.borrow(), 0, "submitted a fresh sidecar");
+    }
+
+    #[test]
+    fn offline_cache_preserves_incomplete_records_without_writing() {
+        let dir = tempfile::tempdir().unwrap();
+        let source = dir.path().join("v1.pdf");
+        std::fs::write(&source, b"source bytes").unwrap();
+        let path = dir.path().join(SIDECAR);
+        let mut sc = sidecar(
+            3,
+            vec![
+                record(0, 1, PageRole::FrontProse, true),
+                record(0, 2, PageRole::FrontProse, false),
+            ],
+        );
+        sc.sources[0].file_sha256 = crate::render::file_hash(&source).unwrap();
+        sc.save(&path).unwrap();
+        let before = std::fs::read(&path).unwrap();
+        let cached = load_cached_front_matter(&path, std::slice::from_ref(&source)).unwrap();
+        assert!(cached.page(0, 1).unwrap().result.is_some());
+        assert!(cached.page(0, 2).unwrap().result.is_none());
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+        std::fs::write(&source, b"different source bytes").unwrap();
+        assert!(load_cached_front_matter(&path, &[source]).is_err());
+        assert_eq!(std::fs::read(&path).unwrap(), before);
     }
 }

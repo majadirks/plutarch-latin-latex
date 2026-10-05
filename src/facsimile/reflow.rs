@@ -33,6 +33,18 @@ const SCALE_PERCENTILE: f32 = 95.0;
 /// full-measure body line (not a centered title / short cross-reference).
 const BODY_LINE_SPAN_FRAC: f32 = 0.8;
 
+/// Minimum dark-pixel area for a strip, measured in source-column pixels.
+const SPECK_MIN_INK: u64 = 8;
+/// Ink-area floor relative to the typical line's bounding rectangle.
+const SPECK_INK_FRAC: f64 = 0.02;
+
+/// The negligible-ink threshold; absent metrics disable the filter.
+fn minimum_ink(m: &LineMetrics) -> Option<u64> {
+    (!m.is_sentinel())
+        .then(|| (SPECK_INK_FRAC * m.height_med as f64 * m.width_med as f64).ceil() as u64)
+        .map(|ink| ink.max(SPECK_MIN_INK))
+}
+
 // Trim geometry, in centimetres, matching the `geometry` options the facsimile
 // inner `.tex` uses (`inner_preamble` with the running head on): paper 10.5×16 cm,
 // `inner=1`, `outer=1` → `\textwidth = 8.5 cm`; `top=1.5` (above the running head),
@@ -194,10 +206,14 @@ pub fn unit_body_strips(
 
     // Pass A — band every page; no boundary trim yet.
     let mut pages: Vec<(GrayImage, Vec<Band>)> = Vec::new();
+    let mut source_pages = Vec::new();
     let mut skipped = 0u32;
     for page in range.unit.start_page..=range.end_page {
         match render_and_band(source, page, &render_fn) {
-            Ok((col, bands)) => pages.push((col, bands)),
+            Ok((col, bands)) => {
+                pages.push((col, bands));
+                source_pages.push(page);
+            }
             Err(e) => {
                 skipped += 1;
                 eprintln!(
@@ -221,15 +237,20 @@ pub fn unit_body_strips(
     // head / signature; a shared last page drops from the next unit's title down.
     // When the unit's one page is both first and shared-last, both boundary trims
     // apply to it.
-    let last_idx = pages.len().saturating_sub(1);
-    for (idx, (col, bands)) in pages.iter_mut().enumerate() {
-        if idx == 0 {
-            *bands = drop_opening_bands(col, bands, range.unit.skip_top_bands, &metrics);
+    for (page, (col, bands)) in source_pages.into_iter().zip(pages.iter_mut()) {
+        if page == range.unit.start_page {
+            *bands = drop_opening_bands(
+                col,
+                bands,
+                range.unit.skip_top_bands,
+                range.open_body_frac,
+                &metrics,
+            );
         } else {
             *bands = drop_interior_running_head(col, bands, &metrics);
         }
-        if range.shared_tail && idx == last_idx {
-            *bands = drop_shared_tail(col, bands, &metrics);
+        if range.shared_tail && page == range.end_page {
+            *bands = drop_shared_tail(col, bands, range.tail_cut_frac, &metrics);
         }
     }
 
@@ -271,22 +292,91 @@ fn drop_interior_running_head(col: &GrayImage, bands: &[Band], m: &LineMetrics) 
         .collect();
     let med = median_gap(&gaps);
     let mut lo = 0usize;
-    let mut hi = bands.len();
     if (band_ink_span(col, &bands[0]) as f32) < short && gaps[0] as f32 > med {
         lo = 1;
     }
-    if hi - lo >= 3 {
-        let last = hi - 1;
-        let outlier = (band_ink_span(col, &bands[last]) as f32) < short
-            || matches!(
-                classify_band(col, &bands[last], m),
-                BandClass::Short | BandClass::Narrow
-            );
-        if outlier && gaps[last - 1] as f32 > med {
-            hi = last;
-        }
+    drop_trailing_furniture(col, &bands[lo..], m)
+}
+
+/// Drop a short or narrow final band detached by an above-median gap. The
+/// full-measure threshold also identifies furniture when metrics are unavailable.
+fn drop_trailing_furniture(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<Band> {
+    if bands.len() < 3 {
+        return drop_detached_rule(col, bands, m);
     }
-    bands[lo..hi].to_vec()
+    let gaps: Vec<i64> = bands
+        .windows(2)
+        .map(|w| w[1].top as i64 - w[0].bottom as i64)
+        .collect();
+    let last = bands.len() - 1;
+    let outlier = (band_ink_span(col, &bands[last]) as f32)
+        < BODY_LINE_SPAN_FRAC * col.width() as f32
+        || matches!(
+            classify_band(col, &bands[last], m),
+            BandClass::Short | BandClass::Narrow
+        );
+    let hi = if outlier && gaps[last - 1] as f32 > median_gap(&gaps) {
+        last
+    } else {
+        bands.len()
+    };
+    drop_detached_rule(col, &bands[..hi], m)
+}
+
+/// Remove a thin detached rule even when gutter noise joins it to adjacent bands.
+/// A stronger row projection locates the rule; the cut stays in its preceding
+/// gap and preserves every source pixel above that gap.
+fn drop_detached_rule(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<Band> {
+    let Some(last) = bands.last() else {
+        return Vec::new();
+    };
+    if m.is_sentinel()
+        || !matches!(
+            classify_band(col, last, m),
+            BandClass::Short | BandClass::Tall
+        )
+    {
+        return bands.to_vec();
+    }
+    let top = bands[bands.len().saturating_sub(TITLE_SCAN_BANDS)].top;
+    let tail = image::imageops::crop_imm(col, 0, top, col.width(), last.bottom - top).to_image();
+    let rows = ink_profile_rows(&tail, INK_THRESHOLD);
+    // Projection peaks can carry less ink than the noisy strip containing them.
+    let min_ink = (minimum_ink(m).unwrap() / 4).max(SPECK_MIN_INK);
+    let peaks: Vec<Band> = line_bands(&tail, (m.width_med / 50).max(LINE_MIN_INK + 2))
+        .into_iter()
+        .filter(|b| {
+            rows[b.top as usize..b.bottom as usize]
+                .iter()
+                .map(|&n| n as u64)
+                .sum::<u64>()
+                >= min_ink
+        })
+        .collect();
+    if peaks.len() < 2 {
+        return bands.to_vec();
+    }
+    let rule = peaks.last().unwrap();
+    let previous = peaks[peaks.len() - 2];
+    let gap = rule.top.saturating_sub(previous.bottom);
+    let gaps: Vec<i64> = peaks
+        .windows(2)
+        .map(|w| w[1].top as i64 - w[0].bottom as i64)
+        .collect();
+    let thin = classify_band(&tail, rule, m) == BandClass::Short
+        && band_ink_span(&tail, rule) >= 4 * (rule.bottom - rule.top);
+    if !thin || gap < m.height_med / 2 || gap as f32 <= median_gap(&gaps) {
+        return bands.to_vec();
+    }
+    let cut = top + previous.bottom + gap / 2;
+    bands
+        .iter()
+        .filter(|b| b.top < cut)
+        .map(|b| Band {
+            top: b.top,
+            bottom: b.bottom.min(cut),
+        })
+        .collect()
 }
 
 /// Median of inter-band gaps, as f32.
@@ -304,8 +394,18 @@ fn median_gap(gaps: &[i64]) -> f32 {
     }
 }
 
+/// Map a page-height fraction to a column row, less half a median line of
+/// tolerance. Missing metrics or invalid fractions leave the heuristic in charge.
+fn frac_row(frac: f32, col_h: u32, m: &LineMetrics) -> Option<u32> {
+    if m.is_sentinel() || !frac.is_finite() || !(0.0..=1.0).contains(&frac) {
+        return None;
+    }
+    Some(((frac * col_h as f32).round() as u32).saturating_sub(m.height_med / 2))
+}
+
 /// Drop the leading opening bands of a unit's first page. The `skip_top_bands`
-/// override, when set, drops exactly that many bands. Otherwise, if the source's
+/// override, when set, drops exactly that many bands. A recorded body fraction
+/// keeps bands from the first body line downward. Without a usable fraction, if the source's
 /// printed display title is detected among the leading bands, every band up to and
 /// including it is dropped (the previous unit's tail on a shared page plus the
 /// printed title); failing that, every band above the first full-measure body line
@@ -314,11 +414,19 @@ fn drop_opening_bands(
     col: &GrayImage,
     bands: &[Band],
     skip_top_bands: Option<u32>,
+    open_body_frac: Option<f32>,
     m: &LineMetrics,
 ) -> Vec<Band> {
     match skip_top_bands {
         Some(n) => bands.iter().skip(n as usize).copied().collect(),
         None => {
+            if let Some(row) = open_body_frac.and_then(|frac| frac_row(frac, col.height(), m)) {
+                return bands
+                    .iter()
+                    .copied()
+                    .filter(|b| b.top + (b.bottom - b.top) / 2 >= row)
+                    .collect();
+            }
             if let Some(i) = find_title_band(col, bands, m) {
                 return bands[i + 1..].to_vec();
             }
@@ -336,9 +444,23 @@ fn drop_opening_bands(
 
 /// On a unit's shared last page, keep only the bands **above** the next unit's
 /// printed display title (dropping the title and the next unit's body below it).
-/// When no title is found the next unit began at the page top, so nothing from this
-/// page belongs to the previous unit and all of it is dropped.
-fn drop_shared_tail(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<Band> {
+/// A recorded title fraction drives the cut and a detached trailing separator is
+/// removed. Without a usable fraction, the title heuristic supplies the cut; if
+/// that finds no title, the page contributes no bands to this unit.
+fn drop_shared_tail(
+    col: &GrayImage,
+    bands: &[Band],
+    tail_cut_frac: Option<f32>,
+    m: &LineMetrics,
+) -> Vec<Band> {
+    if let Some(row) = tail_cut_frac.and_then(|frac| frac_row(frac, col.height(), m)) {
+        let kept: Vec<Band> = bands
+            .iter()
+            .copied()
+            .filter(|b| b.top + (b.bottom - b.top) / 2 < row)
+            .collect();
+        return drop_trailing_furniture(col, &kept, m);
+    }
     match find_title_band_from(col, bands, m) {
         Some(i) => bands[..i].to_vec(),
         None => Vec::new(),
@@ -432,9 +554,21 @@ fn scan_title_band(
 /// corresponds to that page's `j`-th band, so the two zip directly.
 fn strips_in_reading_order(pages: &[(GrayImage, Vec<Band>)], m: &LineMetrics) -> Vec<Strip> {
     let mut strips = Vec::new();
+    let min_ink = minimum_ink(m);
     for (i, (col, bands)) in pages.iter().enumerate() {
+        let rows = min_ink.map(|_| ink_profile_rows(col, INK_THRESHOLD));
         let cuts = cut_points(bands);
         for (j, w) in cuts.windows(2).enumerate() {
+            if let (Some(min_ink), Some(rows)) = (min_ink, &rows) {
+                let band = &bands[j];
+                let ink: u64 = rows[band.top as usize..band.bottom as usize]
+                    .iter()
+                    .map(|&ink| ink as u64)
+                    .sum();
+                if ink < min_ink {
+                    continue;
+                }
+            }
             strips.push(Strip {
                 page_img_index: i,
                 band: Band {
@@ -560,6 +694,17 @@ pub fn compose_pages(
     if !current.is_empty() {
         canvases.push(pack_canvas(&current, geom));
     }
+    if let Some(min_ink) = minimum_ink(metrics) {
+        // Pixel area scales by the square of the global linear scale.
+        let scaled_min = (min_ink as f64 * (scale as f64).powi(2)).ceil().max(1.0) as u64;
+        canvases.retain(|canvas| {
+            let ink: u64 = ink_profile_rows(canvas, INK_THRESHOLD)
+                .iter()
+                .map(|&n| n as u64)
+                .sum();
+            ink >= scaled_min
+        });
+    }
     canvases
 }
 
@@ -665,6 +810,21 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 mod tests {
     use super::*;
 
+    #[test]
+    fn frac_row_maps_full_height_with_line_tolerance() {
+        let m = LineMetrics {
+            height_med: 8,
+            height_mad: 0,
+            width_med: 90,
+        };
+        assert_eq!(frac_row(0.39, 1000, &m), Some(386));
+        assert_eq!(frac_row(0.0, 1000, &m), Some(0));
+        assert_eq!(frac_row(0.39, 1000, &LineMetrics::sentinel()), None);
+        for frac in [f32::NAN, f32::INFINITY, -0.1, 1.1] {
+            assert_eq!(frac_row(frac, 1000, &m), None);
+        }
+    }
+
     /// A synthetic column image with the given row-bands filled dark across
     /// `[left, right)`; the rest is white.
     fn column(h: u32, w: u32, bands: &[(u32, u32, u32, u32)]) -> GrayImage {
@@ -734,7 +894,7 @@ mod tests {
         assert_eq!(bands.len(), 5);
         // With sentinel metrics the title heuristic is skipped, so this exercises the
         // full-measure-line fallback: both narrow leading bands are dropped.
-        let kept = drop_opening_bands(&img, &bands, None, &LineMetrics::sentinel());
+        let kept = drop_opening_bands(&img, &bands, None, None, &LineMetrics::sentinel());
         assert_eq!(kept.len(), 3);
         assert_eq!(kept[0].top, 30);
     }
@@ -754,7 +914,7 @@ mod tests {
         );
         let bands = line_bands(&img, 3);
         assert_eq!(bands.len(), 4);
-        let kept = drop_opening_bands(&img, &bands, Some(3), &LineMetrics::sentinel());
+        let kept = drop_opening_bands(&img, &bands, Some(3), Some(0.0), &LineMetrics::sentinel());
         assert_eq!(kept.len(), 1);
         assert_eq!(kept[0].top, 50);
     }
@@ -773,6 +933,124 @@ mod tests {
         let img = column(y, w, &specs);
         let bands = line_bands(&img, 3);
         (img, bands)
+    }
+
+    #[test]
+    fn compose_drops_speck_trailing_canvas() {
+        let mut page = page_with_lines(3);
+        let top = page.0.height() - 1;
+        for x in 5..8 {
+            page.0.put_pixel(x, top, Luma([0]));
+        }
+        page.1.push(Band {
+            top,
+            bottom: top + 1,
+        });
+        let m = line_metrics(std::slice::from_ref(&page));
+        let strips = strips_in_reading_order(std::slice::from_ref(&page), &m);
+        assert_eq!(strips.len(), 3);
+        assert_eq!(
+            strips_in_reading_order(std::slice::from_ref(&page), &LineMetrics::sentinel()).len(),
+            4
+        );
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 100,
+            tb_h: 100,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        let canvases = compose_pages(&[page], 1.0, &geom, 12, 12, &m);
+        assert_eq!(canvases.len(), 3);
+        for canvas in canvases {
+            let ink: u64 = ink_profile_rows(&canvas, INK_THRESHOLD)
+                .iter()
+                .map(|&n| n as u64)
+                .sum();
+            assert_eq!(ink, 8 * 90);
+        }
+    }
+
+    #[test]
+    fn compose_keeps_short_real_last_line() {
+        let mut page = page_with_lines(3);
+        let last = *page.1.last().unwrap();
+        for y in last.top..last.bottom {
+            for x in 25..95 {
+                page.0.put_pixel(x, y, Luma([255]));
+            }
+        }
+        let m = line_metrics(std::slice::from_ref(&page));
+        assert_eq!(
+            strips_in_reading_order(std::slice::from_ref(&page), &m).len(),
+            3
+        );
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 100,
+            tb_h: 100,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        let canvases = compose_pages(&[page], 1.0, &geom, 12, 12, &m);
+        assert_eq!(canvases.len(), 3);
+        let ink: u64 = ink_profile_rows(canvases.last().unwrap(), INK_THRESHOLD)
+            .iter()
+            .map(|&n| n as u64)
+            .sum();
+        assert_eq!(ink, 8 * 20);
+    }
+
+    #[test]
+    fn compose_drops_near_blank_split_canvases() {
+        let img = column(100, 100, &[(0, 8, 5, 95)]);
+        let pages = [(
+            img,
+            vec![Band {
+                top: 0,
+                bottom: 100,
+            }],
+        )];
+        let m = LineMetrics {
+            height_med: 8,
+            height_mad: 0,
+            width_med: 90,
+        };
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 100,
+            tb_h: 100,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        let canvases = compose_pages(&pages, 1.0, &geom, 20, 20, &m);
+        assert_eq!(canvases.len(), 1);
+        let ink: u64 = ink_profile_rows(&canvases[0], INK_THRESHOLD)
+            .iter()
+            .map(|&n| n as u64)
+            .sum();
+        assert_eq!(ink, 8 * 90);
+    }
+
+    #[test]
+    fn compose_canvas_ink_floor_tracks_global_scale() {
+        let (page, m) = page_and_metrics(8, 100, &[(0, 8, 5, 95)]);
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 10,
+            tb_h: 100,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        // After shrinking, the real line has less ink than the source-pixel floor.
+        let canvases = compose_pages(&[page], 0.1, &geom, 20, 20, &m);
+        assert_eq!(canvases.len(), 1);
+        assert!(
+            ink_profile_rows(&canvases[0], INK_THRESHOLD)
+                .iter()
+                .sum::<u32>()
+                > 0
+        );
     }
 
     #[test]
@@ -1066,6 +1344,8 @@ mod tests {
             source: 0,
             start_page: 1,
             skip_top_bands: None,
+            title_top_frac: None,
+            body_top_frac: None,
             last_page: None,
             pinned: false,
             review_notes: None,
@@ -1074,6 +1354,8 @@ mod tests {
             unit,
             end_page: 3,
             shared_tail: false,
+            open_body_frac: None,
+            tail_cut_frac: None,
         };
         let (pages, metrics) = unit_body_strips(&range, |_, _| Ok(img.clone())).unwrap();
         assert_eq!(pages.len(), 3);
@@ -1082,6 +1364,22 @@ mod tests {
         // The first page's opening (the narrow title) is dropped: its first kept band
         // is the first body line, well below the title's top at y≈4.
         assert!(pages[0].1[0].top > 20, "title not dropped on first page");
+
+        // Boundary coordinates belong to source pages, even if rendering fails.
+        let mut missing_boundaries = range.clone();
+        missing_boundaries.open_body_frac = Some(0.8);
+        missing_boundaries.tail_cut_frac = Some(0.2);
+        missing_boundaries.shared_tail = true;
+        let (surviving, _) = unit_body_strips(&missing_boundaries, |_, page| {
+            if page == 2 {
+                Ok(img.clone())
+            } else {
+                anyhow::bail!("unavailable page")
+            }
+        })
+        .unwrap();
+        assert_eq!(surviving.len(), 1);
+        assert_eq!(surviving[0].1, pages[1].1);
     }
 
     /// A page whose bands are `specs`, plus the metrics computed over it.
@@ -1250,9 +1548,71 @@ mod tests {
             (92, 100, 5, 95),
         ];
         let (page, m) = page_and_metrics(110, w, &specs);
-        let kept = drop_opening_bands(&page.0, &page.1, None, &m);
+        let kept = drop_opening_bands(&page.0, &page.1, None, None, &m);
         assert_eq!(kept.len(), 2);
         assert_eq!(kept[0].top, 80);
+    }
+
+    fn opening_fraction_fixture(title_left: u32, title_right: u32) -> (PageBands, LineMetrics) {
+        page_and_metrics(
+            150,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (12, 20, 5, 95),
+                (24, 32, 5, 95),
+                (50, 52, 40, 60),
+                (70, 80, title_left, title_right),
+                (100, 108, 5, 95),
+                (112, 120, 5, 95),
+                (124, 132, 5, 95),
+            ],
+        )
+    }
+
+    #[test]
+    fn opening_frac_drops_prev_tail_separator_title() {
+        let (page, m) = opening_fraction_fixture(40, 60);
+        let kept = drop_opening_bands(&page.0, &page.1, None, Some(100.0 / 150.0), &m);
+        assert_eq!(kept, page.1[5..]);
+    }
+
+    #[test]
+    fn opening_frac_handles_wide_title() {
+        let (page, m) = opening_fraction_fixture(5, 95);
+        let kept = drop_opening_bands(&page.0, &page.1, None, Some(100.0 / 150.0), &m);
+        assert_eq!(kept, page.1[5..]);
+        // A hand-authored band count takes precedence even with usable metrics.
+        assert_eq!(
+            drop_opening_bands(&page.0, &page.1, Some(2), Some(100.0 / 150.0), &m),
+            page.1[2..]
+        );
+    }
+
+    #[test]
+    fn opening_falls_back_to_heuristic_without_frac() {
+        let (page, m) = page_and_metrics(
+            110,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (12, 20, 5, 95),
+                (24, 32, 5, 95),
+                (60, 70, 40, 60),
+                (80, 88, 5, 95),
+                (92, 100, 5, 95),
+            ],
+        );
+        let kept = drop_opening_bands(&page.0, &page.1, None, None, &m);
+        assert_eq!(kept, page.1[4..]);
+        assert_eq!(
+            drop_opening_bands(&page.0, &page.1, None, Some(f32::NAN), &m),
+            kept
+        );
+        assert_eq!(
+            drop_opening_bands(&page.0, &page.1, None, Some(0.8), &LineMetrics::sentinel()),
+            drop_opening_bands(&page.0, &page.1, None, None, &LineMetrics::sentinel()),
+        );
     }
 
     #[test]
@@ -1267,9 +1627,161 @@ mod tests {
             (92, 100, 5, 95), // next body
         ];
         let (page, m) = page_and_metrics(110, w, &specs);
-        let kept = drop_shared_tail(&page.0, &page.1, &m);
+        let kept = drop_shared_tail(&page.0, &page.1, None, &m);
         assert_eq!(kept.len(), 3);
         assert_eq!(kept[2].top, 24);
+    }
+
+    #[test]
+    fn shared_tail_frac_keeps_prev_body_drops_separator() {
+        let (page, m) = opening_fraction_fixture(5, 95);
+        let kept = drop_shared_tail(&page.0, &page.1, Some(70.0 / 150.0), &m);
+        assert_eq!(kept, page.1[..3]);
+    }
+
+    #[test]
+    fn shared_tail_frac_removes_rule_connected_to_gutter_noise() {
+        let mut img = column(
+            150,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (12, 20, 5, 95),
+                (24, 32, 5, 95),
+                (60, 62, 40, 60),
+                (100, 110, 5, 95),
+                (125, 133, 5, 95),
+            ],
+        );
+        for y in 0..78 {
+            for x in 0..5 {
+                img.put_pixel(x, y, Luma([0]));
+            }
+        }
+        let bands = line_bands(&img, LINE_MIN_INK);
+        let m = LineMetrics {
+            height_med: 8,
+            height_mad: 0,
+            width_med: 90,
+        };
+        assert_eq!(bands[0], Band { top: 0, bottom: 78 });
+        let kept = drop_shared_tail(&img, &bands, Some(100.0 / 150.0), &m);
+        assert_eq!(kept, vec![Band { top: 0, bottom: 46 }]);
+        assert!(
+            kept[0].bottom > 32,
+            "the previous unit's final line must survive"
+        );
+    }
+
+    #[test]
+    fn trailing_rule_cleanup_preserves_real_line_and_sentinel() {
+        let mut img = column(
+            90,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (12, 20, 5, 95),
+                (24, 32, 5, 95),
+                (60, 68, 40, 60),
+            ],
+        );
+        for y in 0..78 {
+            for x in 0..5 {
+                img.put_pixel(x, y, Luma([0]));
+            }
+        }
+        let bands = line_bands(&img, LINE_MIN_INK);
+        let m = LineMetrics {
+            height_med: 8,
+            height_mad: 0,
+            width_med: 90,
+        };
+        assert_eq!(drop_trailing_furniture(&img, &bands, &m), bands);
+        assert_eq!(
+            drop_trailing_furniture(&img, &bands, &LineMetrics::sentinel()),
+            bands
+        );
+    }
+
+    #[test]
+    fn shared_tail_frac_removes_rule_smaller_than_strip_ink_floor() {
+        let mut img = column(
+            400,
+            1066,
+            &[
+                (0, 33, 80, 864),
+                (45, 78, 80, 864),
+                (90, 123, 80, 864),
+                (250, 257, 480, 544),
+                (350, 360, 80, 864),
+            ],
+        );
+        for y in 0..305 {
+            for x in 0..4 {
+                img.put_pixel(x, y, Luma([0]));
+            }
+        }
+        let bands = line_bands(&img, LINE_MIN_INK);
+        let m = LineMetrics {
+            height_med: 33,
+            height_mad: 1,
+            width_med: 784,
+        };
+        assert!(7 * 64 < minimum_ink(&m).unwrap());
+        let kept = drop_shared_tail(&img, &bands, Some(350.0 / 400.0), &m);
+        assert_eq!(
+            kept,
+            vec![Band {
+                top: 0,
+                bottom: 186
+            }]
+        );
+    }
+
+    #[test]
+    fn shared_tail_frac_keeps_short_attached_last_line() {
+        let (page, m) = page_and_metrics(
+            110,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (12, 20, 5, 95),
+                (24, 32, 40, 60),
+                (60, 70, 5, 95),
+                (80, 88, 5, 95),
+            ],
+        );
+        assert_eq!(
+            drop_shared_tail(&page.0, &page.1, Some(60.0 / 110.0), &m),
+            page.1[..3]
+        );
+        assert_eq!(
+            drop_shared_tail(&page.0, &page.1, Some(0.5), &LineMetrics::sentinel()),
+            drop_shared_tail(&page.0, &page.1, None, &LineMetrics::sentinel()),
+        );
+    }
+
+    #[test]
+    fn single_page_fraction_trims_both_ends() {
+        let (page, m) = page_and_metrics(
+            180,
+            100,
+            &[
+                (0, 8, 5, 95),
+                (25, 35, 5, 95),
+                (50, 58, 5, 95),
+                (62, 70, 5, 95),
+                (74, 82, 5, 95),
+                (110, 112, 40, 60),
+                (130, 140, 5, 95),
+                (155, 163, 5, 95),
+            ],
+        );
+        let after_top = drop_opening_bands(&page.0, &page.1, None, Some(50.0 / 180.0), &m);
+        assert_eq!(
+            drop_shared_tail(&page.0, &after_top, Some(130.0 / 180.0), &m),
+            page.1[2..5]
+        );
     }
 
     #[test]
@@ -1303,8 +1815,8 @@ mod tests {
             (152, 160, 5, 95), // next body
         ];
         let (page, m) = page_and_metrics(170, w, &specs);
-        let after_top = drop_opening_bands(&page.0, &page.1, None, &m);
-        let kept = drop_shared_tail(&page.0, &after_top, &m);
+        let after_top = drop_opening_bands(&page.0, &page.1, None, None, &m);
+        let kept = drop_shared_tail(&page.0, &after_top, None, &m);
         assert_eq!(kept.len(), 2);
         assert_eq!(kept[0].top, 70);
         assert_eq!(kept[1].top, 82);

@@ -13,7 +13,7 @@ use crate::tags::LifeKind;
 
 /// One Life or Comparatio: its titles, pairing group, source, and the source page
 /// its text opens on. End pages are derived in [`ranges`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Unit {
     pub id: String,
     pub latin_title: String,
@@ -31,6 +31,12 @@ pub struct Unit {
     /// reflow heuristic.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub skip_top_bands: Option<u32>,
+    /// Top of the printed title on the opening page, as a page-height fraction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title_top_frac: Option<f32>,
+    /// Top of the first body line on the opening page, as a page-height fraction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body_top_frac: Option<f32>,
     /// The inclusive last source body page of this unit, recorded by detection only
     /// on each source's final unit (whose end cannot be derived from a following
     /// unit's `start_page`). It excludes the back-matter/library pages the source
@@ -51,7 +57,7 @@ pub struct Unit {
 }
 
 /// A unit paired with the inclusive last source page of its body range.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UnitRange {
     pub unit: Unit,
     pub end_page: u32,
@@ -60,6 +66,10 @@ pub struct UnitRange {
     /// the bands above the next unit's printed title on that page; otherwise the
     /// whole `end_page` belongs to this unit.
     pub shared_tail: bool,
+    /// First body line on this unit's opening page, as a page-height fraction.
+    pub open_body_frac: Option<f32>,
+    /// Next unit's title on the shared tail page, as a page-height fraction.
+    pub tail_cut_frac: Option<f32>,
 }
 
 /// Load and validate the hand-authored `facsimile_units.json`.
@@ -136,6 +146,11 @@ pub fn ranges(units: &[Unit], source_last_body_page: &[u32]) -> Vec<UnitRange> {
             unit: unit.clone(),
             end_page,
             shared_tail,
+            open_body_frac: unit.body_top_frac,
+            tail_cut_frac: units
+                .get(i + 1)
+                .filter(|next| next.source == unit.source)
+                .and_then(|next| next.title_top_frac),
         });
     }
     out
@@ -144,6 +159,20 @@ pub fn ranges(units: &[Unit], source_last_body_page: &[u32]) -> Vec<UnitRange> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unit_fraction_round_trip_and_legacy_defaults() {
+        let mut row = unit("romulus", 0, 33);
+        let legacy = serde_json::to_string(&row).unwrap();
+        assert!(!legacy.contains("top_frac"));
+        assert_eq!(serde_json::from_str::<Unit>(&legacy).unwrap(), row);
+        row.title_top_frac = Some(0.39);
+        row.body_top_frac = Some(0.43);
+        assert_eq!(
+            serde_json::from_str::<Unit>(&serde_json::to_string(&row).unwrap()).unwrap(),
+            row
+        );
+    }
 
     fn unit(id: &str, source: usize, start: u32) -> Unit {
         Unit {
@@ -155,6 +184,8 @@ mod tests {
             source,
             start_page: start,
             skip_top_bands: None,
+            title_top_frac: None,
+            body_top_frac: None,
             last_page: None,
             pinned: false,
             review_notes: None,
@@ -268,5 +299,23 @@ mod tests {
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].end_page, 637);
         assert!(!ranges[0].shared_tail);
+    }
+
+    #[test]
+    fn ranges_carries_opening_and_same_source_tail_fractions() {
+        let mut first = unit("theseus", 0, 14);
+        first.body_top_frac = Some(0.3);
+        let mut next = unit("romulus", 0, 33);
+        next.title_top_frac = Some(0.39);
+        next.body_top_frac = Some(0.43);
+        let mut other_source = unit("nicias", 1, 18);
+        other_source.title_top_frac = Some(0.2);
+        let ranges = ranges(&[first, next, other_source], &[637, 713]);
+        assert_eq!(ranges[0].open_body_frac, Some(0.3));
+        assert_eq!(ranges[0].tail_cut_frac, Some(0.39));
+        assert_eq!(ranges[1].open_body_frac, Some(0.43));
+        assert_eq!(ranges[1].tail_cut_frac, None);
+        assert_eq!(ranges[2].open_body_frac, None);
+        assert_eq!(ranges[2].tail_cut_frac, None);
     }
 }

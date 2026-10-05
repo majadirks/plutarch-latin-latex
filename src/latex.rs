@@ -324,11 +324,44 @@ pub(crate) fn front_prose_pages(sidecar: &Sidecar, pages: &[(usize, u32)]) -> St
 /// `\markboth{}{}` so the facsimile path's prose carries no stale Life running head;
 /// the transcription path passes `false`, keeping its golden bytes unchanged.
 fn front_prose_page(doc: &PageDoc, reset_running_head: bool) -> String {
+    front_prose_page_blocks(&doc.blocks, reset_running_head)
+}
+
+/// Render listed pages through the first block containing `sentinel`, preserving
+/// the cached text. Warn and emit all available blocks if the sentinel is absent.
+pub(crate) fn front_prose_pages_until(
+    sidecar: &Sidecar,
+    pages: &[(usize, u32)],
+    sentinel: &str,
+) -> String {
+    let mut out = String::new();
+    for &(source, page) in pages {
+        let Some(doc) = sidecar
+            .page(source, page)
+            .and_then(|record| record.result.as_ref())
+        else {
+            continue;
+        };
+        if let Some(idx) = doc
+            .blocks
+            .iter()
+            .position(|block| block.text.contains(sentinel))
+        {
+            out.push_str(&front_prose_page_blocks(&doc.blocks[..=idx], true));
+            return out;
+        }
+        out.push_str(&front_prose_page_blocks(&doc.blocks, true));
+    }
+    eprintln!("WARNING: front-prose sentinel not found: {sentinel:?}; emitting all available prose, which may duplicate embedded errata");
+    out
+}
+
+fn front_prose_page_blocks(blocks: &[Block], reset_running_head: bool) -> String {
     let mut out = String::from("% Re-typeset front-matter prose\n\\freshpage\n");
     if reset_running_head {
         out.push_str("\\markboth{}{}\n");
     }
-    out.push_str(&render_blocks(&doc.blocks));
+    out.push_str(&render_blocks(blocks));
     out.push_str("\\clearpage\n\n");
     out
 }
@@ -402,6 +435,33 @@ pub(crate) fn embed_scan(name: &str) -> String {
          \\begin{{center}}\n\
          \x20 \\includegraphics[width=\\textwidth,height=\\textheight,keepaspectratio]{{{name}}}\n\
          \\end{{center}}\n\
+         \\clearpage\n\n",
+    )
+}
+
+/// Two consecutive front-matter crops in one measured, centered page box.
+/// Zero-depth images keep the stack depth zero, so resizebox scales its full height.
+pub(crate) fn embed_scan_pair(first: &str, second: &str) -> String {
+    format!(
+        "% Embedded front-matter scan pair\n\
+         \\clearpage\n\
+         \\thispagestyle{{empty}}\n\
+         \\begingroup\n\
+         \\setbox0=\\vbox{{%\n\
+         \\offinterlineskip\n\
+         \\hbox{{\\includegraphics[width=\\textwidth]{{{first}}}}}%\n\
+         \\vskip 2mm\n\
+         \\hbox{{\\includegraphics[width=\\textwidth]{{{second}}}}}%\n\
+         }}%\n\
+         \\dimen0=\\dimexpr\\textheight-\\baselineskip\\relax\n\
+         \\noindent\\makebox[\\textwidth][c]{{%\n\
+         \\ifdim\\dimexpr\\ht0+\\dp0\\relax>\\dimen0%\n\
+         \\resizebox{{!}}{{\\dimen0}}{{\\copy0}}%\n\
+         \\else%\n\
+         \\copy0%\n\
+         \\fi%\n\
+         }}\\par\n\
+         \\endgroup\n\
          \\clearpage\n\n",
     )
 }
@@ -1010,6 +1070,38 @@ mod tests {
     }
 
     #[test]
+    fn embed_scan_pair_preserves_order_and_single_page() {
+        let s = embed_scan_pair("first.png", "second.png");
+        assert_eq!(s.matches("first.png").count(), 1);
+        assert_eq!(s.matches("second.png").count(), 1);
+        assert!(s.find("first.png").unwrap() < s.find("second.png").unwrap());
+        assert_eq!(s.matches("\\clearpage").count(), 2);
+        assert!(s.contains("\\thispagestyle{empty}"));
+        assert!(!s.contains("\\freshpage"));
+        assert!(!s.contains("{center}"));
+    }
+
+    #[test]
+    fn embed_scan_pair_measures_and_shrinks_the_shared_box() {
+        let s = embed_scan_pair("first.png", "second.png");
+        for expected in [
+            "\\setbox0=\\vbox{%",
+            "\\offinterlineskip",
+            "\\hbox{\\includegraphics[width=\\textwidth]{first.png}}%",
+            "\\hbox{\\includegraphics[width=\\textwidth]{second.png}}%",
+            "\\vskip 2mm",
+            "\\dimen0=\\dimexpr\\textheight-\\baselineskip\\relax",
+            "\\ifdim\\dimexpr\\ht0+\\dp0\\relax>\\dimen0%",
+            "\\resizebox{!}{\\dimen0}{\\copy0}%",
+            "\\else%\n\\copy0%",
+            "\\noindent\\makebox[\\textwidth][c]{%",
+            "}\\par\n\\endgroup",
+        ] {
+            assert!(s.contains(expected), "missing {expected}: {s}");
+        }
+    }
+
+    #[test]
     fn embed_scan_includes_named_png_scaled() {
         let s = embed_scan("front_qr_s0.png");
         assert!(s.contains(
@@ -1018,6 +1110,60 @@ mod tests {
         assert!(s.contains("\\thispagestyle{empty}"));
         // The PNG is cropped in Rust, so no LaTeX trim is emitted.
         assert!(!s.contains("trim="));
+    }
+
+    #[test]
+    fn front_prose_pages_until_stops_at_sentinel() {
+        let sc = sidecar(
+            vec![
+                front_prose_page(
+                    0,
+                    12,
+                    vec![
+                        block(BlockKind::Paragraph, "Earlier significavit remains."),
+                        block(
+                            BlockKind::Paragraph,
+                            "Dœhnerus hæc mutanda esse significavit.",
+                        ),
+                        block(BlockKind::Paragraph, "ERRATA FIRST"),
+                        block(BlockKind::Paragraph, "ERRATA SECOND"),
+                    ],
+                ),
+                front_prose_page(0, 13, vec![block(BlockKind::Paragraph, "LATER PAGE")]),
+            ],
+            vec![],
+        );
+        let out = front_prose_pages_until(&sc, &[(0, 12), (0, 13)], "mutanda esse significavit.");
+        assert!(out.contains("Earlier significavit remains."));
+        assert!(out.contains("Dœhnerus hæc mutanda esse significavit."));
+        assert!(!out.contains("ERRATA"));
+        assert!(!out.contains("LATER PAGE"));
+        assert_eq!(out.matches("\\freshpage").count(), 1);
+        assert!(out.contains("\\markboth{}{}"));
+        assert!(out.ends_with("\\clearpage\n\n"));
+    }
+
+    #[test]
+    fn front_prose_pages_until_emits_all_when_sentinel_absent() {
+        let sc = sidecar(
+            vec![
+                front_prose_page(
+                    0,
+                    12,
+                    vec![
+                        block(BlockKind::Paragraph, "FIRST BLOCK"),
+                        block(BlockKind::Paragraph, "SECOND BLOCK"),
+                    ],
+                ),
+                front_prose_page(0, 13, vec![block(BlockKind::Paragraph, "LATER PAGE")]),
+            ],
+            vec![],
+        );
+        let pages = [(0, 11), (0, 12), (0, 13)];
+        assert_eq!(
+            front_prose_pages_until(&sc, &pages, "absent"),
+            front_prose_pages(&sc, &pages)
+        );
     }
 
     #[test]

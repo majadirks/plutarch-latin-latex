@@ -36,6 +36,10 @@ struct Args {
     #[arg(long)]
     retag: bool,
 
+    /// Build with cached front-matter prose; never invoke the vision API.
+    #[arg(long, conflicts_with_all = ["retag", "review_lines"])]
+    offline: bool,
+
     /// Detect the unit table, write/refresh `facsimile_units.json`, and exit.
     #[arg(long)]
     detect_units: bool,
@@ -72,6 +76,7 @@ fn main() -> Result<()> {
         units: args.units,
         no_compile: args.no_compile,
         retag: args.retag,
+        offline: args.offline,
         detect_units: args.detect_units,
         redetect: args.redetect,
         pages: args.pages,
@@ -85,6 +90,24 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn offline_flag_excludes_vision_operations() {
+        let base = [
+            "facsimile",
+            "--v1",
+            "v1.pdf",
+            "--v2",
+            "v2.pdf",
+            "--out",
+            "o",
+            "--offline",
+        ];
+        assert!(Args::try_parse_from(base).unwrap().offline);
+        for flag in ["--retag", "--review-lines"] {
+            assert!(Args::try_parse_from(base.into_iter().chain([flag])).is_err());
+        }
+    }
 
     #[test]
     fn facsimile_clean_cache_flag_parses() {

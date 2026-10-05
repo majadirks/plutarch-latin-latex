@@ -26,7 +26,7 @@ pub const FRONT_PER_TOMUS_PAGES: u32 = 2;
 pub const VOLUMEN_TITLE_PAGES: u32 = 1;
 /// The printer's colophon, on **Tomus I only**.
 pub const COLOPHON_PAGES: u32 = 1;
-/// The re-typeset Monitum, on **Tomus I only**.
+/// One re-typeset prose page plus one combined errata image page on Tomus I.
 pub const MONITUM_PAGES: u32 = 2;
 /// The re-typeset Praefatio, on **v2's first tomus only**. Generous estimate
 /// (`\freshpage` may round each piece up to a recto); tuned in Phase 7.
@@ -388,6 +388,12 @@ mod tests {
         let max = *sums.iter().max().unwrap();
         let min = *sums.iter().min().unwrap();
         assert!(max - min <= 140, "volumes imbalanced: {sums:?}");
+    }
+
+    #[test]
+    fn monitum_front_overhead_counts_two_content_pages() {
+        assert_eq!(MONITUM_PAGES, 2);
+        assert_eq!(front_overhead(0, true, true), 6);
     }
 
     #[test]

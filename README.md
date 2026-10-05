@@ -37,6 +37,9 @@ cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/
 # Re-detect the table even when the cache is present (keeps pinned hand edits).
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --redetect
 
+# Rebuild from source scans and cached front-matter prose without vision calls.
+cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --offline
+
 # A single unit, or a raw source page range, for a cheap test.
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --unit theseus --no-compile
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --pages v1:14-45 --no-compile
@@ -69,14 +72,23 @@ normal build auto-detects when it is absent, and any row marked `"pinned": true`
 its `skip_top_bands` tweak) survives regeneration unchanged. See
 `llm_artifacts/2026_10_03_FACSIMILE_UNIT_AUTODETECT_PLAN.md`.
 
-**Front matter** is the one place the facsimile path uses vision: the v1 Monitum, v2
-Praefatio, and derived title pages are full-width prose re-typeset to the trim
-measure. They are transcribed **once** and cached in `plutarch.frontmatter.tags.json`
-(same semantics as the body cache below); later builds read the cache and make zero
-network calls. `--retag` or a changed source re-runs the transcription. Only
-`FrontProse` pages are ever sent — no body page is. If no API key is configured on a
-first run, front-matter transcription is skipped with a warning and the body build
-still completes.
+**Front matter** is the one place the facsimile path uses vision: the v1 Monitum
+prose through “mutanda esse significavit.” is re-typeset to the trim measure, and
+its Greek errata list follows immediately on one page containing the p12 and p13
+source crops, scaled together. The first body page follows directly after that
+combined errata page. The QR notice, Volumen-title, and colophon scans retain their
+existing page starts. The v2 Praefatio remains fully
+re-typeset, as are the derived title pages. The prose is transcribed **once** and
+cached in `plutarch.frontmatter.tags.json` (same semantics as the body cache below);
+later builds read the cache and make zero
+network calls when every required result is present. `--offline` reads a fresh
+cache without updating it, including when individual results are absent; missing
+or stale cached prose is skipped. It cannot be combined with `--retag` or
+`--review-lines`. `--retag` or a changed source re-runs the transcription. Only
+`FrontProse` pages requiring transcription are ever sent — v1 p13 is reproduced as
+an image and excluded from transcription and reconciliation; no body page is sent.
+If no API key is configured on a first run, front-matter transcription is skipped
+with a warning and the body build still completes.
 
 ---
 

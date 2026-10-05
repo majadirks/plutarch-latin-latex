@@ -12,7 +12,7 @@ use anyhow::{bail, Context, Result};
 
 use super::corpus;
 use super::units::{self, Unit};
-use crate::render::{running_head, title_token, Pdf};
+use crate::render::{running_head, title_token, Pdf, Word};
 use crate::verify::fold;
 
 /// Tokens that carry no identifying weight: folded `cum`/`seu` and any token of two
@@ -45,6 +45,42 @@ pub fn tokens(s: &str) -> Vec<String> {
         .map(fold)
         .filter(|t| t.chars().count() > 2 && !STOP.contains(&t.as_str()))
         .collect()
+}
+
+const TITLE_TOP_ZONE_FRAC: f32 = 0.10;
+const TITLE_LINE_EPSILON: f32 = 0.012;
+
+/// Locate the known unit's printed title and first body line below top furniture.
+pub fn title_box(words: &[Word], unit: usize) -> Option<(f32, f32)> {
+    let wanted = tokens(corpus::corpus().get(unit)?.latin_title);
+    let mut kept: Vec<&Word> = words
+        .iter()
+        .filter(|w| w.x_min > 0.5 && w.y_min > TITLE_TOP_ZONE_FRAC && w.y_min.is_finite())
+        .collect();
+    kept.sort_by(|a, b| a.y_min.total_cmp(&b.y_min));
+    let mut lines: Vec<(f32, Vec<&Word>)> = Vec::new();
+    for word in kept {
+        if let Some((y, line)) = lines.last_mut() {
+            if word.y_min - *y < TITLE_LINE_EPSILON {
+                line.push(word);
+                continue;
+            }
+        }
+        lines.push((word.y_min, vec![word]));
+    }
+    let matches = |line: &(f32, Vec<&Word>)| {
+        line.1
+            .iter()
+            .filter_map(|w| title_token(&w.text))
+            .flat_map(|t| tokens(&t))
+            .any(|t| wanted.iter().any(|w| crate::assemble::token_matches(&t, w)))
+    };
+    let first = lines.iter().position(matches)?;
+    let mut body = first + 1;
+    while body < lines.len() && matches(&lines[body]) {
+        body += 1;
+    }
+    Some((lines[first].0, lines.get(body)?.0))
 }
 
 /// The corpus unit a page belongs to, from its running head. `None` when the head
@@ -116,11 +152,13 @@ pub fn smooth(seq: &[Option<usize>], window: u32) -> Vec<Option<usize>> {
 }
 
 /// A maximal contiguous span of one corpus unit, in 1-based page numbers.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Run {
     pub unit: usize,
     pub start_page: u32,
     pub end_page: u32,
+    pub title_top_frac: Option<f32>,
+    pub body_top_frac: Option<f32>,
 }
 
 /// Maximal contiguous spans of one corpus id, as 1-based page ranges (page = index
@@ -139,6 +177,8 @@ pub fn runs(smoothed: &[Option<usize>]) -> Vec<Run> {
                     unit,
                     start_page: (start + 1) as u32,
                     end_page: i as u32,
+                    title_top_frac: None,
+                    body_top_frac: None,
                 };
                 if run.end_page + 1 - run.start_page >= MIN_RUN_PAGES {
                     out.push(run);
@@ -156,9 +196,14 @@ pub fn runs(smoothed: &[Option<usize>]) -> Vec<Run> {
 /// next unit's `start_page − 1`; the last unit runs to its own run end (the source's
 /// last body page). `page_text_fn(page)` is injected so tests supply canned OCR
 /// without a PDF.
-pub fn detect_openings<F>(body_range: RangeInclusive<u32>, page_text_fn: F) -> Result<Vec<Run>>
+pub fn detect_openings<F, G>(
+    body_range: RangeInclusive<u32>,
+    page_text_fn: F,
+    page_words_fn: G,
+) -> Result<Vec<Run>>
 where
     F: Fn(u32) -> Result<String>,
+    G: Fn(u32) -> Result<Vec<Word>>,
 {
     let start = *body_range.start();
     let end = *body_range.end();
@@ -200,10 +245,13 @@ where
             Some(&(_, next_start, _)) => next_start.saturating_sub(1),
             None => run_end,
         };
+        let boundary = title_box(&page_words_fn(s)?, unit);
         out.push(Run {
             unit,
             start_page: s,
             end_page: e.max(s),
+            title_top_frac: boundary.map(|b| b.0),
+            body_top_frac: boundary.map(|b| b.1),
         });
     }
     Ok(out)
@@ -243,6 +291,8 @@ pub fn units_from_runs(runs_v1: &[Run], runs_v2: &[Run]) -> Result<Vec<Unit>> {
                 source: cu.source,
                 start_page: run.start_page,
                 skip_top_bands: None,
+                title_top_frac: run.title_top_frac,
+                body_top_frac: run.body_top_frac,
                 last_page: None,
                 pinned: false,
                 review_notes: None,
@@ -323,23 +373,27 @@ fn merge_pins(detected: Vec<Unit>, existing: &[Unit]) -> Vec<Unit> {
 /// over both sources, pinned hand edits from any existing file are merged over the
 /// result, and the merged table is written to `path` and returned. `page_text_fn`
 /// (source, page) is injected so tests can supply canned OCR without a PDF.
-pub fn load_or_detect<F>(
+pub fn load_or_detect<F, G>(
     path: &Path,
     pdfs: &[Pdf],
     redetect: bool,
     page_text_fn: F,
+    page_words_fn: G,
 ) -> Result<Vec<Unit>>
 where
     F: Fn(usize, u32) -> Result<String>,
+    G: Fn(usize, u32) -> Result<Vec<Word>>,
 {
     if !redetect && path.exists() {
         return units::load_units(path);
     }
     let mut runs: Vec<Vec<Run>> = Vec::new();
     for (source, pdf) in pdfs.iter().enumerate() {
-        runs.push(detect_openings(1..=pdf.page_count, |page| {
-            page_text_fn(source, page)
-        })?);
+        runs.push(detect_openings(
+            1..=pdf.page_count,
+            |page| page_text_fn(source, page),
+            |page| page_words_fn(source, page),
+        )?);
     }
     let detected = units_from_runs(&runs[0], &runs[1])?;
     let existing = if path.exists() {
@@ -358,6 +412,64 @@ where
 mod tests {
     use super::*;
 
+    fn word(text: &str, x: f32, y: f32) -> Word {
+        Word {
+            text: text.into(),
+            x_min: x,
+            x_max: x + 0.1,
+            y_min: y,
+            y_max: y + 0.008,
+        }
+    }
+
+    #[test]
+    fn title_box_narrow_midpage() {
+        let words = vec![
+            word("ROMULUS", 0.6, 0.06),
+            word("tail", 0.6, 0.2),
+            word("ROMULUS.", 0.6, 0.39),
+            word("Ingens", 0.6, 0.43),
+        ];
+        assert_eq!(title_box(&words, id("romulus")), Some((0.39, 0.43)));
+    }
+
+    #[test]
+    fn title_box_wide_two_line() {
+        let words = vec![
+            word("COMPARATIO", 0.51, 0.765),
+            word("THESEI", 0.7, 0.766),
+            word("ROMULO.", 0.6, 0.787),
+            word("Habes", 0.6, 0.827),
+        ];
+        assert_eq!(
+            title_box(&words, id("comparatio_thesei_et_romuli")),
+            Some((0.765, 0.827))
+        );
+    }
+
+    #[test]
+    fn title_box_skips_left_greek_column() {
+        let words = vec![
+            word("ROMULUS", 0.1, 0.2),
+            word("body", 0.1, 0.24),
+            word("ROMULUS", 0.6, 0.39),
+            word("Ingens", 0.6, 0.43),
+        ];
+        assert_eq!(title_box(&words, id("romulus")), Some((0.39, 0.43)));
+    }
+
+    #[test]
+    fn title_box_none_when_absent() {
+        assert_eq!(
+            title_box(
+                &[word("Romulus", 0.6, 0.3), word("body", 0.6, 0.34)],
+                id("romulus")
+            ),
+            None
+        );
+        assert_eq!(title_box(&[word("ROMULUS", 0.6, 0.3)], id("romulus")), None);
+    }
+
     fn id(id: &str) -> usize {
         corpus::corpus().iter().position(|u| u.id == id).unwrap()
     }
@@ -374,6 +486,8 @@ mod tests {
                     unit: i,
                     start_page: p1,
                     end_page: p1 + 1,
+                    title_top_frac: None,
+                    body_top_frac: None,
                 });
                 p1 += 2;
             } else {
@@ -381,6 +495,8 @@ mod tests {
                     unit: i,
                     start_page: p2,
                     end_page: p2 + 1,
+                    title_top_frac: None,
+                    body_top_frac: None,
                 });
                 p2 += 2;
             }
@@ -454,7 +570,7 @@ mod tests {
                 _ => "THESEUS. 10".to_string(),
             })
         };
-        let detected = detect_openings(1..=6, pages).unwrap();
+        let detected = detect_openings(1..=6, pages, |_| Ok(vec![])).unwrap();
         assert_eq!(detected.len(), 1);
         assert_eq!(detected[0].unit, id("theseus"));
         assert_eq!(detected[0].start_page, 1);
@@ -467,7 +583,7 @@ mod tests {
         let pages = |_p: u32| -> Result<String> {
             Ok("ALPHA BETA GAMMA DELTA THESEUS\n1. body text".to_string())
         };
-        let detected = detect_openings(1..=3, pages).unwrap();
+        let detected = detect_openings(1..=3, pages, |_| Ok(vec![])).unwrap();
         assert_eq!(detected.len(), 1);
         assert_eq!(detected[0].unit, id("theseus"));
         assert_eq!(detected[0].start_page, 1);
@@ -495,6 +611,16 @@ mod tests {
     }
 
     #[test]
+    fn units_from_runs_carries_fracs() {
+        let (mut v1, v2) = full_runs();
+        v1[1].title_top_frac = Some(0.39);
+        v1[1].body_top_frac = Some(0.43);
+        let units = units_from_runs(&v1, &v2).unwrap();
+        assert_eq!(units[1].title_top_frac, Some(0.39));
+        assert_eq!(units[1].body_top_frac, Some(0.43));
+    }
+
+    #[test]
     fn units_from_runs_reports_missing_unit() {
         let (mut v1, v2) = full_runs();
         // Drop Romulus, an interior unit of v1's detected span.
@@ -519,12 +645,26 @@ mod tests {
             })
         };
         let pdfs = [stub_pdf("v1", 6), stub_pdf("v2", 0)];
-        let units = load_or_detect(&path, &pdfs, false, pages).unwrap();
+        let boxes = |_: usize, p: u32| {
+            Ok(match p {
+                3 => vec![word("ROMULUS", 0.6, 0.39), word("Ingens", 0.6, 0.43)],
+                5 => vec![
+                    word("COMPARATIO", 0.6, 0.765),
+                    word("ROMULO", 0.6, 0.787),
+                    word("Habes", 0.6, 0.827),
+                ],
+                _ => vec![],
+            })
+        };
+        let units = load_or_detect(&path, &pdfs, false, pages, boxes).unwrap();
         assert!(path.exists());
         let ids: Vec<&str> = units.iter().map(|u| u.id.as_str()).collect();
         assert_eq!(ids, ["theseus", "romulus", "comparatio_thesei_et_romuli"]);
         assert_eq!(units[0].start_page, 1);
         assert_eq!(units[1].start_page, 3);
+        assert_eq!(units[1].title_top_frac, Some(0.39));
+        assert_eq!(units[2].body_top_frac, Some(0.827));
+        assert_eq!(units::load_units(&path).unwrap(), units);
     }
 
     #[test]
@@ -544,16 +684,20 @@ mod tests {
         let pdfs = [stub_pdf("v1", 4), stub_pdf("v2", 0)];
         // First detection writes the file; then a human pins Theseus with a corrected
         // start_page and a skip_top_bands tweak.
-        let mut units = load_or_detect(&path, &pdfs, false, pages).unwrap();
+        let mut units = load_or_detect(&path, &pdfs, false, pages, |_, _| Ok(vec![])).unwrap();
         units[0].start_page = 2;
         units[0].skip_top_bands = Some(3);
+        units[0].title_top_frac = Some(0.3);
+        units[0].body_top_frac = Some(0.35);
         units[0].pinned = true;
         std::fs::write(&path, serde_json::to_string_pretty(&units).unwrap()).unwrap();
         // A redetect that would set Theseus back to page 1 must keep the pin.
-        let redetected = load_or_detect(&path, &pdfs, true, pages).unwrap();
+        let redetected = load_or_detect(&path, &pdfs, true, pages, |_, _| Ok(vec![])).unwrap();
         let theseus = redetected.iter().find(|u| u.id == "theseus").unwrap();
         assert_eq!(theseus.start_page, 2);
         assert_eq!(theseus.skip_top_bands, Some(3));
+        assert_eq!(theseus.title_top_frac, Some(0.3));
+        assert_eq!(theseus.body_top_frac, Some(0.35));
         assert!(theseus.pinned);
         // The unpinned Romulus row is still freshly detected.
         let romulus = redetected.iter().find(|u| u.id == "romulus").unwrap();
@@ -587,7 +731,12 @@ mod full_source {
 
     fn detect_source(pdf: &Path) -> Vec<Run> {
         let last = page_count(pdf).unwrap();
-        detect_openings(1..=last, |p| page_text(pdf, p)).unwrap()
+        detect_openings(
+            1..=last,
+            |p| page_text(pdf, p),
+            |p| crate::render::page_words(pdf, p),
+        )
+        .unwrap()
     }
 
     #[test]
