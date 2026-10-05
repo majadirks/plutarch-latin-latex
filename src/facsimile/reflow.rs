@@ -847,6 +847,254 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 mod tests {
     use super::*;
 
+    #[derive(serde::Deserialize)]
+    struct ReviewedBands {
+        source: usize,
+        page: u32,
+        dpi: u32,
+        column: [u32; 2],
+        body: Vec<[u32; 2]>,
+        excluded: Vec<[u32; 2]>,
+        noise: Vec<[u32; 2]>,
+    }
+
+    struct SourcePageTrace {
+        requests: Vec<u32>,
+        renders: Vec<u32>,
+        detections: Vec<u32>,
+    }
+
+    fn traced_real_unit(range: &UnitRange) -> (Vec<PageBands>, LineMetrics) {
+        let trace = std::cell::RefCell::new(SourcePageTrace {
+            requests: vec![],
+            renders: vec![],
+            detections: vec![],
+        });
+        let (pages, m) = unit_body_strips(range, |s, p| {
+            trace.borrow_mut().requests.push(p);
+            let image = real_source_image(s, p);
+            trace.borrow_mut().renders.push(p);
+            detect_latin_column(&image).expect("successful Latin-column detection");
+            trace.borrow_mut().detections.push(p);
+            Ok(image)
+        })
+        .unwrap();
+        let trace = trace.into_inner();
+        let expected: Vec<_> = (range.unit.start_page..=range.end_page).collect();
+        assert_eq!(trace.requests, expected);
+        assert_eq!(trace.renders, expected);
+        assert_eq!(trace.detections, expected);
+        assert_eq!(
+            pages.len(),
+            expected.len(),
+            "no skipped pages before indexing source coordinates"
+        );
+        let ledger: Vec<ReviewedBands> =
+            serde_json::from_str(include_str!("fixtures/closing_body_bands.json")).unwrap();
+        for record in ledger.iter().filter(|r| {
+            r.source == range.unit.source
+                && expected.contains(&r.page)
+                && !(r.page == 434 && range.unit.id != "cato_major")
+        }) {
+            let retained = &pages[(record.page - range.unit.start_page) as usize];
+            let original = real_source_image(record.source, record.page);
+            let column = detect_latin_column(&original).unwrap();
+            assert_eq!(record.dpi, BODY_DPI);
+            assert_eq!(record.column, [column.left, column.right]);
+            let mut previous = 0;
+            for &[top, bottom] in &record.body {
+                let band = Band { top, bottom };
+                assert!(top >= previous, "review ledger in source order");
+                previous = bottom;
+                assert_eq!(
+                    retained.1.iter().filter(|b| **b == band).count(),
+                    1,
+                    "source {} page {} body band {band:?}",
+                    record.source,
+                    record.page
+                );
+                let source_crop = image::imageops::crop_imm(
+                    &original,
+                    column.left,
+                    top,
+                    column.right - column.left,
+                    bottom - top,
+                )
+                .to_image();
+                let kept_crop = image::imageops::crop_imm(
+                    &retained.0,
+                    0,
+                    top,
+                    retained.0.width(),
+                    bottom - top,
+                )
+                .to_image();
+                assert_eq!(source_crop, kept_crop, "original unscaled source pixels");
+            }
+            let body_top = record.body.first().unwrap()[0];
+            let body_bottom = record.body.last().unwrap()[1];
+            // A shared page's other unit is checked by its own boundary regression.
+            for &[top, bottom] in &record.excluded {
+                if (range.unit.id == "cato_major" && top < body_top)
+                    || (range.unit.id == "comparatio_aristidis_et_catonis" && bottom > body_bottom)
+                {
+                    continue;
+                }
+                assert!(
+                    !strips_in_reading_order(std::slice::from_ref(retained), &m)
+                        .iter()
+                        .any(|s| s.band.top < bottom && s.band.bottom > top),
+                    "excluded furniture on page {}: {top}..{bottom}",
+                    record.page
+                );
+            }
+            for &[top, bottom] in &record.noise {
+                assert!(bottom - top < 12);
+            }
+        }
+        (pages, m)
+    }
+
+    /// Independently resize cut-point intervals and concatenate rows; no packing oracle.
+    fn assert_scaled_stream(
+        pages: &[PageBands],
+        m: &LineMetrics,
+        scale: f32,
+        geom: &TrimGeom,
+        first: u32,
+        budget: u32,
+    ) -> Vec<GrayImage> {
+        let mut expected = Vec::new();
+        for (col, bands) in pages {
+            let cuts = cut_points(bands);
+            for (i, pair) in cuts.windows(2).enumerate() {
+                let source_band = bands[i];
+                let ink: u64 = (source_band.top..source_band.bottom)
+                    .map(|y| {
+                        (0..col.width())
+                            .filter(|&x| col.get_pixel(x, y)[0] <= INK_THRESHOLD)
+                            .count() as u64
+                    })
+                    .sum();
+                if minimum_ink(m).is_some_and(|floor| ink < floor) {
+                    continue;
+                }
+                let resized = scale_strip(
+                    col,
+                    &Band {
+                        top: pair[0],
+                        bottom: pair[1],
+                    },
+                    scale,
+                )
+                .unwrap();
+                for y in 0..resized.height() {
+                    let mut row = vec![255; geom.tb_w as usize];
+                    for x in 0..resized.width().min(geom.tb_w.saturating_sub(geom.pad_x)) {
+                        row[(geom.pad_x + x) as usize] = resized.get_pixel(x, y)[0];
+                    }
+                    expected.extend(row);
+                }
+            }
+        }
+        let canvases = compose_pages(pages, scale, geom, first, budget, m);
+        let actual: Vec<u8> = canvases
+            .iter()
+            .flat_map(|c| {
+                c.as_raw()[(geom.pad_y * c.width()) as usize..]
+                    .iter()
+                    .copied()
+            })
+            .collect();
+        assert_eq!(
+            actual.len(),
+            expected.len(),
+            "complete scaled row-stream dimensions"
+        );
+        assert!(
+            actual == expected,
+            "complete scaled row-stream bytes, with canvas clipping at text width"
+        );
+        canvases
+    }
+
+    fn verify_real_composition(id: &str, pages: &[PageBands], m: &LineMetrics) {
+        let geom = TrimGeom::default();
+        static SCALE: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+        let scale = *SCALE.get_or_init(|| {
+            let units =
+                crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))
+                    .unwrap();
+            let ranges = crate::facsimile::units::ranges(&units, &[638, 711]);
+            super::super::global_scale_for(&ranges, geom.content_width(), &|s, p| {
+                Ok(real_source_image(s, p))
+            })
+        });
+        let canvases = assert_scaled_stream(
+            pages,
+            m,
+            scale,
+            &geom,
+            geom.first_body_budget(),
+            geom.body_budget(),
+        );
+        let dir = std::path::Path::new("tmp/pdfs/recto_units_verification/crops");
+        std::fs::create_dir_all(dir).unwrap();
+        for (i, canvas) in canvases.iter().enumerate().rev().take(2) {
+            canvas
+                .save(dir.join(format!("{id}_composed_{}.png", i + 1)))
+                .unwrap();
+        }
+    }
+
+    #[test]
+    fn composed_scaled_stream_preserves_unique_body_patterns_once() {
+        let (page, m) = page_and_metrics(
+            160,
+            100,
+            &[
+                (10, 20, 5, 95),
+                (30, 40, 7, 93),
+                (50, 100, 5, 95),
+                (110, 120, 9, 91),
+                (130, 140, 5, 95),
+            ],
+        );
+        let geom = TrimGeom {
+            dpi: 100,
+            tb_w: 130,
+            tb_h: 55,
+            pad_x: 3,
+            pad_y: 2,
+        };
+        let canvases = assert_scaled_stream(&[page], &m, 1.23, &geom, 40, 55);
+        assert!(canvases.len() > 2);
+    }
+
+    #[test]
+    fn composed_scaled_stream_excludes_control_furniture_pattern() {
+        let (page, m) = page_and_metrics(
+            120,
+            100,
+            &[
+                (10, 20, 5, 95),
+                (30, 40, 5, 95),
+                (50, 60, 5, 95),
+                (80, 90, 35, 70),
+            ],
+        );
+        let kept = drop_trailing_furniture(&page.0, &page.1, &m);
+        assert_eq!(kept, page.1[..3]);
+        let geom = TrimGeom {
+            dpi: 100,
+            tb_w: 127,
+            tb_h: 30,
+            pad_x: 2,
+            pad_y: 1,
+        };
+        assert_scaled_stream(&[(page.0, kept)], &m, 1.19, &geom, 25, 30);
+    }
+
     fn closing_fixture(left: u32, height: u32) -> (PageBands, LineMetrics) {
         page_and_metrics(
             150,
@@ -903,7 +1151,8 @@ mod tests {
             })
             .collect();
         let gap = drop_furniture(&raw, col.height());
-        let (pages, m) = unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+        let (pages, m) = traced_real_unit(&range);
+        verify_real_composition("lysander", &pages, &m);
         assert_eq!(
             pages.len() as u32,
             range.end_page - range.unit.start_page + 1
@@ -940,7 +1189,7 @@ mod tests {
             "lysander_trace_after.json"
         };
         std::fs::write(dir.join(name), serde_json::to_vec_pretty(&trace).unwrap()).unwrap();
-        println!("{}", serde_json::to_string_pretty(&trace).unwrap());
+        println!("production-DPI trace: {}", dir.join(name).display());
         assert!(
             final_bands.contains(closing),
             "closing body line first removed at {first_loss:?}"
@@ -1076,7 +1325,8 @@ mod tests {
     fn cato_comparatio_source_boundary_excludes_duplicate_title() {
         for id in ["cato_major", "comparatio_aristidis_et_catonis"] {
             let range = operational_range(id);
-            let (pages, _) = unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+            let (pages, m) = traced_real_unit(&range);
+            verify_real_composition(id, &pages, &m);
             assert_eq!(
                 pages.len() as u32,
                 range.end_page - range.unit.start_page + 1

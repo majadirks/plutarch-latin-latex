@@ -21,3 +21,11 @@ Zone and gap filtering retain the closing line. `drop_interior_running_head` los
 ## Lysander repair, step 2B.1
 
 The proposed alignment predicate passes the real 300-DPI regression without widening its thresholds. The closing gap is 17 pixels, below the 22-pixel ceiling. `lysander_trace_after.json` records no loss; the retained closing crop was visually checked through `commemoranda habuimus.`. Four metric tests, five line tests, and 45 nonignored reflow tests pass, as do formatting and Clippy. Centered signatures and thin rules remain excluded in synthetic regressions. The exhaustive scaled-composition checks are added in the following shared-verification step.
+
+## Shared source/composition checks, step 2B.2
+
+The raw 300-DPI Latin columns for 434, 551, 637, and 705–708 were inspected in full before freezing `src/facsimile/fixtures/closing_body_bands.json`. The ledger enumerates all substantive body bands, source furniture, and tiny noise intervals separately. The trace requires inclusive render and successful-detection ledgers before indexing pages. Every reviewed body interval must survive once with byte-identical unscaled pixels. Furniture must contribute no packing strip.
+
+The independent stream assertion resizes source cut-point intervals once, places each on white rows with the real horizontal clipping, and compares dimensions and bytes against decoded canvas rows after removing their leading inset. It covers noninteger scaling, ordinary wrapping, tall splitting, and a rejected control signature. Cato and Lysander both passed these real-source assertions at the measured production global scale; neither test silently skipped prerequisites. Synthetic stream checks and the 47 nonignored reflow tests passed, alongside formatting and Clippy.
+
+The plan records two measured refinements: rejected noise can influence surrounding whitespace cut points without contributing text, and Otho's first body bands on pages 706/707 need a narrow geometry-based rescue from the top zone. The shared 8% furniture API remains unchanged. These refinements follow source-column inspection rather than weakening the exhaustive body ledger.
