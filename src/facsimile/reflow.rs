@@ -22,6 +22,152 @@ use crate::facsimile::units::UnitRange;
 /// Default DPI the body column is rendered and composed at.
 pub const BODY_DPI: u32 = 300;
 
+/// Verified furniture regions in normalized, half-open full-source coordinates.
+#[derive(Clone, Copy)]
+struct SourceFurnitureMask {
+    source: usize,
+    page: u32,
+    left: f64,
+    top: f64,
+    right: f64,
+    bottom: f64,
+}
+
+const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
+    // Pale digitization watermark below the final Latin line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 233,
+        left: 1180.0 / 1954.0,
+        top: 2870.0 / 3005.0,
+        right: 1605.0 / 1954.0,
+        bottom: 2980.0 / 3005.0,
+    },
+    // Bottom scan edge below all Latin.
+    SourceFurnitureMask {
+        source: 0,
+        page: 233,
+        left: 0.0 / 1954.0,
+        top: 2980.0 / 3005.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Right scan edge beyond the Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 233,
+        left: 1920.0 / 1954.0,
+        top: 0.0 / 3005.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Pale digitization watermark below the final Latin line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 235,
+        left: 1180.0 / 1969.0,
+        top: 2880.0 / 3013.0,
+        right: 1605.0 / 1969.0,
+        bottom: 2985.0 / 3013.0,
+    },
+    // Bottom scan rule below all Latin.
+    SourceFurnitureMask {
+        source: 0,
+        page: 235,
+        left: 0.0 / 1969.0,
+        top: 2985.0 / 3013.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Right scan noise connecting body and footer bands.
+    SourceFurnitureMask {
+        source: 0,
+        page: 235,
+        left: 1920.0 / 1969.0,
+        top: 0.0 / 3013.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Running head above the first Latin line and comparison title.
+    SourceFurnitureMask {
+        source: 0,
+        page: 240,
+        left: 550.0 / 1978.0,
+        top: 210.0 / 2980.0,
+        right: 1260.0 / 1978.0,
+        bottom: 270.0 / 2980.0,
+    },
+    // Detached folio above the first Latin line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 240,
+        left: 1630.0 / 1978.0,
+        top: 210.0 / 2980.0,
+        right: 1730.0 / 1978.0,
+        bottom: 275.0 / 2980.0,
+    },
+    // Running head above the Coriolanus continuation.
+    SourceFurnitureMask {
+        source: 0,
+        page: 284,
+        left: 680.0 / 2002.0,
+        top: 190.0 / 2988.0,
+        right: 1150.0 / 2002.0,
+        bottom: 245.0 / 2988.0,
+    },
+    // Detached folio above the first Latin line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 284,
+        left: 1630.0 / 2002.0,
+        top: 190.0 / 2988.0,
+        right: 1730.0 / 2002.0,
+        bottom: 245.0 / 2988.0,
+    },
+    // Right scan noise joining header and early body bands.
+    SourceFurnitureMask {
+        source: 0,
+        page: 284,
+        left: 1970.0 / 2002.0,
+        top: 0.0 / 2988.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Local divider and foreign-column fragments beside comparison opening.
+    SourceFurnitureMask {
+        source: 0,
+        page: 56,
+        left: 946.0 / 2012.0,
+        top: 2445.0 / 2998.0,
+        right: 1000.0 / 2012.0,
+        bottom: 2630.0 / 2998.0,
+    },
+];
+
+fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
+    let coords = [mask.left, mask.top, mask.right, mask.bottom];
+    if coords.iter().any(|v| !v.is_finite()) || mask.left >= mask.right || mask.top >= mask.bottom {
+        return;
+    }
+    let x = |v: f64| (v.clamp(0.0, 1.0) * img.width() as f64).round() as u32;
+    let y = |v: f64| (v.clamp(0.0, 1.0) * img.height() as f64).round() as u32;
+    let (left, right, top, bottom) = (x(mask.left), x(mask.right), y(mask.top), y(mask.bottom));
+    for yy in top..bottom {
+        for xx in left..right {
+            img.put_pixel(xx, yy, Luma([255]));
+        }
+    }
+}
+
+fn mask_known_source_furniture(source: usize, page: u32, img: &mut GrayImage) {
+    for mask in SOURCE_FURNITURE_MASKS
+        .iter()
+        .filter(|m| m.source == source && m.page == page)
+    {
+        apply_source_furniture_mask(mask, img);
+    }
+}
+
 /// Minimum per-row ink for a row to count as texty when banding a column.
 const LINE_MIN_INK: u32 = 3;
 
@@ -266,7 +412,8 @@ fn render_and_band(
     page: u32,
     render_fn: &impl Fn(usize, u32) -> Result<GrayImage>,
 ) -> Result<(GrayImage, Vec<Band>)> {
-    let page_img = render_fn(source, page)?;
+    let mut page_img = render_fn(source, page)?;
+    mask_known_source_furniture(source, page, &mut page_img);
     let column = detect_latin_column(&page_img)?;
     let cropped = crop_column(&page_img, &column);
     let bands = line_bands(&cropped, LINE_MIN_INK);
@@ -1760,6 +1907,32 @@ mod tests {
     fn reported_divider_pages_preserve_latin() {
         for page in [51, 56, 59] {
             let img = real_source_image(0, page);
+            let cleaned = assert_real_mask_preservation(page);
+            if page == 56 {
+                let c = detect_latin_column(&cleaned).unwrap();
+                let cropped = crop_column(&cleaned, &c);
+                let bands = line_bands(&cropped, LINE_MIN_INK);
+                for expected in [
+                    Band {
+                        top: 2470,
+                        bottom: 2518,
+                    },
+                    Band {
+                        top: 2525,
+                        bottom: 2572,
+                    },
+                    Band {
+                        top: 2577,
+                        bottom: 2630,
+                    },
+                ] {
+                    assert!(bands.contains(&expected));
+                }
+                image::imageops::crop_imm(&cropped, 0, 2445, cropped.width(), 200)
+                    .to_image()
+                    .save("tmp/pdfs/facsimile_artifact_cleanup/opening-56-production.png")
+                    .unwrap();
+            }
             let c = detect_latin_column(&img).unwrap();
             let cropped = crop_column(&img, &c);
             assert!(c.left < c.right);
@@ -1774,6 +1947,211 @@ mod tests {
                 &(cropped.clone(), line_bands(&cropped, LINE_MIN_INK)),
             );
         }
+    }
+    fn small_mask() -> SourceFurnitureMask {
+        SourceFurnitureMask {
+            source: 0,
+            page: 233,
+            left: 0.2,
+            top: 0.4,
+            right: 0.4,
+            bottom: 0.6,
+        }
+    }
+    #[test]
+    fn known_source_furniture_masks_only_matching_page() {
+        let img = GrayImage::from_pixel(100, 100, Luma([200]));
+        for (source, page) in [(1, 233), (0, 232)] {
+            let mut cleaned = img.clone();
+            mask_known_source_furniture(source, page, &mut cleaned);
+            assert_eq!(cleaned, img);
+        }
+        let mut cleaned = img.clone();
+        mask_known_source_furniture(0, 233, &mut cleaned);
+        assert_ne!(cleaned, img);
+    }
+    #[test]
+    fn known_source_furniture_preserves_pixels_outside_rectangle() {
+        let mut img = GrayImage::from_pixel(100, 100, Luma([90]));
+        apply_source_furniture_mask(&small_mask(), &mut img);
+        for y in 0..100 {
+            for x in 0..100 {
+                assert_eq!(
+                    img.get_pixel(x, y).0[0],
+                    if (20..40).contains(&x) && (40..60).contains(&y) {
+                        255
+                    } else {
+                        90
+                    }
+                );
+            }
+        }
+    }
+    #[test]
+    fn known_source_furniture_removes_pale_watermark_pixels() {
+        let mut img = GrayImage::from_pixel(100, 100, Luma([220]));
+        mask_known_source_furniture(0, 233, &mut img);
+        assert_eq!(img.get_pixel(70, 97).0[0], 255);
+        assert_eq!(img.get_pixel(70, 80).0[0], 220);
+    }
+    #[test]
+    fn source_furniture_mask_bounds_are_safe() {
+        for mask in SOURCE_FURNITURE_MASKS {
+            assert!(mask.left >= 0.0 && mask.right <= 1.0 && mask.left < mask.right);
+            assert!(mask.top >= 0.0 && mask.bottom <= 1.0 && mask.top < mask.bottom);
+        }
+        let original = GrayImage::from_pixel(10, 10, Luma([0]));
+        for (left, right) in [(f64::NAN, 0.5), (0.8, 0.2), (0.3, 0.3)] {
+            let mut img = original.clone();
+            apply_source_furniture_mask(
+                &SourceFurnitureMask {
+                    left,
+                    right,
+                    ..small_mask()
+                },
+                &mut img,
+            );
+            assert_eq!(img, original);
+        }
+        let mut img = original;
+        apply_source_furniture_mask(
+            &SourceFurnitureMask {
+                left: -2.0,
+                top: -1.0,
+                right: 2.0,
+                bottom: 2.0,
+                ..small_mask()
+            },
+            &mut img,
+        );
+        assert!(img.pixels().all(|p| p.0[0] == 255));
+    }
+    #[test]
+    fn masked_furniture_cannot_return_in_strip_padding() {
+        let mut img = column(
+            100,
+            100,
+            &[(10, 20, 0, 90), (50, 60, 0, 90), (80, 90, 0, 90)],
+        );
+        img.put_pixel(30, 45, Luma([220]));
+        apply_source_furniture_mask(&small_mask(), &mut img);
+        let bands = line_bands(&img, LINE_MIN_INK);
+        let pages = vec![(img, bands)];
+        let m = line_metrics(&pages);
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: 100,
+            tb_h: 200,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        let output = compose_pages(&pages, 1.0, &geom, 200, 200, &m);
+        assert_eq!(output.len(), 1);
+        assert!(output[0].pixels().all(|p| p.0[0] != 220));
+        assert_eq!(output[0].get_pixel(30, 35).0[0], 255);
+    }
+
+    /// Compare full-resolution pixels, including faint type, outside verified masks.
+    fn assert_real_mask_preservation(page: u32) -> GrayImage {
+        let original = real_source_image(0, page);
+        let mut cleaned = original.clone();
+        mask_known_source_furniture(0, page, &mut cleaned);
+        let mut erased = vec![false; (original.width() * original.height()) as usize];
+        for mask in SOURCE_FURNITURE_MASKS
+            .iter()
+            .filter(|m| m.source == 0 && m.page == page)
+        {
+            let x = |v: f64| (v * original.width() as f64).round() as u32;
+            let y = |v: f64| (v * original.height() as f64).round() as u32;
+            for yy in y(mask.top)..y(mask.bottom) {
+                for xx in x(mask.left)..x(mask.right) {
+                    erased[(yy * original.width() + xx) as usize] = true;
+                }
+            }
+        }
+        for (i, (before, after)) in original.pixels().zip(cleaned.pixels()).enumerate() {
+            if erased[i] {
+                assert_eq!(after.0[0], 255);
+            } else {
+                assert_eq!(before, after, "page {page} pixel {i}");
+            }
+        }
+        let dir = std::path::Path::new("tmp/pdfs/facsimile_artifact_cleanup");
+        std::fs::create_dir_all(dir).unwrap();
+        cleaned
+            .save(dir.join(format!("s0-p{page:04}-production-cleaned.png")))
+            .unwrap();
+        cleaned
+    }
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn reported_watermark_pages_preserve_adjacent_lines() {
+        for (page, end, next, first) in [
+            (
+                233,
+                2624,
+                234,
+                Band {
+                    top: 266,
+                    bottom: 306,
+                },
+            ),
+            (
+                235,
+                2622,
+                236,
+                Band {
+                    top: 270,
+                    bottom: 301,
+                },
+            ),
+        ] {
+            let cleaned = assert_real_mask_preservation(page);
+            let (col, bands) = render_and_band(0, page, &|_, _| Ok(cleaned.clone())).unwrap();
+            assert_eq!(bands.last().unwrap().bottom, end);
+            assert_eq!(*cut_points(&bands).last().unwrap(), end);
+            let (_, following) =
+                render_and_band(0, next, &|s, p| Ok(real_source_image(s, p))).unwrap();
+            assert!(following.contains(&first));
+            assert!(col.height() > end);
+        }
+    }
+    fn assert_header_units(page: u32, ids: &[&str], first: Band) {
+        assert_real_mask_preservation(page);
+        for id in ids {
+            let range = operational_range(id);
+            let (pages, _) = unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+            let retained = &pages[(page - range.unit.start_page) as usize];
+            assert!(retained.1.iter().all(|b| b.top >= first.top));
+            if page != range.unit.start_page {
+                assert!(retained.1.contains(&first));
+            }
+            save_retained_crop(&format!("{id}-header-{page}"), retained);
+        }
+    }
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn fabius_shared_page_header_is_excluded_from_both_units() {
+        assert_header_units(
+            240,
+            &["fabius_maximus", "comparatio_periclis_et_fabii"],
+            Band {
+                top: 291,
+                bottom: 327,
+            },
+        );
+    }
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn coriolanus_source_284_header_is_excluded() {
+        assert_header_units(
+            284,
+            &["marcius_coriolanus"],
+            Band {
+                top: 270,
+                bottom: 302,
+            },
+        );
     }
     fn operational_range(id: &str) -> UnitRange {
         let units =
