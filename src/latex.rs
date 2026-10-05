@@ -332,7 +332,7 @@ pub(crate) fn front_prose_pages(sidecar: &Sidecar, pages: &[(usize, u32)]) -> St
     if blocks.is_empty() {
         String::new()
     } else {
-        front_prose_page_blocks(&blocks, true)
+        front_prose_page_blocks(&blocks, true, true)
     }
 }
 
@@ -341,7 +341,7 @@ pub(crate) fn front_prose_pages(sidecar: &Sidecar, pages: &[(usize, u32)]) -> St
 /// `\markboth{}{}` so the facsimile path's prose carries no stale Life running head;
 /// the transcription path passes `false`, keeping its golden bytes unchanged.
 fn front_prose_page(doc: &PageDoc, reset_running_head: bool) -> String {
-    front_prose_page_blocks(&doc.blocks, reset_running_head)
+    front_prose_page_blocks(&doc.blocks, reset_running_head, false)
 }
 
 /// Render listed pages through the first block containing `sentinel`, preserving
@@ -364,21 +364,32 @@ pub(crate) fn front_prose_pages_until(
             .iter()
             .position(|block| block.text.contains(sentinel))
         {
-            out.push_str(&front_prose_page_blocks(&doc.blocks[..=idx], true));
+            out.push_str(&front_prose_page_blocks(&doc.blocks[..=idx], true, false));
             return out;
         }
-        out.push_str(&front_prose_page_blocks(&doc.blocks, true));
+        out.push_str(&front_prose_page_blocks(&doc.blocks, true, false));
     }
     eprintln!("WARNING: front-prose sentinel not found: {sentinel:?}; emitting all available prose, which may duplicate embedded errata");
     out
 }
 
-fn front_prose_page_blocks(blocks: &[Block], reset_running_head: bool) -> String {
+fn front_prose_page_blocks(
+    blocks: &[Block],
+    reset_running_head: bool,
+    flexible_spacing: bool,
+) -> String {
     let mut out = String::from("% Re-typeset front-matter prose\n\\freshpage\n");
     if reset_running_head {
         out.push_str("\\markboth{}{}\n");
     }
+    if flexible_spacing {
+        // Additional stretch lets long Latin and Greek runs fit the narrow measure.
+        out.push_str("\\begingroup\n\\emergencystretch=3em\n");
+    }
     out.push_str(&render_blocks(blocks));
+    if flexible_spacing {
+        out.push_str("\\par\\endgroup\n");
+    }
     out.push_str("\\clearpage\n\n");
     out
 }
@@ -1206,6 +1217,8 @@ mod tests {
         assert_eq!(out.matches("\\clearpage").count(), 1);
         assert_eq!(out.matches("\\markboth{}{}").count(), 1);
         assert_eq!(out.matches("\\heading{PRÆFATIO.}").count(), 1);
+        assert!(out.contains("\\begingroup\n\\emergencystretch=3em\n"));
+        assert!(out.contains("\\par\\endgroup\n\\clearpage"));
         assert!(out.ends_with("\\clearpage\n\n"));
     }
 

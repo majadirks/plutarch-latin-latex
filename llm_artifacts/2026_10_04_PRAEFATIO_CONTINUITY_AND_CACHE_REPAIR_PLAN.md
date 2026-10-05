@@ -60,6 +60,20 @@ Run `cargo fmt --all`, `cargo fmt --all --check`, `cargo clippy --all-targets --
 
 Read the generated praefatio LaTeX. Confirm `in ordinem recepi` and `ipso Plutarcho` are within their continuing paragraph, while `Interpretationem` and the dateline have paragraph boundaries. Confirm the Monitum helper still terminates its prose before the embedded errata.
 
+# Phase 2B — Keep praefatio lines within the trim measure (Suggested implementer: Sonnet)
+
+## 2B.1 Scope additional line-breaking flexibility to the continuous section
+
+Visual QA found pre-existing overfull Latin and Greek lines, including text reaching the trim edge. Extend `front_prose_page_blocks` with a `flexible_spacing: bool` parameter. Pass true from continuous `front_prose_pages` and false from all legacy and Monitum callers. Surround the rendered continuous blocks with a TeX group setting `\emergencystretch=3em`, and terminate the final paragraph before ending the group. This permits additional interword stretch during TeX's fallback line-breaking pass without modifying source text. Reuse the same rendering helper; do not duplicate section construction. Assert the grouped setting and paragraph termination in `front_prose_pages_flows_as_one_section`.
+
+### LLM verification
+
+Run `cargo fmt --all`, `cargo fmt --all --check`, `cargo clippy --target-dir target --all-targets -- -D warnings`, and `cargo test --target-dir target front_prose`. Compile and render the complete praefatio; require no overfull boxes or missing glyphs in its compiler log. Re-run full local gates before final delivery.
+
+### Human verification
+
+Inspect all praefatio pages, especially long Greek citations and Benselerus, for complete text within the margins and readable spacing. Confirm Monitum and body-page typesetting are unchanged.
+
 # Phase 3 — Reject protocol artifacts without rewriting source text (Suggested implementer: Opus)
 
 ## 3.1 Add one validator at ingestion and finalized praefatio use
@@ -109,3 +123,5 @@ Read the entire rebuilt praefatio alongside source pages 14–17, focusing on th
 2026-10-04, step 2.1: listed prose now shares append_blocks continuation assembly and renders one section. Missing records, missing results, and empty documents break continuation. Updated both affected existing tests and added five section/continuity tests. Formatting, clippy, front-prose tests, and the body continuation regression passed using the workspace target directory.
 
 2026-10-04, step 3.1: shared validation rejects the exact END OF JSON marker and leaked continuation-field syntax with ordinary or backslash-containing quotes, whitespace, either boolean, and a trailing word boundary. The regex compiles once per validation call and is reused across blocks. Pure assign_front_prose validates before mutating volumes; its tests cover rejection and real finalized-cache composition without network dependencies. Ten parser tests, two validator tests, two assignment tests, offline loading, lazy-client coverage, formatting, and clippy passed.
+
+2026-10-04, step 2B.1: full PDF QA found existing overfull lines that reached the trim edge. A prose-only compilation with grouped emergencystretch=3em eliminated all overfull-box and missing-glyph warnings. This adjustment is scoped to continuous front prose; the Monitum and legacy reader pass false. Full regeneration follows to verify final pagination and imposition.
