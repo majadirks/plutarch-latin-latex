@@ -156,6 +156,50 @@ pub const MONITUM_IMAGE_PAGES: [(usize, u32); 1] = [(0, 13)];
 /// Source pages re-typeset as the Praefatio, on v2's first tomus.
 pub const PRAEFATIO_PAGES: [(usize, u32); 4] = [(1, 14), (1, 15), (1, 16), (1, 17)];
 
+#[cfg(test)]
+pub(crate) const PRAEFATIO_OPENING_PAGES: [(usize, u32); 2] = [(1, 14), (1, 15)];
+#[cfg(test)]
+pub(crate) const PRAEFATIO_CLOSING_PAGES: [(usize, u32); 1] = [(1, 17)];
+#[cfg(test)]
+pub(crate) const PRAEFATIO_IMAGE_PAGES: [(usize, u32); 1] = [(1, 16)];
+#[cfg(test)]
+pub(crate) const PRAEFATIO_PROSE_SENTINEL: &str =
+    "Ita, ut in duarum vitarum exemplis consistam, Ages.";
+
+/// Editorial body bounds and the shared prose/corrigenda boundary, in pixels.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct PraefatioRegions {
+    pub body: (u32, u32, u32, u32),
+    pub transition: Option<(u32, u32, u32)>,
+}
+
+#[cfg(test)]
+pub(crate) fn praefatio_regions(width: u32, height: u32, page: u32) -> Result<PraefatioRegions> {
+    let (left, top, right, bottom) = match page {
+        15 => (0.145, 0.074, 0.919, 0.907),
+        16 => (0.078, 0.078, 0.852, 0.916),
+        _ => bail!("praefatio source 1, source page {page}: no editorial region"),
+    };
+    let x = |fraction: f64| (width as f64 * fraction).round() as u32;
+    let y = |fraction: f64| (height as f64 * fraction).round() as u32;
+    let (l, t, r, b) = (x(left), y(top), x(right), y(bottom));
+    if l >= r || t >= b || r > width || b > height {
+        bail!("praefatio source 1, source page {page}: empty or invalid body bounds");
+    }
+    let transition =
+        (page == 15).then(|| (y(1595.0 / 2827.0), y(1654.0 / 2827.0), x(795.0 / 1829.0)));
+    if let Some((start, end, split)) = transition {
+        if start < t || start >= end || end > b || split <= l || split >= r {
+            bail!("praefatio source 1, source page {page}: invalid transition bounds");
+        }
+    }
+    Ok(PraefatioRegions {
+        body: (l, t, r - l, b - t),
+        transition,
+    })
+}
+
 /// Validate finalized praefatio prose, retaining candidate passes as evidence.
 pub(crate) fn validate_praefatio_results(sidecar: &Sidecar) -> Result<()> {
     for (source, page) in PRAEFATIO_PAGES {
@@ -280,6 +324,29 @@ pub fn render_front_scans(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn praefatio_regions_scale_with_render_dimensions() {
+        let a = super::praefatio_regions(1829, 2827, 15).unwrap();
+        let b = super::praefatio_regions(3658, 5654, 15).unwrap();
+        assert_eq!(a.transition, Some((1595, 1654, 795)));
+        assert_eq!(b.transition, Some((3190, 3308, 1590)));
+        for page in [15, 16] {
+            let region = super::praefatio_regions(1829, 2827, page).unwrap();
+            let (x, y, w, h) = region.body;
+            assert!(x + w <= 1829 && y + h <= 2827);
+        }
+        assert_eq!(super::PRAEFATIO_OPENING_PAGES, [(1, 14), (1, 15)]);
+        assert_eq!(super::PRAEFATIO_CLOSING_PAGES, [(1, 17)]);
+        assert_eq!(super::PRAEFATIO_IMAGE_PAGES, [(1, 16)]);
+        assert!(super::PRAEFATIO_PROSE_SENTINEL.ends_with("Ages."));
+    }
+
+    #[test]
+    fn praefatio_regions_reject_invalid_bounds() {
+        for (w, h, page) in [(0, 2827, 15), (1829, 0, 16), (1, 1, 15), (1829, 2827, 14)] {
+            assert!(super::praefatio_regions(w, h, page).is_err());
+        }
+    }
     #[test]
     fn praefatio_validation_rejects_contaminated_final_result() {
         let mut rec = record(1, 16, PageRole::FrontProse, true);

@@ -536,12 +536,15 @@ Confirm body numbering and imposition remain suitable for printing.
 
 ## Implementation record
 
-Not implemented. Planning inspection found the shared-line boundary on p15,
-confirmed the single mixed finalized p15 block, and identified existing line,
-geometry, continuation, validation and recto-start helpers to reuse. The reviewed
-contract keeps cache migration and active policy changes together in step 4.1,
-rejects legacy candidates before API work, retains line provenance, defines
-accent grouping and half-gap spacing, specifies deterministic balanced packing,
-and requires shared image primitives and maximum-height compiled coverage. Fill this
-section during implementation with the tuned region coordinates, exact cache
-edit, verification commands/results, line inventory and rendered output paths.
+Step 1.1: rendered source pages at 300 DPI into `tmp/praefatio/source-015.png`
+(1829 × 2827) and `source-016.png` (1840 × 2828). The normalized body edge
+coordinates are p15 `(0.145, 0.074, 0.919, 0.907)` and p16
+`(0.078, 0.078, 0.852, 0.916)`. The p15 transition uses y=1595–1654
+and x=795 at its native render size; normalized values use those exact ratios.
+The x boundary occupies the white gap after the period of `Ages.` and before
+`c. III, 5`. Body margins retain the final editorial lines and exclude the
+head, folio and Google watermark. Preview paths: `tmp/praefatio/transition.png`
+and `tmp/praefatio/annotated-15.png`, `annotated-16.png`.
+The definitions remain test-only until integration. Formatting, clippy with
+warnings denied, and both region tests passed. The complete test suite is also
+run before committing this step.
