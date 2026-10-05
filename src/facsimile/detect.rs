@@ -19,6 +19,45 @@ use crate::verify::fold;
 /// characters or fewer (which also drops `et` and bare initials like `C`).
 const STOP: [&str; 2] = ["cvm", "sev"];
 
+/// Verified terminal body pages in the Didot source scans, before duplicate/back matter.
+const KNOWN_FINAL_BODY_PAGES: &[(usize, &str, u32)] =
+    &[(0, "comparatio_cimonis_et_luculli", 637), (1, "otho", 708)];
+
+fn known_final_body_page(source: usize, unit_id: &str) -> Option<u32> {
+    KNOWN_FINAL_BODY_PAGES
+        .iter()
+        .find(|&&(s, id, _)| s == source && id == unit_id)
+        .map(|&(_, _, page)| page)
+}
+
+fn detection_last_page(source: usize, pdf_page_count: u32) -> u32 {
+    KNOWN_FINAL_BODY_PAGES
+        .iter()
+        .filter(|&&(s, _, _)| s == source)
+        .map(|&(_, _, p)| p)
+        .max()
+        .map_or(pdf_page_count, |p| p.min(pdf_page_count))
+}
+
+fn validate_pdf_endpoints(units: &[Unit], pdfs: &[Pdf]) -> Result<()> {
+    for unit in units {
+        let count = pdfs
+            .get(unit.source)
+            .with_context(|| format!("unit {:?} refers to absent source {}", unit.id, unit.source))?
+            .page_count;
+        let end = unit.last_page.unwrap_or(unit.start_page);
+        if unit.start_page == 0 || unit.start_page > end || end > count {
+            bail!(
+                "source {} unit {:?}: invalid endpoint {}..={end} for PDF count {count}",
+                unit.source,
+                unit.id,
+                unit.start_page
+            );
+        }
+    }
+    Ok(())
+}
+
 /// How many pages before a run's first running-head page to scan for the display
 /// title. The running head can lag the true opening by a page or two when the first
 /// pages OCR poorly (e.g. the first Life, whose opening page carries the work
@@ -55,7 +94,12 @@ pub fn title_box(words: &[Word], unit: usize) -> Option<(f32, f32)> {
     let wanted = tokens(corpus::corpus().get(unit)?.latin_title);
     let mut kept: Vec<&Word> = words
         .iter()
-        .filter(|w| w.x_min > 0.5 && w.y_min > TITLE_TOP_ZONE_FRAC && w.y_min.is_finite())
+        .filter(|w| {
+            w.x_max.is_finite()
+                && w.x_max > 0.5
+                && w.y_min > TITLE_TOP_ZONE_FRAC
+                && w.y_min.is_finite()
+        })
         .collect();
     kept.sort_by(|a, b| a.y_min.total_cmp(&b.y_min));
     let mut lines: Vec<(f32, Vec<&Word>)> = Vec::new();
@@ -324,15 +368,14 @@ pub fn units_from_runs(runs_v1: &[Run], runs_v2: &[Run]) -> Result<Vec<Unit>> {
             .then(a.start_page.cmp(&b.start_page))
     });
 
-    // Record each source's last body page (its final run's end) on that source's
-    // last unit, so a cached full build can bound it without re-detecting.
+    // Explicit edition endpoints bound unrecognized terminal continuations.
     for (expected_source, runs) in [(0usize, runs_v1), (1usize, runs_v2)] {
         let last_body = runs.iter().map(|r| r.end_page).max();
         if let (Some(end), Some(unit)) = (
             last_body,
             units.iter_mut().rfind(|u| u.source == expected_source),
         ) {
-            unit.last_page = Some(end);
+            unit.last_page = Some(known_final_body_page(expected_source, &unit.id).unwrap_or(end));
         }
     }
 
@@ -385,12 +428,14 @@ where
     G: Fn(usize, u32) -> Result<Vec<Word>>,
 {
     if !redetect && path.exists() {
-        return units::load_units(path);
+        let cached = units::load_units(path)?;
+        validate_pdf_endpoints(&cached, pdfs)?;
+        return Ok(cached);
     }
     let mut runs: Vec<Vec<Run>> = Vec::new();
     for (source, pdf) in pdfs.iter().enumerate() {
         runs.push(detect_openings(
-            1..=pdf.page_count,
+            1..=detection_last_page(source, pdf.page_count),
             |page| page_text_fn(source, page),
             |page| page_words_fn(source, page),
         )?);
@@ -403,6 +448,7 @@ where
     };
     let merged = merge_pins(detected, &existing);
     units::validate(&merged)?;
+    validate_pdf_endpoints(&merged, pdfs)?;
     let json = serde_json::to_string_pretty(&merged).context("serializing unit table")?;
     std::fs::write(path, json).with_context(|| format!("writing {}", path.display()))?;
     Ok(merged)
@@ -412,6 +458,160 @@ where
 mod tests {
     use super::*;
 
+    fn terminal_run(unit_id: &str, start: u32, end: u32) -> Run {
+        Run {
+            unit: id(unit_id),
+            start_page: start,
+            end_page: end,
+            title_top_frac: None,
+            body_top_frac: None,
+        }
+    }
+
+    #[test]
+    fn known_final_body_pages_override_unrecognized_terminal_runs() {
+        let units = units_from_runs(
+            &[terminal_run("comparatio_cimonis_et_luculli", 635, 636)],
+            &[terminal_run("otho", 696, 704)],
+        )
+        .unwrap();
+        assert_eq!(
+            units.iter().map(|u| u.last_page).collect::<Vec<_>>(),
+            vec![Some(637), Some(708)]
+        );
+    }
+
+    #[test]
+    fn known_final_body_pages_do_not_override_other_units_or_sources() {
+        for (source, id) in [
+            (0, "otho"),
+            (1, "comparatio_cimonis_et_luculli"),
+            (2, "otho"),
+            (0, "romulus"),
+        ] {
+            assert_eq!(known_final_body_page(source, id), None);
+        }
+        assert_eq!(detection_last_page(2, 1000), 1000);
+        let units = units_from_runs(&[terminal_run("romulus", 3, 4)], &[]).unwrap();
+        assert_eq!(units[0].last_page, Some(4));
+    }
+
+    #[test]
+    fn known_final_body_pages_preserves_wrong_source_validation() {
+        let err = units_from_runs(&[terminal_run("otho", 696, 704)], &[]).unwrap_err();
+        assert!(err.to_string().contains("source"));
+    }
+
+    #[test]
+    fn known_final_body_pages_bounds_detection_before_duplicate_terminal_run() {
+        let requests = std::cell::RefCell::new(Vec::new());
+        let runs = detect_openings(
+            1..=detection_last_page(1, 711),
+            |p| {
+                requests.borrow_mut().push(p);
+                Ok(if (696..=704).contains(&p) || p >= 709 {
+                    "OTHO. 1"
+                } else {
+                    ""
+                }
+                .into())
+            },
+            |_| Ok(vec![]),
+        )
+        .unwrap();
+        assert_eq!(*requests.borrow().last().unwrap(), 708);
+        assert!(units_from_runs(&[], &runs).is_ok());
+        let repeated = vec![
+            terminal_run("otho", 696, 704),
+            terminal_run("otho", 707, 708),
+        ];
+        assert!(units_from_runs(&[], &repeated)
+            .unwrap_err()
+            .to_string()
+            .contains("more than one run"));
+    }
+
+    #[test]
+    fn known_final_body_pages_rejects_endpoint_beyond_pdf_count() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("units.json");
+        let pdfs = [stub_pdf("v1", 636), stub_pdf("v2", 711)];
+        let err = load_or_detect(
+            &path,
+            &pdfs,
+            true,
+            |s, p| {
+                Ok(if s == 0 && p >= 635 {
+                    "COMPARATIO CIMONIS ET LUCULLI. 1"
+                } else {
+                    ""
+                }
+                .into())
+            },
+            |_, _| Ok(vec![]),
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("637"));
+        assert!(err.to_string().contains("636"));
+        assert!(!path.exists(), "invalid detection must not write cache");
+        let mut units = units_from_runs(
+            &[terminal_run("comparatio_cimonis_et_luculli", 635, 636)],
+            &[],
+        )
+        .unwrap();
+        std::fs::write(&path, serde_json::to_vec(&units).unwrap()).unwrap();
+        assert!(load_or_detect(
+            &path,
+            &pdfs,
+            false,
+            |_, _| panic!("cached read"),
+            |_, _| panic!("cached read")
+        )
+        .is_err());
+        units[0].start_page = 638;
+        assert!(validate_pdf_endpoints(&units, &[stub_pdf("v1", 638)]).is_err());
+    }
+
+    #[test]
+    fn load_or_detect_preserves_pinned_final_endpoint() {
+        for (source, id, start, recognized, endpoint) in [
+            (0, "comparatio_cimonis_et_luculli", 635, 636, 637),
+            (1, "otho", 696, 704, 708),
+        ] {
+            for pin in [endpoint, endpoint - 1] {
+                let dir = tempfile::tempdir().unwrap();
+                let path = dir.path().join("units.json");
+                let mut units = if source == 0 {
+                    units_from_runs(&[terminal_run(id, start, recognized)], &[]).unwrap()
+                } else {
+                    units_from_runs(&[], &[terminal_run(id, start, recognized)]).unwrap()
+                };
+                units[0].last_page = Some(pin);
+                units[0].pinned = true;
+                units[0].review_notes = Some("verified boundary".into());
+                std::fs::write(&path, serde_json::to_vec(&units).unwrap()).unwrap();
+                let pdfs = [stub_pdf("v1", 638), stub_pdf("v2", 711)];
+                let title = units[0].latin_title.clone();
+                let detected = load_or_detect(
+                    &path,
+                    &pdfs,
+                    true,
+                    |s, p| {
+                        Ok(if s == source && (start..=recognized).contains(&p) {
+                            format!("{title}. 1")
+                        } else {
+                            String::new()
+                        })
+                    },
+                    |_, _| Ok(vec![]),
+                )
+                .unwrap();
+                assert_eq!(detected, units);
+                assert_eq!(units::load_units(&path).unwrap(), units);
+            }
+        }
+    }
+
     fn word(text: &str, x: f32, y: f32) -> Word {
         Word {
             text: text.into(),
@@ -420,6 +620,46 @@ mod tests {
             y_min: y,
             y_max: y + 0.008,
         }
+    }
+
+    #[test]
+    fn title_box_two_line_comparatio_crossing_midpoint() {
+        let words = vec![
+            word("CATONIS", 0.6, 0.06),
+            word("clarissimus.", 0.6, 0.51),
+            word("ΑΡΙΣΤΕΙΔΟΥ", 0.15, 0.5491843),
+            word("ARISTIDIS", 220.562 / 460.32, 392.381_2 / 714.48),
+            word("CUM", 0.66, 0.5491843),
+            word("CATΟNE", 0.75, 0.5491843),
+            word("COMPARATIO.", 0.6, 0.57787454),
+            word("Si", 0.55, 0.6090118),
+        ];
+        let (title, body) = title_box(&words, id("comparatio_aristidis_et_catonis")).unwrap();
+        assert!((title - 0.5491843).abs() < 0.000001);
+        assert!((body - 0.6090118).abs() < 0.000001);
+    }
+
+    #[test]
+    fn title_box_excludes_greek_words_ending_before_midpoint() {
+        let words = vec![
+            word("ARISTIDIS", 0.2, 0.3),
+            word("ΑΡΙΣΤΕΙΔΟΥ", 0.479, 0.4),
+            word("ARISTIDIS", 0.479, 0.55),
+            word("COMPARATIO.", 0.6, 0.58),
+            word("Si", 0.55, 0.61),
+        ];
+        assert_eq!(
+            title_box(&words, id("comparatio_aristidis_et_catonis")),
+            Some((0.55, 0.61))
+        );
+        let mut invalid = word("ARISTIDIS", 0.6, 0.3);
+        invalid.x_max = f32::NAN;
+        let mut words = words;
+        words.push(invalid);
+        assert_eq!(
+            title_box(&words, id("comparatio_aristidis_et_catonis")),
+            Some((0.55, 0.61))
+        );
     }
 
     #[test]
@@ -719,6 +959,34 @@ mod full_source {
     use crate::render::{page_count, page_text, pdftotext_available};
     use std::path::Path;
 
+    #[test]
+    #[ignore = "requires both source PDFs and Poppler; complete detection without pins"]
+    fn known_final_body_pages_real_sources_load_or_detect_without_pins() {
+        let paths = sources().expect("both source PDFs and Poppler required");
+        let pdfs = paths
+            .iter()
+            .map(|p| Pdf::open(p).unwrap())
+            .collect::<Vec<_>>();
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("units.json");
+        let units = load_or_detect(
+            &path,
+            &pdfs,
+            false,
+            |s, p| page_text(&paths[s], p),
+            |s, p| crate::render::page_words(&paths[s], p),
+        )
+        .unwrap();
+        for &(source, id, end) in KNOWN_FINAL_BODY_PAGES {
+            let row = units
+                .iter()
+                .find(|u| u.source == source && u.id == id)
+                .unwrap();
+            assert_eq!(row.last_page, Some(end));
+            assert!(!row.pinned);
+        }
+    }
+
     /// Both sources present and `pdftotext` callable, else the real-PDF tests skip.
     fn sources() -> Option<[std::path::PathBuf; 2]> {
         if !pdftotext_available() {
@@ -729,8 +997,8 @@ mod full_source {
         (v1.exists() && v2.exists()).then(|| [v1.to_path_buf(), v2.to_path_buf()])
     }
 
-    fn detect_source(pdf: &Path) -> Vec<Run> {
-        let last = page_count(pdf).unwrap();
+    fn detect_source(source: usize, pdf: &Path) -> Vec<Run> {
+        let last = detection_last_page(source, page_count(pdf).unwrap());
         detect_openings(
             1..=last,
             |p| page_text(pdf, p),
@@ -745,8 +1013,8 @@ mod full_source {
             eprintln!("skipping: sources or pdftotext not available");
             return;
         };
-        let runs_v1 = detect_source(&paths[0]);
-        let runs_v2 = detect_source(&paths[1]);
+        let runs_v1 = detect_source(0, &paths[0]);
+        let runs_v2 = detect_source(1, &paths[1]);
         let units = units_from_runs(&runs_v1, &runs_v2).unwrap();
         // Every corpus unit appears exactly once, in corpus order.
         let detected: Vec<&str> = units.iter().map(|u| u.id.as_str()).collect();
@@ -760,8 +1028,8 @@ mod full_source {
             eprintln!("skipping: sources or pdftotext not available");
             return;
         };
-        let runs_v1 = detect_source(&paths[0]);
-        let runs_v2 = detect_source(&paths[1]);
+        let runs_v1 = detect_source(0, &paths[0]);
+        let runs_v2 = detect_source(1, &paths[1]);
         let units = units_from_runs(&runs_v1, &runs_v2).unwrap();
         for (source, pdf) in paths.iter().enumerate() {
             let last = units

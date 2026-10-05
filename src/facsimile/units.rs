@@ -161,6 +161,29 @@ mod tests {
     use super::*;
 
     #[test]
+    fn ranges_honors_explicit_final_source_endpoint() {
+        for (source, id, start, end) in [
+            (0, "comparatio_cimonis_et_luculli", 635, 637),
+            (1, "otho", 696, 708),
+        ] {
+            let mut row = unit(id, source, start);
+            row.last_page = Some(end);
+            row.body_top_frac = Some(0.16);
+            for following in [false, true] {
+                let mut rows = vec![row.clone()];
+                if following {
+                    rows.push(unit("next_source", source + 1, 10));
+                }
+                let ranges = ranges(&rows, &[800, 800, 800]);
+                assert_eq!(ranges[0].end_page, end);
+                assert!(!ranges[0].shared_tail);
+                assert_eq!(ranges[0].tail_cut_frac, None);
+                assert_eq!(ranges[0].open_body_frac, Some(0.16));
+            }
+        }
+    }
+
+    #[test]
     fn unit_fraction_round_trip_and_legacy_defaults() {
         let mut row = unit("romulus", 0, 33);
         let legacy = serde_json::to_string(&row).unwrap();

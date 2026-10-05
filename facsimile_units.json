@@ -296,8 +296,10 @@
     "group": 9,
     "source": 0,
     "start_page": 434,
-    "title_top_frac": 0.57787454,
-    "body_top_frac": 0.6090118
+    "title_top_frac": 0.5491843,
+    "body_top_frac": 0.6090118,
+    "pinned": true,
+    "review_notes": "Source 0 physical page 434: scan and OCR boxes verify the two-line Latin title ARISTIDIS CUM CATONE / COMPARATIO.; cutoff begins at the first line (y=392.381180 / 714.479980), preserving Cato's closing body and the Comparatio opening below."
   },
   {
     "id": "philopoemen",
@@ -423,9 +425,9 @@
     "start_page": 635,
     "title_top_frac": 0.1084784,
     "body_top_frac": 0.16192225,
-    "last_page": 636,
+    "last_page": 637,
     "pinned": true,
-    "review_notes": "Source bbox and scan checked: printed title on v1 page 635; first body line below its complete title block."
+    "review_notes": "Source bbox and scan checked: printed title on v1 physical page 635; first body line below its complete title block. Endpoint verified on physical page 637: continuation begins tulerunt, and concludes through fuisse.; page 638 is blank and excluded."
   },
   {
     "id": "nicias",
@@ -787,8 +789,8 @@
     "start_page": 696,
     "title_top_frac": 0.106995836,
     "body_top_frac": 0.14487474,
-    "last_page": 704,
+    "last_page": 708,
     "pinned": true,
-    "review_notes": "Source bbox and scan checked: printed title on v2 page 696; first body line below its complete title block."
+    "review_notes": "Source bbox and scan checked: printed title on v2 physical page 696; first body line below its complete title block. Complete conclusion through chapter XVIII verified on physical page 708. Duplicate concluding scans 709-710 and subsequent blank/back matter are deliberately excluded."
   }
 ]

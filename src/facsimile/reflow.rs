@@ -14,7 +14,8 @@ use image::{GrayImage, Luma};
 use crate::facsimile::columns::{crop_column, detect_latin_column, INK_THRESHOLD};
 use crate::facsimile::lines::{cut_points, drop_furniture, ink_profile_rows, line_bands, Band};
 use crate::facsimile::metrics::{
-    band_ink_span, classify_band, is_narrow, line_metrics, BandClass, LineMetrics,
+    band_ink_bounds, band_ink_coverage, band_ink_span, classify_band, is_narrow, line_metrics,
+    median_u32, BandClass, LineMetrics,
 };
 use crate::facsimile::units::UnitRange;
 
@@ -269,8 +270,65 @@ fn render_and_band(
     let column = detect_latin_column(&page_img)?;
     let cropped = crop_column(&page_img, &column);
     let bands = line_bands(&cropped, LINE_MIN_INK);
-    let bands = drop_furniture(&bands, cropped.height());
+    let kept = drop_furniture(&bands, cropped.height());
+    let bands = retain_early_aligned_body_bands(&cropped, &bands, &kept);
     Ok((cropped, bands))
+}
+
+/// Rescue full body lines just inside the top furniture zone using their geometry.
+fn retain_early_aligned_body_bands(col: &GrayImage, raw: &[Band], kept: &[Band]) -> Vec<Band> {
+    let m = line_metrics(&[(col.clone(), kept.to_vec())]);
+    let Some(first) = kept.first() else {
+        return kept.to_vec();
+    };
+    let gaps: Vec<_> = kept
+        .windows(2)
+        .map(|w| w[1].top.saturating_sub(w[0].bottom) as i64)
+        .collect();
+    let mut result: Vec<_> = raw
+        .iter()
+        .copied()
+        .filter(|b| {
+            let center = (b.top + b.bottom) as f32 / 2.0 / col.height() as f32;
+            (0.07..0.08).contains(&center)
+                && b.bottom <= first.top
+                && first.top.saturating_sub(b.bottom) as f32 <= (2.2 * median_gap(&gaps)).max(1.0)
+                && band_ink_span(col, b) as f32 >= BODY_LINE_SPAN_FRAC * col.width() as f32
+                // A running head and distant folio can span the measure across empty columns.
+                && band_ink_coverage(col, b) >= col.width().div_ceil(2)
+                && is_aligned_body_band(col, b, kept, &m)
+        })
+        .collect();
+    result.extend_from_slice(kept);
+    result
+}
+
+fn is_aligned_body_band(
+    col: &GrayImage,
+    band: &Band,
+    references: &[Band],
+    m: &LineMetrics,
+) -> bool {
+    if m.is_sentinel()
+        || matches!(
+            classify_band(col, band, m),
+            BandClass::Short | BandClass::Tall
+        )
+    {
+        return false;
+    }
+    let Some((left, _)) = band_ink_bounds(col, band) else {
+        return false;
+    };
+    let lefts: Vec<_> = references
+        .iter()
+        .filter(|b| {
+            !matches!(classify_band(col, b, m), BandClass::Short | BandClass::Tall)
+                && band_ink_span(col, b) as f32 >= BODY_LINE_SPAN_FRAC * col.width() as f32
+        })
+        .filter_map(|b| band_ink_bounds(col, b).map(|(left, _)| left))
+        .collect();
+    !lefts.is_empty() && left.abs_diff(median_u32(&lefts)) <= (m.height_med / 2).max(1)
 }
 
 /// Drop a bled-through running head or bare folio/signature that survived zone
@@ -298,9 +356,35 @@ fn drop_interior_running_head(col: &GrayImage, bands: &[Band], m: &LineMetrics) 
     drop_trailing_furniture(col, &bands[lo..], m)
 }
 
-/// Drop a short or narrow final band detached by an above-median gap. The
-/// full-measure threshold also identifies furniture when metrics are unavailable.
+/// Recognize a normal-height closing body line aligned with preceding full lines.
+fn is_aligned_closing_body_line(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> bool {
+    if m.is_sentinel() || bands.len() < 2 {
+        return false;
+    }
+    let last = bands.last().unwrap();
+    if matches!(
+        classify_band(col, last, m),
+        BandClass::Short | BandClass::Tall
+    ) {
+        return false;
+    }
+    let gaps: Vec<i64> = bands
+        .windows(2)
+        .map(|w| w[1].top.saturating_sub(w[0].bottom) as i64)
+        .collect();
+    if *gaps.last().unwrap() as f32 > (2.2 * median_gap(&gaps)).max(1.0) {
+        return false;
+    }
+    is_aligned_body_band(col, last, &bands[..bands.len() - 1], m)
+}
+
+/// Drop detached short or narrow furniture, preserving aligned closing body lines.
+/// The full-measure threshold identifies furniture when metrics are unavailable.
 fn drop_trailing_furniture(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<Band> {
+    if bands.len() < 3 {
+        return drop_detached_rule(col, bands, m);
+    }
+    let bands = &bands[..detached_tail_cluster_start(col, bands, m).unwrap_or(bands.len())];
     if bands.len() < 3 {
         return drop_detached_rule(col, bands, m);
     }
@@ -315,12 +399,38 @@ fn drop_trailing_furniture(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> 
             classify_band(col, &bands[last], m),
             BandClass::Short | BandClass::Narrow
         );
-    let hi = if outlier && gaps[last - 1] as f32 > median_gap(&gaps) {
+    let hi = if outlier
+        && gaps[last - 1] as f32 > median_gap(&gaps)
+        && !is_aligned_closing_body_line(col, bands, m)
+    {
         last
     } else {
         bands.len()
     };
     drop_detached_rule(col, &bands[..hi], m)
+}
+
+/// A distant cluster of narrow marks after aligned body text is source furniture.
+fn detached_tail_cluster_start(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Option<usize> {
+    if m.is_sentinel() {
+        return None;
+    }
+    let gaps: Vec<_> = bands
+        .windows(2)
+        .map(|w| w[1].top.saturating_sub(w[0].bottom) as i64)
+        .collect();
+    let ceiling = (2.2 * median_gap(&gaps)).max(m.height_med as f32);
+    (2..bands.len()).find(|&i| {
+        gaps[i - 1] as f32 > ceiling
+            && is_aligned_body_band(col, &bands[i - 1], &bands[..i - 1], m)
+            && bands.len() - i >= 2
+            && bands[i..]
+                .iter()
+                .any(|b| matches!(classify_band(col, b, m), BandClass::Short | BandClass::Tall))
+            && bands[i..]
+                .iter()
+                .all(|b| (band_ink_span(col, b) as f32) < BODY_LINE_SPAN_FRAC * col.width() as f32)
+    })
 }
 
 /// Remove a thin detached rule even when gutter noise joins it to adjacent bands.
@@ -809,6 +919,704 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn detached_tail_cluster_preserves_spaced_verse_and_short_final_body() {
+        for suffix in [
+            vec![(140, 150, 7, 70)],
+            vec![(140, 150, 10, 70), (155, 165, 10, 75)],
+        ] {
+            let mut specs = vec![
+                (20, 30, 5, 95),
+                (35, 45, 5, 95),
+                (50, 60, 5, 95),
+                (70, 80, 5, 95),
+            ];
+            specs.extend(suffix);
+            let (page, m) = page_and_metrics(220, 100, &specs);
+            assert_eq!(detached_tail_cluster_start(&page.0, &page.1, &m), None);
+        }
+    }
+
+    #[test]
+    fn trailing_furniture_removes_detached_stamp_and_rule_cluster() {
+        let (page, m) = page_and_metrics(
+            220,
+            100,
+            &[
+                (20, 30, 5, 95),
+                (35, 45, 5, 95),
+                (50, 60, 5, 95),
+                (70, 80, 5, 40),
+                (140, 150, 35, 55),
+                (160, 170, 35, 55),
+                (180, 182, 25, 65),
+            ],
+        );
+        assert_eq!(drop_trailing_furniture(&page.0, &page.1, &m), page.1[..4]);
+    }
+
+    #[test]
+    fn early_body_rescue_preserves_full_aligned_line_and_excludes_short_head() {
+        let (page, _) = page_and_metrics(
+            1000,
+            100,
+            &[
+                (60, 64, 35, 65),
+                (72, 82, 5, 95),
+                (92, 102, 5, 95),
+                (107, 117, 5, 95),
+                (122, 132, 5, 95),
+            ],
+        );
+        let kept = drop_furniture(&page.1, 1000);
+        assert!(!kept.contains(&page.1[1]));
+        let rescued = retain_early_aligned_body_bands(&page.0, &page.1, &kept);
+        assert_eq!(rescued, page.1[1..]);
+    }
+
+    #[test]
+    fn early_body_rescue_excludes_wide_sparse_running_head_and_folio() {
+        let (mut page, _) = page_and_metrics(
+            1000,
+            100,
+            &[
+                (72, 82, 5, 25),
+                (92, 102, 5, 95),
+                (107, 117, 5, 95),
+                (122, 132, 5, 95),
+            ],
+        );
+        for y in 72..82 {
+            for x in 90..95 {
+                page.0.put_pixel(x, y, Luma([0]));
+            }
+        }
+        let kept = drop_furniture(&page.1, 1000);
+        assert_eq!(band_ink_span(&page.0, &page.1[0]), 90);
+        assert_eq!(
+            retain_early_aligned_body_bands(&page.0, &page.1, &kept),
+            kept
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler"]
+    fn otho_final_source_pages_survive_reflow_once() {
+        let range = operational_range("otho");
+        let mut old = range.clone();
+        old.end_page = 704;
+        old.unit.last_page = Some(704);
+        assert!(
+            std::panic::catch_unwind(|| assert_source_endpoint(&old, 708)).is_err(),
+            "old endpoint must fail"
+        );
+        assert_source_endpoint(&range, 708);
+        let (pages, m) = traced_real_unit(&range);
+        for page in 705..=708 {
+            let retained = &pages[(page - range.unit.start_page) as usize];
+            save_retained_crop(&format!("otho_{page}"), retained);
+        }
+        assert_ocr_landmark(
+            1,
+            705,
+            "videbantur",
+            &pages[(705 - range.unit.start_page) as usize],
+        );
+        assert_ocr_landmark(
+            1,
+            708,
+            "XVIII",
+            &pages[(708 - range.unit.start_page) as usize],
+        );
+        assert_ocr_landmark(
+            1,
+            708,
+            "conjunxerunt",
+            &pages[(708 - range.unit.start_page) as usize],
+        );
+        verify_real_composition("otho", &pages, &m);
+    }
+
+    fn assert_source_endpoint(range: &UnitRange, endpoint: u32) {
+        assert_eq!(
+            range.end_page, endpoint,
+            "reviewed inclusive final source page"
+        );
+        assert_eq!(range.unit.last_page, Some(endpoint));
+        assert!(!range.shared_tail);
+        assert_eq!(range.tail_cut_frac, None);
+    }
+
+    fn assert_ocr_landmark(source: usize, page: u32, text: &str, retained: &PageBands) {
+        let pdf = std::path::PathBuf::from(format!("Ploutarchou_Bioi_v{}.pdf", source + 1));
+        let words = crate::render::page_words(&pdf, page).unwrap();
+        assert!(!words.is_empty(), "actual source OCR boxes required");
+        let word = words
+            .iter()
+            .find(|w| w.x_max > 0.5 && w.text.contains(text))
+            .unwrap_or_else(|| panic!("source {source} page {page} OCR landmark {text:?} absent"));
+        let top = (word.y_min * retained.0.height() as f32) as u32;
+        let bottom = (word.y_max * retained.0.height() as f32).ceil() as u32;
+        assert!(
+            retained.1.iter().any(|b| b.top < bottom && b.bottom > top),
+            "retained OCR landmark {text:?}"
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler"]
+    fn cimon_lucullus_final_source_page_survives_reflow() {
+        let range = operational_range("comparatio_cimonis_et_luculli");
+        let mut old = range.clone();
+        old.end_page = 636;
+        old.unit.last_page = Some(636);
+        assert!(
+            std::panic::catch_unwind(|| assert_source_endpoint(&old, 637)).is_err(),
+            "old endpoint must fail"
+        );
+        assert_source_endpoint(&range, 637);
+        let (pages, m) = traced_real_unit(&range);
+        let last = &pages[(637 - range.unit.start_page) as usize];
+        for landmark in ["tulerunt", "Lucullus", "fuisse."] {
+            assert_ocr_landmark(0, 637, landmark, last);
+        }
+        save_retained_crop("cimon_lucullus_final", last);
+        verify_real_composition(&range.unit.id, &pages, &m);
+    }
+
+    #[test]
+    fn unit_body_strips_requests_inclusive_final_page() {
+        for (id, source, start, end) in [
+            ("comparatio_cimonis_et_luculli", 0, 635, 637),
+            ("otho", 1, 696, 708),
+        ] {
+            let mut unit = operational_range(id).unit;
+            unit.start_page = start;
+            unit.last_page = Some(end);
+            unit.body_top_frac = Some(0.25);
+            let ranges = crate::facsimile::units::ranges(&[unit], &[800, 800]);
+            let requests = std::cell::RefCell::new(Vec::new());
+            let image = body_page(
+                140,
+                &[
+                    (40, 50, 122, 188),
+                    (54, 64, 122, 188),
+                    (68, 78, 122, 188),
+                    (82, 92, 122, 188),
+                    (96, 106, 122, 188),
+                    (110, 120, 122, 188),
+                ],
+            );
+            let (pages, _) = unit_body_strips(&ranges[0], |s, p| {
+                assert_eq!(s, source);
+                requests.borrow_mut().push(p);
+                Ok(image.clone())
+            })
+            .unwrap();
+            assert_eq!(*requests.borrow(), (start..=end).collect::<Vec<_>>());
+            assert_eq!(pages.len() as u32, end - start + 1);
+            assert!(!pages.last().unwrap().1.is_empty());
+            assert!(!ranges[0].shared_tail);
+        }
+    }
+
+    #[derive(serde::Deserialize)]
+    struct ReviewedBands {
+        source: usize,
+        page: u32,
+        dpi: u32,
+        column: [u32; 2],
+        body: Vec<[u32; 2]>,
+        excluded: Vec<[u32; 2]>,
+        noise: Vec<[u32; 2]>,
+    }
+
+    struct SourcePageTrace {
+        requests: Vec<u32>,
+        renders: Vec<u32>,
+        detections: Vec<u32>,
+    }
+
+    fn traced_real_unit(range: &UnitRange) -> (Vec<PageBands>, LineMetrics) {
+        let trace = std::cell::RefCell::new(SourcePageTrace {
+            requests: vec![],
+            renders: vec![],
+            detections: vec![],
+        });
+        let (pages, m) = unit_body_strips(range, |s, p| {
+            trace.borrow_mut().requests.push(p);
+            let image = real_source_image(s, p);
+            trace.borrow_mut().renders.push(p);
+            detect_latin_column(&image).expect("successful Latin-column detection");
+            trace.borrow_mut().detections.push(p);
+            Ok(image)
+        })
+        .unwrap();
+        let trace = trace.into_inner();
+        let expected: Vec<_> = (range.unit.start_page..=range.end_page).collect();
+        assert_eq!(trace.requests, expected);
+        assert_eq!(trace.renders, expected);
+        assert_eq!(trace.detections, expected);
+        assert_eq!(
+            pages.len(),
+            expected.len(),
+            "no skipped pages before indexing source coordinates"
+        );
+        let ledger: Vec<ReviewedBands> =
+            serde_json::from_str(include_str!("fixtures/closing_body_bands.json")).unwrap();
+        for record in ledger.iter().filter(|r| {
+            r.source == range.unit.source
+                && expected.contains(&r.page)
+                && !(r.page == 434 && range.unit.id != "cato_major")
+        }) {
+            let retained = &pages[(record.page - range.unit.start_page) as usize];
+            let original = real_source_image(record.source, record.page);
+            let column = detect_latin_column(&original).unwrap();
+            assert_eq!(record.dpi, BODY_DPI);
+            assert_eq!(record.column, [column.left, column.right]);
+            let mut previous = 0;
+            for &[top, bottom] in &record.body {
+                let band = Band { top, bottom };
+                assert!(top >= previous, "review ledger in source order");
+                previous = bottom;
+                assert_eq!(
+                    retained.1.iter().filter(|b| **b == band).count(),
+                    1,
+                    "source {} page {} body band {band:?}",
+                    record.source,
+                    record.page
+                );
+                let source_crop = image::imageops::crop_imm(
+                    &original,
+                    column.left,
+                    top,
+                    column.right - column.left,
+                    bottom - top,
+                )
+                .to_image();
+                let kept_crop = image::imageops::crop_imm(
+                    &retained.0,
+                    0,
+                    top,
+                    retained.0.width(),
+                    bottom - top,
+                )
+                .to_image();
+                assert_eq!(source_crop, kept_crop, "original unscaled source pixels");
+            }
+            let body_top = record.body.first().unwrap()[0];
+            let body_bottom = record.body.last().unwrap()[1];
+            // A shared page's other unit is checked by its own boundary regression.
+            for &[top, bottom] in &record.excluded {
+                if (range.unit.id == "cato_major" && top < body_top)
+                    || (range.unit.id == "comparatio_aristidis_et_catonis" && bottom > body_bottom)
+                {
+                    continue;
+                }
+                assert!(
+                    !strips_in_reading_order(std::slice::from_ref(retained), &m)
+                        .iter()
+                        .any(|s| s.band.top < bottom && s.band.bottom > top),
+                    "excluded furniture on page {}: {top}..{bottom}",
+                    record.page
+                );
+            }
+            for &[top, bottom] in &record.noise {
+                assert!(bottom - top < 12);
+            }
+        }
+        (pages, m)
+    }
+
+    /// Independently resize cut-point intervals and concatenate rows; no packing oracle.
+    fn assert_scaled_stream(
+        pages: &[PageBands],
+        m: &LineMetrics,
+        scale: f32,
+        geom: &TrimGeom,
+        first: u32,
+        budget: u32,
+    ) -> Vec<GrayImage> {
+        let mut expected = Vec::new();
+        for (col, bands) in pages {
+            let cuts = cut_points(bands);
+            for (i, pair) in cuts.windows(2).enumerate() {
+                let source_band = bands[i];
+                let ink: u64 = (source_band.top..source_band.bottom)
+                    .map(|y| {
+                        (0..col.width())
+                            .filter(|&x| col.get_pixel(x, y)[0] <= INK_THRESHOLD)
+                            .count() as u64
+                    })
+                    .sum();
+                if minimum_ink(m).is_some_and(|floor| ink < floor) {
+                    continue;
+                }
+                let resized = scale_strip(
+                    col,
+                    &Band {
+                        top: pair[0],
+                        bottom: pair[1],
+                    },
+                    scale,
+                )
+                .unwrap();
+                for y in 0..resized.height() {
+                    let mut row = vec![255; geom.tb_w as usize];
+                    for x in 0..resized.width().min(geom.tb_w.saturating_sub(geom.pad_x)) {
+                        row[(geom.pad_x + x) as usize] = resized.get_pixel(x, y)[0];
+                    }
+                    expected.extend(row);
+                }
+            }
+        }
+        let canvases = compose_pages(pages, scale, geom, first, budget, m);
+        let actual: Vec<u8> = canvases
+            .iter()
+            .flat_map(|c| {
+                c.as_raw()[(geom.pad_y * c.width()) as usize..]
+                    .iter()
+                    .copied()
+            })
+            .collect();
+        assert_eq!(
+            actual.len(),
+            expected.len(),
+            "complete scaled row-stream dimensions"
+        );
+        assert!(
+            actual == expected,
+            "complete scaled row-stream bytes, with canvas clipping at text width"
+        );
+        canvases
+    }
+
+    fn verify_real_composition(id: &str, pages: &[PageBands], m: &LineMetrics) {
+        let geom = TrimGeom::default();
+        static SCALE: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+        let scale = *SCALE.get_or_init(|| {
+            let units =
+                crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))
+                    .unwrap();
+            let ranges = crate::facsimile::units::ranges(&units, &[638, 711]);
+            super::super::global_scale_for(&ranges, geom.content_width(), &|s, p| {
+                Ok(real_source_image(s, p))
+            })
+        });
+        let canvases = assert_scaled_stream(
+            pages,
+            m,
+            scale,
+            &geom,
+            geom.first_body_budget(),
+            geom.body_budget(),
+        );
+        let dir = std::path::Path::new("tmp/pdfs/recto_units_verification/crops");
+        std::fs::create_dir_all(dir).unwrap();
+        for (i, canvas) in canvases.iter().enumerate().rev().take(2) {
+            canvas
+                .save(dir.join(format!("{id}_composed_{}.png", i + 1)))
+                .unwrap();
+        }
+    }
+
+    #[test]
+    fn composed_scaled_stream_preserves_unique_body_patterns_once() {
+        let (page, m) = page_and_metrics(
+            160,
+            100,
+            &[
+                (10, 20, 5, 95),
+                (30, 40, 7, 93),
+                (50, 100, 5, 95),
+                (110, 120, 9, 91),
+                (130, 140, 5, 95),
+            ],
+        );
+        let geom = TrimGeom {
+            dpi: 100,
+            tb_w: 130,
+            tb_h: 55,
+            pad_x: 3,
+            pad_y: 2,
+        };
+        let canvases = assert_scaled_stream(&[page], &m, 1.23, &geom, 40, 55);
+        assert!(canvases.len() > 2);
+    }
+
+    #[test]
+    fn composed_scaled_stream_excludes_control_furniture_pattern() {
+        let (page, m) = page_and_metrics(
+            120,
+            100,
+            &[
+                (10, 20, 5, 95),
+                (30, 40, 5, 95),
+                (50, 60, 5, 95),
+                (80, 90, 35, 70),
+            ],
+        );
+        let kept = drop_trailing_furniture(&page.0, &page.1, &m);
+        assert_eq!(kept, page.1[..3]);
+        let geom = TrimGeom {
+            dpi: 100,
+            tb_w: 127,
+            tb_h: 30,
+            pad_x: 2,
+            pad_y: 1,
+        };
+        assert_scaled_stream(&[(page.0, kept)], &m, 1.19, &geom, 25, 30);
+    }
+
+    fn closing_fixture(left: u32, height: u32) -> (PageBands, LineMetrics) {
+        page_and_metrics(
+            150,
+            100,
+            &[
+                (20, 30, 5, 95),
+                (35, 45, 5, 95),
+                (50, 60, 5, 95),
+                (70, 70 + height, left, left + 35),
+            ],
+        )
+    }
+
+    #[test]
+    fn trailing_furniture_preserves_narrow_left_aligned_closing_line_with_skewed_gap() {
+        let (page, m) = closing_fixture(7, 10);
+        assert!(is_aligned_closing_body_line(&page.0, &page.1, &m));
+        assert_eq!(drop_trailing_furniture(&page.0, &page.1, &m), page.1);
+    }
+
+    #[test]
+    fn trailing_furniture_still_removes_detached_centered_signature() {
+        let (page, m) = closing_fixture(35, 10);
+        assert!(!is_aligned_closing_body_line(&page.0, &page.1, &m));
+        assert_eq!(drop_trailing_furniture(&page.0, &page.1, &m), page.1[..3]);
+    }
+
+    #[test]
+    fn trailing_furniture_still_removes_thin_separator() {
+        let (page, m) = closing_fixture(5, 2);
+        assert!(!is_aligned_closing_body_line(&page.0, &page.1, &m));
+        assert_eq!(drop_trailing_furniture(&page.0, &page.1, &m), page.1[..3]);
+        assert!(!is_aligned_closing_body_line(
+            &page.0,
+            &page.1,
+            &LineMetrics::sentinel()
+        ));
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler; production-DPI trace"]
+    fn lysander_closing_line_survives_reflow() {
+        let range = operational_range("lysander");
+        let image = real_source_image(0, 551);
+        let column = detect_latin_column(&image).unwrap();
+        let col = crop_column(&image, &column);
+        let raw = line_bands(&col, LINE_MIN_INK);
+        let zone: Vec<_> = raw
+            .iter()
+            .copied()
+            .filter(|b| {
+                (b.top + b.bottom) / 2 >= col.height() * 8 / 100
+                    && (b.top + b.bottom) / 2 <= col.height() * 95 / 100
+            })
+            .collect();
+        let gap = drop_furniture(&raw, col.height());
+        let (pages, m) = traced_real_unit(&range);
+        verify_real_composition("lysander", &pages, &m);
+        assert_eq!(
+            pages.len() as u32,
+            range.end_page - range.unit.start_page + 1
+        );
+        let interior = drop_interior_running_head(&col, &gap, &m);
+        let trailing = drop_trailing_furniture(&col, &gap, &m);
+        let target = (0.86545 * col.height() as f32) as u32;
+        let closing = raw
+            .iter()
+            .find(|b| b.top.abs_diff(target) <= m.height_med && b.bottom > target)
+            .expect("closing ink band in source");
+        assert!(band_ink_span(&col, closing) > 0);
+        let final_bands = &pages[(551 - range.unit.start_page) as usize].1;
+        let gaps: Vec<_> = gap
+            .windows(2)
+            .map(|w| w[1].top.saturating_sub(w[0].bottom) as i64)
+            .collect();
+        let first_loss = [
+            ("zone", &zone),
+            ("gap", &gap),
+            ("interior", &interior),
+            ("trailing", &trailing),
+            ("final", final_bands),
+        ]
+        .into_iter()
+        .find(|(_, b)| !b.contains(closing))
+        .map(|(name, _)| name);
+        let trace = serde_json::json!({"dpi":BODY_DPI,"column":[column.left,column.right],"raw":raw.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"zone":zone.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"gap":gap.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"interior":interior.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"trailing":trailing.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"minimum_ink_input":strips_in_reading_order(&pages,&m).iter().filter(|s|s.page_img_index==(551-range.unit.start_page) as usize).map(|s|[s.band.top,s.band.bottom]).collect::<Vec<_>>(),"metrics":[m.height_med,m.height_mad,m.width_med],"closing":[closing.top,closing.bottom],"closing_span":band_ink_span(&col,closing),"gaps":gaps,"median_gap":median_gap(&gaps),"first_loss":first_loss});
+        let dir = std::path::Path::new("tmp/pdfs/recto_units_verification");
+        std::fs::create_dir_all(dir).unwrap();
+        let name = if first_loss.is_some() {
+            "lysander_trace_before.json"
+        } else {
+            "lysander_trace_after.json"
+        };
+        std::fs::write(dir.join(name), serde_json::to_vec_pretty(&trace).unwrap()).unwrap();
+        println!("production-DPI trace: {}", dir.join(name).display());
+        assert!(
+            final_bands.contains(closing),
+            "closing body line first removed at {first_loss:?}"
+        );
+        save_retained_crop("lysander", &pages[(551 - range.unit.start_page) as usize]);
+    }
+
+    fn operational_range(id: &str) -> UnitRange {
+        let units =
+            crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))
+                .unwrap();
+        crate::facsimile::units::ranges(&units, &[638, 711])
+            .into_iter()
+            .find(|r| r.unit.id == id)
+            .unwrap()
+    }
+
+    fn real_source_image(source: usize, page: u32) -> GrayImage {
+        let pdf = std::path::PathBuf::from(format!("Ploutarchou_Bioi_v{}.pdf", source + 1));
+        assert!(pdf.is_file(), "required source PDF {}", pdf.display());
+        assert!(crate::render::pdftotext_available(), "Poppler is required");
+        let cache = std::path::Path::new("build_facsimile/render_cache");
+        let png = cache.join(format!(
+            "Ploutarchou_Bioi_v{}-p{page:04}-{BODY_DPI}dpi.png",
+            source + 1
+        ));
+        let png = if png.exists() {
+            png
+        } else {
+            crate::render::render_page(&pdf, page, BODY_DPI, cache).expect("production-DPI render")
+        };
+        image::open(png).expect("decode source raster").to_luma8()
+    }
+
+    fn save_retained_crop(id: &str, page: &PageBands) {
+        let dir = std::path::Path::new("tmp/pdfs/recto_units_verification/crops");
+        std::fs::create_dir_all(dir).unwrap();
+        let first = page.1.first().expect("retained body").top;
+        let last = page.1.last().unwrap().bottom;
+        let path = dir.join(format!("{id}.png"));
+        image::imageops::crop_imm(&page.0, 0, first, page.0.width(), last - first)
+            .to_image()
+            .save(&path)
+            .unwrap();
+        println!("retained crop: {}", path.display());
+    }
+
+    fn two_line_boundary_fixture() -> (Vec<UnitRange>, GrayImage) {
+        let mut cato = operational_range("cato_major").unit;
+        let mut comparison = operational_range("comparatio_aristidis_et_catonis").unit;
+        cato.start_page = 434;
+        cato.body_top_frac = Some(0.40);
+        comparison.last_page = Some(434);
+        let ranges = crate::facsimile::units::ranges(&[cato, comparison], &[434]);
+        let mut img = body_page(
+            1000,
+            &[
+                (400, 410, 122, 188),
+                (420, 430, 122, 188),
+                (440, 450, 122, 188),
+                (470, 480, 122, 188),
+                (510, 512, 140, 170),
+                (549, 560, 140, 180),
+                (578, 589, 140, 180),
+                (609, 619, 122, 188),
+                (629, 639, 122, 188),
+                (649, 659, 122, 188),
+            ],
+        );
+        // Match the Greek column's total ink to the sparse Latin fixture.
+        for y in 0..img.height() {
+            let ink = (120..190).any(|x| img.get_pixel(x, y)[0] == 0);
+            for x in 10..80 {
+                img.put_pixel(x, y, Luma([if ink { 0 } else { 255 }]));
+            }
+        }
+        (ranges, img)
+    }
+
+    #[test]
+    fn shared_tail_excludes_both_lines_of_comparatio_title() {
+        let (ranges, img) = two_line_boundary_fixture();
+        assert_eq!(ranges[0].tail_cut_frac, Some(0.5491843));
+        let (pages, _) = unit_body_strips(&ranges[0], |_, _| Ok(img.clone())).unwrap();
+        assert_eq!(
+            pages[0].1,
+            vec![
+                Band {
+                    top: 400,
+                    bottom: 410
+                },
+                Band {
+                    top: 420,
+                    bottom: 430
+                },
+                Band {
+                    top: 440,
+                    bottom: 450
+                },
+                Band {
+                    top: 470,
+                    bottom: 480
+                }
+            ]
+        );
+    }
+
+    #[test]
+    fn opening_fraction_preserves_comparatio_first_body_line() {
+        let (ranges, img) = two_line_boundary_fixture();
+        let (pages, _) = unit_body_strips(&ranges[1], |_, _| Ok(img.clone())).unwrap();
+        assert_eq!(
+            pages[0].1,
+            vec![
+                Band {
+                    top: 609,
+                    bottom: 619
+                },
+                Band {
+                    top: 629,
+                    bottom: 639
+                },
+                Band {
+                    top: 649,
+                    bottom: 659
+                }
+            ]
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler"]
+    fn cato_comparatio_source_boundary_excludes_duplicate_title() {
+        for id in ["cato_major", "comparatio_aristidis_et_catonis"] {
+            let range = operational_range(id);
+            let (pages, m) = traced_real_unit(&range);
+            verify_real_composition(id, &pages, &m);
+            assert_eq!(
+                pages.len() as u32,
+                range.end_page - range.unit.start_page + 1
+            );
+            let page = &pages[(434 - range.unit.start_page) as usize];
+            let h = page.0.height() as f32;
+            if id == "cato_major" {
+                assert!((page.1.last().unwrap().bottom as f32) < 0.5491843 * h);
+                assert!((page.1.last().unwrap().bottom as f32) > 0.49 * h);
+            } else {
+                assert!((page.1[0].top as f32) > 0.59 * h);
+                assert!((page.1[0].top as f32) < 0.62 * h);
+            }
+            save_retained_crop(id, page);
+        }
+    }
 
     #[test]
     fn frac_row_maps_full_height_with_line_tolerance() {

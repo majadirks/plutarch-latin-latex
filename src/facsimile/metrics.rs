@@ -120,6 +120,21 @@ pub fn is_narrow(col: &GrayImage, band: &Band, m: &LineMetrics) -> bool {
 
 /// The horizontal extent (leftmost to rightmost ink column) of a band's rows.
 pub(crate) fn band_ink_span(col: &GrayImage, band: &Band) -> u32 {
+    band_ink_bounds(col, band).map_or(0, |(left, right)| right - left)
+}
+
+/// Number of horizontal coordinates containing ink in a band's rows.
+pub(crate) fn band_ink_coverage(col: &GrayImage, band: &Band) -> u32 {
+    (0..col.width())
+        .filter(|&x| {
+            (band.top..band.bottom.min(col.height()))
+                .any(|y| col.get_pixel(x, y)[0] <= INK_THRESHOLD)
+        })
+        .count() as u32
+}
+
+/// Leftmost and exclusive rightmost ink coordinates in a band's rows.
+pub(crate) fn band_ink_bounds(col: &GrayImage, band: &Band) -> Option<(u32, u32)> {
     let w = col.width();
     let mut left = None;
     let mut right = 0u32;
@@ -131,14 +146,11 @@ pub(crate) fn band_ink_span(col: &GrayImage, band: &Band) -> u32 {
             }
         }
     }
-    match left {
-        Some(l) => right.saturating_sub(l) + 1,
-        None => 0,
-    }
+    left.map(|l| (l, right + 1))
 }
 
 /// Median of a non-empty `u32` slice, rounding a two-element midpoint down.
-fn median_u32(values: &[u32]) -> u32 {
+pub(crate) fn median_u32(values: &[u32]) -> u32 {
     if values.is_empty() {
         return 0;
     }
@@ -156,6 +168,44 @@ fn median_u32(values: &[u32]) -> u32 {
 mod tests {
     use super::*;
     use image::Luma;
+
+    #[test]
+    fn band_ink_coverage_excludes_whitespace_between_head_and_folio() {
+        let col = column(40, 100, &[(10, 20, 5, 25), (10, 20, 90, 95)]);
+        let band = Band {
+            top: 10,
+            bottom: 20,
+        };
+        assert_eq!(band_ink_span(&col, &band), 90);
+        assert_eq!(band_ink_coverage(&col, &band), 25);
+        assert_eq!(
+            band_ink_coverage(
+                &col,
+                &Band {
+                    top: 25,
+                    bottom: 35
+                }
+            ),
+            0
+        );
+    }
+
+    #[test]
+    fn band_ink_bounds_preserves_span_contract() {
+        let col = column(40, 100, &[(10, 20, 5, 75)]);
+        let body = Band {
+            top: 10,
+            bottom: 20,
+        };
+        assert_eq!(band_ink_bounds(&col, &body), Some((5, 75)));
+        assert_eq!(band_ink_span(&col, &body), 70);
+        let empty = Band {
+            top: 25,
+            bottom: 35,
+        };
+        assert_eq!(band_ink_bounds(&col, &empty), None);
+        assert_eq!(band_ink_span(&col, &empty), 0);
+    }
 
     /// A synthetic column image with the given row-bands filled dark across
     /// `[left, right)`; the rest is white.
