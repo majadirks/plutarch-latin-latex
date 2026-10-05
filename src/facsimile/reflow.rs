@@ -14,7 +14,8 @@ use image::{GrayImage, Luma};
 use crate::facsimile::columns::{crop_column, detect_latin_column, INK_THRESHOLD};
 use crate::facsimile::lines::{cut_points, drop_furniture, ink_profile_rows, line_bands, Band};
 use crate::facsimile::metrics::{
-    band_ink_span, classify_band, is_narrow, line_metrics, BandClass, LineMetrics,
+    band_ink_bounds, band_ink_span, classify_band, is_narrow, line_metrics, median_u32, BandClass,
+    LineMetrics,
 };
 use crate::facsimile::units::UnitRange;
 
@@ -298,8 +299,41 @@ fn drop_interior_running_head(col: &GrayImage, bands: &[Band], m: &LineMetrics) 
     drop_trailing_furniture(col, &bands[lo..], m)
 }
 
-/// Drop a short or narrow final band detached by an above-median gap. The
-/// full-measure threshold also identifies furniture when metrics are unavailable.
+/// Recognize a normal-height closing body line aligned with preceding full lines.
+fn is_aligned_closing_body_line(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> bool {
+    if m.is_sentinel() || bands.len() < 2 {
+        return false;
+    }
+    let last = bands.last().unwrap();
+    if matches!(
+        classify_band(col, last, m),
+        BandClass::Short | BandClass::Tall
+    ) {
+        return false;
+    }
+    let gaps: Vec<i64> = bands
+        .windows(2)
+        .map(|w| w[1].top.saturating_sub(w[0].bottom) as i64)
+        .collect();
+    if *gaps.last().unwrap() as f32 > (2.2 * median_gap(&gaps)).max(1.0) {
+        return false;
+    }
+    let Some((left, _)) = band_ink_bounds(col, last) else {
+        return false;
+    };
+    let references: Vec<u32> = bands[..bands.len() - 1]
+        .iter()
+        .filter(|b| {
+            !matches!(classify_band(col, b, m), BandClass::Short | BandClass::Tall)
+                && band_ink_span(col, b) as f32 >= BODY_LINE_SPAN_FRAC * col.width() as f32
+        })
+        .filter_map(|b| band_ink_bounds(col, b).map(|(left, _)| left))
+        .collect();
+    !references.is_empty() && left.abs_diff(median_u32(&references)) <= (m.height_med / 2).max(1)
+}
+
+/// Drop detached short or narrow furniture, preserving aligned closing body lines.
+/// The full-measure threshold identifies furniture when metrics are unavailable.
 fn drop_trailing_furniture(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<Band> {
     if bands.len() < 3 {
         return drop_detached_rule(col, bands, m);
@@ -315,7 +349,10 @@ fn drop_trailing_furniture(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> 
             classify_band(col, &bands[last], m),
             BandClass::Short | BandClass::Narrow
         );
-    let hi = if outlier && gaps[last - 1] as f32 > median_gap(&gaps) {
+    let hi = if outlier
+        && gaps[last - 1] as f32 > median_gap(&gaps)
+        && !is_aligned_closing_body_line(col, bands, m)
+    {
         last
     } else {
         bands.len()
@@ -809,6 +846,45 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn closing_fixture(left: u32, height: u32) -> (PageBands, LineMetrics) {
+        page_and_metrics(
+            150,
+            100,
+            &[
+                (20, 30, 5, 95),
+                (35, 45, 5, 95),
+                (50, 60, 5, 95),
+                (70, 70 + height, left, left + 35),
+            ],
+        )
+    }
+
+    #[test]
+    fn trailing_furniture_preserves_narrow_left_aligned_closing_line_with_skewed_gap() {
+        let (page, m) = closing_fixture(7, 10);
+        assert!(is_aligned_closing_body_line(&page.0, &page.1, &m));
+        assert_eq!(drop_trailing_furniture(&page.0, &page.1, &m), page.1);
+    }
+
+    #[test]
+    fn trailing_furniture_still_removes_detached_centered_signature() {
+        let (page, m) = closing_fixture(35, 10);
+        assert!(!is_aligned_closing_body_line(&page.0, &page.1, &m));
+        assert_eq!(drop_trailing_furniture(&page.0, &page.1, &m), page.1[..3]);
+    }
+
+    #[test]
+    fn trailing_furniture_still_removes_thin_separator() {
+        let (page, m) = closing_fixture(5, 2);
+        assert!(!is_aligned_closing_body_line(&page.0, &page.1, &m));
+        assert_eq!(drop_trailing_furniture(&page.0, &page.1, &m), page.1[..3]);
+        assert!(!is_aligned_closing_body_line(
+            &page.0,
+            &page.1,
+            &LineMetrics::sentinel()
+        ));
+    }
 
     #[test]
     #[ignore = "requires source PDFs and Poppler; production-DPI trace"]

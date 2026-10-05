@@ -17,3 +17,7 @@ Evidence is saved under `tmp/pdfs/recto_units_verification/baseline/`: existing 
 The ignored regression fails on unchanged filtering with source ink present. The complete trace is `tmp/pdfs/recto_units_verification/lysander_trace_before.json`, and test output is `lysander_before_test.txt` beside it. Source 0/page 551 at 300 DPI has column bounds `[1063,1859)`. The closing band's rows are `[2566,2595)`, its horizontal ink span is 359 pixels, and unit metrics are height median 33, height MAD 2, width median 779. The median inter-band gap is 10 pixels.
 
 Zone and gap filtering retain the closing line. `drop_interior_running_head` loses it through its call to `drop_trailing_furniture`; direct tracing of that trailing function confirms the same loss. This selects the planned trailing-furniture repair, without changing zone/gap filtering or metric sampling. No filtering predicate was changed for the diagnostic step.
+
+## Lysander repair, step 2B.1
+
+The proposed alignment predicate passes the real 300-DPI regression without widening its thresholds. The closing gap is 17 pixels, below the 22-pixel ceiling. `lysander_trace_after.json` records no loss; the retained closing crop was visually checked through `commemoranda habuimus.`. Four metric tests, five line tests, and 45 nonignored reflow tests pass, as do formatting and Clippy. Centered signatures and thin rules remain excluded in synthetic regressions. The exhaustive scaled-composition checks are added in the following shared-verification step.
