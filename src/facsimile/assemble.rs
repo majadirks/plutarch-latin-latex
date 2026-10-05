@@ -86,15 +86,18 @@ pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts) -> String {
         // The re-typeset Monitum / Praefatio prose (empty on other tomi).
         doc.push_str(&vol.prose);
         if vol.tomus == 1 {
-            doc.push_str(&latex::embed_scan(frontmatter::front_monitum_a_name()));
-            doc.push_str(&latex::embed_scan(frontmatter::front_monitum_b_name()));
+            doc.push_str(&latex::embed_scan_pair(
+                frontmatter::front_monitum_a_name(),
+                frontmatter::front_monitum_b_name(),
+            ));
         }
     }
 
     doc.push_str("\\beginbodynumbering\n\n");
 
-    for unit in &vol.units {
-        doc.push_str(&unit_block(unit));
+    for (index, unit) in vol.units.iter().enumerate() {
+        let force_parity_start = !(index == 0 && vol.emit_front_matter && vol.tomus == 1);
+        doc.push_str(&unit_block(unit, force_parity_start));
     }
 
     doc.push_str("\\clearpage\n");
@@ -105,14 +108,18 @@ pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts) -> String {
     doc
 }
 
-/// One unit: a fresh page with the running head set to the Latin name, then one body
+/// One unit: a parity start or consecutive page with the running head set to the Latin name, then one body
 /// image per page. There is no standalone title page; the unit's first body page
 /// opens with a large centered inline chapter header (the Latin title only) and
 /// carries no running head, while later pages keep the centered Latin running head.
-fn unit_block(unit: &PlacedUnit) -> String {
+fn unit_block(unit: &PlacedUnit, force_parity_start: bool) -> String {
     let latin = latex::escape_latex(&unit.latin_title);
     let mut out = String::new();
-    out.push_str("\\freshpage\n");
+    out.push_str(if force_parity_start {
+        "\\freshpage\n"
+    } else {
+        "\\clearpage\n"
+    });
     // The running head on every body page of this unit is its Latin name.
     out.push_str(&format!("\\markboth{{{latin}}}{{{latin}}}\n"));
     let mut images = unit.image_names.iter();
@@ -175,7 +182,7 @@ mod tests {
 
     #[test]
     fn inner_tex_includes_one_image_per_page() {
-        let vol = volume(vec![unit(
+        let mut vol = volume(vec![unit(
             "theseus",
             &[
                 "facsimile_theseus_1.png",
@@ -183,6 +190,7 @@ mod tests {
                 "facsimile_theseus_3.png",
             ],
         )]);
+        vol.emit_front_matter = false;
         let doc = inner_document(&vol, &Fonts::default());
         let images = doc.matches("\\includegraphics[width=\\textwidth]").count();
         assert_eq!(images, 3);
@@ -194,10 +202,11 @@ mod tests {
 
     #[test]
     fn inner_tex_starts_each_unit_fresh_page() {
-        let vol = volume(vec![
+        let mut vol = volume(vec![
             unit("theseus", &["facsimile_theseus_1.png"]),
             unit("romulus", &["facsimile_romulus_1.png"]),
         ]);
+        vol.emit_front_matter = false;
         let doc = inner_document(&vol, &Fonts::default());
         // A fresh page opens each unit (the preamble also *defines* \freshpage, so
         // count the unit openings via the \freshpage + \markboth pairing).
@@ -312,6 +321,10 @@ mod tests {
             vec![unit("a", &["x.png"])],
         );
         let doc = inner_document(&first, &Fonts::default());
+        assert_eq!(doc.matches("% Embedded front-matter scan pair").count(), 1);
+        let pair_start = doc.find("% Embedded front-matter scan pair").unwrap();
+        let pair_end = doc[pair_start..].find("\\beginbodynumbering").unwrap() + pair_start;
+        assert_eq!(doc[pair_start..pair_end].matches("\\clearpage").count(), 2);
         let prose = doc.find("PROSE MARKER").unwrap();
         let a = doc.find("front_monitum_a.png").unwrap();
         let b = doc.find("front_monitum_b.png").unwrap();
@@ -329,6 +342,48 @@ mod tests {
             assert!(!doc.contains("front_monitum_a.png"));
             assert!(!doc.contains("front_monitum_b.png"));
         }
+    }
+
+    #[test]
+    fn monitum_errata_and_first_body_use_consecutive_pages() {
+        let vol = volume_full(
+            1,
+            0,
+            true,
+            true,
+            "% PROSE MARKER\n",
+            vec![
+                unit("theseus", &["first.png"]),
+                unit("romulus", &["second.png"]),
+            ],
+        );
+        let doc = inner_document(&vol, &Fonts::default());
+        let prose = doc.find("% PROSE MARKER").unwrap();
+        let first = doc.find("{first.png}").unwrap();
+        assert!(!doc[prose..first].contains("\\freshpage"));
+        assert!(doc[prose..first].contains("\\clearpage\n\\markboth{THESEUS}"));
+        assert!(doc[first..].contains("\\freshpage\n\\markboth{ROMULUS}"));
+    }
+
+    #[test]
+    fn first_body_keeps_parity_start_without_monitum() {
+        for vol in [
+            volume_full(2, 0, false, true, "", vec![unit("theseus", &["x.png"])]),
+            volume_full(1, 0, true, false, "", vec![unit("theseus", &["x.png"])]),
+        ] {
+            let doc = inner_document(&vol, &Fonts::default());
+            assert!(doc.contains("\\freshpage\n\\markboth{THESEUS}"));
+        }
+    }
+
+    #[test]
+    fn monitum_without_cached_prose_still_uses_consecutive_pages() {
+        let vol = volume_full(1, 0, true, true, "", vec![unit("theseus", &["x.png"])]);
+        let doc = inner_document(&vol, &Fonts::default());
+        let pair = doc.find("% Embedded front-matter scan pair").unwrap();
+        let body = doc.find("{x.png}").unwrap();
+        assert!(!doc[pair..body].contains("\\freshpage"));
+        assert!(doc[pair..body].contains("\\clearpage\n\\markboth{THESEUS}"));
     }
 
     #[test]
@@ -408,7 +463,7 @@ mod tests {
 
     #[test]
     fn unit_block_has_no_standalone_title_page() {
-        let out = unit_block(&unit("theseus", &["f1.png", "f2.png"]));
+        let out = unit_block(&unit("theseus", &["f1.png", "f2.png"]), true);
         // The old standalone title page was `\heading{…}\clearpage`; now the heading
         // sits directly above the first image, with no intervening page break.
         assert!(!out.contains("\\heading{THESEUS}\n\\clearpage"));
@@ -419,7 +474,7 @@ mod tests {
 
     #[test]
     fn unit_first_page_suppresses_running_head() {
-        let out = unit_block(&unit("theseus", &["f1.png", "f2.png", "f3.png"]));
+        let out = unit_block(&unit("theseus", &["f1.png", "f2.png", "f3.png"]), true);
         // Only the first body page suppresses the running head.
         assert_eq!(out.matches("\\thispagestyle{empty}").count(), 1);
         // The suppression precedes the first image, not the later ones.
@@ -431,7 +486,7 @@ mod tests {
 
     #[test]
     fn unit_header_is_latin_only() {
-        let out = unit_block(&unit("theseus", &["f1.png"]));
+        let out = unit_block(&unit("theseus", &["f1.png"]), true);
         assert!(out.contains("\\heading{THESEUS}"));
         // No Greek title is emitted.
         assert!(!out.contains("ΘΗΣΕΥΣ"));
