@@ -810,6 +810,152 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 mod tests {
     use super::*;
 
+    fn operational_range(id: &str) -> UnitRange {
+        let units =
+            crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))
+                .unwrap();
+        crate::facsimile::units::ranges(&units, &[638, 711])
+            .into_iter()
+            .find(|r| r.unit.id == id)
+            .unwrap()
+    }
+
+    fn real_source_image(source: usize, page: u32) -> GrayImage {
+        let pdf = std::path::PathBuf::from(format!("Ploutarchou_Bioi_v{}.pdf", source + 1));
+        assert!(pdf.is_file(), "required source PDF {}", pdf.display());
+        assert!(crate::render::pdftotext_available(), "Poppler is required");
+        let cache = std::path::Path::new("build_facsimile/render_cache");
+        let png = cache.join(format!(
+            "Ploutarchou_Bioi_v{}-p{page:04}-{BODY_DPI}dpi.png",
+            source + 1
+        ));
+        let png = if png.exists() {
+            png
+        } else {
+            crate::render::render_page(&pdf, page, BODY_DPI, cache).expect("production-DPI render")
+        };
+        image::open(png).expect("decode source raster").to_luma8()
+    }
+
+    fn save_retained_crop(id: &str, page: &PageBands) {
+        let dir = std::path::Path::new("tmp/pdfs/recto_units_verification/crops");
+        std::fs::create_dir_all(dir).unwrap();
+        let first = page.1.first().expect("retained body").top;
+        let last = page.1.last().unwrap().bottom;
+        let path = dir.join(format!("{id}.png"));
+        image::imageops::crop_imm(&page.0, 0, first, page.0.width(), last - first)
+            .to_image()
+            .save(&path)
+            .unwrap();
+        println!("retained crop: {}", path.display());
+    }
+
+    fn two_line_boundary_fixture() -> (Vec<UnitRange>, GrayImage) {
+        let mut cato = operational_range("cato_major").unit;
+        let mut comparison = operational_range("comparatio_aristidis_et_catonis").unit;
+        cato.start_page = 434;
+        cato.body_top_frac = Some(0.40);
+        comparison.last_page = Some(434);
+        let ranges = crate::facsimile::units::ranges(&[cato, comparison], &[434]);
+        let mut img = body_page(
+            1000,
+            &[
+                (400, 410, 122, 188),
+                (420, 430, 122, 188),
+                (440, 450, 122, 188),
+                (470, 480, 122, 188),
+                (510, 512, 140, 170),
+                (549, 560, 140, 180),
+                (578, 589, 140, 180),
+                (609, 619, 122, 188),
+                (629, 639, 122, 188),
+                (649, 659, 122, 188),
+            ],
+        );
+        // Match the Greek column's total ink to the sparse Latin fixture.
+        for y in 0..img.height() {
+            let ink = (120..190).any(|x| img.get_pixel(x, y)[0] == 0);
+            for x in 10..80 {
+                img.put_pixel(x, y, Luma([if ink { 0 } else { 255 }]));
+            }
+        }
+        (ranges, img)
+    }
+
+    #[test]
+    fn shared_tail_excludes_both_lines_of_comparatio_title() {
+        let (ranges, img) = two_line_boundary_fixture();
+        assert_eq!(ranges[0].tail_cut_frac, Some(0.5491843));
+        let (pages, _) = unit_body_strips(&ranges[0], |_, _| Ok(img.clone())).unwrap();
+        assert_eq!(
+            pages[0].1,
+            vec![
+                Band {
+                    top: 400,
+                    bottom: 410
+                },
+                Band {
+                    top: 420,
+                    bottom: 430
+                },
+                Band {
+                    top: 440,
+                    bottom: 450
+                },
+                Band {
+                    top: 470,
+                    bottom: 480
+                }
+            ]
+        );
+    }
+
+    #[test]
+    fn opening_fraction_preserves_comparatio_first_body_line() {
+        let (ranges, img) = two_line_boundary_fixture();
+        let (pages, _) = unit_body_strips(&ranges[1], |_, _| Ok(img.clone())).unwrap();
+        assert_eq!(
+            pages[0].1,
+            vec![
+                Band {
+                    top: 609,
+                    bottom: 619
+                },
+                Band {
+                    top: 629,
+                    bottom: 639
+                },
+                Band {
+                    top: 649,
+                    bottom: 659
+                }
+            ]
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler"]
+    fn cato_comparatio_source_boundary_excludes_duplicate_title() {
+        for id in ["cato_major", "comparatio_aristidis_et_catonis"] {
+            let range = operational_range(id);
+            let (pages, _) = unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+            assert_eq!(
+                pages.len() as u32,
+                range.end_page - range.unit.start_page + 1
+            );
+            let page = &pages[(434 - range.unit.start_page) as usize];
+            let h = page.0.height() as f32;
+            if id == "cato_major" {
+                assert!((page.1.last().unwrap().bottom as f32) < 0.5491843 * h);
+                assert!((page.1.last().unwrap().bottom as f32) > 0.49 * h);
+            } else {
+                assert!((page.1[0].top as f32) > 0.59 * h);
+                assert!((page.1[0].top as f32) < 0.62 * h);
+            }
+            save_retained_crop(id, page);
+        }
+    }
+
     #[test]
     fn frac_row_maps_full_height_with_line_tolerance() {
         let m = LineMetrics {

@@ -296,8 +296,10 @@
     "group": 9,
     "source": 0,
     "start_page": 434,
-    "title_top_frac": 0.57787454,
-    "body_top_frac": 0.6090118
+    "title_top_frac": 0.5491843,
+    "body_top_frac": 0.6090118,
+    "pinned": true,
+    "review_notes": "Source 0 physical page 434: scan and OCR boxes verify the two-line Latin title ARISTIDIS CUM CATONE / COMPARATIO.; cutoff begins at the first line (y=392.381180 / 714.479980), preserving Cato's closing body and the Comparatio opening below."
   },
   {
     "id": "philopoemen",
