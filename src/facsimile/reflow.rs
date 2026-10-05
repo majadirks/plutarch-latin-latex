@@ -421,6 +421,10 @@ fn detached_tail_cluster_start(col: &GrayImage, bands: &[Band], m: &LineMetrics)
     (2..bands.len()).find(|&i| {
         gaps[i - 1] as f32 > ceiling
             && is_aligned_body_band(col, &bands[i - 1], &bands[..i - 1], m)
+            && bands.len() - i >= 2
+            && bands[i..]
+                .iter()
+                .any(|b| matches!(classify_band(col, b, m), BandClass::Short | BandClass::Tall))
             && bands[i..]
                 .iter()
                 .all(|b| (band_ink_span(col, b) as f32) < BODY_LINE_SPAN_FRAC * col.width() as f32)
@@ -913,6 +917,24 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn detached_tail_cluster_preserves_spaced_verse_and_short_final_body() {
+        for suffix in [
+            vec![(140, 150, 7, 70)],
+            vec![(140, 150, 10, 70), (155, 165, 10, 75)],
+        ] {
+            let mut specs = vec![
+                (20, 30, 5, 95),
+                (35, 45, 5, 95),
+                (50, 60, 5, 95),
+                (70, 80, 5, 95),
+            ];
+            specs.extend(suffix);
+            let (page, m) = page_and_metrics(220, 100, &specs);
+            assert_eq!(detached_tail_cluster_start(&page.0, &page.1, &m), None);
+        }
+    }
 
     #[test]
     fn trailing_furniture_removes_detached_stamp_and_rule_cluster() {

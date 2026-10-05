@@ -720,8 +720,7 @@ mod tests {
     #[test]
     fn unit_block_has_no_standalone_title_page() {
         let out = unit_block(&unit("theseus", &["f1.png", "f2.png"]));
-        // The old standalone title page was `\heading{…}\clearpage`; now the heading
-        // sits directly above the first image, with no intervening page break.
+        // The heading sits directly above the first image, with no page break.
         assert!(!out.contains("\\heading{THESEUS}\n\\clearpage"));
         assert!(out.contains(
             "\\heading{THESEUS}\n\\noindent\\includegraphics[width=\\textwidth]{f1.png}"

@@ -39,3 +39,23 @@ Step 2C.2 (`c35f6bc`) passed the complete page-637 body ledger, first/middle/las
 Step 2D.1 passed the ignored real-source Otho test after demonstrating failure against the actual old operational endpoint 704. Every source page in 696–708 renders and detects successfully once; 709/710 are outside the range. Every reviewed body band on 705–708 survives with source pixels intact, and the entire resized row stream matches composition. The concluding crop includes chapter XVIII and the last hyphenated sentence. Pages 706/707 also retain their first body lines through the geometry-based top-zone rescue.
 
 The page-708 ledger initially failed on the library stamp at rows 2080–2117. The plan now specifies removal of a distant narrow furniture cluster after aligned body text. Its synthetic stamp/rule test passes, as do all 50 nonignored reflow tests, formatting, and Clippy. The remedy shares the ink-alignment helper with short closing-line protection; neither page numbers nor Latin strings drive production filtering.
+
+## Compiled recto fixtures, step 3.1
+
+Commit `825558a` passed all four explicitly requested assembler compile regressions with LuaLaTeX and Poppler. The unit fixture places its seven images on physical pages 5, 6, 7, 8, 9, 11, and 12, confirming odd starts and consecutive continuation pages. Repeated recto commands, four front-matter parity cases, and the real Monitum transition also pass. The full suite before the subsequent audit correction passed 301 library tests and five CLI tests, with 13 environment-dependent tests ignored.
+
+## Body-preservation correction during the final audit
+
+Comparison against the baseline caught two false furniture classifications: the two normal-height verse lines on Lysander source 0/page 550 and a normal-height short final line on Tiberius Gracchus source 1/page 414. A detached furniture cluster must contain at least two bands and at least one abnormal-height band. The synthetic `detached_tail_cluster_preserves_spaced_verse_and_short_final_body` regression protects these shapes while the stamp/rule fixture continues to pass.
+
+The corrected production-DPI trace matches all 40 retained baseline bands on Lysander 550 and all 33 on Tiberius Gracchus 414 exactly, including coordinates, dimensions, and pixel hashes. All four explicitly requested real-source reflow regressions pass with the correction, including their complete reviewed ledgers and independent scaled-stream comparisons. Expected assertion panics in the Cimon and Otho tests demonstrate rejection of isolated old endpoint controls; both tests finish successfully.
+
+## Paused checkpoint
+
+The user requested a pause after the current step. Steps through 3.1 are committed and pushed. The audit-discovered body-preservation correction is the final checkpoint before pausing; step 4.1 remains incomplete. README wording records the implemented recto behavior, and temporary diagnostic programs are preserved under `tmp/pdfs/recto_units_verification/diagnostic_sources/` rather than registered as crate binaries.
+
+The all-volume rebuild was stopped when the audit found the two lost passages. Its cleanup had already removed the existing generated inner and imposed PDFs, and replacement PDFs have not been compiled. Current generated body PNGs belong to that interrupted build and are not accepted final output. Baseline TeX, logs, decoded PDF images, source renders, and hash manifests remain available under the verification directory.
+
+Resuming requires a fresh complete all-volume build, the physical-page/body-folio and wrapper-count audit, completion of visual review of source-band changes, and comparison of generated PDF images against the baseline. The current source trace has global width percentile 835 versus baseline 837 because the corrected inclusive ranges change the sampled population; the remaining audit must distinguish scale-induced pixel changes from source-band preservation. Do not mark step 4.1 complete until these checks pass.
+
+Checkpoint validation: `cargo fmt --all`, `cargo fmt --all --check`, and `cargo clippy --all-targets -- -D warnings` passed. The full `cargo test` run passed 302 library tests and five CLI tests, with 13 environment-dependent tests ignored. The four real-source reflow regressions were run separately in release mode and all passed. `cargo build` and `git diff --check` also passed.

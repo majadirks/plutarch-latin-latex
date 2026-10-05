@@ -76,8 +76,11 @@ cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --clean-ca
 reflowed (whole source lines repaginated at one **global** scale) into the trim text
 block, under a **typeset centered Latin running head** and the per-Tomus folio.
 Margins are inner / outer 1 cm, 1.5 cm above the running head, and 1.5 cm below the
-text. Each Life and Comparatio **opens fresh**, with its display title typeset from
-the unit table; Comparationes follow their pair.
+text. Each nonempty Life and Comparatio **opens on a recto** (an odd physical book
+page), with its display title typeset above the first body image; Comparationes
+follow their pair. A unit boundary inserts zero or one empty verso, preserving
+consecutive pages within each unit. The first body page anchors folio 1 after recto
+alignment, so physical-page and body-folio parity agree. Opening folios are hidden.
 
 The reusable poppler rasters in `<out>/render_cache/` are preserved across runs by
 default. `--clean-cache` deletes that directory before building to reclaim its disk
@@ -99,8 +102,9 @@ its `skip_top_bands` tweak) survives regeneration unchanged. See
 **Front matter** is the one place the facsimile path uses vision: the v1 Monitum
 prose through “mutanda esse significavit.” is re-typeset to the trim measure, and
 its Greek errata list follows immediately on one page containing the p12 and p13
-source crops, scaled together. The first body page follows directly after that
-combined errata page. The QR notice, Volumen-title, and colophon scans retain their
+source crops, scaled together. The first body page opens on the next recto after
+that combined errata page, with zero or one intervening blank. The QR notice,
+Volumen-title, and colophon scans retain their
 existing page starts. The v2 Praefatio remains fully
 re-typeset, as are the derived title pages. The prose is transcribed **once** and
 cached in `plutarch.frontmatter.tags.json` (same semantics as the body cache below);
