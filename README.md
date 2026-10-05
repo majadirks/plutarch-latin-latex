@@ -32,7 +32,7 @@ cargo run --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_
     --out build_facsimile/ --detect-units
 
 # Full build (auto-detects the table on first run if it is absent).
-cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/
+cargo run --release --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_v2.pdf --out build_facsimile/
 
 # Re-detect the table even when the cache is present (keeps pinned hand edits).
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --redetect
