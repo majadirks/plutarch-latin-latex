@@ -55,7 +55,12 @@ pub fn title_box(words: &[Word], unit: usize) -> Option<(f32, f32)> {
     let wanted = tokens(corpus::corpus().get(unit)?.latin_title);
     let mut kept: Vec<&Word> = words
         .iter()
-        .filter(|w| w.x_min > 0.5 && w.y_min > TITLE_TOP_ZONE_FRAC && w.y_min.is_finite())
+        .filter(|w| {
+            w.x_max.is_finite()
+                && w.x_max > 0.5
+                && w.y_min > TITLE_TOP_ZONE_FRAC
+                && w.y_min.is_finite()
+        })
         .collect();
     kept.sort_by(|a, b| a.y_min.total_cmp(&b.y_min));
     let mut lines: Vec<(f32, Vec<&Word>)> = Vec::new();
@@ -420,6 +425,46 @@ mod tests {
             y_min: y,
             y_max: y + 0.008,
         }
+    }
+
+    #[test]
+    fn title_box_two_line_comparatio_crossing_midpoint() {
+        let words = vec![
+            word("CATONIS", 0.6, 0.06),
+            word("clarissimus.", 0.6, 0.51),
+            word("ΑΡΙΣΤΕΙΔΟΥ", 0.15, 0.5491843),
+            word("ARISTIDIS", 220.562 / 460.32, 392.381_2 / 714.48),
+            word("CUM", 0.66, 0.5491843),
+            word("CATΟNE", 0.75, 0.5491843),
+            word("COMPARATIO.", 0.6, 0.57787454),
+            word("Si", 0.55, 0.6090118),
+        ];
+        let (title, body) = title_box(&words, id("comparatio_aristidis_et_catonis")).unwrap();
+        assert!((title - 0.5491843).abs() < 0.000001);
+        assert!((body - 0.6090118).abs() < 0.000001);
+    }
+
+    #[test]
+    fn title_box_excludes_greek_words_ending_before_midpoint() {
+        let words = vec![
+            word("ARISTIDIS", 0.2, 0.3),
+            word("ΑΡΙΣΤΕΙΔΟΥ", 0.479, 0.4),
+            word("ARISTIDIS", 0.479, 0.55),
+            word("COMPARATIO.", 0.6, 0.58),
+            word("Si", 0.55, 0.61),
+        ];
+        assert_eq!(
+            title_box(&words, id("comparatio_aristidis_et_catonis")),
+            Some((0.55, 0.61))
+        );
+        let mut invalid = word("ARISTIDIS", 0.6, 0.3);
+        invalid.x_max = f32::NAN;
+        let mut words = words;
+        words.push(invalid);
+        assert_eq!(
+            title_box(&words, id("comparatio_aristidis_et_catonis")),
+            Some((0.55, 0.61))
+        );
     }
 
     #[test]
