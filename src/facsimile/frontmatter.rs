@@ -201,6 +201,99 @@ pub(crate) fn praefatio_regions(width: u32, height: u32, page: u32) -> Result<Pr
 }
 
 /// Validate finalized praefatio prose, retaining candidate passes as evidence.
+#[cfg(test)]
+pub(crate) fn is_front_image_page(source: usize, page: u32) -> bool {
+    MONITUM_IMAGE_PAGES.contains(&(source, page)) || PRAEFATIO_IMAGE_PAGES.contains(&(source, page))
+}
+
+#[cfg(test)]
+pub(crate) fn prepare_front_prose_image(
+    source: usize,
+    page: u32,
+    bytes: Vec<u8>,
+) -> Result<Vec<u8>> {
+    if (source, page) != (1, 15) {
+        return Ok(bytes);
+    }
+    let mut image = image::load_from_memory(&bytes)?.to_rgba8();
+    let regions = praefatio_regions(image.width(), image.height(), page)?;
+    let (left, top, width, height) = regions.body;
+    let (_, bottom, split) = regions.transition.unwrap();
+    let transition_top = regions.transition.unwrap().0;
+    for (x, y, pixel) in image.enumerate_pixels_mut() {
+        if x < left
+            || x >= left + width
+            || y < top
+            || y >= top + height
+            || y >= bottom
+            || (y >= transition_top && x >= split)
+        {
+            *pixel = image::Rgba([255, 255, 255, 255]);
+        }
+    }
+    let mut output = std::io::Cursor::new(Vec::new());
+    image::DynamicImage::ImageRgba8(image).write_to(&mut output, image::ImageFormat::Png)?;
+    Ok(output.into_inner())
+}
+
+#[cfg(test)]
+fn validate_praefatio_prose_boundary(doc: &crate::tags::PageDoc) -> Result<()> {
+    let nonempty: Vec<_> = doc
+        .blocks
+        .iter()
+        .enumerate()
+        .filter(|(_, b)| !b.text.trim().is_empty())
+        .collect();
+    let count: usize = doc
+        .blocks
+        .iter()
+        .map(|b| b.text.matches(PRAEFATIO_PROSE_SENTINEL).count())
+        .sum();
+    if count != 1
+        || !nonempty
+            .last()
+            .is_some_and(|(_, b)| b.text.ends_with(PRAEFATIO_PROSE_SENTINEL))
+    {
+        let block = doc
+            .blocks
+            .iter()
+            .position(|b| b.text.contains(PRAEFATIO_PROSE_SENTINEL))
+            .unwrap_or(0);
+        bail!("praefatio source 1, source page 15, block {block}: expected a unique prose sentinel ending the final nonempty block; restore a reviewed finalized prose prefix in the cache, or deliberately regenerate using --retag. Preserve a copy first: --retag resets the entire front-matter sidecar and discards corrections and candidate evidence");
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+pub(crate) fn validate_praefatio_prose_results(sidecar: &Sidecar) -> Result<()> {
+    for (source, page) in PRAEFATIO_OPENING_PAGES
+        .into_iter()
+        .chain(PRAEFATIO_CLOSING_PAGES)
+    {
+        if let Some(doc) = sidecar.page(source, page).and_then(|r| r.result.as_ref()) {
+            crate::llm::transcribe::validate_pagedoc_text(doc)
+                .with_context(|| format!("praefatio source {source}, source page {page}"))?;
+            if page == 15 {
+                validate_praefatio_prose_boundary(doc)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+pub(crate) fn validate_praefatio_candidate_state(sidecar: &Sidecar) -> Result<()> {
+    if let Some(record) = sidecar.page(1, 15).filter(|r| r.result.is_none()) {
+        for (name, doc) in [("pass_a", &record.pass_a), ("pass_b", &record.pass_b)] {
+            if let Some(doc) = doc {
+                validate_praefatio_prose_boundary(doc)
+                    .with_context(|| format!("legacy praefatio candidate {name}"))?;
+            }
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn validate_praefatio_results(sidecar: &Sidecar) -> Result<()> {
     for (source, page) in PRAEFATIO_PAGES {
         if let Some(doc) = sidecar
@@ -324,6 +417,100 @@ pub fn render_front_scans(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn work_remains_ignores_praefatio_image_page() {
+        assert!(is_front_image_page(1, 16));
+        assert!(is_front_image_page(0, 13));
+        assert!(!is_front_image_page(1, 15));
+    }
+
+    #[test]
+    fn transcribe_and_reconcile_exclude_praefatio_image_page() {
+        let pages = [(1, 14), (1, 15), (1, 16), (1, 17)];
+        let scope: Vec<_> = pages
+            .into_iter()
+            .filter(|&(s, p)| !is_front_image_page(s, p))
+            .collect();
+        assert_eq!(scope, [(1, 14), (1, 15), (1, 17)]);
+    }
+
+    #[test]
+    fn praefatio_mask_preserves_prose_and_removes_errata() {
+        let mut raw = image::RgbaImage::from_pixel(1829, 2827, image::Rgba([255; 4]));
+        for (x, y) in [
+            (790, 1620),
+            (805, 1620),
+            (400, 1700),
+            (400, 100),
+            (400, 2800),
+            (400, 1000),
+        ] {
+            raw.put_pixel(x, y, image::Rgba([0, 0, 0, 255]));
+        }
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        image::DynamicImage::ImageRgba8(raw)
+            .write_to(&mut bytes, image::ImageFormat::Png)
+            .unwrap();
+        let renderer = |s, p| prepare_front_prose_image(s, p, bytes.get_ref().clone());
+        let masked = image::load_from_memory(&renderer(1, 15).unwrap())
+            .unwrap()
+            .to_rgba8();
+        assert_eq!(masked.dimensions(), (1829, 2827));
+        for (x, y) in [(790, 1620), (400, 1000)] {
+            assert_eq!(masked.get_pixel(x, y).0, [0, 0, 0, 255]);
+        }
+        for (x, y) in [(805, 1620), (400, 1700), (400, 100), (400, 2800)] {
+            assert_eq!(masked.get_pixel(x, y).0, [255; 4]);
+        }
+        assert_eq!(renderer(0, 12).unwrap(), *bytes.get_ref());
+    }
+
+    fn migrated_cache() -> Sidecar {
+        let mut sc = committed_praefatio();
+        let text = &mut sc.page_mut(1, 15).unwrap().result.as_mut().unwrap().blocks[0].text;
+        let end = text.find(PRAEFATIO_PROSE_SENTINEL).unwrap() + PRAEFATIO_PROSE_SENTINEL.len();
+        text.truncate(end);
+        sc
+    }
+
+    #[test]
+    fn praefatio_validation_rejects_unmigrated_mixed_result() {
+        let err = validate_praefatio_prose_results(&committed_praefatio()).unwrap_err();
+        assert!(format!("{err:#}").contains("source page 15, block 0"));
+        validate_praefatio_prose_results(&migrated_cache()).unwrap();
+    }
+
+    #[test]
+    fn praefatio_validation_ignores_image_only_result() {
+        let mut sc = migrated_cache();
+        sc.page_mut(1, 16).unwrap().result.as_mut().unwrap().blocks[0].text =
+            "***END OF JSON***".into();
+        validate_praefatio_prose_results(&sc).unwrap();
+    }
+
+    #[test]
+    fn praefatio_missing_result_rejects_legacy_candidates_before_api() {
+        let mut sc = committed_praefatio();
+        sc.page_mut(1, 15).unwrap().result = None;
+        let before = sc.clone();
+        let err = validate_praefatio_candidate_state(&sc).unwrap_err();
+        let message = format!("{err:#}");
+        assert!(message.contains("--retag") && message.contains("entire front-matter sidecar"));
+        assert_eq!(sc, before);
+        let record = sc.page_mut(1, 15).unwrap();
+        record.pass_a = None;
+        record.pass_b = None;
+        validate_praefatio_candidate_state(&sc).unwrap();
+    }
+
+    #[test]
+    fn praefatio_valid_result_preserves_candidates_when_other_page_needs_work() {
+        let mut sc = migrated_cache();
+        sc.page_mut(1, 17).unwrap().result = None;
+        let before = sc.clone();
+        validate_praefatio_candidate_state(&sc).unwrap();
+        assert_eq!(sc, before);
+    }
     #[test]
     fn praefatio_regions_scale_with_render_dimensions() {
         let a = super::praefatio_regions(1829, 2827, 15).unwrap();

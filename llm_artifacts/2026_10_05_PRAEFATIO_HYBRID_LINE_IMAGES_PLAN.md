@@ -557,3 +557,13 @@ JSON comparison permits exactly that finalized-text edit and proves preservation
 of continuation, candidates, hashes, page 16 and all remaining evidence. The
 committed cache remains unchanged. Formatting, clippy and cache tests passed;
 the complete suite is run for this step as well.
+
+Step 2.1: prepared the shared image-page predicate, unchanged-dimension PNG
+mask, finalized prose boundary validation and legacy-candidate guard, all under
+test-only gates. Seven policy tests pass; the existing production behavior is
+unchanged. `tmp/praefatio/masked-15.png` confirms the complete final `Ages.` and
+no visible corrigendum or page furniture. The guard names source/page/block,
+offers a reviewed finalized-prefix restoration or deliberate `--retag`, and
+explains the whole-sidecar reset and need to preserve evidence first.
+Formatting, clippy, Praefatio and work-remains tests passed; full-suite results
+are checked before committing.
