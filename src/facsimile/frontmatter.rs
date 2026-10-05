@@ -266,6 +266,60 @@ pub fn render_front_scans(
 
 #[cfg(test)]
 mod tests {
+    fn committed_praefatio() -> crate::tags::Sidecar {
+        crate::tags::Sidecar::load(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(SIDECAR))
+            .unwrap()
+    }
+
+    #[test]
+    fn praefatio_cache_has_one_display_heading() {
+        let sc = committed_praefatio();
+        let headings: Vec<_> = PRAEFATIO_PAGES
+            .iter()
+            .flat_map(|&(source, page)| {
+                &sc.page(source, page)
+                    .unwrap()
+                    .result
+                    .as_ref()
+                    .unwrap()
+                    .blocks
+            })
+            .filter(|b| b.kind == crate::tags::BlockKind::Heading)
+            .collect();
+        assert_eq!(headings.len(), 1);
+        assert_eq!(headings[0].text, "PRÆFATIO.");
+    }
+
+    #[test]
+    fn praefatio_cache_marks_sentence_continuations() {
+        let sc = committed_praefatio();
+        for page in [15, 16] {
+            let blocks = &sc.page(1, page).unwrap().result.as_ref().unwrap().blocks;
+            assert_eq!(blocks[0].kind, crate::tags::BlockKind::Paragraph);
+            assert!(blocks[0].continues_previous);
+        }
+        assert!(sc
+            .page(1, 17)
+            .unwrap()
+            .result
+            .as_ref()
+            .unwrap()
+            .blocks
+            .iter()
+            .all(|b| !b.continues_previous));
+    }
+
+    #[test]
+    fn praefatio_cache_ends_page_sixteen_at_source_period() {
+        let sc = committed_praefatio();
+        let record = sc.page(1, 16).unwrap();
+        let result = &record.result.as_ref().unwrap().blocks[0].text;
+        let original = &record.pass_a.as_ref().unwrap().blocks[0].text;
+        assert!(result.ends_with("cap. LXVIII, 4 e cod. 1676 dedi καθίσταντο."));
+        assert!(original.starts_with(result));
+        assert!(original[result.len()..].contains("***END OF JSON***"));
+    }
+
     use super::*;
     use crate::llm::batch::{BatchOutcome, BatchRequest, BatchStatus};
     use crate::llm::instrument::Usage;
