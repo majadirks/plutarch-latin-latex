@@ -810,6 +810,68 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 mod tests {
     use super::*;
 
+    #[test]
+    #[ignore = "requires source PDFs and Poppler; production-DPI trace"]
+    fn lysander_closing_line_survives_reflow() {
+        let range = operational_range("lysander");
+        let image = real_source_image(0, 551);
+        let column = detect_latin_column(&image).unwrap();
+        let col = crop_column(&image, &column);
+        let raw = line_bands(&col, LINE_MIN_INK);
+        let zone: Vec<_> = raw
+            .iter()
+            .copied()
+            .filter(|b| {
+                (b.top + b.bottom) / 2 >= col.height() * 8 / 100
+                    && (b.top + b.bottom) / 2 <= col.height() * 95 / 100
+            })
+            .collect();
+        let gap = drop_furniture(&raw, col.height());
+        let (pages, m) = unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+        assert_eq!(
+            pages.len() as u32,
+            range.end_page - range.unit.start_page + 1
+        );
+        let interior = drop_interior_running_head(&col, &gap, &m);
+        let trailing = drop_trailing_furniture(&col, &gap, &m);
+        let target = (0.86545 * col.height() as f32) as u32;
+        let closing = raw
+            .iter()
+            .find(|b| b.top.abs_diff(target) <= m.height_med && b.bottom > target)
+            .expect("closing ink band in source");
+        assert!(band_ink_span(&col, closing) > 0);
+        let final_bands = &pages[(551 - range.unit.start_page) as usize].1;
+        let gaps: Vec<_> = gap
+            .windows(2)
+            .map(|w| w[1].top.saturating_sub(w[0].bottom) as i64)
+            .collect();
+        let first_loss = [
+            ("zone", &zone),
+            ("gap", &gap),
+            ("interior", &interior),
+            ("trailing", &trailing),
+            ("final", final_bands),
+        ]
+        .into_iter()
+        .find(|(_, b)| !b.contains(closing))
+        .map(|(name, _)| name);
+        let trace = serde_json::json!({"dpi":BODY_DPI,"column":[column.left,column.right],"raw":raw.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"zone":zone.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"gap":gap.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"interior":interior.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"trailing":trailing.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"minimum_ink_input":strips_in_reading_order(&pages,&m).iter().filter(|s|s.page_img_index==(551-range.unit.start_page) as usize).map(|s|[s.band.top,s.band.bottom]).collect::<Vec<_>>(),"metrics":[m.height_med,m.height_mad,m.width_med],"closing":[closing.top,closing.bottom],"closing_span":band_ink_span(&col,closing),"gaps":gaps,"median_gap":median_gap(&gaps),"first_loss":first_loss});
+        let dir = std::path::Path::new("tmp/pdfs/recto_units_verification");
+        std::fs::create_dir_all(dir).unwrap();
+        let name = if first_loss.is_some() {
+            "lysander_trace_before.json"
+        } else {
+            "lysander_trace_after.json"
+        };
+        std::fs::write(dir.join(name), serde_json::to_vec_pretty(&trace).unwrap()).unwrap();
+        println!("{}", serde_json::to_string_pretty(&trace).unwrap());
+        assert!(
+            final_bands.contains(closing),
+            "closing body line first removed at {first_loss:?}"
+        );
+        save_retained_crop("lysander", &pages[(551 - range.unit.start_page) as usize]);
+    }
+
     fn operational_range(id: &str) -> UnitRange {
         let units =
             crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))
