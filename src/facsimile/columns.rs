@@ -195,8 +195,8 @@ const TICK_WIDTH_DIVISOR: usize = 8;
 /// rule/tick column) when it is detached from the dense body by a whitespace gap.
 /// Such a stripe spans the inter-line gaps with ink and would merge body lines into
 /// giant bands. Conservative: only a narrow stripe set off by a clear gap from a
-/// following dense body is trimmed, so on a clean page the body's own left edge â€” and
-/// thus the column width that feeds the global scale â€” is unchanged.
+/// following dense body is trimmed, so on a clean page the body's own left edge — and
+/// thus the column width that feeds the global scale — is unchanged.
 fn exclude_left_ticks(col: &[f32], left: u32, right: u32, cmax: f32) -> u32 {
     let dense = 0.35 * cmax;
     let white = 0.05 * cmax;
@@ -224,7 +224,7 @@ fn exclude_left_ticks(col: &[f32], left: u32, right: u32, cmax: f32) -> u32 {
     }
     let body_follows = j < r;
     // A real whitespace separation (not just a dip) must sit in the gap, the stripe
-    // must be thin, and a body must follow â€” otherwise this is the body itself.
+    // must be thin, and a body must follow — otherwise this is the body itself.
     let gap_is_white = (i..j).any(|x| col[x] < white);
     let thin = stripe_w * TICK_WIDTH_DIVISOR <= (r - l);
     if body_follows && gap_is_white && thin {
