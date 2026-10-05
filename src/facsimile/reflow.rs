@@ -847,6 +847,42 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 mod tests {
     use super::*;
 
+    #[test]
+    fn unit_body_strips_requests_inclusive_final_page() {
+        for (id, source, start, end) in [
+            ("comparatio_cimonis_et_luculli", 0, 635, 637),
+            ("otho", 1, 696, 708),
+        ] {
+            let mut unit = operational_range(id).unit;
+            unit.start_page = start;
+            unit.last_page = Some(end);
+            unit.body_top_frac = Some(0.25);
+            let ranges = crate::facsimile::units::ranges(&[unit], &[800, 800]);
+            let requests = std::cell::RefCell::new(Vec::new());
+            let image = body_page(
+                140,
+                &[
+                    (40, 50, 122, 188),
+                    (54, 64, 122, 188),
+                    (68, 78, 122, 188),
+                    (82, 92, 122, 188),
+                    (96, 106, 122, 188),
+                    (110, 120, 122, 188),
+                ],
+            );
+            let (pages, _) = unit_body_strips(&ranges[0], |s, p| {
+                assert_eq!(s, source);
+                requests.borrow_mut().push(p);
+                Ok(image.clone())
+            })
+            .unwrap();
+            assert_eq!(*requests.borrow(), (start..=end).collect::<Vec<_>>());
+            assert_eq!(pages.len() as u32, end - start + 1);
+            assert!(!pages.last().unwrap().1.is_empty());
+            assert!(!ranges[0].shared_tail);
+        }
+    }
+
     #[derive(serde::Deserialize)]
     struct ReviewedBands {
         source: usize,
