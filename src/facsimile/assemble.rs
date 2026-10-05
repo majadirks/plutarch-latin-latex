@@ -16,6 +16,8 @@ use crate::facsimile::frontmatter;
 use crate::latex::{self, Fonts, InnerOpts};
 use crate::tags::LifeKind;
 
+const RECTO_START_DEFINITION: &str = "\\newcommand{\\unitrecto}{\\clearpage\\ifodd\\value{page}\\else\\thispagestyle{empty}\\hbox{}\\clearpage\\fi}\n";
+
 /// One unit placed in a facsimile volume: its Latin title (for the inline chapter
 /// header and running head), its kind (so the Tomus title page lists Lives only),
 /// and the composed body-image file names, in reading order.
@@ -57,6 +59,7 @@ pub fn write_inner(vol: &FacsimileVolume, out_dir: &Path, fonts: &Fonts) -> Resu
 /// Generate the full facsimile inner `.tex` for one volume.
 pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts) -> String {
     let mut doc = latex::inner_preamble(fonts, InnerOpts { running_head: true });
+    doc.push_str(RECTO_START_DEFINITION);
     doc.push_str("\\begin{document}\n\n");
     doc.push_str("% Front flyleaves (blank endpapers), two PDF pages per leaf\n");
     doc.push_str(&latex::blank_pages(2 * latex::FLYLEAVES_PER_END));
@@ -93,11 +96,13 @@ pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts) -> String {
         }
     }
 
+    if vol.units.iter().any(|unit| !unit.image_names.is_empty()) {
+        doc.push_str("\\unitrecto\n");
+    }
     doc.push_str("\\beginbodynumbering\n\n");
 
-    for (index, unit) in vol.units.iter().enumerate() {
-        let force_parity_start = !(index == 0 && vol.emit_front_matter && vol.tomus == 1);
-        doc.push_str(&unit_block(unit, force_parity_start));
+    for unit in &vol.units {
+        doc.push_str(&unit_block(unit));
     }
 
     doc.push_str("\\clearpage\n");
@@ -108,18 +113,17 @@ pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts) -> String {
     doc
 }
 
-/// One unit: a parity start or consecutive page with the running head set to the Latin name, then one body
+/// One unit: a recto start with the running head set to the Latin name, then one body
 /// image per page. There is no standalone title page; the unit's first body page
 /// opens with a large centered inline chapter header (the Latin title only) and
 /// carries no running head, while later pages keep the centered Latin running head.
-fn unit_block(unit: &PlacedUnit, force_parity_start: bool) -> String {
+fn unit_block(unit: &PlacedUnit) -> String {
+    if unit.image_names.is_empty() {
+        return String::new();
+    }
     let latin = latex::escape_latex(&unit.latin_title);
     let mut out = String::new();
-    out.push_str(if force_parity_start {
-        "\\freshpage\n"
-    } else {
-        "\\clearpage\n"
-    });
+    out.push_str("\\unitrecto\n");
     // The running head on every body page of this unit is its Latin name.
     out.push_str(&format!("\\markboth{{{latin}}}{{{latin}}}\n"));
     let mut images = unit.image_names.iter();
@@ -144,6 +148,49 @@ fn unit_block(unit: &PlacedUnit, force_parity_start: bool) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn facsimile_units_use_recto_command() {
+        let vol = volume(vec![
+            unit("theseus", &["life.png"]),
+            unit_kind("comparison", LifeKind::Comparatio, &["comparison.png"]),
+        ]);
+        let doc = inner_document(&vol, &Fonts::default());
+        assert_eq!(doc.matches(RECTO_START_DEFINITION).count(), 1);
+        assert_eq!(doc.matches("\\unitrecto\n\\markboth").count(), 2);
+    }
+
+    #[test]
+    fn first_body_alignment_precedes_numbering() {
+        for tomus in [1, 2] {
+            for front in [false, true] {
+                let vol = volume_full(
+                    tomus,
+                    0,
+                    tomus == 1,
+                    front,
+                    "",
+                    vec![unit("theseus", &["body.png"])],
+                );
+                let doc = inner_document(&vol, &Fonts::default());
+                assert!(
+                    doc.contains("\\unitrecto\n\\beginbodynumbering\n\n\\unitrecto\n\\markboth")
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn empty_unit_emits_no_heading_or_page_break() {
+        assert_eq!(unit_block(&unit("empty", &[])), "");
+        let mut vol = volume(vec![unit("empty", &[]), unit("theseus", &["body.png"])]);
+        vol.emit_front_matter = false;
+        let doc = inner_document(&vol, &Fonts::default());
+        assert!(!doc.contains("\\heading{EMPTY}"));
+        assert_eq!(doc.matches("\\unitrecto\n\\markboth").count(), 1);
+        let empty = volume(vec![unit("empty", &[])]);
+        assert!(!inner_document(&empty, &Fonts::default()).contains("\\unitrecto\n"));
+    }
 
     fn unit(id: &str, images: &[&str]) -> PlacedUnit {
         unit_kind(id, LifeKind::Life, images)
@@ -201,16 +248,15 @@ mod tests {
     }
 
     #[test]
-    fn inner_tex_starts_each_unit_fresh_page() {
+    fn inner_tex_starts_each_unit_on_recto() {
         let mut vol = volume(vec![
             unit("theseus", &["facsimile_theseus_1.png"]),
             unit("romulus", &["facsimile_romulus_1.png"]),
         ]);
         vol.emit_front_matter = false;
         let doc = inner_document(&vol, &Fonts::default());
-        // A fresh page opens each unit (the preamble also *defines* \freshpage, so
-        // count the unit openings via the \freshpage + \markboth pairing).
-        assert_eq!(doc.matches("\\freshpage\n\\markboth").count(), 2);
+        // Count body openings independently of the command definition.
+        assert_eq!(doc.matches("\\unitrecto\n\\markboth").count(), 2);
         // The inline chapter header carries the Latin title only.
         assert!(doc.contains("\\heading{THESEUS}"));
         assert!(doc.contains("\\heading{ROMULUS}"));
@@ -345,7 +391,7 @@ mod tests {
     }
 
     #[test]
-    fn monitum_errata_and_first_body_use_consecutive_pages() {
+    fn monitum_errata_follow_prose_before_recto_body() {
         let vol = volume_full(
             1,
             0,
@@ -361,29 +407,29 @@ mod tests {
         let prose = doc.find("% PROSE MARKER").unwrap();
         let first = doc.find("{first.png}").unwrap();
         assert!(!doc[prose..first].contains("\\freshpage"));
-        assert!(doc[prose..first].contains("\\clearpage\n\\markboth{THESEUS}"));
-        assert!(doc[first..].contains("\\freshpage\n\\markboth{ROMULUS}"));
+        assert!(doc[prose..first].contains("\\unitrecto\n\\markboth{THESEUS}"));
+        assert!(doc[first..].contains("\\unitrecto\n\\markboth{ROMULUS}"));
     }
 
     #[test]
-    fn first_body_keeps_parity_start_without_monitum() {
+    fn first_body_uses_recto_start_without_monitum() {
         for vol in [
             volume_full(2, 0, false, true, "", vec![unit("theseus", &["x.png"])]),
             volume_full(1, 0, true, false, "", vec![unit("theseus", &["x.png"])]),
         ] {
             let doc = inner_document(&vol, &Fonts::default());
-            assert!(doc.contains("\\freshpage\n\\markboth{THESEUS}"));
+            assert!(doc.contains("\\unitrecto\n\\markboth{THESEUS}"));
         }
     }
 
     #[test]
-    fn monitum_without_cached_prose_still_uses_consecutive_pages() {
+    fn monitum_without_cached_prose_still_aligns_body_on_recto() {
         let vol = volume_full(1, 0, true, true, "", vec![unit("theseus", &["x.png"])]);
         let doc = inner_document(&vol, &Fonts::default());
         let pair = doc.find("% Embedded front-matter scan pair").unwrap();
         let body = doc.find("{x.png}").unwrap();
         assert!(!doc[pair..body].contains("\\freshpage"));
-        assert!(doc[pair..body].contains("\\clearpage\n\\markboth{THESEUS}"));
+        assert!(doc[pair..body].contains("\\unitrecto\n\\markboth{THESEUS}"));
     }
 
     #[test]
@@ -463,7 +509,7 @@ mod tests {
 
     #[test]
     fn unit_block_has_no_standalone_title_page() {
-        let out = unit_block(&unit("theseus", &["f1.png", "f2.png"]), true);
+        let out = unit_block(&unit("theseus", &["f1.png", "f2.png"]));
         // The old standalone title page was `\heading{…}\clearpage`; now the heading
         // sits directly above the first image, with no intervening page break.
         assert!(!out.contains("\\heading{THESEUS}\n\\clearpage"));
@@ -474,7 +520,7 @@ mod tests {
 
     #[test]
     fn unit_first_page_suppresses_running_head() {
-        let out = unit_block(&unit("theseus", &["f1.png", "f2.png", "f3.png"]), true);
+        let out = unit_block(&unit("theseus", &["f1.png", "f2.png", "f3.png"]));
         // Only the first body page suppresses the running head.
         assert_eq!(out.matches("\\thispagestyle{empty}").count(), 1);
         // The suppression precedes the first image, not the later ones.
@@ -486,7 +532,7 @@ mod tests {
 
     #[test]
     fn unit_header_is_latin_only() {
-        let out = unit_block(&unit("theseus", &["f1.png"]), true);
+        let out = unit_block(&unit("theseus", &["f1.png"]));
         assert!(out.contains("\\heading{THESEUS}"));
         // No Greek title is emitted.
         assert!(!out.contains("ΘΗΣΕΥΣ"));
