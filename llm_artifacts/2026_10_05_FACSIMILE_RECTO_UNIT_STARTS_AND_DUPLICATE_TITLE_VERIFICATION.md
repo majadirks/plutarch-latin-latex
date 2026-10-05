@@ -50,12 +50,80 @@ Comparison against the baseline caught two false furniture classifications: the 
 
 The corrected production-DPI trace matches all 40 retained baseline bands on Lysander 550 and all 33 on Tiberius Gracchus 414 exactly, including coordinates, dimensions, and pixel hashes. All four explicitly requested real-source reflow regressions pass with the correction, including their complete reviewed ledgers and independent scaled-stream comparisons. Expected assertion panics in the Cimon and Otho tests demonstrate rejection of isolated old endpoint controls; both tests finish successfully.
 
-## Paused checkpoint
+## Early-line rescue correction during the final audit
 
-The user requested a pause after the current step. Steps through 3.1 are committed and pushed. The audit-discovered body-preservation correction is the final checkpoint before pausing; step 4.1 remains incomplete. README wording records the implemented recto behavior, and temporary diagnostic programs are preserved under `tmp/pdfs/recto_units_verification/diagnostic_sources/` rather than registered as crate binaries.
+The resumed visual audit identified sparse running heads admitted by the early-line rescue: a title fragment and distant source folio can have a full-width bounding span while most intervening horizontal coordinates contain no ink. `metrics::band_ink_coverage` counts coordinates containing ink with the existing source-ink threshold. Early rescue requires coverage of at least half the column, alongside the existing normal-height, full-span, alignment, top-zone, and spacing checks. It has no unit, page-number, or text special cases. `band_ink_coverage_excludes_whitespace_between_head_and_folio` and `early_body_rescue_excludes_wide_sparse_running_head_and_folio` protect this distinction. The four real-source regressions still pass, including Otho's complete first body lines on 706/707.
 
-The all-volume rebuild was stopped when the audit found the two lost passages. Its cleanup had already removed the existing generated inner and imposed PDFs, and replacement PDFs have not been compiled. Current generated body PNGs belong to that interrupted build and are not accepted final output. Baseline TeX, logs, decoded PDF images, source renders, and hash manifests remain available under the verification directory.
+## All-volume verification, step 4.1
 
-Resuming requires a fresh complete all-volume build, the physical-page/body-folio and wrapper-count audit, completion of visual review of source-band changes, and comparison of generated PDF images against the baseline. The current source trace has global width percentile 835 versus baseline 837 because the corrected inclusive ranges change the sampled population; the remaining audit must distinguish scale-induced pixel changes from source-band preservation. Do not mark step 4.1 complete until these checks pass.
+Step 4.1 is complete. The resume revoked the pause, and the fresh compiled build, all-volume placement audit, source/cache comparisons, visual source-band review, decoded-PDF comparison, and independent all-unit source-stream audit all pass. README wording states recto starts, zero or one boundary blank, and matching body-folio parity. Temporary diagnostics are preserved under `tmp/pdfs/recto_units_verification/diagnostic_sources/`; none remain registered in `src/bin`.
 
-Checkpoint validation: `cargo fmt --all`, `cargo fmt --all --check`, and `cargo clippy --all-targets -- -D warnings` passed. The full `cargo test` run passed 302 library tests and five CLI tests, with 13 environment-dependent tests ignored. The four real-source reflow regressions were run separately in release mode and all passed. `cargo build` and `git diff --check` also passed.
+### Build and environment
+
+The accepted candidate is a fresh complete offline build with both preservation corrections. `rebuilt/corrected_full_build.log` ends with successful compilation of all eight inner PDFs, all eight imposed PDFs, and `Volumes: 8`. The interrupted earlier build and the completed candidate preceding the sparse-head correction are not accepted output. The normal compile branch removes composed PNGs after embedding them; final pixel verification therefore uses images decoded from the completed inner PDFs.
+
+Commands were run from the repository in PowerShell with workspace-local Cargo output:
+
+```powershell
+$env:CARGO_TARGET_DIR = Join-Path (Get-Location) 'target'
+$env:PLUTARCH_LUALATEX = "$env:LOCALAPPDATA\Programs\MiKTeX\miktex\bin\x64\lualatex.exe"
+& $env:PLUTARCH_LUALATEX --version
+cargo run --release --bin facsimile --target-dir target -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_v2.pdf --out build_facsimile/ --offline
+cargo fmt --all
+cargo fmt --all --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+cargo build
+cargo test facsimile::reflow --release -- --ignored --nocapture --test-threads=1
+cargo test facsimile::assemble --release -- --ignored --nocapture --test-threads=1
+git diff --check
+```
+
+LuaLaTeX identifies itself as LuaHBTeX 1.24.0, MiKTeX 25.12, development id 7707. The installed Poppler tools are from `poppler-25.12.0`. LuaLaTeX commands ran with elevated execution. No caches were cleared or redetected, and no vision review or transcription call was made.
+
+Final Rust checks pass: 304 library tests and five CLI tests, with 13 environment-dependent tests ignored by the normal suite. All four explicitly invoked real-source reflow tests pass, and all four explicitly invoked compiled assembler tests pass. The Cimon/Otho endpoint panics printed by the reflow tests are caught negative controls; their test results are successful. Logs are `rebuilt/final_cargo_test.log`, `coverage_real_tests.log`, and `final_compiled_fixtures.log`.
+
+### Compiled pagination and imposition
+
+`audit.ps1` correlates generated TeX references, whitespace-unwrapped LuaLaTeX shipment logs, and `pdfimages -list`. `rebuilt/unit_audit.json` records all 68 expected units and all 2,710 body placements. Every unit opens on an odd physical page and odd body folio; the first body origin is inferred and checked against continuation folios. Every continuation is consecutive. Every inter-unit transition is E+1 after an even ending or E+2 after an odd ending. All 29 inserted boundary versos, including Tomus I's front/body filler, were rendered, contain no text or images, and pass the decoded white-pixel check (every grayscale pixel at least 245). Body TeX contains exactly one generated heading per unit, excluding front-matter headings.
+
+| Tomus | Units | Body images | First body physical page | Last body physical page | Compiled inner pages | Imposed PDF pages |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| I | 11 | 376 | 17 | 398 | 416 | 208 |
+| II | 12 | 413 | 9 | 427 | 448 | 224 |
+| III | 11 | 396 | 9 | 411 | 416 | 208 |
+| IV | 3 | 109 | 9 | 118 | 128 | 64 |
+| V | 9 | 358 | 19 | 378 | 384 | 192 |
+| VI | 4 | 352 | 9 | 362 | 384 | 192 |
+| VII | 11 | 413 | 9 | 423 | 448 | 224 |
+| VIII | 7 | 293 | 9 | 303 | 320 | 160 |
+
+All inner counts are divisible by 32 and happen to equal the baseline signature-padded counts. Each fresh wrapper's `\innercount` equals its compiled inner count; each compiled imposed PDF has half that count. Wrapper slots cover every inner page exactly once, with even pages left and odd pages right. Cato's opening is inner page 53 in the right slot of imposed PDF page 28, paired with inner page 44. Its Comparatio opens on inner page 97 in the right slot of imposed PDF page 49, paired with inner page 128. These representative imposed sheets were rendered and inspected. The imposed PDF page number itself is not a book-page parity assertion.
+
+Tomus I retains both combined errata scans on physical page 15, followed by empty verso 16 and body recto 17. Tomus V's prose ends on page 18 and body recto 19 follows directly. The other six tomi end their front matter on page 8 and begin their bodies on page 9. First continuation folios confirm body origin 1 in every volume. `front_transition_t*.json` records these transitions.
+
+| Unit | Baseline opening | Rebuilt opening | Rebuilt opening body folio | Rebuilt final physical page | Body images |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Cato Major | 54 | 53 | 45 | 95 | 43 |
+| Aristides/Cato Comparatio | 98 | 97 | 89 | 104 | 8 |
+| Lysander | 300 | 299 | 291 | 342 | 44 |
+| Cimon/Lucullus Comparatio | 114 | 113 | 105 | 118 | 6 |
+| Otho | 278 | 277 | 269 | 303 | 27 |
+
+### Source coverage, cache integrity, and visual inspection
+
+All 1,315 baseline source/cache file hashes match exactly, including both source PDFs, transcription/front-matter caches, and existing render-cache entries. `rebuilt/hashes.json` records the recheck. Metadata-cache comparison against `baseline/facsimile_units.json` identifies exactly `comparatio_aristidis_et_catonis`, `comparatio_cimonis_et_luculli`, and `otho`; no fourth row differs. `generated_manifest.json` records hashes and sizes of the fresh generated PDF/TeX/log files.
+
+The corrected trace contains 1,381 unit/source-page contributions and 62,490 retained bands, compared with 1,376 contributions and 62,115 bands in the baseline. Five new source-page contributions are precisely Cimon/Lucullus 637 and Otho 705–708. The ordered source-band comparison identifies 401 additions and 26 removals on 199 changed source pages. All other 62,089 baseline bands preserve coordinates, dimensions, pixel hashes, and order. All 40 bands on Lysander 550 and all 33 on Tiberius Gracchus 414 match exactly.
+
+The latest comparison was used to regenerate `contact_sheets_latest/sheet_01.png` through `sheet_17.png`, with green added-band and red removed-band bounds and JSON labels. All 17 sheets were inspected; stale later sheet files and the original `contact_sheets/` are not evidence for the final code. Enlarged crops additionally confirm the separated top/closing restorations on Alexander 223, Caesar 255, and Demetrius 495. The removals are source furniture, scan-edge/noise bands, and Cato's copied title boundary; no removed interval contains Latin body text. The 401 additions include the complete restored terminal-page ledgers, genuine early body lines, and genuine short body endings. The exhaustive frozen ledgers separately distinguish body from tiny source noise on the terminal pages.
+
+The global 95th-percentile column width changes from 837 to 835 pixels at 300 DPI; default-trim scale changes from 1.1995221376419067 to 1.2023952007293701, approximately +0.2395%. The new inclusive source ranges change the width sample population. Scale was not frozen to match baseline composed hashes. `pdfimages -png` successfully decoded all eight completed inner PDFs; `baseline/pixel_map.json` and `rebuilt/pixel_map.json` correlate their extraction indices to shipment pages and body filenames. The final comparison actually reads all 2,710 new body rasters: 2,687 names overlap baseline and all differ in decoded dimensions or pixels at the changed scale; 23 names are new and one baseline name is absent. The baseline has 2,688 body rasters, so the rebuilt stream has 22 additional trim pages overall. `rebuilt/pixel_comparison.json` records these comparisons; no absent maps or zero-comparison diagnostic was accepted.
+
+The added names are one final canvas apiece for Lycurgus, Pelopidas, Caius Marius, Cimon/Lucullus Comparatio, Nicias, Crassus, Eumenes, Pompeius, Alexander, Iulius Caesar, Cato Minor, Agis, Antonius, Artoxerxes, and Aratus, plus Otho canvases 20–27. Timoleon canvas 52 is absent after repacking into 51 canvases. Its final page 269 was rendered and retains the complete concluding sentence; its source bands preserve every baseline body band and add the reviewed source-309 closing line. Cato still has 43 canvases, but its last canvas contains its genuine final sentence rather than the copied title: equal canvas counts do not establish content equality.
+
+The independent all-unit diagnostic reads the completed-PDF pixel map, requires every source page to render/detect successfully, resizes the source cut-point intervals once at rebuilt scale, applies the real horizontal clipping, and compares complete ordered row-stream dimensions and SHA-256 bytes with the decoded PDF content after its leading inset. It separately reruns production composition and requires each individual decoded canvas to have exactly its expected dimensions and bytes. All 68 units and 2,710 canvases pass, covering 3,640,092 independently resized source rows. `rebuilt/scaled_stream_audit.json` stores each unit's inclusive source range, canvas/row counts, and stream hash; `embedded_scaled_stream_audit.log` records every passing unit. Cimon/Lucullus ends at source 637 and Otho at 708. Together with the exhaustive terminal ledgers and unchanged ordered unscaled bands, these checks account for the changed composed pixels without permitting unexplained source loss, duplication, reordering, or alternative packing. The earlier diagnostic attempt reading removed standalone PNGs failed explicitly and was superseded by this complete embedded-PDF audit.
+
+Completed-PDF renders confirm Cato page 95 contains its genuine final sentence and no copied title. Empty verso 96 precedes the generated heading once above Comparatio body text on page 97. Lysander page 342 contains the complete `commemoranda habuimus.` line. Cimon/Lucullus page 117 contains the source join `contra Græcos` / `tulerunt,`; its conclusion through `fuisse.` appears on page 118 before endpapers. Otho page 303 contains the final hyphenated sentence through `cinæ se conjunxerunt.`; its full retained columns 705–708 were inspected through chapter XVIII. Its operational range excludes duplicate scans 709/710, and the Cimon/Lucullus range excludes 638. Other rendered Comparatio openings—Pelopidas/Marcellus, Sertorius/Eumenes, and Demosthenes/Cicero—retain generated headings above substantive opening text. Exact scanned glyphs, punctuation, capitalization, and line breaks are preserved as pixels; identifying excerpts here are not replacement transcriptions.
+
+Physical printing, folding, and binding have not been performed. Their parity interpretation is checked by the exhaustive wrapper mapping and representative imposed-sheet inspection. Structural flyleaves and final signature blanks remain intentional.

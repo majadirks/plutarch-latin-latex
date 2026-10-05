@@ -14,8 +14,8 @@ use image::{GrayImage, Luma};
 use crate::facsimile::columns::{crop_column, detect_latin_column, INK_THRESHOLD};
 use crate::facsimile::lines::{cut_points, drop_furniture, ink_profile_rows, line_bands, Band};
 use crate::facsimile::metrics::{
-    band_ink_bounds, band_ink_span, classify_band, is_narrow, line_metrics, median_u32, BandClass,
-    LineMetrics,
+    band_ink_bounds, band_ink_coverage, band_ink_span, classify_band, is_narrow, line_metrics,
+    median_u32, BandClass, LineMetrics,
 };
 use crate::facsimile::units::UnitRange;
 
@@ -294,6 +294,8 @@ fn retain_early_aligned_body_bands(col: &GrayImage, raw: &[Band], kept: &[Band])
                 && b.bottom <= first.top
                 && first.top.saturating_sub(b.bottom) as f32 <= (2.2 * median_gap(&gaps)).max(1.0)
                 && band_ink_span(col, b) as f32 >= BODY_LINE_SPAN_FRAC * col.width() as f32
+                // A running head and distant folio can span the measure across empty columns.
+                && band_ink_coverage(col, b) >= col.width().div_ceil(2)
                 && is_aligned_body_band(col, b, kept, &m)
         })
         .collect();
@@ -971,6 +973,31 @@ mod tests {
         assert!(!kept.contains(&page.1[1]));
         let rescued = retain_early_aligned_body_bands(&page.0, &page.1, &kept);
         assert_eq!(rescued, page.1[1..]);
+    }
+
+    #[test]
+    fn early_body_rescue_excludes_wide_sparse_running_head_and_folio() {
+        let (mut page, _) = page_and_metrics(
+            1000,
+            100,
+            &[
+                (72, 82, 5, 25),
+                (92, 102, 5, 95),
+                (107, 117, 5, 95),
+                (122, 132, 5, 95),
+            ],
+        );
+        for y in 72..82 {
+            for x in 90..95 {
+                page.0.put_pixel(x, y, Luma([0]));
+            }
+        }
+        let kept = drop_furniture(&page.1, 1000);
+        assert_eq!(band_ink_span(&page.0, &page.1[0]), 90);
+        assert_eq!(
+            retain_early_aligned_body_bands(&page.0, &page.1, &kept),
+            kept
+        );
     }
 
     #[test]

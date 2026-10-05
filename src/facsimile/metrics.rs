@@ -123,6 +123,16 @@ pub(crate) fn band_ink_span(col: &GrayImage, band: &Band) -> u32 {
     band_ink_bounds(col, band).map_or(0, |(left, right)| right - left)
 }
 
+/// Number of horizontal coordinates containing ink in a band's rows.
+pub(crate) fn band_ink_coverage(col: &GrayImage, band: &Band) -> u32 {
+    (0..col.width())
+        .filter(|&x| {
+            (band.top..band.bottom.min(col.height()))
+                .any(|y| col.get_pixel(x, y)[0] <= INK_THRESHOLD)
+        })
+        .count() as u32
+}
+
 /// Leftmost and exclusive rightmost ink coordinates in a band's rows.
 pub(crate) fn band_ink_bounds(col: &GrayImage, band: &Band) -> Option<(u32, u32)> {
     let w = col.width();
@@ -158,6 +168,27 @@ pub(crate) fn median_u32(values: &[u32]) -> u32 {
 mod tests {
     use super::*;
     use image::Luma;
+
+    #[test]
+    fn band_ink_coverage_excludes_whitespace_between_head_and_folio() {
+        let col = column(40, 100, &[(10, 20, 5, 25), (10, 20, 90, 95)]);
+        let band = Band {
+            top: 10,
+            bottom: 20,
+        };
+        assert_eq!(band_ink_span(&col, &band), 90);
+        assert_eq!(band_ink_coverage(&col, &band), 25);
+        assert_eq!(
+            band_ink_coverage(
+                &col,
+                &Band {
+                    top: 25,
+                    bottom: 35
+                }
+            ),
+            0
+        );
+    }
 
     #[test]
     fn band_ink_bounds_preserves_span_contract() {
