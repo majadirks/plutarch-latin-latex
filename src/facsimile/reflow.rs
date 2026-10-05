@@ -3,7 +3,7 @@
 //!
 //! One global scale is chosen for the whole work (so type size does not breathe
 //! page to page), mapping a robust column width to the trim text-block width. Every
-//! composed body canvas is the same fixed pixel width — the global measure — so
+//! composed body canvas is the same fixed pixel width â€” the global measure â€” so
 //! that `\includegraphics[width=\textwidth]` keeps the type size uniform across
 //! pages; canvas height is ragged on a unit's last page.
 
@@ -47,8 +47,8 @@ fn minimum_ink(m: &LineMetrics) -> Option<u64> {
 }
 
 // Trim geometry, in centimetres, matching the `geometry` options the facsimile
-// inner `.tex` uses (`inner_preamble` with the running head on): paper 10.5×16 cm,
-// `inner=1`, `outer=1` → `\textwidth = 8.5 cm`; `top=1.5` (above the running head),
+// inner `.tex` uses (`inner_preamble` with the running head on): paper 10.5Ã—16 cm,
+// `inner=1`, `outer=1` â†’ `\textwidth = 8.5 cm`; `top=1.5` (above the running head),
 // `bottom=1.5`, and the head band (`headheight`+`headsep`) reserved for it. These
 // are the real page margins (binding-safe); a golden test keeps them in sync with
 // the preamble strings.
@@ -191,7 +191,7 @@ fn percentile(widths: &[u32], p: f32) -> u32 {
 /// unit's robust [`LineMetrics`].
 ///
 /// Two passes, because the metrics must summarize body lines from **every** page
-/// (furniture already removed) before the boundary trims — which depend on them —
+/// (furniture already removed) before the boundary trims â€” which depend on them â€”
 /// can run. Pass A bands every page (`render_and_band`, which drops furniture and,
 /// on interior pages, a bled running head) without any boundary trim. The metrics
 /// are taken over those bands. Pass B then applies the first page's top-trim (the
@@ -205,7 +205,7 @@ pub fn unit_body_strips(
 ) -> Result<(Vec<PageBands>, LineMetrics)> {
     let source = range.unit.source;
 
-    // Pass A — band every page; no boundary trim yet.
+    // Pass A â€” band every page; no boundary trim yet.
     let mut pages: Vec<(GrayImage, Vec<Band>)> = Vec::new();
     let mut source_pages = Vec::new();
     let mut skipped = 0u32;
@@ -233,7 +233,7 @@ pub fn unit_body_strips(
 
     let metrics = line_metrics(&pages);
 
-    // Pass B — boundary and furniture trims, now that the metrics exist. The first
+    // Pass B â€” boundary and furniture trims, now that the metrics exist. The first
     // page drops its leading opening bands; every interior page drops a bled running
     // head / signature; a shared last page drops from the next unit's title down.
     // When the unit's one page is both first and shared-last, both boundary trims
@@ -581,7 +581,7 @@ fn drop_shared_tail(
 const TITLE_SCAN_BANDS: usize = 6;
 
 /// The leading band indices the optional line review should examine: the boundary
-/// bands the heuristics are least sure about — a `Tall` (merged) band or a `Narrow`
+/// bands the heuristics are least sure about â€” a `Tall` (merged) band or a `Narrow`
 /// band (a possible title / furniture) within the leading window. Ordinary full-
 /// measure body lines are not candidates.
 pub(crate) fn review_candidates(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<usize> {
@@ -614,7 +614,7 @@ fn find_title_band_from(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Opt
     scan_title_band(col, bands, m, lo..bands.len())
 }
 
-/// The earliest narrow, isolated band whose index lies in `range` — the display-title
+/// The earliest narrow, isolated band whose index lies in `range` â€” the display-title
 /// heuristic shared by [`find_title_band`] and [`find_title_band_from`]. Returns
 /// `None` when no band in the window is both narrow and set off by an above-median
 /// gap, or when the metrics are the sentinel (every band reads `Normal`).
@@ -713,7 +713,7 @@ const MIN_PIECE_FLOOR: u32 = 8;
 /// strip taller than an entire budget (even on a fresh canvas) falls back to
 /// [`split_tall_strip`]. The classification is taken from the original band against
 /// the original `metrics`, so it is scale-invariant; the cutting is all in scaled
-/// (trim) px. **Every returned canvas has height ≤ its budget** — no page overflows,
+/// (trim) px. **Every returned canvas has height â‰¤ its budget** â€” no page overflows,
 /// and no page closes early leaving a large mid-unit blank.
 pub fn compose_pages(
     pages: &[(GrayImage, Vec<Band>)],
@@ -845,7 +845,7 @@ fn min_piece_px(metrics: &LineMetrics, scale: f32) -> u32 {
     ((MIN_PIECE_FACTOR * metrics.height_med as f32 * scale).round() as u32).max(MIN_PIECE_FLOOR)
 }
 
-/// Split a scaled strip taller than `max_h` into sub-strips each ≤ `max_h`, cutting
+/// Split a scaled strip taller than `max_h` into sub-strips each â‰¤ `max_h`, cutting
 /// preferentially at an internal low-ink row (so a cut never bisects a glyph row)
 /// and falling back to a hard cut at `max_h` when the window has no clear gap. The
 /// cut is sought in the lower half of each `max_h` window so pieces are not
@@ -1755,6 +1755,26 @@ mod tests {
         .unwrap();
     }
 
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn reported_divider_pages_preserve_latin() {
+        for page in [51, 56, 59] {
+            let img = real_source_image(0, page);
+            let c = detect_latin_column(&img).unwrap();
+            let cropped = crop_column(&img, &c);
+            assert!(c.left < c.right);
+            assert_eq!(cropped.height(), img.height());
+            for y in 0..img.height() {
+                for x in c.left..c.right {
+                    assert_eq!(img.get_pixel(x, y), cropped.get_pixel(x - c.left, y));
+                }
+            }
+            save_retained_crop(
+                &format!("divider-{page}"),
+                &(cropped.clone(), line_bands(&cropped, LINE_MIN_INK)),
+            );
+        }
+    }
     fn operational_range(id: &str) -> UnitRange {
         let units =
             crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))
@@ -1934,7 +1954,7 @@ mod tests {
     #[test]
     fn trim_geom_width_is_textwidth_in_px() {
         let geom = TrimGeom::new(300);
-        // 8.5 cm / 2.54 * 300 ≈ 1004 px.
+        // 8.5 cm / 2.54 * 300 â‰ˆ 1004 px.
         assert!((1002..=1006).contains(&geom.tb_w), "tb_w {}", geom.tb_w);
         assert!(geom.tb_h > geom.tb_w, "a page is taller than it is wide");
         // No internal inset by default: the page geometry provides the margins, so
@@ -2167,7 +2187,7 @@ mod tests {
     #[test]
     fn compose_fills_page_then_wraps() {
         // Each strip (cut-point interval) is 12 px tall at scale 1.0; tb_h=24 fits
-        // exactly two strips, so six strips → three canvases.
+        // exactly two strips, so six strips â†’ three canvases.
         let pages = vec![page_with_lines(6)];
         let geom = TrimGeom {
             dpi: 300,
@@ -2297,13 +2317,13 @@ mod tests {
     #[test]
     fn drop_interior_running_head_removes_low_head() {
         // A short centered band (bled running head) detached by a large gap above
-        // three full-measure body lines is dropped (models a bled `…COMPARATIO. 227`).
+        // three full-measure body lines is dropped (models a bled `â€¦COMPARATIO. 227`).
         let w = 100;
         let img = column(
             200,
             w,
             &[
-                (5, 12, 40, 60),   // short head: span 20 < 0.8·100
+                (5, 12, 40, 60),   // short head: span 20 < 0.8Â·100
                 (60, 70, 5, 95),   // body line, big gap (48) before it
                 (80, 90, 5, 95),   // body line
                 (100, 110, 5, 95), // body line
@@ -2430,7 +2450,7 @@ mod tests {
         let unit = crate::facsimile::units::Unit {
             id: "u".to_string(),
             latin_title: "U".to_string(),
-            greek_title: "Τ".to_string(),
+            greek_title: "Î¤".to_string(),
             kind: crate::tags::LifeKind::Life,
             group: 1,
             source: 0,
@@ -2454,7 +2474,7 @@ mod tests {
         assert!(!metrics.is_sentinel());
         assert!(metrics.height_med > 0);
         // The first page's opening (the narrow title) is dropped: its first kept band
-        // is the first body line, well below the title's top at y≈4.
+        // is the first body line, well below the title's top at yâ‰ˆ4.
         assert!(pages[0].1[0].top > 20, "title not dropped on first page");
 
         // Boundary coordinates belong to source pages, even if rendering fails.
@@ -2894,7 +2914,7 @@ mod tests {
 
     #[test]
     fn single_page_unit_trims_both_ends() {
-        // [prev tail][own title][own body][next title][next body] → keep [own body].
+        // [prev tail][own title][own body][next title][next body] â†’ keep [own body].
         let w = 100;
         let specs = [
             (0, 8, 5, 95),
