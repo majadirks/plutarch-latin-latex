@@ -49,17 +49,22 @@ pub struct FacsimileVolume {
 }
 
 /// Write one facsimile inner `.tex` into `out_dir`, returning its path.
-pub fn write_inner(vol: &FacsimileVolume, out_dir: &Path, fonts: &Fonts) -> Result<PathBuf> {
+pub fn write_inner(
+    vol: &FacsimileVolume,
+    out_dir: &Path,
+    fonts: &Fonts,
+    exlibris: Option<&str>,
+) -> Result<PathBuf> {
     fs::create_dir_all(out_dir)
         .with_context(|| format!("creating output dir {}", out_dir.display()))?;
-    let doc = inner_document(vol, fonts);
+    let doc = inner_document(vol, fonts, exlibris);
     let path = out_dir.join(format!("tomus_{}_inner.tex", vol.tomus));
     fs::write(&path, doc).with_context(|| format!("writing {}", path.display()))?;
     Ok(path)
 }
 
 /// Generate the full facsimile inner `.tex` for one volume.
-pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts) -> String {
+pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts, exlibris: Option<&str>) -> String {
     let mut doc = latex::inner_preamble(fonts, InnerOpts { running_head: true });
     doc.push_str(RECTO_START_DEFINITION);
     doc.push_str("\\begin{document}\n\n");
@@ -75,7 +80,7 @@ pub fn inner_document(vol: &FacsimileVolume, fonts: &Fonts) -> String {
             .filter(|u| u.kind == LifeKind::Life)
             .map(|u| u.latin_title.clone())
             .collect();
-        doc.push_str(&latex::tomus_title_page(vol.tomus, &lives));
+        doc.push_str(&latex::tomus_title_page(vol.tomus, &lives, exlibris));
         // The reproduction-notice (QR) scan is on every tomus.
         doc.push_str(&latex::embed_scan(&frontmatter::front_qr_name(vol.source)));
         // The engraved Volumen title opens each volumen (first tomus of a source).
@@ -271,7 +276,7 @@ mod tests {
             &prose,
             vec![unit("nicias", &["body-a.png", "body-b.png"])],
         );
-        write_inner(&vol, dir.path(), &Fonts::default()).unwrap();
+        write_inner(&vol, dir.path(), &Fonts::default(), None).unwrap();
         let (texts, images) = compiled_fixture(dir.path(), 5);
         let opening = texts
             .iter()
@@ -324,6 +329,154 @@ mod tests {
 
     #[test]
     #[ignore = "requires MiKTeX/LuaLaTeX and Poppler"]
+    fn exlibris_compile_preserves_title_page_and_body_starts() {
+        let preview = Path::new(env!("CARGO_MANIFEST_DIR")).join("tmp/exlibris_preview");
+        let normalize = |text: &str| text.split_whitespace().collect::<Vec<_>>().join(" ");
+        for tomus in [1, 2] {
+            let mut baseline = None;
+            for (variant, owner) in [
+                ("omitted", None),
+                ("ordinary", Some("Alex Smith")),
+                (
+                    "long",
+                    Some("Alexandra Catherine Elizabeth Montgomery Smith"),
+                ),
+                ("accented", Some("\u{c9}lodie & Andr\u{e9}")),
+            ] {
+                let dir = tempfile::tempdir().unwrap();
+                fixture_image(dir.path(), &frontmatter::front_qr_name(0), 301, 101);
+                if tomus == 1 {
+                    for name in [
+                        frontmatter::front_volumen_name(0),
+                        frontmatter::front_colophon_name().into(),
+                        frontmatter::front_monitum_a_name().into(),
+                        frontmatter::front_monitum_b_name().into(),
+                    ] {
+                        fixture_image(dir.path(), &name, 302, 102);
+                    }
+                }
+                fixture_image(dir.path(), "body-a.png", 311, 101);
+                fixture_image(dir.path(), "body-b.png", 312, 102);
+                let vol = volume_full(
+                    tomus,
+                    0,
+                    tomus == 1,
+                    true,
+                    "",
+                    vec![unit("theseus", &["body-a.png", "body-b.png"])],
+                );
+                let tex = write_inner(&vol, dir.path(), &Fonts::default(), owner).unwrap();
+                let (texts, images) = compiled_fixture(dir.path(), tomus);
+                let titles: Vec<_> = texts
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, text)| text.contains("SECUNDUM CODICES"))
+                    .collect();
+                assert_eq!(titles.len(), 1);
+                let title_index = titles[0].0;
+                let title_text = normalize(titles[0].1);
+                assert_eq!(
+                    texts
+                        .iter()
+                        .map(|text| text.matches("EX LIBRIS").count())
+                        .sum::<usize>(),
+                    usize::from(owner.is_some())
+                );
+                if let Some(name) = owner {
+                    assert!(title_text.contains(&name.to_uppercase()), "{title_text}");
+                }
+                let body_page = images
+                    .iter()
+                    .find(|(_, w, h)| (*w, *h) == (311, 101))
+                    .unwrap()
+                    .0;
+                assert_eq!(body_page % 2, 1);
+                let body_texts = texts[body_page as usize - 1..].to_vec();
+                assert!(normalize(&body_texts[1]).contains("2"));
+                if let Some((count, placements, first_body, body, title)) = &baseline {
+                    assert_eq!(texts.len(), *count);
+                    assert_eq!(&images, placements);
+                    assert_eq!(body_page, *first_body);
+                    assert_eq!(&body_texts, body);
+                    assert_eq!(title_index, *title);
+                } else {
+                    baseline = Some((texts.len(), images, body_page, body_texts, title_index));
+                }
+                let stem = format!("tomus_{tomus}_inner");
+                let log = dir.path().join(format!("{stem}.log"));
+                let log_text = fs::read_to_string(&log).unwrap();
+                assert!(
+                    !log_text.contains("Overfull"),
+                    "{variant}: overfull box in compile log"
+                );
+                let saved = preview.join(format!("tomus_{tomus}/{variant}"));
+                fs::create_dir_all(&saved).unwrap();
+                fs::copy(&tex, saved.join(tex.file_name().unwrap())).unwrap();
+                fs::copy(&log, saved.join(log.file_name().unwrap())).unwrap();
+                let pdf = dir.path().join(format!("{stem}.pdf"));
+                fs::copy(&pdf, saved.join(pdf.file_name().unwrap())).unwrap();
+                let png =
+                    crate::render::render_page(&pdf, title_index as u32 + 1, 150, &saved).unwrap();
+                if variant == "ordinary" {
+                    let image = image::open(png).unwrap().to_luma8();
+                    let mut border_rows = Vec::new();
+                    for y in image.height() / 2..image.height() {
+                        let mut run = 0;
+                        let mut longest = 0;
+                        for x in 0..image.width() {
+                            if image.get_pixel(x, y)[0] < 128 {
+                                run += 1;
+                                longest = longest.max(run);
+                            } else {
+                                run = 0;
+                            }
+                        }
+                        if longest > image.width() / 2 {
+                            border_rows.push((y, longest));
+                        }
+                    }
+                    let top = border_rows.first().expect("visible upper plate border");
+                    let bottom = border_rows.last().expect("visible lower plate border");
+                    assert!(bottom.0 > top.0);
+                    assert!(
+                        top.1 > bottom.0 - top.0,
+                        "ordinary plate must be wider than tall"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn inner_document_propagates_exlibris_to_each_tomus() {
+        for tomus in [1, 2] {
+            let vol = volume_full(tomus, 0, tomus == 1, true, "", vec![]);
+            let doc = inner_document(&vol, &Fonts::default(), Some("Alex Smith"));
+            assert_eq!(doc.matches("EX LIBRIS").count(), 1);
+            assert_eq!(doc.matches("ALEX SMITH").count(), 1);
+            assert!(!inner_document(&vol, &Fonts::default(), None).contains("EX LIBRIS"));
+        }
+    }
+    #[test]
+    fn restricted_volume_omits_exlibris_even_when_requested() {
+        let vol = volume_full(1, 0, true, false, "", vec![]);
+        let doc = inner_document(&vol, &Fonts::default(), Some("Alex Smith"));
+        for absent in ["EX LIBRIS", "ALEX SMITH", "% Tomus title page", "\\fbox{"] {
+            assert!(!doc.contains(absent));
+        }
+    }
+    #[test]
+    fn write_inner_writes_requested_exlibris() {
+        let dir = tempfile::tempdir().unwrap();
+        let vol = volume_full(2, 0, false, true, "", vec![]);
+        let path = write_inner(&vol, dir.path(), &Fonts::default(), Some("Alex Smith")).unwrap();
+        let doc = fs::read_to_string(path).unwrap();
+        assert!(doc.contains("ALEX SMITH"));
+        assert!(doc.contains("\\fbox{"));
+    }
+
+    #[test]
+    #[ignore = "requires MiKTeX/LuaLaTeX and Poppler"]
     fn praefatio_hybrid_compile_has_consecutive_content_pages() {
         check_hybrid_compile(false);
     }
@@ -360,7 +513,7 @@ mod tests {
             &prose,
             vec![unit("nicias", &["body-a.png", "body-b.png"])],
         );
-        write_inner(&vol, dir, &Fonts::default()).unwrap();
+        write_inner(&vol, dir, &Fonts::default(), None).unwrap();
         assert!(names.iter().all(|name| dir.join(name).exists()));
         println!("Real Praefatio preview: {}", dir.display());
     }
@@ -409,7 +562,7 @@ mod tests {
     fn facsimile_units_compile_on_rectos_with_single_boundary_blanks() {
         let dir = tempfile::tempdir().unwrap();
         let vol = volume_full(2, 0, false, false, "", fixture_body(dir.path()));
-        write_inner(&vol, dir.path(), &Fonts::default()).unwrap();
+        write_inner(&vol, dir.path(), &Fonts::default(), None).unwrap();
         let (texts, images) = compiled_fixture(dir.path(), 2);
         assert_eq!(texts.len(), 32);
         assert_eq!(
@@ -451,7 +604,7 @@ mod tests {
                 unit("romulus", &["b.png"]),
             ],
         );
-        let doc = inner_document(&vol, &Fonts::default())
+        let doc = inner_document(&vol, &Fonts::default(), None)
             .replace("\\unitrecto\n", "\\unitrecto\n\\unitrecto\n\\unitrecto\n");
         std::fs::write(dir.path().join("tomus_2_inner.tex"), doc).unwrap();
         let (texts, images) = compiled_fixture(dir.path(), 2);
@@ -490,7 +643,7 @@ mod tests {
                     &prose,
                     vec![unit("theseus", &["a.png", "b.png"])],
                 );
-                write_inner(&vol, dir.path(), &Fonts::default()).unwrap();
+                write_inner(&vol, dir.path(), &Fonts::default(), None).unwrap();
                 let (texts, images) = compiled_fixture(dir.path(), tomus);
                 let prose_start = if tomus == 1 { 13 } else { 9 };
                 assert!(texts[prose_start - 1].contains("FRONT-A"));
@@ -536,7 +689,7 @@ mod tests {
             unit("theseus", &["life.png"]),
             unit_kind("comparison", LifeKind::Comparatio, &["comparison.png"]),
         ]);
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         assert_eq!(doc.matches(RECTO_START_DEFINITION).count(), 1);
         assert_eq!(doc.matches("\\unitrecto\n\\markboth").count(), 2);
     }
@@ -553,7 +706,7 @@ mod tests {
                     "",
                     vec![unit("theseus", &["body.png"])],
                 );
-                let doc = inner_document(&vol, &Fonts::default());
+                let doc = inner_document(&vol, &Fonts::default(), None);
                 assert!(
                     doc.contains("\\unitrecto\n\\beginbodynumbering\n\n\\unitrecto\n\\markboth")
                 );
@@ -566,11 +719,11 @@ mod tests {
         assert_eq!(unit_block(&unit("empty", &[])), "");
         let mut vol = volume(vec![unit("empty", &[]), unit("theseus", &["body.png"])]);
         vol.emit_front_matter = false;
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         assert!(!doc.contains("\\heading{EMPTY}"));
         assert_eq!(doc.matches("\\unitrecto\n\\markboth").count(), 1);
         let empty = volume(vec![unit("empty", &[])]);
-        assert!(!inner_document(&empty, &Fonts::default()).contains("\\unitrecto\n"));
+        assert!(!inner_document(&empty, &Fonts::default(), None).contains("\\unitrecto\n"));
     }
 
     fn unit(id: &str, images: &[&str]) -> PlacedUnit {
@@ -604,7 +757,7 @@ mod tests {
             unit("theseus", &["facsimile_theseus_1.png"]),
             unit("romulus", &["facsimile_romulus_1.png"]),
         ]);
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         assert!(doc.contains("\\markboth{THESEUS}{THESEUS}"));
         assert!(doc.contains("\\markboth{ROMULUS}{ROMULUS}"));
     }
@@ -620,7 +773,7 @@ mod tests {
             ],
         )]);
         vol.emit_front_matter = false;
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         let images = doc.matches("\\includegraphics[width=\\textwidth]").count();
         assert_eq!(images, 3);
         // Each image is followed by a page break.
@@ -636,7 +789,7 @@ mod tests {
             unit("romulus", &["facsimile_romulus_1.png"]),
         ]);
         vol.emit_front_matter = false;
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         // Count body openings independently of the command definition.
         assert_eq!(doc.matches("\\unitrecto\n\\markboth").count(), 2);
         // The inline chapter header carries the Latin title only.
@@ -649,7 +802,7 @@ mod tests {
     #[test]
     fn facsimile_inner_emits_flyleaves_and_signature_padding() {
         let vol = volume(vec![unit("theseus", &["facsimile_theseus_1.png"])]);
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         // Front and back flyleaves: 2 * FLYLEAVES_PER_END blank pages at each end.
         let blanks = doc
             .matches("\\thispagestyle{empty}\\null\\clearpage")
@@ -667,7 +820,7 @@ mod tests {
     #[test]
     fn running_head_preamble_used() {
         let vol = volume(vec![unit("theseus", &["facsimile_theseus_1.png"])]);
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         assert!(doc.contains("includehead,headheight=0.5cm,headsep=0.4cm"));
         assert!(doc.contains("\\fancyhead[C]{\\small\\leftmark}"));
     }
@@ -712,11 +865,10 @@ mod tests {
                 ),
             ],
         );
-        let doc = inner_document(&vol, &Fonts::default());
-        // The title page lists the Lives (small caps) and the owner's plate.
+        let doc = inner_document(&vol, &Fonts::default(), None);
+        // The title page lists the Lives (small caps) in small caps.
         assert!(doc.contains("\\MakeLowercase{THESEUS}"));
         assert!(doc.contains("\\MakeLowercase{ROMULUS}"));
-        assert!(doc.contains("MARTINEZ-DIRKS"));
         // The Comparatio is not listed on the title page.
         assert!(!doc.contains("\\MakeLowercase{COMP\\_TR}"));
         assert!(!doc.contains("\\MakeLowercase{COMP_TR}"));
@@ -732,7 +884,7 @@ mod tests {
             "",
             vec![unit("theseus", &["facsimile_theseus_1.png"])],
         );
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         // Exactly one TOMUS page: the old standalone tomus_label is gone.
         assert_eq!(doc.matches("TOMUS ").count(), 1);
         assert!(doc.contains("TOMUS II"));
@@ -749,7 +901,7 @@ mod tests {
             "% PROSE MARKER\n",
             vec![unit("a", &["x.png"])],
         );
-        let doc = inner_document(&first, &Fonts::default());
+        let doc = inner_document(&first, &Fonts::default(), None);
         assert_eq!(doc.matches("% Embedded front-matter scan pair").count(), 1);
         let pair_start = doc.find("% Embedded front-matter scan pair").unwrap();
         let pair_end = doc[pair_start..].find("\\beginbodynumbering").unwrap() + pair_start;
@@ -767,7 +919,7 @@ mod tests {
             volume_full(3, 1, true, true, "% PRAEFATIO\n", vec![]),
             volume_full(1, 0, true, false, "", vec![]),
         ] {
-            let doc = inner_document(&vol, &Fonts::default());
+            let doc = inner_document(&vol, &Fonts::default(), None);
             assert!(!doc.contains("front_monitum_a.png"));
             assert!(!doc.contains("front_monitum_b.png"));
         }
@@ -786,7 +938,7 @@ mod tests {
                 unit("romulus", &["second.png"]),
             ],
         );
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         let prose = doc.find("% PROSE MARKER").unwrap();
         let first = doc.find("{first.png}").unwrap();
         assert!(!doc[prose..first].contains("\\freshpage"));
@@ -800,7 +952,7 @@ mod tests {
             volume_full(2, 0, false, true, "", vec![unit("theseus", &["x.png"])]),
             volume_full(1, 0, true, false, "", vec![unit("theseus", &["x.png"])]),
         ] {
-            let doc = inner_document(&vol, &Fonts::default());
+            let doc = inner_document(&vol, &Fonts::default(), None);
             assert!(doc.contains("\\unitrecto\n\\markboth{THESEUS}"));
         }
     }
@@ -808,7 +960,7 @@ mod tests {
     #[test]
     fn monitum_without_cached_prose_still_aligns_body_on_recto() {
         let vol = volume_full(1, 0, true, true, "", vec![unit("theseus", &["x.png"])]);
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         let pair = doc.find("% Embedded front-matter scan pair").unwrap();
         let body = doc.find("{x.png}").unwrap();
         assert!(!doc[pair..body].contains("\\freshpage"));
@@ -825,7 +977,7 @@ mod tests {
             "% MONITUM PROSE MARKER\n",
             vec![unit("theseus", &["facsimile_theseus_1.png"])],
         );
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         let title = doc.find("PLUTARCHI VITÆ").unwrap();
         let qr = doc.find("front_qr_s0.png").unwrap();
         let volumen = doc.find("front_volumen_s0.png").unwrap();
@@ -849,7 +1001,7 @@ mod tests {
             "",
             vec![unit("nicias", &["facsimile_nicias_1.png"])],
         );
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         assert!(doc.contains("front_qr_s1.png"));
         assert!(!doc.contains("front_volumen_s1.png"));
         assert!(!doc.contains("front_colophon.png"));
@@ -865,7 +1017,7 @@ mod tests {
             "",
             vec![unit("theseus", &["facsimile_theseus_1.png"])],
         );
-        let doc = inner_document(&vol, &Fonts::default());
+        let doc = inner_document(&vol, &Fonts::default(), None);
         assert!(!doc.contains("PLUTARCHI VITÆ"));
         assert!(!doc.contains("front_qr_s0.png"));
         assert!(!doc.contains("front_volumen_s0.png"));
@@ -878,16 +1030,16 @@ mod tests {
     fn volumen_title_only_first_of_source() {
         let first = volume_full(1, 0, true, true, "", vec![unit("a", &["x.png"])]);
         let later = volume_full(2, 0, false, true, "", vec![unit("b", &["y.png"])]);
-        assert!(inner_document(&first, &Fonts::default()).contains("front_volumen_s0.png"));
-        assert!(!inner_document(&later, &Fonts::default()).contains("front_volumen_s0.png"));
+        assert!(inner_document(&first, &Fonts::default(), None).contains("front_volumen_s0.png"));
+        assert!(!inner_document(&later, &Fonts::default(), None).contains("front_volumen_s0.png"));
     }
 
     #[test]
     fn colophon_only_tomus_one() {
         let t1 = volume_full(1, 0, true, true, "", vec![unit("a", &["x.png"])]);
         let t2 = volume_full(2, 0, false, true, "", vec![unit("b", &["y.png"])]);
-        assert!(inner_document(&t1, &Fonts::default()).contains("front_colophon.png"));
-        assert!(!inner_document(&t2, &Fonts::default()).contains("front_colophon.png"));
+        assert!(inner_document(&t1, &Fonts::default(), None).contains("front_colophon.png"));
+        assert!(!inner_document(&t2, &Fonts::default(), None).contains("front_colophon.png"));
     }
 
     #[test]
@@ -965,7 +1117,7 @@ mod tests {
                 &["theseus_first.png", "theseus_second.png"],
             )],
         );
-        write_inner(&vol, dir.path(), &Fonts::default()).unwrap();
+        write_inner(&vol, dir.path(), &Fonts::default(), None).unwrap();
         compile::compile(dir.path(), "tomus_1_inner.tex", compile::INNER_PASSES)
             .unwrap_or_else(|e| panic!("compile in {}: {e:#}", dir.path().display()));
         let page_count = compile::inner_page_count(dir.path(), "tomus_1_inner").unwrap();
@@ -1132,7 +1284,7 @@ mod tests {
     fn write_inner_creates_file() {
         let dir = tempfile::tempdir().unwrap();
         let vol = volume(vec![unit("theseus", &["facsimile_theseus_1.png"])]);
-        let path = write_inner(&vol, dir.path(), &Fonts::default()).unwrap();
+        let path = write_inner(&vol, dir.path(), &Fonts::default(), None).unwrap();
         assert!(path.exists());
         assert_eq!(path.file_name().unwrap(), "tomus_1_inner.tex");
     }

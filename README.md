@@ -58,6 +58,9 @@ cargo run --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_
 # Full build (auto-detects the table on first run if it is absent).
 cargo run --release --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_v2.pdf --out build_facsimile/
 
+# Full offline build with a personalized ownership plate.
+cargo run --release --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_v2.pdf --out build_facsimile/ --offline --exlibris "Alex Smith"
+
 # Re-detect the table even when the cache is present (keeps pinned hand edits).
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --redetect
 
@@ -71,6 +74,12 @@ cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --pages v1
 # Purge the raster cache first, forcing every page to be re-rasterized.
 cargo run --bin facsimile -- --v1 … --v2 … --out build_facsimile/ --clean-cache
 ```
+
+For the facsimile command, `--exlibris "Alex Smith"` adds a bordered
+`EX LIBRIS` / `ALEX SMITH` plate to each full-build Tomus title page. Names are
+converted to uppercase; empty or whitespace-only names are rejected. Omit the
+argument to print no ownership plate. Restricted `--unit` / `--pages` builds omit
+the title pages and therefore the plate.
 
 **Body.** Each page's Latin column is detected, sliced at inter-line whitespace, and
 reflowed (whole source lines repaginated at one **global** scale) into the trim text

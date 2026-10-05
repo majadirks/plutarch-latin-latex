@@ -18,7 +18,7 @@
 - The PDF will be 8.5" x 11" (landscape, two-up) for printing on US Letter paper, but the text should be constrained to Loeb size (roughly 10.5 cm wide by 16 cm tall). The first recto of each signature should have "cut lines" showing where the page can be cut by a guillotine to fit that size.
 - The strategy here is to first generate the trim-size inner PDF first, read its real page count from the lualatex log, and then build an imposition wrapper to match exactly  (\includegraphics[page=N])
 -  Imposition formula: sheet i of a 32-page signature → outer side 34−2i | 2i−1, inner 2i | 33−2i, even pages left so gutters face the fold
-- Pad signatures with blank pages to a multiple of 32. 
+- Pad signatures with blank pages to a multiple of 32.
 - Every sheet (not leaf - each sheet containing four printed leaves) will have fold lines on the outer/recto side (eg between 1|32, not 2|31) to show where the binder should fold inward and crease.
 - The fold lines will also contain sew marks: solid, circular bullets showing where to pierce the pages:
 	> Style: small solid dots (filled circles, radius \sewdot = 0.06 cm) placed along the center fold line, drawn on every outer/recto side only (same branch as the dotted fold line — so they appear between pages 1|32, not 2|31).
@@ -38,8 +38,8 @@ That's 6 dots per fold total (2 kettles + 2 tapes × 2 holes), symmetric about t
 
 -----------
 
-Write an implementation plan: 
-- Drop the "first title page" with the Greek/Latin title for the Volumen (Plutarch Operum Volumen Primum). 
+Write an implementation plan:
+- Drop the "first title page" with the Greek/Latin title for the Volumen (Plutarch Operum Volumen Primum).
 
 - The "second title page" is currently transcribed (IIAOYTAPXOY BIOI. PLUTARCHI VITÆ. SECUNDUM CODICES PARISINOS RECOGNOVIT, etc). Instead, let's just grab a png of that page (drop the Google watermark) and shrink it to size. Include this page in the first Tomus, and the corresponding page in the first tomus from Volumen 2. (I'll refer to this as the "Volumen Title Page")
 
@@ -80,3 +80,49 @@ Other assorted issues to fix (diagnose and include fixes in the plan):
 Note also: The source is the public-domain 1857 Didot edition, so faithful reproduction is the goal throughout, and there are no copyright issues here.
 
 Do you have clarifying questions?
+
+
+
+----
+
+EX LIBRIS flag:
+
+Each Tomus has a title page with the text "EX LIBRIS MARTINEZ-DIRKS".
+I want to make some updates here. On a new git branch, write an implementation plan for the following:
+(1) Surround that text (the "Ex Libris Plate") within an oblong to make it a bit more stylized
+(2) Gate this Ex Libris plate behind a command line flag, --exlibris "NAME". If the flag is omitted, no Ex Libris plate is generated. Otherwise, a plate is generated using the given name. For example, --exlibris "MARTINEZ-DIRKS" reproduces the current behavior (plus oblong box). The input names are normalized to be upper-case.
+(3) Update the README to reflect the new command-line argument. Do not use Martinez-Dirks as the example; use some other generic name instead.
+
+----
+
+Vertical Line fix:
+
+Some pages copy the vertical dividing line that, in the source text, divides the Latin and the Greek.
+For example, in file:///C:/Users/majad/coding/Plutarch/plutarch-latin-latex/build_facsimile/tomus_1_inner.pdf,
+pdf page 112 has the line all down the left. On pdf pages 95, 107, and 107 it is present on part of the page.
+I'd like to detect that line and eliminate it where easy.
+Favor specificity over sensitivity; if the line cannot be easily detected,
+it is preferable to leave it rather than risk deleting valuable content. Write an
+implementation plan for this fix.
+
+---
+
+Google Watermarks:
+
+File file:///C:/Users/majad/coding/Plutarch/plutarch-latin-latex/build_facsimile/tomus_2_inner.pdf, at pdf page 90,
+has a Google watermark at the top of the page. Same on pdf page 94.
+These should have been removed.
+Diagnose, and (on a new git branch) write an implementation plan to fix this and any similar issues.
+
+---
+
+Bleeding Headers:
+
+File file:///C:/Users/majad/coding/Plutarch/plutarch-latin-latex/build_facsimile/tomus_2_inner.pdf, at pdf page 102,
+has a header that leaked into the prose ("IO COMPARATIO ... 227"). That should not be there.
+Same issue at pdf page 194 ("RIOLANUS. ... 271")
+The code already has some guards against these, but this slipped past existing filters.
+Diagnose, and (on a new git branch) write an implementation plan to fix.
+Hardcoding logic for a one-off fix is a valid solution if appropriate.
+This code already produces readers that are pretty good; at this point getting these last details right
+in a cheap-and-dirty way is probably better than adding complexity or tuning parameters.
