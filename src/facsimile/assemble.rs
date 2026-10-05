@@ -328,6 +328,126 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires MiKTeX/LuaLaTeX and Poppler"]
+    fn exlibris_compile_preserves_title_page_and_body_starts() {
+        let preview = Path::new(env!("CARGO_MANIFEST_DIR")).join("tmp/exlibris_preview");
+        let normalize = |text: &str| text.split_whitespace().collect::<Vec<_>>().join(" ");
+        for tomus in [1, 2] {
+            let mut baseline = None;
+            for (variant, owner) in [
+                ("omitted", None),
+                ("ordinary", Some("Alex Smith")),
+                (
+                    "long",
+                    Some("Alexandra Catherine Elizabeth Montgomery Smith"),
+                ),
+                ("accented", Some("\u{c9}lodie & Andr\u{e9}")),
+            ] {
+                let dir = tempfile::tempdir().unwrap();
+                fixture_image(dir.path(), &frontmatter::front_qr_name(0), 301, 101);
+                if tomus == 1 {
+                    for name in [
+                        frontmatter::front_volumen_name(0),
+                        frontmatter::front_colophon_name().into(),
+                        frontmatter::front_monitum_a_name().into(),
+                        frontmatter::front_monitum_b_name().into(),
+                    ] {
+                        fixture_image(dir.path(), &name, 302, 102);
+                    }
+                }
+                fixture_image(dir.path(), "body-a.png", 311, 101);
+                fixture_image(dir.path(), "body-b.png", 312, 102);
+                let vol = volume_full(
+                    tomus,
+                    0,
+                    tomus == 1,
+                    true,
+                    "",
+                    vec![unit("theseus", &["body-a.png", "body-b.png"])],
+                );
+                let tex = write_inner(&vol, dir.path(), &Fonts::default(), owner).unwrap();
+                let (texts, images) = compiled_fixture(dir.path(), tomus);
+                let titles: Vec<_> = texts
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, text)| text.contains("SECUNDUM CODICES"))
+                    .collect();
+                assert_eq!(titles.len(), 1);
+                let title_index = titles[0].0;
+                let title_text = normalize(titles[0].1);
+                assert_eq!(
+                    texts
+                        .iter()
+                        .map(|text| text.matches("EX LIBRIS").count())
+                        .sum::<usize>(),
+                    usize::from(owner.is_some())
+                );
+                if let Some(name) = owner {
+                    assert!(title_text.contains(&name.to_uppercase()), "{title_text}");
+                }
+                let body_page = images
+                    .iter()
+                    .find(|(_, w, h)| (*w, *h) == (311, 101))
+                    .unwrap()
+                    .0;
+                assert_eq!(body_page % 2, 1);
+                let body_texts = texts[body_page as usize - 1..].to_vec();
+                assert!(normalize(&body_texts[1]).contains("2"));
+                if let Some((count, placements, first_body, body, title)) = &baseline {
+                    assert_eq!(texts.len(), *count);
+                    assert_eq!(&images, placements);
+                    assert_eq!(body_page, *first_body);
+                    assert_eq!(&body_texts, body);
+                    assert_eq!(title_index, *title);
+                } else {
+                    baseline = Some((texts.len(), images, body_page, body_texts, title_index));
+                }
+                let stem = format!("tomus_{tomus}_inner");
+                let log = dir.path().join(format!("{stem}.log"));
+                let log_text = fs::read_to_string(&log).unwrap();
+                assert!(
+                    !log_text.contains("Overfull"),
+                    "{variant}: overfull box in compile log"
+                );
+                let saved = preview.join(format!("tomus_{tomus}/{variant}"));
+                fs::create_dir_all(&saved).unwrap();
+                fs::copy(&tex, saved.join(tex.file_name().unwrap())).unwrap();
+                fs::copy(&log, saved.join(log.file_name().unwrap())).unwrap();
+                let pdf = dir.path().join(format!("{stem}.pdf"));
+                fs::copy(&pdf, saved.join(pdf.file_name().unwrap())).unwrap();
+                let png =
+                    crate::render::render_page(&pdf, title_index as u32 + 1, 150, &saved).unwrap();
+                if variant == "ordinary" {
+                    let image = image::open(png).unwrap().to_luma8();
+                    let mut border_rows = Vec::new();
+                    for y in image.height() / 2..image.height() {
+                        let mut run = 0;
+                        let mut longest = 0;
+                        for x in 0..image.width() {
+                            if image.get_pixel(x, y)[0] < 128 {
+                                run += 1;
+                                longest = longest.max(run);
+                            } else {
+                                run = 0;
+                            }
+                        }
+                        if longest > image.width() / 2 {
+                            border_rows.push((y, longest));
+                        }
+                    }
+                    let top = border_rows.first().expect("visible upper plate border");
+                    let bottom = border_rows.last().expect("visible lower plate border");
+                    assert!(bottom.0 > top.0);
+                    assert!(
+                        top.1 > bottom.0 - top.0,
+                        "ordinary plate must be wider than tall"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     fn inner_document_propagates_exlibris_to_each_tomus() {
         for tomus in [1, 2] {
             let vol = volume_full(tomus, 0, tomus == 1, true, "", vec![]);

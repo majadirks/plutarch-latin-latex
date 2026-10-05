@@ -29,3 +29,4 @@ rustc-ice-*.txt
 *.png
 *.zip
 secrets.json
+/tmp/exlibris_preview/
