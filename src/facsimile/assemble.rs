@@ -494,6 +494,193 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires source PDFs, cached front matter, Poppler, and MiKTeX"]
+    fn monitum_combined_compile_has_adjacent_content_pages() {
+        use crate::{compile, render};
+        use std::process::Command;
+
+        assert!(render::pdftotext_available(), "pdftotext is required");
+        let dir = tempfile::tempdir().unwrap();
+        let sources = [
+            PathBuf::from("Ploutarchou_Bioi_v1.pdf"),
+            PathBuf::from("Ploutarchou_Bioi_v2.pdf"),
+        ];
+        let cache =
+            frontmatter::load_cached_front_matter(Path::new(frontmatter::SIDECAR), &sources)
+                .expect("load real front-matter cache read-only");
+        let prose = latex::front_prose_pages_until(
+            &cache,
+            &frontmatter::MONITUM_PROSE_PAGES,
+            frontmatter::MONITUM_PROSE_SENTINEL,
+        );
+        let pdf = render::Pdf::open(&sources[0]).expect("open v1 source PDF");
+        frontmatter::render_front_scans(0, true, true, &pdf, dir.path())
+            .expect("render real front scans");
+        let body = image::GrayImage::from_fn(300, 100, |x, y| {
+            image::Luma([if (10..290).contains(&x) && (10..90).contains(&y) {
+                0
+            } else {
+                255
+            }])
+        });
+        for name in ["theseus_first.png", "theseus_second.png"] {
+            body.save(dir.path().join(name)).unwrap();
+        }
+        let vol = volume_full(
+            1,
+            0,
+            true,
+            true,
+            &prose,
+            vec![unit(
+                "theseus",
+                &["theseus_first.png", "theseus_second.png"],
+            )],
+        );
+        write_inner(&vol, dir.path(), &Fonts::default()).unwrap();
+        compile::compile(dir.path(), "tomus_1_inner.tex", compile::INNER_PASSES)
+            .unwrap_or_else(|e| panic!("compile in {}: {e:#}", dir.path().display()));
+        let page_count = compile::inner_page_count(dir.path(), "tomus_1_inner").unwrap();
+        let inner_pdf = dir.path().join("tomus_1_inner.pdf");
+        let pages: Vec<String> = (1..=page_count)
+            .map(|page| {
+                render::page_text(&inner_pdf, page).unwrap_or_else(|e| {
+                    panic!("extract page {page} of {}: {e:#}", inner_pdf.display())
+                })
+            })
+            .collect();
+        let prose_pages: Vec<usize> = pages
+            .iter()
+            .enumerate()
+            .filter_map(|(i, text)| {
+                let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
+                normalized
+                    .contains(frontmatter::MONITUM_PROSE_SENTINEL)
+                    .then_some(i + 1)
+            })
+            .collect();
+        assert_eq!(
+            prose_pages.len(),
+            1,
+            "sentinel pages {prose_pages:?} in {}",
+            inner_pdf.display()
+        );
+        let prose_page = prose_pages[0];
+        let body_page = pages
+            .iter()
+            .enumerate()
+            .skip(prose_page)
+            .find_map(|(i, text)| text.contains("THESEUS").then_some(i + 1))
+            .unwrap_or_else(|| {
+                panic!(
+                    "no THESEUS after page {prose_page} in {}",
+                    inner_pdf.display()
+                )
+            });
+        assert_eq!(
+            body_page,
+            prose_page + 2,
+            "body adjacency in {}",
+            inner_pdf.display()
+        );
+        assert!(
+            !pages[body_page - 1].lines().any(|line| {
+                let line = line.trim();
+                !line.is_empty() && line.chars().all(|c| c.is_ascii_digit())
+            }),
+            "opening page {body_page} has a folio in {}",
+            inner_pdf.display()
+        );
+        assert!(
+            pages[body_page].contains("THESEUS")
+                && pages[body_page].lines().any(|l| l.trim() == "2"),
+            "second body page {} lacks running head/folio 2 in {}: {:?}",
+            body_page + 1,
+            inner_pdf.display(),
+            pages[body_page]
+        );
+
+        let dimensions: Vec<_> = [
+            frontmatter::front_monitum_a_name(),
+            frontmatter::front_monitum_b_name(),
+        ]
+        .iter()
+        .map(|name| image::image_dimensions(dir.path().join(name)).unwrap())
+        .collect();
+        assert_ne!(dimensions[0], dimensions[1]);
+        let output = Command::new(
+            std::env::var("PLUTARCH_PDFIMAGES").unwrap_or_else(|_| "pdfimages".into()),
+        )
+        .arg("-list")
+        .arg(&inner_pdf)
+        .output()
+        .unwrap_or_else(|e| panic!("pdfimages on {}: {e}", inner_pdf.display()));
+        let listing = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            output.status.success(),
+            "pdfimages on {}: {listing}\n{}",
+            inner_pdf.display(),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        for (width, height) in dimensions {
+            let matches: Vec<u32> = listing
+                .lines()
+                .filter_map(|line| {
+                    let fields: Vec<_> = line.split_whitespace().collect();
+                    if fields.len() < 5 || fields[2] != "image" {
+                        return None;
+                    }
+                    let page = fields[0].parse::<u32>().ok()?;
+                    fields[1].parse::<u32>().ok()?;
+                    (fields[3].parse::<u32>().ok()? == width
+                        && fields[4].parse::<u32>().ok()? == height)
+                        .then_some(page)
+                })
+                .collect();
+            assert_eq!(
+                matches,
+                vec![(prose_page + 1) as u32],
+                "crop {width}x{height} in {}:\n{listing}",
+                inner_pdf.display()
+            );
+        }
+        let rendered = render::render_page(
+            &inner_pdf,
+            (prose_page + 1) as u32,
+            100,
+            &dir.path().join("renders"),
+        )
+        .unwrap_or_else(|e| {
+            panic!(
+                "render errata page {} of {}: {e:#}",
+                prose_page + 1,
+                inner_pdf.display()
+            )
+        });
+        let image = image::open(&rendered).unwrap().to_luma8();
+        for (start, end) in [
+            (0, image.height() / 2),
+            (image.height() / 2, image.height()),
+        ] {
+            let dark = image
+                .enumerate_pixels()
+                .filter(|(_, y, pixel)| *y >= start && *y < end && pixel[0] < 128)
+                .count();
+            let total = u64::from(image.width()) * u64::from(end - start);
+            assert!(
+                dark as u64 * 100 >= total,
+                "insufficient ink in rows {start}..{end} of {}",
+                rendered.display()
+            );
+        }
+        println!(
+            "Verified {} pages: prose {prose_page}, errata {}, body {body_page}, next body folio 2",
+            page_count,
+            prose_page + 1
+        );
+    }
+
+    #[test]
     fn write_inner_creates_file() {
         let dir = tempfile::tempdir().unwrap();
         let vol = volume(vec![unit("theseus", &["facsimile_theseus_1.png"])]);

@@ -441,7 +441,6 @@ pub(crate) fn embed_scan(name: &str) -> String {
 
 /// Two consecutive front-matter crops in one measured, centered page box.
 /// Zero-depth images keep the stack depth zero, so resizebox scales its full height.
-#[allow(dead_code)]
 pub(crate) fn embed_scan_pair(first: &str, second: &str) -> String {
     format!(
         "% Embedded front-matter scan pair\n\
