@@ -433,15 +433,29 @@ fn fill_front_matter(
             return Ok(());
         }
     };
-    for vol in volumes.iter_mut() {
+    assign_front_prose(volumes, &sidecar)
+}
+
+/// Validate and compose cached prose before assigning it to emitting volumes.
+fn assign_front_prose(
+    volumes: &mut [FacsimileVolume],
+    sidecar: &crate::tags::Sidecar,
+) -> Result<()> {
+    if volumes
+        .iter()
+        .any(|vol| vol.emit_front_matter && vol.is_first_of_source && vol.source == 1)
+    {
+        frontmatter::validate_praefatio_results(sidecar)?;
+    }
+    for vol in volumes.iter_mut().filter(|vol| vol.emit_front_matter) {
         vol.prose = if vol.tomus == 1 {
             latex::front_prose_pages_until(
-                &sidecar,
+                sidecar,
                 &frontmatter::MONITUM_PROSE_PAGES,
                 frontmatter::MONITUM_PROSE_SENTINEL,
             )
         } else if vol.is_first_of_source && vol.source == 1 {
-            latex::front_prose_pages(&sidecar, &frontmatter::PRAEFATIO_PAGES)
+            latex::front_prose_pages(sidecar, &frontmatter::PRAEFATIO_PAGES)
         } else {
             String::new()
         };
@@ -568,6 +582,52 @@ fn file_stem(path: &Path) -> String {
 mod tests {
     use super::*;
     use crate::render::pdftoppm_available;
+
+    #[test]
+    fn assign_front_prose_rejects_poisoned_praefatio_without_mutating_volumes() {
+        let mut sc = crate::tags::Sidecar::load(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join(frontmatter::SIDECAR),
+        )
+        .unwrap();
+        sc.page_mut(1, 16).unwrap().result.as_mut().unwrap().blocks[0]
+            .text
+            .push_str("***END OF JSON***");
+        let mut volumes = vec![FacsimileVolume {
+            tomus: 5,
+            source: 1,
+            is_first_of_source: true,
+            units: vec![],
+            prose: "unchanged".into(),
+            emit_front_matter: true,
+        }];
+        assert!(assign_front_prose(&mut volumes, &sc).is_err());
+        assert_eq!(volumes[0].prose, "unchanged");
+        volumes[0].emit_front_matter = false;
+        assign_front_prose(&mut volumes, &sc).unwrap();
+        assert_eq!(volumes[0].prose, "unchanged");
+    }
+
+    #[test]
+    fn assign_front_prose_composes_finalized_praefatio() {
+        let sc = crate::tags::Sidecar::load(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join(frontmatter::SIDECAR),
+        )
+        .unwrap();
+        let mut volumes = vec![FacsimileVolume {
+            tomus: 5,
+            source: 1,
+            is_first_of_source: true,
+            units: vec![],
+            prose: String::new(),
+            emit_front_matter: true,
+        }];
+        assign_front_prose(&mut volumes, &sc).unwrap();
+        let prose = &volumes[0].prose;
+        assert_eq!(prose.matches("\\heading{PRÆFATIO.}").count(), 1);
+        assert!(prose.contains("confirmatas in ordinem recepi"));
+        assert!(prose.contains("consentiente ipso Plutarcho"));
+        assert!(!prose.contains("END OF JSON"));
+    }
 
     fn placed(id: &str, images: usize) -> PlacedUnit {
         PlacedUnit {

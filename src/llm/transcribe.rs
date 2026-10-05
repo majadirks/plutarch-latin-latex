@@ -112,7 +112,25 @@ pub fn parse_pagedoc(reply: &str) -> Result<PageDoc> {
     let json = extract_json_object(reply).unwrap_or(reply);
     let doc: PageDoc =
         serde_json::from_str(json).context("parsing transcription reply as a PageDoc")?;
+    validate_pagedoc_text(&doc)?;
     Ok(doc)
+}
+
+/// Reject recognizable protocol fragments inside prose without altering text.
+pub(crate) fn validate_pagedoc_text(doc: &PageDoc) -> Result<()> {
+    let field = regex::Regex::new(r#"\bcontinues_previous\\?"\s*:\s*(?:true|false)\b"#)
+        .expect("valid protocol-field pattern");
+    for (index, block) in doc.blocks.iter().enumerate() {
+        let marker = if block.text.contains("***END OF JSON***") {
+            Some("***END OF JSON***")
+        } else {
+            field.find(&block.text).map(|found| found.as_str())
+        };
+        if let Some(marker) = marker {
+            anyhow::bail!("block {index} contains protocol artifact {marker:?}; source-check and repair the transcription cache");
+        }
+    }
+    Ok(())
 }
 
 /// The first balanced top-level JSON object `{ … }` in `reply`, or `None` if there is
@@ -321,6 +339,42 @@ mod tests {
     use super::*;
     use crate::llm::instrument::Usage;
     use crate::tags::BlockKind;
+
+    fn reply_with_text(text: &str) -> String {
+        serde_json::json!({"blocks": [{"kind": "paragraph", "text": text}]}).to_string()
+    }
+
+    #[test]
+    fn parse_pagedoc_rejects_end_of_json_inside_text() {
+        let err = parse_pagedoc(&reply_with_text("καθίσταντο.***END OF JSON***")).unwrap_err();
+        assert!(err.to_string().contains("block 0"));
+    }
+
+    #[test]
+    fn parse_pagedoc_rejects_leaked_continuation_field() {
+        for text in [
+            r#",continues_previous\":true}]}"#,
+            r#""continues_previous":false}"#,
+            "continues_previous\" \n: \ttrue}",
+        ] {
+            assert!(parse_pagedoc(&reply_with_text(text)).is_err(), "{text}");
+        }
+    }
+
+    #[test]
+    fn parse_pagedoc_preserves_source_punctuation() {
+        let text = "æ καθίσταντο. { } 》】 continues_previous continues_previous\":trueword";
+        assert_eq!(
+            parse_pagedoc(&reply_with_text(text)).unwrap().blocks[0].text,
+            text
+        );
+    }
+
+    #[test]
+    fn parse_pagedoc_accepts_external_json_end_marker() {
+        let reply = format!("{}***END OF JSON***", reply_with_text("καθίσταντο."));
+        assert_eq!(parse_pagedoc(&reply).unwrap().blocks[0].text, "καθίσταντο.");
+    }
 
     #[test]
     fn parse_pagedoc_reads_blocks_and_numbering() {
