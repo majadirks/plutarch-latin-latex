@@ -108,10 +108,83 @@ pub fn detect_latin_column(img: &GrayImage) -> Result<Column> {
     // inter-line gaps and merge body lines into giant bands.
     let latin_left = exclude_left_ticks(&col, latin_left, latin_right, cmax);
 
-    Ok(Column {
-        left: latin_left,
-        right: latin_right.max(latin_left + 1).min(w),
-    })
+    Ok(exclude_isolated_left_divider(
+        img,
+        Column {
+            left: latin_left,
+            right: latin_right.max(latin_left + 1).min(w),
+        },
+    ))
+}
+
+/// Exclude a connected narrow rule only when the discarded pixels are isolated.
+fn exclude_isolated_left_divider(img: &GrayImage, column: Column) -> Column {
+    let width = 48.min(column.right.saturating_sub(column.left));
+    let height = img.height();
+    if width == 0 || height == 0 {
+        return column;
+    }
+    let mut visited = vec![false; (width * height) as usize];
+    for y in 0..height {
+        for x in 0..width {
+            let index = (y * width + x) as usize;
+            if visited[index] || img.get_pixel(column.left + x, y).0[0] > INK_THRESHOLD {
+                continue;
+            }
+            visited[index] = true;
+            let mut pending = vec![(x, y)];
+            let (mut left, mut right, mut top, mut bottom) = (x, x + 1, y, y + 1);
+            let mut count = 0;
+            while let Some((cx, cy)) = pending.pop() {
+                count += 1;
+                left = left.min(cx);
+                right = right.max(cx + 1);
+                top = top.min(cy);
+                bottom = bottom.max(cy + 1);
+                for ny in cy.saturating_sub(1)..=(cy + 1).min(height - 1) {
+                    for nx in cx.saturating_sub(1)..=(cx + 1).min(width - 1) {
+                        let i = (ny * width + nx) as usize;
+                        if !visited[i] && img.get_pixel(column.left + nx, ny).0[0] <= INK_THRESHOLD
+                        {
+                            visited[i] = true;
+                            pending.push((nx, ny));
+                        }
+                    }
+                }
+            }
+            if bottom - top < 150.max(height / 20) || right - left > 12 || right == width {
+                continue;
+            }
+            let edge = column.left + right;
+            if edge + 8 >= column.right {
+                continue;
+            }
+            if (edge..edge + 8)
+                .any(|xx| (top..bottom).any(|yy| img.get_pixel(xx, yy).0[0] <= INK_THRESHOLD))
+            {
+                continue;
+            }
+            // Every discarded dark pixel must belong to this one component.
+            let discarded = (0..height)
+                .map(|yy| {
+                    (column.left..edge)
+                        .filter(|&xx| img.get_pixel(xx, yy).0[0] <= INK_THRESHOLD)
+                        .count()
+                })
+                .sum::<usize>();
+            if discarded != count {
+                continue;
+            }
+            let retained = Column {
+                left: edge,
+                right: column.right,
+            };
+            if crate::facsimile::lines::line_bands(&crop_column(img, &retained), 3).len() >= 3 {
+                return retained;
+            }
+        }
+    }
+    column
 }
 
 /// A left stripe this many times narrower than the whole detected block counts as a
@@ -175,6 +248,78 @@ mod tests {
     use super::*;
     use image::Luma;
 
+    fn divider_fixture() -> (GrayImage, Column) {
+        let mut img = page(200, 400, &[], &[]);
+        for y in 50..350 {
+            img.put_pixel(102, y, Luma([0]));
+        }
+        for top in [70, 150, 230] {
+            for y in top..top + 15 {
+                for x in 120..190 {
+                    img.put_pixel(x, y, Luma([0]));
+                }
+            }
+        }
+        (
+            img,
+            Column {
+                left: 100,
+                right: 195,
+            },
+        )
+    }
+    #[test]
+    fn isolated_left_divider_is_excluded() {
+        let (img, c) = divider_fixture();
+        let out = exclude_isolated_left_divider(&img, c);
+        assert_eq!(
+            out,
+            Column {
+                left: 103,
+                right: 195
+            }
+        );
+        assert_eq!(
+            crop_column(&img, &out).get_pixel(120 - out.left, 70).0[0],
+            0
+        );
+    }
+    #[test]
+    fn partial_divider_with_lower_left_body_is_preserved() {
+        let (mut img, c) = divider_fixture();
+        img.put_pixel(101, 370, Luma([0]));
+        assert_eq!(exclude_isolated_left_divider(&img, c), c);
+    }
+    #[test]
+    fn divider_touching_glyph_is_preserved() {
+        let (mut img, c) = divider_fixture();
+        for x in 103..121 {
+            img.put_pixel(x, 70, Luma([0]));
+        }
+        assert_eq!(exclude_isolated_left_divider(&img, c), c);
+    }
+    #[test]
+    fn short_vertical_glyph_is_preserved() {
+        let (mut img, c) = divider_fixture();
+        for y in 100..350 {
+            img.put_pixel(102, y, Luma([255]));
+        }
+        assert_eq!(exclude_isolated_left_divider(&img, c), c);
+    }
+    #[test]
+    fn ambiguous_left_noise_is_preserved() {
+        let (mut img, c) = divider_fixture();
+        img.put_pixel(104, 60, Luma([0]));
+        assert_eq!(exclude_isolated_left_divider(&img, c), c);
+    }
+    #[test]
+    fn clean_column_detection_is_unchanged() {
+        let (mut img, c) = divider_fixture();
+        for y in 50..350 {
+            img.put_pixel(102, y, Luma([255]));
+        }
+        assert_eq!(exclude_isolated_left_divider(&img, c), c);
+    }
     /// A synthetic page: white background, with the given `[left,right)` x-bands
     /// filled dark over their full height, plus optional sparse dark marks at
     /// `(x, y)` single pixels (marginal letters).
