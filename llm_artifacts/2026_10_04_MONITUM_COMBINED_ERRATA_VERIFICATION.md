@@ -85,4 +85,19 @@ The ordinary test suite leaves this external-tool regression ignored.
 
 Formatting, clippy with warnings denied, focused renderer/assembly/Monitum/volume
 tests, builds, and `git diff --check` passed for the corresponding implementation
-steps. The final full-suite gate is recorded after it is executed.
+steps.
+
+## Final green gate
+
+After the last Rust edit, `cargo fmt --all`, `cargo fmt --all --check`,
+`cargo clippy --all-targets -- -D warnings`, `cargo test`, `cargo build`, and
+`git diff --check` all passed. The ordinary suite reports 261 library tests and
+5 facsimile CLI tests passed, with zero failures and 5 ignored library tests.
+The combined Monitum compile regression was executed explicitly and passed
+separately, including after the final Rust cleanup.
+
+Compared against the starting commit `9e7eba6`: the transcription cache,
+committed unit table, `src/facsimile/frontmatter.rs` (including crop constants),
+global `freshpage` definition, and existing `embed_scan` helper are unchanged.
+The README describes the delivered two-page Monitum and direct body transition.
+The separate full-build outputs were not overwritten or its process stopped.
