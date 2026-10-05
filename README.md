@@ -105,18 +105,25 @@ its Greek errata list follows immediately on one page containing the p12 and p13
 source crops, scaled together. The first body page opens on the next recto after
 that combined errata page, with zero or one intervening blank. The QR notice,
 Volumen-title, and colophon scans retain their
-existing page starts. The v2 Praefatio remains fully
-re-typeset, as are the derived title pages. The prose is transcribed **once** and
-cached in `plutarch.frontmatter.tags.json` (same semantics as the body cache below);
-later builds read the cache and make zero
+existing page starts. The v2 Praefatio typesets the opening Latin through `Ages.`,
+then reproduces all p15–p16 corrigenda as intact printed line images on balanced,
+dedicated pages, and resumes typeset Latin and the dateline from p17. The image
+run uses one common scale and flows across the source-page boundary without
+parity blanks. Derived title pages are typeset too. The prose is transcribed
+**once** and cached in `plutarch.frontmatter.tags.json`; later builds make zero
 network calls when every required result is present. `--offline` reads a fresh
-cache without updating it, including when individual results are absent; missing
-or stale cached prose is skipped. It cannot be combined with `--retag` or
-`--review-lines`. `--retag` or a changed source re-runs the transcription. Only
-`FrontProse` pages requiring transcription are ever sent — v1 p13 is reproduced as
-an image and excluded from transcription and reconciliation; no body page is sent.
-If no API key is configured on a first run, front-matter transcription is skipped
-with a warning and the body build still completes.
+cache without updating it. An emitting Praefatio requires finalized prose from
+v2 p14, p15 and p17 and rejects a missing, stale, or unreviewed mixed-text cache;
+unrelated volumes retain the warning-and-skip behavior for unavailable prose.
+`--offline` cannot be combined with `--retag` or `--review-lines`. Only
+`FrontProse` pages requiring transcription are sent: v1 p13 and v2 p16 are images
+and excluded from transcription and reconciliation; v2 p15 is masked to its Latin
+prose region for both stages. No body page is sent. Finalized results retain their
+historical candidates and are not regenerated merely because masking changed.
+A legacy p15 candidate without a finalized prose prefix is rejected before any
+API call. Restore a reviewed finalized prefix or deliberately use `--retag` after
+preserving a copy: retagging resets the entire front-matter sidecar, including its
+corrections and candidate evidence.
 
 ---
 

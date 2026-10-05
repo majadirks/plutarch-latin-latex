@@ -36,10 +36,12 @@ pub struct FacsimileVolume {
     pub source: usize,
     pub is_first_of_source: bool,
     pub units: Vec<PlacedUnit>,
-    /// Re-typeset Monitum (Tomus I) or Praefatio (v2's first tomus) LaTeX, prepared
+    /// Re-typeset Monitum or composed hybrid Praefatio LaTeX, prepared
     /// upstream in `fill_front_matter` (which holds the sidecar). Empty on every
     /// other emitting volume, and on restricted runs.
     pub prose: String,
+    /// Ordered corrigenda assets on the first emitting tomus of source 1.
+    pub praefatio_errata_images: Vec<String>,
     /// Whether this volume emits the new front matter (Tomus title page, embedded
     /// scans, prose). True for a normal build; false for a restricted single-volume
     /// `--unit`/`--pages` run, whose scans are never rendered.
@@ -192,6 +194,175 @@ mod tests {
             })
             .collect();
         (texts, placements)
+    }
+
+    fn check_hybrid_compile(maximum_budget: bool) {
+        let dir = tempfile::tempdir().unwrap();
+        let geom = crate::facsimile::reflow::TrimGeom::default();
+        let heights = if maximum_budget {
+            vec![geom.body_budget()]
+        } else {
+            vec![310, 710, 430]
+        };
+        let names: Vec<_> = heights
+            .iter()
+            .enumerate()
+            .map(|(i, &height)| {
+                let name = format!("front_praefatio_errata_{:03}.png", i + 1);
+                fixture_image(dir.path(), &name, geom.tb_w, height);
+                name
+            })
+            .collect();
+        for name in [
+            frontmatter::front_qr_name(1),
+            frontmatter::front_volumen_name(1),
+        ] {
+            fixture_image(dir.path(), &name, 300, 100);
+        }
+        let mut cache = crate::tags::Sidecar::load(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join(frontmatter::SIDECAR),
+        )
+        .unwrap();
+        cache
+            .page_mut(1, 14)
+            .unwrap()
+            .result
+            .as_mut()
+            .unwrap()
+            .blocks = vec![crate::tags::Block {
+            kind: crate::tags::BlockKind::Heading,
+            roman: None,
+            section_no: None,
+            continues_previous: false,
+            text: "SYNTHETIC OPENING".into(),
+        }];
+        cache
+            .page_mut(1, 15)
+            .unwrap()
+            .result
+            .as_mut()
+            .unwrap()
+            .blocks[0]
+            .text = frontmatter::PRAEFATIO_PROSE_SENTINEL.into();
+        cache
+            .page_mut(1, 17)
+            .unwrap()
+            .result
+            .as_mut()
+            .unwrap()
+            .blocks[0]
+            .text = "SYNTHETIC CLOSING".into();
+        cache
+            .page_mut(1, 17)
+            .unwrap()
+            .result
+            .as_mut()
+            .unwrap()
+            .blocks[1]
+            .text = "SYNTHETIC DATELINE".into();
+        let prose = latex::front_praefatio(&cache, &names).unwrap();
+        fixture_image(dir.path(), "body-a.png", 311, 101);
+        fixture_image(dir.path(), "body-b.png", 312, 102);
+        let vol = volume_full(
+            5,
+            1,
+            true,
+            true,
+            &prose,
+            vec![unit("nicias", &["body-a.png", "body-b.png"])],
+        );
+        write_inner(&vol, dir.path(), &Fonts::default()).unwrap();
+        let (texts, images) = compiled_fixture(dir.path(), 5);
+        let opening = texts
+            .iter()
+            .position(|s| s.contains("SYNTHETIC OPENING"))
+            .unwrap()
+            + 1;
+        let closing = texts
+            .iter()
+            .position(|s| s.contains("SYNTHETIC CLOSING"))
+            .unwrap()
+            + 1;
+        assert_eq!(closing, opening + heights.len() + 1);
+        assert!(texts[closing - 1].contains("SYNTHETIC DATELINE"));
+        for (i, &height) in heights.iter().enumerate() {
+            assert!(images.contains(&((opening + i + 1) as u32, geom.tb_w, height)));
+        }
+        let body = images.iter().find(|p| p.1 == 311).unwrap().0 as usize;
+        assert!(body == closing + 1 || body == closing + 2);
+        assert_eq!(body % 2, 1);
+        if body == closing + 2 {
+            assert_blank(dir.path(), 5, (closing + 1) as u32, &texts, &images);
+        }
+        assert!(images.contains(&((body + 1) as u32, 312, 102)));
+        assert!(texts[body].lines().any(|l| l.trim() == "2"));
+        let log = std::fs::read_to_string(dir.path().join("tomus_5_inner.log")).unwrap();
+        assert!(!log.contains("Overfull "));
+        assert!(!log.contains("Missing character:"));
+        if maximum_budget {
+            let png = crate::render::render_page(
+                &dir.path().join("tomus_5_inner.pdf"),
+                (opening + 1) as u32,
+                300,
+                &dir.path().join("budget_check"),
+            )
+            .unwrap();
+            let raster = image::open(png).unwrap().to_luma8();
+            // The left image edge avoids the centered footer folio.
+            let edge_x = (1.0 / 2.54 * 300.0_f32).round() as u32 + 15;
+            let last_ink = (0..raster.height())
+                .rev()
+                .find(|&y| raster.get_pixel(edge_x, y)[0] < 100)
+                .unwrap();
+            assert!(last_ink < raster.height() - 170, "bottom ink at {last_ink}");
+            assert!(
+                last_ink > geom.body_budget() + 230,
+                "bottom ink missing at {last_ink}"
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "requires MiKTeX/LuaLaTeX and Poppler"]
+    fn praefatio_hybrid_compile_has_consecutive_content_pages() {
+        check_hybrid_compile(false);
+    }
+
+    #[test]
+    #[ignore = "requires MiKTeX/LuaLaTeX and Poppler"]
+    fn praefatio_hybrid_compile_fits_maximum_image_budget() {
+        check_hybrid_compile(true);
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler; writes a real-section preview"]
+    fn praefatio_real_section_preview() {
+        let dir = Path::new("build_facsimile/praefatio_section_preview");
+        std::fs::create_dir_all(dir).unwrap();
+        let sources = [
+            PathBuf::from("Ploutarchou_Bioi_v1.pdf"),
+            PathBuf::from("Ploutarchou_Bioi_v2.pdf"),
+        ];
+        let cache =
+            frontmatter::load_cached_front_matter(Path::new(frontmatter::SIDECAR), &sources)
+                .unwrap();
+        let pdf = crate::render::Pdf::open(&sources[1]).unwrap();
+        frontmatter::render_front_scans(1, true, false, &pdf, dir).unwrap();
+        let names = crate::facsimile::praefatio::render_praefatio_errata(&pdf, dir).unwrap();
+        let prose = latex::front_praefatio(&cache, &names).unwrap();
+        fixture_image(dir, "body-a.png", 311, 101);
+        fixture_image(dir, "body-b.png", 312, 102);
+        let vol = volume_full(
+            5,
+            1,
+            true,
+            true,
+            &prose,
+            vec![unit("nicias", &["body-a.png", "body-b.png"])],
+        );
+        write_inner(&vol, dir, &Fonts::default()).unwrap();
+        assert!(names.iter().all(|name| dir.join(name).exists()));
+        println!("Real Praefatio preview: {}", dir.display());
     }
 
     fn assert_blank(
@@ -422,6 +593,7 @@ mod tests {
             is_first_of_source: true,
             units,
             prose: String::new(),
+            praefatio_errata_images: Vec::new(),
             emit_front_matter: true,
         }
     }
@@ -517,6 +689,7 @@ mod tests {
             is_first_of_source,
             units,
             prose: prose.to_string(),
+            praefatio_errata_images: Vec::new(),
             emit_front_matter,
         }
     }

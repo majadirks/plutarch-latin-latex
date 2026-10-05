@@ -1,0 +1,3 @@
+model_reasoning_summary = "detailed"
+model_verbosity = "high"
+approvals_reviewer = "auto_review"

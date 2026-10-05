@@ -306,6 +306,15 @@ fn front_prose(sidecar: &Sidecar, source: usize) -> String {
 /// flows across source pages and resets the running head once. Missing or empty
 /// documents prevent paragraph continuation across the omitted text.
 pub(crate) fn front_prose_pages(sidecar: &Sidecar, pages: &[(usize, u32)]) -> String {
+    let blocks = collect_front_prose_blocks(sidecar, pages);
+    if blocks.is_empty() {
+        String::new()
+    } else {
+        front_prose_page_blocks(&blocks, true, true)
+    }
+}
+
+fn collect_front_prose_blocks(sidecar: &Sidecar, pages: &[(usize, u32)]) -> Vec<Block> {
     let mut blocks = Vec::new();
     let mut previous_present = false;
     for &(source, page) in pages {
@@ -329,11 +338,38 @@ pub(crate) fn front_prose_pages(sidecar: &Sidecar, pages: &[(usize, u32)]) -> St
         }
         previous_present = true;
     }
-    if blocks.is_empty() {
-        String::new()
-    } else {
-        front_prose_page_blocks(&blocks, true, true)
+    blocks
+}
+
+/// One continuous section with faithful prose around dedicated corrigenda pages.
+pub(crate) fn front_praefatio(sidecar: &Sidecar, image_names: &[String]) -> Result<String> {
+    use crate::facsimile::frontmatter::{self, PRAEFATIO_CLOSING_PAGES, PRAEFATIO_OPENING_PAGES};
+    if image_names.is_empty() {
+        anyhow::bail!("praefatio: missing corrigenda image assets");
     }
+    frontmatter::validate_praefatio_results(sidecar)?;
+    for (source, page) in PRAEFATIO_OPENING_PAGES
+        .into_iter()
+        .chain(PRAEFATIO_CLOSING_PAGES)
+    {
+        if sidecar
+            .page(source, page)
+            .and_then(|r| r.result.as_ref())
+            .is_none_or(|d| d.blocks.is_empty())
+        {
+            anyhow::bail!("praefatio source {source}, source page {page}: missing finalized prose; restore the reviewed cache or transcribe the Latin region");
+        }
+    }
+    let mut out = front_prose_pages(sidecar, &PRAEFATIO_OPENING_PAGES);
+    for name in image_names {
+        out.push_str(&format!("\\noindent\\includegraphics[width=\\textwidth,keepaspectratio]{{{name}}}\\par\n\\clearpage\n"));
+    }
+    out.push_str(&front_prose_blocks(
+        &collect_front_prose_blocks(sidecar, &PRAEFATIO_CLOSING_PAGES),
+        true,
+    ));
+    out.push_str("\\clearpage\n");
+    Ok(out)
 }
 
 /// Render one front-prose page: a fresh recto, an optional running-head reset, the
@@ -382,6 +418,13 @@ fn front_prose_page_blocks(
     if reset_running_head {
         out.push_str("\\markboth{}{}\n");
     }
+    out.push_str(&front_prose_blocks(blocks, flexible_spacing));
+    out.push_str("\\clearpage\n\n");
+    out
+}
+
+fn front_prose_blocks(blocks: &[Block], flexible_spacing: bool) -> String {
+    let mut out = String::new();
     if flexible_spacing {
         // Additional stretch lets long Latin and Greek runs fit the narrow measure.
         out.push_str("\\begingroup\n\\emergencystretch=3em\n");
@@ -390,7 +433,6 @@ fn front_prose_page_blocks(
     if flexible_spacing {
         out.push_str("\\par\\endgroup\n");
     }
-    out.push_str("\\clearpage\n\n");
     out
 }
 
@@ -770,6 +812,74 @@ fn to_roman(mut n: u32) -> String {
 
 #[cfg(test)]
 mod tests {
+    fn hybrid_fixture() -> (Sidecar, Vec<String>) {
+        let sc = Sidecar::load(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join(crate::facsimile::frontmatter::SIDECAR),
+        )
+        .unwrap();
+        (
+            sc,
+            vec![
+                "front_praefatio_errata_001.png".into(),
+                "front_praefatio_errata_002.png".into(),
+            ],
+        )
+    }
+
+    #[test]
+    fn praefatio_hybrid_emits_prose_images_prose_once() {
+        let (sc, names) = hybrid_fixture();
+        let out = front_praefatio(&sc, &names).unwrap();
+        assert_eq!(
+            out.matches(crate::facsimile::frontmatter::PRAEFATIO_PROSE_SENTINEL)
+                .count(),
+            1
+        );
+        assert_eq!(out.matches("\\heading{PRÆFATIO.}").count(), 1);
+        assert_eq!(out.matches("\\markboth{}{}").count(), 1);
+        assert!(!out.contains("consentiente ipso Plutarcho"));
+        let a = out.find(&names[0]).unwrap();
+        let b = out.find(&names[1]).unwrap();
+        let c = out.find("Interpretationem latinam").unwrap();
+        assert!(a < b && b < c);
+        assert!(names.iter().all(|n| out.matches(n.as_str()).count() == 1));
+    }
+
+    #[test]
+    fn praefatio_hybrid_has_no_internal_parity_breaks() {
+        let (sc, names) = hybrid_fixture();
+        let out = front_praefatio(&sc, &names).unwrap();
+        assert_eq!(out.matches("\\freshpage").count(), 1);
+        assert_eq!(out.matches("\\clearpage").count(), 4);
+        for token in ["\\unitrecto", "\\hbox{}", "\\begin{center}", "\\vfill"] {
+            assert!(!out.contains(token));
+        }
+    }
+
+    #[test]
+    fn praefatio_hybrid_keeps_page_seventeen_paragraphs_separate() {
+        let (sc, names) = hybrid_fixture();
+        let out = front_praefatio(&sc, &names).unwrap();
+        let blocks = &sc.page(1, 17).unwrap().result.as_ref().unwrap().blocks;
+        assert_eq!(blocks.len(), 2);
+        assert!(out.contains(&format!(
+            "{}\n\n{}",
+            escape_latex(&blocks[0].text),
+            escape_latex(&blocks[1].text)
+        )));
+    }
+
+    #[test]
+    fn praefatio_hybrid_rejects_missing_prose_or_images() {
+        let (mut sc, names) = hybrid_fixture();
+        assert!(front_praefatio(&sc, &[]).is_err());
+        for page in [14, 15, 17] {
+            let original = sc.page_mut(1, page).unwrap().result.take();
+            let err = front_praefatio(&sc, &names).unwrap_err();
+            assert!(err.to_string().contains(&format!("source page {page}")));
+            sc.page_mut(1, page).unwrap().result = original;
+        }
+    }
     use super::*;
     use crate::tags::{LifeKind, PageDoc, PageRecord, PageStatus, SourcePdf};
 

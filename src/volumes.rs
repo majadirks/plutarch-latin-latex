@@ -28,9 +28,10 @@ pub const VOLUMEN_TITLE_PAGES: u32 = 1;
 pub const COLOPHON_PAGES: u32 = 1;
 /// One re-typeset prose page plus one combined errata image page on Tomus I.
 pub const MONITUM_PAGES: u32 = 2;
-/// The re-typeset Praefatio, on **v2's first tomus only**. Generous estimate
-/// (`\freshpage` may round each piece up to a recto); tuned in Phase 7.
-pub const PRAEFATIO_PAGES_EST: u32 = 4;
+/// Hybrid Praefatio on v2's first tomus: three opening prose pages, two
+/// balanced corrigenda image pages, and one closing prose page at current trim.
+/// Imposition uses actual compiled counts rather than this planning estimate.
+pub const PRAEFATIO_PAGES_EST: u32 = 6;
 /// Blank-leaf pages in every volume: two flyleaves at each end, two PDF pages per
 /// leaf.
 pub const BLANK_LEAF_PAGES: u32 = 2 * 2 * 2;

@@ -20,6 +20,7 @@ pub mod detect;
 pub mod frontmatter;
 pub mod lines;
 pub mod metrics;
+pub mod praefatio;
 pub mod reflow;
 pub mod review;
 pub mod units;
@@ -352,6 +353,7 @@ fn plan_volumes(
             is_first_of_source: true,
             units: placed.to_vec(),
             prose: String::new(),
+            praefatio_errata_images: Vec::new(),
             emit_front_matter: false,
         }]);
     }
@@ -379,20 +381,16 @@ fn plan_volumes(
             is_first_of_source,
             units,
             prose: String::new(),
+            praefatio_errata_images: Vec::new(),
             emit_front_matter: true,
         });
     }
     Ok(out)
 }
 
-/// Fill each volume's front matter: render its embedded scans (offline) and, when
-/// possible, its re-typeset Monitum/Praefatio prose.
-///
-/// The scans need only the PDFs and `--out`, so they are rendered for every volume
-/// first — a build with no API credentials still gets the Tomus title page and all
-/// embedded scans. The prose then goes through `run_front_matter` (which may hit the
-/// API); a transcription failure is warned and leaves `prose` empty, but the scans
-/// are already on disk.
+/// Render emitting volumes' scans and load or transcribe their cached prose.
+/// An emitting Praefatio requires the complete prose cache and corrigenda assets;
+/// unrelated volumes can continue with scans when prose loading fails.
 fn fill_front_matter(
     volumes: &mut [FacsimileVolume],
     pdfs: &[Pdf; 2],
@@ -400,7 +398,7 @@ fn fill_front_matter(
     args: &FacsimileArgs,
 ) -> Result<()> {
     // 1. Render each volume's scans (offline, no network).
-    for vol in volumes.iter() {
+    for vol in volumes.iter_mut().filter(|v| v.emit_front_matter) {
         frontmatter::render_front_scans(
             vol.source,
             vol.is_first_of_source,
@@ -408,9 +406,12 @@ fn fill_front_matter(
             &pdfs[vol.source],
             &args.out,
         )?;
+        if vol.is_first_of_source && vol.source == 1 {
+            vol.praefatio_errata_images = praefatio::render_praefatio_errata(&pdfs[1], &args.out)?;
+        }
     }
 
-    // 2. Transcribe (once, cached) the re-typeset prose; warn and continue on failure.
+    // Load the cached prose or transcribe missing results through the shared pipeline.
     let tracker = UsageTracker::new();
     let factory = || {
         let secrets = crate::secrets::load(Path::new("secrets.json"))?;
@@ -429,6 +430,13 @@ fn fill_front_matter(
     let sidecar = match prose {
         Ok(sidecar) => sidecar,
         Err(err) => {
+            if volumes
+                .iter()
+                .any(|v| v.emit_front_matter && v.is_first_of_source && v.source == 1)
+            {
+                return Err(err)
+                    .context("emitting Praefatio requires its finalized Latin prose cache");
+            }
             eprintln!("  front-matter prose skipped ({err}); volumes carry the scans but no re-typeset prose");
             return Ok(());
         }
@@ -447,18 +455,27 @@ fn assign_front_prose(
     {
         frontmatter::validate_praefatio_results(sidecar)?;
     }
-    for vol in volumes.iter_mut().filter(|vol| vol.emit_front_matter) {
-        vol.prose = if vol.tomus == 1 {
+    let mut prepared = Vec::new();
+    for (index, vol) in volumes
+        .iter()
+        .enumerate()
+        .filter(|(_, vol)| vol.emit_front_matter)
+    {
+        let prose = if vol.tomus == 1 {
             latex::front_prose_pages_until(
                 sidecar,
                 &frontmatter::MONITUM_PROSE_PAGES,
                 frontmatter::MONITUM_PROSE_SENTINEL,
             )
         } else if vol.is_first_of_source && vol.source == 1 {
-            latex::front_prose_pages(sidecar, &frontmatter::PRAEFATIO_PAGES)
+            latex::front_praefatio(sidecar, &vol.praefatio_errata_images)?
         } else {
             String::new()
         };
+        prepared.push((index, prose));
+    }
+    for (index, prose) in prepared {
+        volumes[index].prose = prose;
     }
     Ok(())
 }
@@ -584,12 +601,127 @@ mod tests {
     use crate::render::pdftoppm_available;
 
     #[test]
+    fn assign_front_prose_hybrid_failure_does_not_mutate_volumes() {
+        let sc = crate::tags::Sidecar::load(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join(frontmatter::SIDECAR),
+        )
+        .unwrap();
+        let mut volumes = vec![
+            FacsimileVolume {
+                tomus: 1,
+                source: 0,
+                is_first_of_source: true,
+                units: vec![],
+                prose: "monitum unchanged".into(),
+                praefatio_errata_images: vec![],
+                emit_front_matter: true,
+            },
+            FacsimileVolume {
+                tomus: 5,
+                source: 1,
+                is_first_of_source: true,
+                units: vec![],
+                prose: "praefatio unchanged".into(),
+                praefatio_errata_images: vec![],
+                emit_front_matter: true,
+            },
+        ];
+        assert!(assign_front_prose(&mut volumes, &sc).is_err());
+        assert_eq!(volumes[0].prose, "monitum unchanged");
+        assert_eq!(volumes[1].prose, "praefatio unchanged");
+    }
+
+    #[test]
+    fn praefatio_images_are_excluded_from_other_and_restricted_volumes() {
+        let mut volumes = vec![
+            FacsimileVolume {
+                tomus: 6,
+                source: 1,
+                is_first_of_source: false,
+                units: vec![],
+                prose: String::new(),
+                praefatio_errata_images: vec![],
+                emit_front_matter: true,
+            },
+            FacsimileVolume {
+                tomus: 5,
+                source: 1,
+                is_first_of_source: true,
+                units: vec![],
+                prose: String::new(),
+                praefatio_errata_images: vec![],
+                emit_front_matter: false,
+            },
+        ];
+        let sc = crate::tags::Sidecar::load(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join(frontmatter::SIDECAR),
+        )
+        .unwrap();
+        assign_front_prose(&mut volumes, &sc).unwrap();
+        for vol in &volumes {
+            assert!(vol.praefatio_errata_images.is_empty());
+            assert!(!assemble::inner_document(vol, &latex::Fonts::default())
+                .contains("praefatio_errata"));
+        }
+        let restricted = plan_volumes(
+            &[unit_pages("nicias", 1, LifeKind::Life, 1, 2)],
+            &[placed("nicias", 1)],
+            true,
+        )
+        .unwrap();
+        assert!(!restricted[0].emit_front_matter);
+        assert!(restricted[0].praefatio_errata_images.is_empty());
+    }
+
+    #[test]
+    #[ignore = "requires complete offline QA output and its UTF-8 build log"]
+    fn praefatio_full_build_matches_current_volume_estimate() {
+        let log = std::fs::read_to_string("tmp/praefatio/full-build.log").unwrap();
+        let pattern =
+            regex::Regex::new(r"(?m)^  ([a-z_]+): \d+ source page\(s\) -> (\d+) trim page\(s\)")
+                .unwrap();
+        let counts: std::collections::HashMap<_, _> = pattern
+            .captures_iter(&log)
+            .map(|c| (c[1].to_string(), c[2].parse::<u32>().unwrap()))
+            .collect();
+        let metadata = units::load_units(Path::new("facsimile_units.json")).unwrap();
+        assert_eq!(counts.len(), metadata.len());
+        let unit_pages: Vec<_> = metadata
+            .iter()
+            .map(|u| UnitPages {
+                id: u.id.clone(),
+                group: u.group,
+                kind: u.kind,
+                source: u.source,
+                pages: counts[&u.id],
+            })
+            .collect();
+        let volumes = split_into_volumes(&unit_pages, TARGET_PAGES, MAX_PAGES).unwrap();
+        for (index, ids) in volumes.iter().enumerate() {
+            let doc = std::fs::read_to_string(format!(
+                "build_facsimile/praefatio_hybrid_check/tomus_{}_inner.tex",
+                index + 1
+            ))
+            .unwrap();
+            for u in &metadata {
+                assert_eq!(
+                    doc.contains(&format!("facsimile_{}_1.png", u.id)),
+                    ids.contains(&u.id),
+                    "tomus {} unit {}",
+                    index + 1,
+                    u.id
+                );
+            }
+        }
+    }
+
+    #[test]
     fn assign_front_prose_rejects_poisoned_praefatio_without_mutating_volumes() {
         let mut sc = crate::tags::Sidecar::load(
             &Path::new(env!("CARGO_MANIFEST_DIR")).join(frontmatter::SIDECAR),
         )
         .unwrap();
-        sc.page_mut(1, 16).unwrap().result.as_mut().unwrap().blocks[0]
+        sc.page_mut(1, 17).unwrap().result.as_mut().unwrap().blocks[0]
             .text
             .push_str("***END OF JSON***");
         let mut volumes = vec![FacsimileVolume {
@@ -598,6 +730,7 @@ mod tests {
             is_first_of_source: true,
             units: vec![],
             prose: "unchanged".into(),
+            praefatio_errata_images: vec!["errata.png".into()],
             emit_front_matter: true,
         }];
         assert!(assign_front_prose(&mut volumes, &sc).is_err());
@@ -619,14 +752,28 @@ mod tests {
             is_first_of_source: true,
             units: vec![],
             prose: String::new(),
+            praefatio_errata_images: vec!["errata.png".into()],
             emit_front_matter: true,
         }];
         assign_front_prose(&mut volumes, &sc).unwrap();
         let prose = &volumes[0].prose;
         assert_eq!(prose.matches("\\heading{PRÆFATIO.}").count(), 1);
         assert!(prose.contains("confirmatas in ordinem recepi"));
-        assert!(prose.contains("consentiente ipso Plutarcho"));
+        assert!(!prose.contains("consentiente ipso Plutarcho"));
+        assert!(prose.contains("errata.png"));
         assert!(!prose.contains("END OF JSON"));
+        let expected = prose.clone();
+        let mut historical = sc.clone();
+        historical
+            .page_mut(1, 16)
+            .unwrap()
+            .result
+            .as_mut()
+            .unwrap()
+            .blocks[0]
+            .text = "***END OF JSON***".into();
+        assign_front_prose(&mut volumes, &historical).unwrap();
+        assert_eq!(volumes[0].prose, expected);
     }
 
     fn placed(id: &str, images: usize) -> PlacedUnit {
