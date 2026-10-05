@@ -158,7 +158,7 @@ pub fn assembled_text(sidecar: &Sidecar, life: &LifeBoundary) -> Vec<Block> {
     out
 }
 
-fn append_blocks(out: &mut Vec<Block>, doc: &PageDoc) {
+pub(crate) fn append_blocks(out: &mut Vec<Block>, doc: &PageDoc) {
     for block in &doc.blocks {
         let continuable = matches!(block.kind, BlockKind::Paragraph | BlockKind::Verse);
         if block.continues_previous && continuable {

@@ -302,21 +302,38 @@ fn front_prose(sidecar: &Sidecar, source: usize) -> String {
 /// The re-typeset front-matter prose for exactly the listed `(source, page)`
 /// records, in the given order. Page-list-driven (not role-driven), so the facsimile
 /// Monitum/Praefatio is composed from a precise page span and never sweeps in the
-/// half-title or Volumen-title pages that share the `FrontProse` role. Each page
-/// resets the running head with `\markboth{}{}` so the prose carries no stale Life
-/// running head under the facsimile preamble.
+/// half-title or Volumen-title pages that share the `FrontProse` role. The section
+/// flows across source pages and resets the running head once. Missing or empty
+/// documents prevent paragraph continuation across the omitted text.
 pub(crate) fn front_prose_pages(sidecar: &Sidecar, pages: &[(usize, u32)]) -> String {
-    let mut out = String::new();
+    let mut blocks = Vec::new();
+    let mut previous_present = false;
     for &(source, page) in pages {
-        let Some(record) = sidecar.page(source, page) else {
+        let Some(doc) = sidecar
+            .page(source, page)
+            .and_then(|record| record.result.as_ref())
+        else {
+            previous_present = false;
             continue;
         };
-        let Some(doc) = &record.result else {
+        if doc.blocks.is_empty() {
+            previous_present = false;
             continue;
-        };
-        out.push_str(&front_prose_page(doc, true));
+        }
+        if previous_present {
+            crate::assemble::append_blocks(&mut blocks, doc);
+        } else {
+            let mut after_gap = doc.clone();
+            after_gap.blocks[0].continues_previous = false;
+            crate::assemble::append_blocks(&mut blocks, &after_gap);
+        }
+        previous_present = true;
     }
-    out
+    if blocks.is_empty() {
+        String::new()
+    } else {
+        front_prose_page_blocks(&blocks, true, true)
+    }
 }
 
 /// Render one front-prose page: a fresh recto, an optional running-head reset, the
@@ -324,7 +341,7 @@ pub(crate) fn front_prose_pages(sidecar: &Sidecar, pages: &[(usize, u32)]) -> St
 /// `\markboth{}{}` so the facsimile path's prose carries no stale Life running head;
 /// the transcription path passes `false`, keeping its golden bytes unchanged.
 fn front_prose_page(doc: &PageDoc, reset_running_head: bool) -> String {
-    front_prose_page_blocks(&doc.blocks, reset_running_head)
+    front_prose_page_blocks(&doc.blocks, reset_running_head, false)
 }
 
 /// Render listed pages through the first block containing `sentinel`, preserving
@@ -347,21 +364,32 @@ pub(crate) fn front_prose_pages_until(
             .iter()
             .position(|block| block.text.contains(sentinel))
         {
-            out.push_str(&front_prose_page_blocks(&doc.blocks[..=idx], true));
+            out.push_str(&front_prose_page_blocks(&doc.blocks[..=idx], true, false));
             return out;
         }
-        out.push_str(&front_prose_page_blocks(&doc.blocks, true));
+        out.push_str(&front_prose_page_blocks(&doc.blocks, true, false));
     }
     eprintln!("WARNING: front-prose sentinel not found: {sentinel:?}; emitting all available prose, which may duplicate embedded errata");
     out
 }
 
-fn front_prose_page_blocks(blocks: &[Block], reset_running_head: bool) -> String {
+fn front_prose_page_blocks(
+    blocks: &[Block],
+    reset_running_head: bool,
+    flexible_spacing: bool,
+) -> String {
     let mut out = String::from("% Re-typeset front-matter prose\n\\freshpage\n");
     if reset_running_head {
         out.push_str("\\markboth{}{}\n");
     }
+    if flexible_spacing {
+        // Additional stretch lets long Latin and Greek runs fit the narrow measure.
+        out.push_str("\\begingroup\n\\emergencystretch=3em\n");
+    }
     out.push_str(&render_blocks(blocks));
+    if flexible_spacing {
+        out.push_str("\\par\\endgroup\n");
+    }
     out.push_str("\\clearpage\n\n");
     out
 }
@@ -1160,10 +1188,109 @@ mod tests {
             vec![],
         );
         let pages = [(0, 11), (0, 12), (0, 13)];
-        assert_eq!(
-            front_prose_pages_until(&sc, &pages, "absent"),
-            front_prose_pages(&sc, &pages)
+        let out = front_prose_pages_until(&sc, &pages, "absent");
+        assert!(out.contains("FIRST BLOCK\n\nSECOND BLOCK"));
+        assert!(out.contains("LATER PAGE"));
+        assert_eq!(out.matches("\\freshpage").count(), 2);
+        assert_eq!(out.matches("\\markboth{}{}").count(), 2);
+        assert_eq!(out.matches("\\clearpage").count(), 2);
+    }
+
+    #[test]
+    fn front_prose_pages_flows_as_one_section() {
+        let sc = sidecar(
+            vec![
+                front_prose_page(
+                    1,
+                    14,
+                    vec![
+                        block(BlockKind::Heading, "PRÆFATIO."),
+                        block(BlockKind::Paragraph, "First"),
+                    ],
+                ),
+                front_prose_page(1, 15, vec![block(BlockKind::Paragraph, "Second")]),
+            ],
+            vec![],
         );
+        let out = front_prose_pages(&sc, &[(1, 14), (1, 15)]);
+        assert_eq!(out.matches("\\freshpage").count(), 1);
+        assert_eq!(out.matches("\\clearpage").count(), 1);
+        assert_eq!(out.matches("\\markboth{}{}").count(), 1);
+        assert_eq!(out.matches("\\heading{PRÆFATIO.}").count(), 1);
+        assert!(out.contains("\\begingroup\n\\emergencystretch=3em\n"));
+        assert!(out.contains("\\par\\endgroup\n\\clearpage"));
+        assert!(out.ends_with("\\clearpage\n\n"));
+    }
+
+    #[test]
+    fn front_prose_pages_rejoins_continued_paragraphs() {
+        let mut continuation = block(BlockKind::Paragraph, "ordinem recepi æ; ipso");
+        continuation.continues_previous = true;
+        let mut tail = block(BlockKind::Paragraph, "Plutarcho καθίσταντο.");
+        tail.continues_previous = true;
+        let sc = sidecar(
+            vec![
+                front_prose_page(1, 14, vec![block(BlockKind::Paragraph, "confirmatas in")]),
+                front_prose_page(1, 15, vec![continuation]),
+                front_prose_page(1, 16, vec![tail]),
+            ],
+            vec![],
+        );
+        let before = sc.clone();
+        let out = front_prose_pages(&sc, &[(1, 14), (1, 15), (1, 16)]);
+        assert!(out.contains("confirmatas in ordinem recepi æ; ipso Plutarcho καθίσταντο."));
+        assert_eq!(sc, before);
+    }
+
+    #[test]
+    fn front_prose_pages_preserves_new_paragraph_and_dateline() {
+        let sc = sidecar(
+            vec![
+                front_prose_page(1, 16, vec![block(BlockKind::Paragraph, "καθίσταντο.")]),
+                front_prose_page(
+                    1,
+                    17,
+                    vec![
+                        block(BlockKind::Paragraph, "Interpretationem"),
+                        block(BlockKind::Paragraph, "Scribebam Schneebergæ."),
+                    ],
+                ),
+            ],
+            vec![],
+        );
+        assert!(front_prose_pages(&sc, &[(1, 16), (1, 17)])
+            .contains("καθίσταντο.\n\nInterpretationem\n\nScribebam Schneebergæ."));
+    }
+
+    #[test]
+    fn front_prose_pages_empty_emits_nothing() {
+        let sc = sidecar(vec![front_prose_page(1, 14, vec![])], vec![]);
+        assert!(front_prose_pages(&sc, &[]).is_empty());
+        assert!(front_prose_pages(&sc, &[(1, 14), (1, 15)]).is_empty());
+    }
+
+    #[test]
+    fn front_prose_pages_does_not_join_across_missing_page() {
+        for gap in 0..3 {
+            let mut tail = block(BlockKind::Paragraph, "after gap");
+            tail.continues_previous = true;
+            let mut records = vec![front_prose_page(
+                1,
+                14,
+                vec![block(BlockKind::Paragraph, "before gap")],
+            )];
+            if gap != 0 {
+                let mut record = front_prose_page(1, 15, vec![]);
+                if gap == 1 {
+                    record.result = None;
+                }
+                records.push(record);
+            }
+            records.push(front_prose_page(1, 16, vec![tail]));
+            let sc = sidecar(records, vec![]);
+            assert!(front_prose_pages(&sc, &[(1, 14), (1, 15), (1, 16)])
+                .contains("before gap\n\nafter gap"));
+        }
     }
 
     #[test]
@@ -1188,8 +1315,8 @@ mod tests {
         // Neither the half-title (p8) nor the Volumen title (p10) is emitted.
         assert!(!out.contains("HALF TITLE P8"));
         assert!(!out.contains("VOLUMEN P10"));
-        // Each emitted prose page resets the running head.
-        assert_eq!(out.matches("\\markboth{}{}").count(), 2);
+        // The section resets the running head once.
+        assert_eq!(out.matches("\\markboth{}{}").count(), 1);
     }
 
     #[test]
