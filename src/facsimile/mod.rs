@@ -20,6 +20,8 @@ pub mod detect;
 pub mod frontmatter;
 pub mod lines;
 pub mod metrics;
+#[cfg(test)]
+pub mod praefatio;
 pub mod reflow;
 pub mod review;
 pub mod units;

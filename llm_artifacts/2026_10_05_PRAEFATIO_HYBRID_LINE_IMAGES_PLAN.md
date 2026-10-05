@@ -567,3 +567,18 @@ offers a reviewed finalized-prefix restoration or deliberate `--retag`, and
 explains the whole-sidecar reset and need to preserve evidence first.
 Formatting, clippy, Praefatio and work-remains tests passed; full-suite results
 are checked before committing.
+
+Step 3.1: automatic accent grouping uses `ACCENT_JOIN_GAP_FRAC = 0.001`
+(3 pixels at native height). A 6-pixel trial merged p15's first two baselines
+and was rejected; 3 pixels joins its detached final fragment while leaving all
+neighboring baselines separate. Both pages use automatic grouping, with 16
+reviewed p15 lines and 39 reviewed p16 lines. All 55 numbered crops were compared
+row by row against the source; accents, descenders, short lines and the final
+editorial period remain present. No explicit intervals are needed for these scans.
+The durable crop inventory is `2026_10_05_PRAEFATIO_LINE_INVENTORY.txt`; individual
+previews are `tmp/praefatio/lines/p15-01.png` through `p16-39.png` and contact
+sheets `tmp/praefatio/sheet-{0,8,16,24,32,40,48}.png`. The first crop starts at
+x=795; the source-page join adds one median normal gap, split across the two
+adjacent strips. Five synthetic extraction/coverage/order tests and the real
+source inventory test passed. Formatting and clippy passed; the full suite is
+checked before committing. Preparatory extraction remains test-only.
