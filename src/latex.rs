@@ -1412,6 +1412,21 @@ mod tests {
     }
 
     #[test]
+    fn imposition_places_odd_book_pages_on_right() {
+        for signatures in [1, 2, 4, 11] {
+            let sides = sheet_sides(signatures);
+            let mut pages = Vec::new();
+            for side in sides {
+                assert_eq!(side.right % 2, 1);
+                assert_eq!(side.left % 2, 0);
+                pages.extend([side.left, side.right]);
+            }
+            pages.sort_unstable();
+            assert_eq!(pages, (1..=32 * signatures).collect::<Vec<_>>());
+        }
+    }
+
+    #[test]
     fn fold_and_sew_only_on_outer_sides() {
         for (i, side) in sheet_sides(2).iter().enumerate() {
             assert_eq!(side.fold, i % 2 == 0);

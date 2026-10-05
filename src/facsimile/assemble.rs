@@ -149,6 +149,216 @@ fn unit_block(unit: &PlacedUnit) -> String {
 mod tests {
     use super::*;
 
+    fn fixture_image(dir: &Path, name: &str, w: u32, h: u32) {
+        image::GrayImage::from_fn(w, h, |x, y| {
+            image::Luma([if x > 8 && x < w - 8 && y > 8 && y < h - 8 {
+                0
+            } else {
+                255
+            }])
+        })
+        .save(dir.join(name))
+        .unwrap();
+    }
+
+    fn compiled_fixture(dir: &Path, tomus: usize) -> (Vec<String>, Vec<(u32, u32, u32)>) {
+        use crate::{compile, render};
+        assert!(compile::lualatex_available(), "MiKTeX/LuaLaTeX required");
+        assert!(render::pdftotext_available(), "Poppler required");
+        let stem = format!("tomus_{tomus}_inner");
+        compile::compile(dir, &format!("{stem}.tex"), compile::INNER_PASSES).unwrap();
+        let count = compile::inner_page_count(dir, &stem).unwrap();
+        assert_eq!(count % 32, 0);
+        let pdf = dir.join(format!("{stem}.pdf"));
+        let texts = (1..=count)
+            .map(|p| render::page_text(&pdf, p).unwrap())
+            .collect();
+        let output = std::process::Command::new(
+            std::env::var("PLUTARCH_PDFIMAGES").unwrap_or_else(|_| "pdfimages".into()),
+        )
+        .arg("-list")
+        .arg(&pdf)
+        .output()
+        .unwrap();
+        assert!(output.status.success());
+        let placements = String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .filter_map(|line| {
+                let f: Vec<_> = line.split_whitespace().collect();
+                if f.len() < 5 || f[2] != "image" {
+                    return None;
+                }
+                Some((f[0].parse().ok()?, f[3].parse().ok()?, f[4].parse().ok()?))
+            })
+            .collect();
+        (texts, placements)
+    }
+
+    fn assert_blank(
+        dir: &Path,
+        tomus: usize,
+        page: u32,
+        texts: &[String],
+        images: &[(u32, u32, u32)],
+    ) {
+        assert!(texts[(page - 1) as usize].trim().is_empty());
+        assert!(!images.iter().any(|p| p.0 == page));
+        let pdf = dir.join(format!("tomus_{tomus}_inner.pdf"));
+        let png = crate::render::render_page(&pdf, page, 100, &dir.join("blank_checks")).unwrap();
+        let raster = image::open(png).unwrap().to_luma8();
+        // Empty white PDF pages must contain no pixels below 245/255 at 100 DPI.
+        assert_eq!(raster.pixels().filter(|p| p[0] < 245).count(), 0);
+    }
+
+    fn fixture_body(dir: &Path) -> Vec<PlacedUnit> {
+        let mut units = Vec::new();
+        let mut index = 0;
+        for (id, n, kind) in [
+            ("theseus", 2, LifeKind::Life),
+            ("romulus", 3, LifeKind::Life),
+            ("comparison", 2, LifeKind::Comparatio),
+        ] {
+            let names: Vec<_> = (0..n)
+                .map(|_| {
+                    index += 1;
+                    let name = format!("body_{index}.png");
+                    fixture_image(dir, &name, 300 + index, 100 + index);
+                    name
+                })
+                .collect();
+            let mut u = unit_kind(id, kind, &[]);
+            u.image_names = names;
+            units.push(u);
+        }
+        units
+    }
+
+    #[test]
+    #[ignore = "requires MiKTeX/LuaLaTeX and Poppler"]
+    fn facsimile_units_compile_on_rectos_with_single_boundary_blanks() {
+        let dir = tempfile::tempdir().unwrap();
+        let vol = volume_full(2, 0, false, false, "", fixture_body(dir.path()));
+        write_inner(&vol, dir.path(), &Fonts::default()).unwrap();
+        let (texts, images) = compiled_fixture(dir.path(), 2);
+        assert_eq!(texts.len(), 32);
+        assert_eq!(
+            images.iter().map(|p| p.0).collect::<Vec<_>>(),
+            vec![5, 6, 7, 8, 9, 11, 12]
+        );
+        for (i, (_, w, h)) in images.iter().enumerate() {
+            assert_eq!((*w, *h), (301 + i as u32, 101 + i as u32));
+        }
+        for (page, title) in [(5, "THESEUS"), (7, "ROMULUS"), (11, "COMPARISON")] {
+            assert!(texts[page - 1].contains(title));
+            assert!(!texts[page - 1]
+                .lines()
+                .any(|l| l.trim().parse::<u32>().is_ok()));
+        }
+        for (page, folio) in [(6, 2), (8, 4), (9, 5), (12, 8)] {
+            assert!(texts[page - 1]
+                .lines()
+                .any(|l| l.trim() == folio.to_string()));
+        }
+        assert_blank(dir.path(), 2, 10, &texts, &images);
+    }
+
+    #[test]
+    #[ignore = "requires MiKTeX/LuaLaTeX and Poppler"]
+    fn recto_alignment_compile_is_idempotent() {
+        let dir = tempfile::tempdir().unwrap();
+        fixture_image(dir.path(), "a.png", 301, 101);
+        fixture_image(dir.path(), "b.png", 302, 102);
+        let vol = volume_full(
+            2,
+            0,
+            false,
+            false,
+            "",
+            vec![
+                unit("theseus", &["a.png"]),
+                unit("empty", &[]),
+                unit("romulus", &["b.png"]),
+            ],
+        );
+        let doc = inner_document(&vol, &Fonts::default())
+            .replace("\\unitrecto\n", "\\unitrecto\n\\unitrecto\n\\unitrecto\n");
+        std::fs::write(dir.path().join("tomus_2_inner.tex"), doc).unwrap();
+        let (texts, images) = compiled_fixture(dir.path(), 2);
+        assert_eq!(images.iter().map(|p| p.0).collect::<Vec<_>>(), vec![5, 7]);
+        assert_blank(dir.path(), 2, 6, &texts, &images);
+        assert!(!texts.iter().any(|s| s.contains("EMPTY")));
+    }
+
+    #[test]
+    #[ignore = "requires MiKTeX/LuaLaTeX and Poppler"]
+    fn first_body_compile_aligns_before_numbering() {
+        for tomus in [1, 2] {
+            for prose_count in [1, 2] {
+                let dir = tempfile::tempdir().unwrap();
+                for name in [
+                    frontmatter::front_qr_name(0),
+                    frontmatter::front_volumen_name(0),
+                    frontmatter::front_colophon_name().to_string(),
+                    frontmatter::front_monitum_a_name().to_string(),
+                    frontmatter::front_monitum_b_name().to_string(),
+                ] {
+                    fixture_image(dir.path(), &name, 300, 100);
+                }
+                fixture_image(dir.path(), "a.png", 311, 101);
+                fixture_image(dir.path(), "b.png", 312, 102);
+                let mut prose =
+                    "\\thispagestyle{empty}\\noindent FRONT-A\\par\\clearpage\n".to_string();
+                if prose_count == 2 {
+                    prose.push_str("\\thispagestyle{empty}\\noindent FRONT-B\\par\\clearpage\n");
+                }
+                let vol = volume_full(
+                    tomus,
+                    0,
+                    tomus == 1,
+                    true,
+                    &prose,
+                    vec![unit("theseus", &["a.png", "b.png"])],
+                );
+                write_inner(&vol, dir.path(), &Fonts::default()).unwrap();
+                let (texts, images) = compiled_fixture(dir.path(), tomus);
+                let prose_start = if tomus == 1 { 13 } else { 9 };
+                assert!(texts[prose_start - 1].contains("FRONT-A"));
+                if prose_count == 2 {
+                    assert!(texts[prose_start].contains("FRONT-B"));
+                }
+                let final_prose = prose_start + prose_count - 1;
+                let final_front = if tomus == 1 {
+                    let scan = final_prose + 1;
+                    assert_eq!(
+                        images
+                            .iter()
+                            .filter(|p| p.0 == scan as u32 && p.1 == 300 && p.2 == 100)
+                            .count(),
+                        2
+                    );
+                    scan
+                } else {
+                    final_prose
+                };
+                let body = if final_front % 2 == 0 {
+                    final_front + 1
+                } else {
+                    final_front + 2
+                };
+                let placements: Vec<_> = images.iter().filter(|p| p.1 > 300).map(|p| p.0).collect();
+                assert_eq!(placements, vec![body as u32, body as u32 + 1]);
+                assert_eq!(body % 2, 1);
+                if body == final_front + 2 {
+                    assert_blank(dir.path(), tomus, (body - 1) as u32, &texts, &images);
+                }
+                assert!(texts[body].lines().any(|l| l.trim() == "2"));
+                assert!(!texts[body - 1]
+                    .lines()
+                    .any(|l| l.trim().parse::<u32>().is_ok()));
+            }
+        }
+    }
+
     #[test]
     fn facsimile_units_use_recto_command() {
         let vol = volume(vec![
@@ -541,7 +751,7 @@ mod tests {
 
     #[test]
     #[ignore = "requires source PDFs, cached front matter, Poppler, and MiKTeX"]
-    fn monitum_combined_compile_has_adjacent_content_pages() {
+    fn monitum_combined_compile_keeps_scans_adjacent_and_body_on_recto() {
         use crate::{compile, render};
         use std::process::Command;
 
@@ -625,7 +835,7 @@ mod tests {
             });
         assert_eq!(
             body_page,
-            prose_page + 2,
+            (prose_page + 2) | 1,
             "body adjacency in {}",
             inner_pdf.display()
         );
@@ -645,6 +855,26 @@ mod tests {
             inner_pdf.display(),
             pages[body_page]
         );
+
+        if body_page == prose_page + 3 {
+            let png = render::render_page(
+                &inner_pdf,
+                (body_page - 1) as u32,
+                100,
+                &dir.path().join("blank"),
+            )
+            .unwrap();
+            assert!(pages[body_page - 2].trim().is_empty());
+            assert_eq!(
+                image::open(png)
+                    .unwrap()
+                    .to_luma8()
+                    .pixels()
+                    .filter(|p| p[0] < 245)
+                    .count(),
+                0
+            );
+        }
 
         let dimensions: Vec<_> = [
             frontmatter::front_monitum_a_name(),
