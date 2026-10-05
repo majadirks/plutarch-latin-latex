@@ -43,6 +43,8 @@ pub struct FacsimileArgs {
     pub v1: PathBuf,
     pub v2: PathBuf,
     pub out: PathBuf,
+    /// Optional owner name for the bordered Tomus title-page plate.
+    pub exlibris: Option<String>,
     /// Path to the auto-detected, hand-editable `facsimile_units.json` cache.
     pub units: PathBuf,
     pub no_compile: bool,
@@ -80,10 +82,21 @@ impl FacsimileArgs {
     }
 }
 
+/// Validate an owner name without changing its spaces or punctuation.
+pub fn validate_exlibris_name(name: &str) -> Result<()> {
+    if name.trim().is_empty() {
+        bail!("exlibris name must not be blank");
+    }
+    Ok(())
+}
+
 /// Run the facsimile build: compose each unit's body images at one global scale,
 /// emit the inner `.tex` per volume, and (unless `--no-compile`) compile and
 /// impose. Body rendering and image analysis are offline and deterministic.
 pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
+    if let Some(name) = args.exlibris.as_deref() {
+        validate_exlibris_name(name)?;
+    }
     if args.offline && (args.retag || args.review_lines) {
         bail!("--offline cannot be combined with --retag or --review-lines");
     }
@@ -218,7 +231,12 @@ pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
     let fonts = Fonts::default();
     let mut inner_paths = Vec::with_capacity(volumes.len());
     for vol in &volumes {
-        inner_paths.push(write_inner(vol, &args.out, &fonts)?);
+        inner_paths.push(write_inner(
+            vol,
+            &args.out,
+            &fonts,
+            args.exlibris.as_deref(),
+        )?);
     }
 
     if !args.no_compile && compile::lualatex_available() {
@@ -601,6 +619,42 @@ mod tests {
     use crate::render::pdftoppm_available;
 
     #[test]
+    fn validate_exlibris_name_rejects_blank() {
+        for name in ["", "   ", "\t"] {
+            assert_eq!(
+                validate_exlibris_name(name).unwrap_err().to_string(),
+                "exlibris name must not be blank"
+            );
+        }
+        assert!(validate_exlibris_name("Alex Smith").is_ok());
+    }
+    #[test]
+    fn run_facsimile_rejects_blank_exlibris_before_pdf_access() {
+        let dir = tempfile::tempdir().unwrap();
+        let args = FacsimileArgs {
+            v1: dir.path().join("missing1.pdf"),
+            v2: dir.path().join("missing2.pdf"),
+            out: dir.path().join("output"),
+            units: dir.path().join("units.json"),
+            exlibris: Some("\t".into()),
+            no_compile: true,
+            retag: false,
+            offline: true,
+            detect_units: false,
+            redetect: false,
+            pages: None,
+            unit: None,
+            review_lines: false,
+            clean_cache: false,
+        };
+        assert_eq!(
+            run_facsimile(&args).unwrap_err().to_string(),
+            "exlibris name must not be blank"
+        );
+        assert!(!args.out.exists());
+    }
+
+    #[test]
     fn assign_front_prose_hybrid_failure_does_not_mutate_volumes() {
         let sc = crate::tags::Sidecar::load(
             &Path::new(env!("CARGO_MANIFEST_DIR")).join(frontmatter::SIDECAR),
@@ -660,8 +714,10 @@ mod tests {
         assign_front_prose(&mut volumes, &sc).unwrap();
         for vol in &volumes {
             assert!(vol.praefatio_errata_images.is_empty());
-            assert!(!assemble::inner_document(vol, &latex::Fonts::default())
-                .contains("praefatio_errata"));
+            assert!(
+                !assemble::inner_document(vol, &latex::Fonts::default(), None)
+                    .contains("praefatio_errata")
+            );
         }
         let restricted = plan_volumes(
             &[unit_pages("nicias", 1, LifeKind::Life, 1, 2)],
@@ -930,6 +986,7 @@ mod tests {
             unit: Some("romulus".to_string()),
             review_lines: false,
             clean_cache: false,
+            exlibris: None,
         };
         assert!(args.restricted());
         if !args.restricted() {
@@ -995,6 +1052,7 @@ mod tests {
             unit: None,
             review_lines: false,
             clean_cache: false,
+            exlibris: None,
         };
         run_facsimile(&args).unwrap();
         // A body image and an imposition wrapper were produced offline.

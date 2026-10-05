@@ -436,17 +436,20 @@ fn front_prose_blocks(blocks: &[Block], flexible_spacing: bool) -> String {
     out
 }
 
-/// The facsimile Tomus title page: the fixed Didot bibliographic lines, the
-/// `TOMUS <roman>` line, this tomus's Lives (small caps, bullet-separated), and the
-/// owner's `EX LIBRIS / MARTINEZ-DIRKS` plate. Replaces both the derived
-/// `title_page` and the `tomus_label` on the facsimile path; it is the first page
-/// with content in every emitting tomus.
+/// The facsimile Tomus title page includes fixed Didot bibliographic lines,
+/// this Tomus's Lives in small caps, and an optional bordered ownership plate.
+/// It is the first page with content in every emitting Tomus.
 ///
 /// `life_latin_titles` are the corpus `latin_title`s (already uppercase, e.g.
 /// `C. MARIUS`). Each is emitted as `\textsc{\MakeLowercase{…}}`: lower-casing feeds
 /// true small caps while the font restores cap height, so an abbreviated praenomen
 /// like `C. MARIUS` renders correctly without manual case surgery.
-pub(crate) fn tomus_title_page(tomus: usize, life_latin_titles: &[String]) -> String {
+pub(crate) fn tomus_title_page(
+    tomus: usize,
+    life_latin_titles: &[String],
+    exlibris: Option<&str>,
+) -> String {
+    let plate = exlibris.map(exlibris_plate).unwrap_or_default();
     let roman = to_roman(tomus as u32);
     let mut lines: Vec<String> = vec![
         "{\\LARGE\\bfseries PLUTARCHI VITÆ}".to_string(),
@@ -485,12 +488,16 @@ pub(crate) fn tomus_title_page(tomus: usize, life_latin_titles: &[String]) -> St
          \x20 {body}\n\
          \\end{{center}}\n\
          \\vfill\\vfill\n\
-         \\begin{{center}}\n\
-         \x20 EX LIBRIS\\\\[0.6em]\n\
-         \x20 {{\\large MARTINEZ-DIRKS}}\n\
-         \\end{{center}}\n\
+         {plate}\
          \\vspace{{1cm}}\n\
          \\clearpage\n\n",
+    )
+}
+
+fn exlibris_plate(name: &str) -> String {
+    let owner = escape_latex(&name.to_uppercase());
+    format!(
+        "\\begin{{center}}\n{{\\setlength{{\\fboxrule}}{{0.4pt}}\\setlength{{\\fboxsep}}{{8pt}}\n\\fbox{{\\parbox{{0.72\\textwidth}}{{\\centering EX LIBRIS\\\\[0.6em]{{\\large {owner}}}\\par}}}}}}\n\\end{{center}}\n"
     )
 }
 
@@ -824,6 +831,56 @@ mod tests {
                 "front_praefatio_errata_002.png".into(),
             ],
         )
+    }
+
+    #[test]
+    fn tomus_title_page_omits_visible_exlibris_by_default() {
+        let page = tomus_title_page(1, &[], None);
+        for absent in ["EX LIBRIS", "\\fbox", "phantom"] {
+            assert!(!page.contains(absent));
+        }
+        assert!(page.contains("PLUTARCHI VIT\u{c6}"));
+        assert!(page.ends_with("\\clearpage\n\n"));
+    }
+    #[test]
+    fn tomus_title_page_renders_bordered_uppercase_exlibris() {
+        let page = tomus_title_page(1, &[], Some("Alex Smith"));
+        for expected in [
+            "\\fbox{",
+            "EX LIBRIS",
+            "ALEX SMITH",
+            "\\fboxrule}{0.4pt}",
+            "\\fboxsep}{8pt}",
+            "\\parbox{0.72\\textwidth}",
+        ] {
+            assert!(page.contains(expected), "{expected}");
+        }
+        assert!(!page.contains("Alex Smith"));
+    }
+    #[test]
+    fn exlibris_plate_uppercases_unicode_and_escapes_latex() {
+        let plate = exlibris_plate("\u{c9}lodie & Andr\u{e9} \\{}%_#$~^");
+        assert!(plate.contains("\u{c9}LODIE \\& ANDR\u{c9}"));
+        for expected in [
+            "\\textbackslash{}",
+            "\\{",
+            "\\}",
+            "\\%",
+            "\\_",
+            "\\#",
+            "\\$",
+            "\\textasciitilde{}",
+            "\\textasciicircum{}",
+        ] {
+            assert!(plate.contains(expected), "{expected}");
+        }
+        assert!(exlibris_plate(" Alex Smith ").contains(" ALEX SMITH "));
+    }
+    #[test]
+    fn tomus_title_page_preserves_requested_legacy_owner() {
+        let page = tomus_title_page(1, &[], Some("Martinez-Dirks"));
+        assert!(page.contains("\\fbox{"));
+        assert!(page.contains("MARTINEZ-DIRKS"));
     }
 
     #[test]
@@ -1190,7 +1247,7 @@ mod tests {
 
     #[test]
     fn tomus_title_page_renders_fixed_lines_and_small_caps() {
-        let page = tomus_title_page(1, &["THESEUS".to_string(), "C. MARIUS".to_string()]);
+        let page = tomus_title_page(1, &["THESEUS".to_string(), "C. MARIUS".to_string()], None);
         assert!(page.contains("{\\LARGE\\bfseries PLUTARCHI VITÆ}"));
         assert!(page.contains("SECUNDUM CODICES PARISINOS RECOGNOVIT"));
         assert!(page.contains("THEODOR DŒHNER"));
@@ -1202,8 +1259,6 @@ mod tests {
         assert!(page.contains("\\mbox{\\textsc{\\MakeLowercase{THESEUS}}}"));
         assert!(page.contains("\\textbullet"));
         assert!(page.contains("\\parbox{0.86\\textwidth}"));
-        assert!(page.contains("EX LIBRIS"));
-        assert!(page.contains("MARTINEZ-DIRKS"));
         assert_eq!(page.matches("TOMUS ").count(), 1);
     }
 

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use clap::Parser;
 
-use plutarch_reader::facsimile::{run_facsimile, FacsimileArgs};
+use plutarch_reader::facsimile::{run_facsimile, validate_exlibris_name, FacsimileArgs};
 
 /// Build a Loeb-size, Latin-only reader whose body pages are the original 1857
 /// Didot Latin column cropped from the source scans and reflowed into the trim
@@ -23,6 +23,10 @@ struct Args {
     /// Directory to write the per-volume `.tex`, body images, and PDFs into.
     #[arg(long)]
     out: PathBuf,
+
+    /// Add an optional bordered ownership plate, with the name in uppercase.
+    #[arg(long, value_name = "NAME", value_parser = parse_exlibris)]
+    exlibris: Option<String>,
 
     /// The auto-detected, hand-editable unit-table cache.
     #[arg(long, default_value = "facsimile_units.json")]
@@ -67,12 +71,18 @@ struct Args {
     clean_cache: bool,
 }
 
+fn parse_exlibris(name: &str) -> std::result::Result<String, String> {
+    validate_exlibris_name(name).map_err(|error| error.to_string())?;
+    Ok(name.to_string())
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
     let facsimile_args = FacsimileArgs {
         v1: args.v1,
         v2: args.v2,
         out: args.out,
+        exlibris: args.exlibris,
         units: args.units,
         no_compile: args.no_compile,
         retag: args.retag,
@@ -90,6 +100,56 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn exlibris_cli(extra: &[&str]) -> std::result::Result<Args, clap::Error> {
+        Args::try_parse_from(
+            [
+                "facsimile",
+                "--v1",
+                "v1.pdf",
+                "--v2",
+                "v2.pdf",
+                "--out",
+                "o",
+            ]
+            .into_iter()
+            .chain(extra.iter().copied()),
+        )
+    }
+    #[test]
+    fn facsimile_exlibris_flag_defaults_to_none() {
+        assert!(exlibris_cli(&[]).unwrap().exlibris.is_none());
+    }
+    #[test]
+    fn facsimile_exlibris_flag_accepts_name() {
+        assert_eq!(
+            exlibris_cli(&["--exlibris", "Alex Smith"])
+                .unwrap()
+                .exlibris
+                .as_deref(),
+            Some("Alex Smith")
+        );
+    }
+    #[test]
+    fn facsimile_exlibris_flag_requires_value() {
+        assert!(exlibris_cli(&["--exlibris"]).is_err());
+    }
+    #[test]
+    fn facsimile_exlibris_flag_rejects_blank_name() {
+        for name in ["", "   ", "\t"] {
+            assert!(exlibris_cli(&["--exlibris", name])
+                .unwrap_err()
+                .to_string()
+                .contains("exlibris name must not be blank"));
+        }
+        assert_eq!(
+            exlibris_cli(&["--exlibris", " Alex Smith "])
+                .unwrap()
+                .exlibris
+                .as_deref(),
+            Some(" Alex Smith ")
+        );
+    }
 
     #[test]
     fn offline_flag_excludes_vision_operations() {
