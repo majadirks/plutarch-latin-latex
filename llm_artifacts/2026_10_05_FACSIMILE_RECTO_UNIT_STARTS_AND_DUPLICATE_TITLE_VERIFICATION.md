@@ -29,3 +29,13 @@ The raw 300-DPI Latin columns for 434, 551, 637, and 705–708 were inspected in
 The independent stream assertion resizes source cut-point intervals once, places each on white rows with the real horizontal clipping, and compares dimensions and bytes against decoded canvas rows after removing their leading inset. It covers noninteger scaling, ordinary wrapping, tall splitting, and a rejected control signature. Cato and Lysander both passed these real-source assertions at the measured production global scale; neither test silently skipped prerequisites. Synthetic stream checks and the 47 nonignored reflow tests passed, alongside formatting and Clippy.
 
 The plan records two measured refinements: rejected noise can influence surrounding whitespace cut points without contributing text, and Otho's first body bands on pages 706/707 need a narrow geometry-based rescue from the top zone. The shared 8% furniture API remains unchanged. These refinements follow source-column inspection rather than weakening the exhaustive body ledger.
+
+## Terminal endpoints and restored pages
+
+Step 2C.1 (`7ed6d76`) passed the explicit endpoint/range/request and pin-precedence fixtures, all 26 nonignored detector tests, and nine unit-table tests. Real-source detection with an absent temporary cache and no pins passed, ending at 637/708. The operational cache was never redetected by a test. Invalid endpoints fail before saving, and OCR detection is bounded before duplicate terminal scans.
+
+Step 2C.2 (`c35f6bc`) passed the complete page-637 body ledger, first/middle/last OCR-location checks, and exact scaled stream. Its old endpoint 636 fails the same endpoint assertion on an isolated cloned row. The retained page was visually inspected through `fuisse.`, with no detached ornament.
+
+Step 2D.1 passed the ignored real-source Otho test after demonstrating failure against the actual old operational endpoint 704. Every source page in 696–708 renders and detects successfully once; 709/710 are outside the range. Every reviewed body band on 705–708 survives with source pixels intact, and the entire resized row stream matches composition. The concluding crop includes chapter XVIII and the last hyphenated sentence. Pages 706/707 also retain their first body lines through the geometry-based top-zone rescue.
+
+The page-708 ledger initially failed on the library stamp at rows 2080–2117. The plan now specifies removal of a distant narrow furniture cluster after aligned body text. Its synthetic stamp/rule test passes, as do all 50 nonignored reflow tests, formatting, and Clippy. The remedy shares the ink-alignment helper with short closing-line protection; neither page numbers nor Latin strings drive production filtering.

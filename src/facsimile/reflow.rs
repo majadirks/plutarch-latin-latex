@@ -270,8 +270,63 @@ fn render_and_band(
     let column = detect_latin_column(&page_img)?;
     let cropped = crop_column(&page_img, &column);
     let bands = line_bands(&cropped, LINE_MIN_INK);
-    let bands = drop_furniture(&bands, cropped.height());
+    let kept = drop_furniture(&bands, cropped.height());
+    let bands = retain_early_aligned_body_bands(&cropped, &bands, &kept);
     Ok((cropped, bands))
+}
+
+/// Rescue full body lines just inside the top furniture zone using their geometry.
+fn retain_early_aligned_body_bands(col: &GrayImage, raw: &[Band], kept: &[Band]) -> Vec<Band> {
+    let m = line_metrics(&[(col.clone(), kept.to_vec())]);
+    let Some(first) = kept.first() else {
+        return kept.to_vec();
+    };
+    let gaps: Vec<_> = kept
+        .windows(2)
+        .map(|w| w[1].top.saturating_sub(w[0].bottom) as i64)
+        .collect();
+    let mut result: Vec<_> = raw
+        .iter()
+        .copied()
+        .filter(|b| {
+            let center = (b.top + b.bottom) as f32 / 2.0 / col.height() as f32;
+            (0.07..0.08).contains(&center)
+                && b.bottom <= first.top
+                && first.top.saturating_sub(b.bottom) as f32 <= (2.2 * median_gap(&gaps)).max(1.0)
+                && band_ink_span(col, b) as f32 >= BODY_LINE_SPAN_FRAC * col.width() as f32
+                && is_aligned_body_band(col, b, kept, &m)
+        })
+        .collect();
+    result.extend_from_slice(kept);
+    result
+}
+
+fn is_aligned_body_band(
+    col: &GrayImage,
+    band: &Band,
+    references: &[Band],
+    m: &LineMetrics,
+) -> bool {
+    if m.is_sentinel()
+        || matches!(
+            classify_band(col, band, m),
+            BandClass::Short | BandClass::Tall
+        )
+    {
+        return false;
+    }
+    let Some((left, _)) = band_ink_bounds(col, band) else {
+        return false;
+    };
+    let lefts: Vec<_> = references
+        .iter()
+        .filter(|b| {
+            !matches!(classify_band(col, b, m), BandClass::Short | BandClass::Tall)
+                && band_ink_span(col, b) as f32 >= BODY_LINE_SPAN_FRAC * col.width() as f32
+        })
+        .filter_map(|b| band_ink_bounds(col, b).map(|(left, _)| left))
+        .collect();
+    !lefts.is_empty() && left.abs_diff(median_u32(&lefts)) <= (m.height_med / 2).max(1)
 }
 
 /// Drop a bled-through running head or bare folio/signature that survived zone
@@ -318,23 +373,16 @@ fn is_aligned_closing_body_line(col: &GrayImage, bands: &[Band], m: &LineMetrics
     if *gaps.last().unwrap() as f32 > (2.2 * median_gap(&gaps)).max(1.0) {
         return false;
     }
-    let Some((left, _)) = band_ink_bounds(col, last) else {
-        return false;
-    };
-    let references: Vec<u32> = bands[..bands.len() - 1]
-        .iter()
-        .filter(|b| {
-            !matches!(classify_band(col, b, m), BandClass::Short | BandClass::Tall)
-                && band_ink_span(col, b) as f32 >= BODY_LINE_SPAN_FRAC * col.width() as f32
-        })
-        .filter_map(|b| band_ink_bounds(col, b).map(|(left, _)| left))
-        .collect();
-    !references.is_empty() && left.abs_diff(median_u32(&references)) <= (m.height_med / 2).max(1)
+    is_aligned_body_band(col, last, &bands[..bands.len() - 1], m)
 }
 
 /// Drop detached short or narrow furniture, preserving aligned closing body lines.
 /// The full-measure threshold identifies furniture when metrics are unavailable.
 fn drop_trailing_furniture(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Vec<Band> {
+    if bands.len() < 3 {
+        return drop_detached_rule(col, bands, m);
+    }
+    let bands = &bands[..detached_tail_cluster_start(col, bands, m).unwrap_or(bands.len())];
     if bands.len() < 3 {
         return drop_detached_rule(col, bands, m);
     }
@@ -358,6 +406,25 @@ fn drop_trailing_furniture(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> 
         bands.len()
     };
     drop_detached_rule(col, &bands[..hi], m)
+}
+
+/// A distant cluster of narrow marks after aligned body text is source furniture.
+fn detached_tail_cluster_start(col: &GrayImage, bands: &[Band], m: &LineMetrics) -> Option<usize> {
+    if m.is_sentinel() {
+        return None;
+    }
+    let gaps: Vec<_> = bands
+        .windows(2)
+        .map(|w| w[1].top.saturating_sub(w[0].bottom) as i64)
+        .collect();
+    let ceiling = (2.2 * median_gap(&gaps)).max(m.height_med as f32);
+    (2..bands.len()).find(|&i| {
+        gaps[i - 1] as f32 > ceiling
+            && is_aligned_body_band(col, &bands[i - 1], &bands[..i - 1], m)
+            && bands[i..]
+                .iter()
+                .all(|b| (band_ink_span(col, b) as f32) < BODY_LINE_SPAN_FRAC * col.width() as f32)
+    })
 }
 
 /// Remove a thin detached rule even when gutter noise joins it to adjacent bands.
@@ -846,6 +913,81 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn trailing_furniture_removes_detached_stamp_and_rule_cluster() {
+        let (page, m) = page_and_metrics(
+            220,
+            100,
+            &[
+                (20, 30, 5, 95),
+                (35, 45, 5, 95),
+                (50, 60, 5, 95),
+                (70, 80, 5, 40),
+                (140, 150, 35, 55),
+                (160, 170, 35, 55),
+                (180, 182, 25, 65),
+            ],
+        );
+        assert_eq!(drop_trailing_furniture(&page.0, &page.1, &m), page.1[..4]);
+    }
+
+    #[test]
+    fn early_body_rescue_preserves_full_aligned_line_and_excludes_short_head() {
+        let (page, _) = page_and_metrics(
+            1000,
+            100,
+            &[
+                (60, 64, 35, 65),
+                (72, 82, 5, 95),
+                (92, 102, 5, 95),
+                (107, 117, 5, 95),
+                (122, 132, 5, 95),
+            ],
+        );
+        let kept = drop_furniture(&page.1, 1000);
+        assert!(!kept.contains(&page.1[1]));
+        let rescued = retain_early_aligned_body_bands(&page.0, &page.1, &kept);
+        assert_eq!(rescued, page.1[1..]);
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler"]
+    fn otho_final_source_pages_survive_reflow_once() {
+        let range = operational_range("otho");
+        let mut old = range.clone();
+        old.end_page = 704;
+        old.unit.last_page = Some(704);
+        assert!(
+            std::panic::catch_unwind(|| assert_source_endpoint(&old, 708)).is_err(),
+            "old endpoint must fail"
+        );
+        assert_source_endpoint(&range, 708);
+        let (pages, m) = traced_real_unit(&range);
+        for page in 705..=708 {
+            let retained = &pages[(page - range.unit.start_page) as usize];
+            save_retained_crop(&format!("otho_{page}"), retained);
+        }
+        assert_ocr_landmark(
+            1,
+            705,
+            "videbantur",
+            &pages[(705 - range.unit.start_page) as usize],
+        );
+        assert_ocr_landmark(
+            1,
+            708,
+            "XVIII",
+            &pages[(708 - range.unit.start_page) as usize],
+        );
+        assert_ocr_landmark(
+            1,
+            708,
+            "conjunxerunt",
+            &pages[(708 - range.unit.start_page) as usize],
+        );
+        verify_real_composition("otho", &pages, &m);
+    }
 
     fn assert_source_endpoint(range: &UnitRange, endpoint: u32) {
         assert_eq!(
