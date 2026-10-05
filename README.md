@@ -74,8 +74,10 @@ its `skip_top_bands` tweak) survives regeneration unchanged. See
 
 **Front matter** is the one place the facsimile path uses vision: the v1 Monitum
 prose through “mutanda esse significavit.” is re-typeset to the trim measure, and
-its Greek errata list is reproduced as two embedded, scaled source images alongside
-the QR notice, Volumen-title, and colophon scans. The v2 Praefatio remains fully
+its Greek errata list follows immediately on one page containing the p12 and p13
+source crops, scaled together. The first body page follows directly after that
+combined errata page. The QR notice, Volumen-title, and colophon scans retain their
+existing page starts. The v2 Praefatio remains fully
 re-typeset, as are the derived title pages. The prose is transcribed **once** and
 cached in `plutarch.frontmatter.tags.json` (same semantics as the body cache below);
 later builds read the cache and make zero
