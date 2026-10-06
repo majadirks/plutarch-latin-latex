@@ -62,8 +62,13 @@ Nothing is erased until its RFI is marked **CONFIRMED** here.
   (Coriolanus p268, Timoleon p295), `remaining.*` (Brutus p596).
 - **Prior review renders cited in the findings** (under `tmp/pdfs/inner_review/`,
   `review12/`, `review34/`, `review56/`; may need regeneration). Per-item pointers below.
-- **Per-item crops I will generate** at interview time: named
-  `tmp/pdfs/inner_tomi_repairs/rfi-<id>-*.png`.
+- **Per-item crops, generated 2026-10-05** under `tmp/pdfs/inner_tomi_repairs/` (regenerate with
+  the scratchpad `render_rfis.py`): `rfi-03-*` (annotated boxes, confirmed); `*-overview.png`
+  (downscaled full pages) for RFI-01 (p100–105), 02 (p366–370), 05 (p181–182), 06 (p286–287),
+  07 (p290), 08 (p298), 09 (p308), 10 (p549), 11 (p441), 12 (p538–539), 13 (p337,347), 16
+  (p303–305), 17 (p624–626), 18 (p470–471), 19 (p23,28), 21 (p529–530); plus full-res `*-top.png`
+  header crops for RFI-05/07/10/11. Still to pin a source page: RFI-04 (W2 ≈ s300), RFI-15 (G1),
+  RFI-20A (O8B). Annotated candidate mask boxes are drawn per item at confirmation time.
 
 ---
 
@@ -124,6 +129,7 @@ This table supersedes the per-RFI "candidate source page (UNCONFIRMED)" lines be
 | RFI | Finding | src | Source page(s) | Anchor / note |
 | --- | --- | ---: | --- | --- |
 | 03 | W1 | 0 | **287** (watermark), **288** (header `MARCIUS CORIOLANUS.`+folio 275) | CONFIRMED |
+| 04 | W2, G4 | 0 | **~300** (to pin) | "Digitized by Google" is at the bottom (~rows 2854–2925) of **every** Timoleon page; W2 is a sparse page whose bottom watermark lands in an output gap. II/227 ≈ s300 by reader-folio interpolation (214→s298, 237→s308). Pin by finding the sparse ~2-line page near 300. |
 | 05 | O1 | 0 | seam **181→182**; header `CAMILLUS.`+folio 169 atop **182** | `...jam exsul,`(181) / `neque nos cives`(182) |
 | 06 | O1B | 0 | ch. XXII near **286/287**; Greek head `ΜΑΡΚΙΟΣ…` (“ARKIOS”) | inspect which page has the pre-XXII gap |
 | 07 | O1C | 0 | **290** | `RIOLANUS.`+damaged folio 277 + right divider (folio 277=phys 290) |
