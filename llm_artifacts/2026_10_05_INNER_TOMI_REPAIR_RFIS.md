@@ -181,6 +181,8 @@ choose the retained sequence.
 - **What I will produce:** source renders of the Eumenes tail and both comparison openings,
   with OCR anchors for `posset.`, `Hæc sunt quæ`, `que-`/`rentes.`, and the second
   comparison opening; a line-by-line table of what is unique vs. repeated.
+- **Generated (2026-10-05):** `rfi-01-D1-p100-overview.png` … `rfi-01-D1-p105-overview.png`
+  (source pages 100–105; `inspicere posset`+`de Eumene` on 102 & 104, `Deinde impetu facto` on 101 & 103).
 - **I need you to confirm:** (a) the correct reading order; (b) which physical occurrence
   of the comparison opening to keep; (c) that the `que-` → `rentes.` join belongs to the
   comparison (not Eumenes), so the retained sequence loses no unique line; (d) whether the
@@ -198,6 +200,8 @@ choose the retained sequence.
   differing image appearances — not necessarily byte-identical rasters.
 - **What I will produce:** source renders of both occurrences with OCR anchors on the shared
   opening and chapter VIII; a comparison of the start/end seams of each occurrence.
+- **Generated (2026-10-05):** `rfi-02-D2-p366-overview.png` … `rfi-02-D2-p370-overview.png`
+  (Agis opening `non modo luxum, in quo felicitatem vitae` repeats on source p367 **&** p369).
 - **I need you to confirm:** (a) which occurrence to retain (cleaner image vs. divider marks);
   (b) that the retained occurrence's beginning and end join correctly to the surrounding
   distinct passages; (c) whether this is repeated whole source pages (→ duplicate-page
@@ -239,7 +243,9 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   of the source — to be OCR-anchored on the two lines above and the continuation below.
 - **Observed (W2/G4):** two lines near the top, then a large empty interval containing a gray
   **Digitized by Google**, then continuing prose. Interior gap + watermark together.
-- **Prior artifacts:** `review12/` II/227.
+- **Prior artifacts:** `review12/` II/227. **Generated (2026-10-05):**
+  `rfi-04-W2-p299-overview.png`, `rfi-04-W2-p300-overview.png`, `rfi-04-W2-p301-overview.png`
+  (none is the W2 page — see tracker note; pin via inner PDF p227).
 - **Confirm:** the watermark rectangle; and whether the surrounding empty interval is a source
   page tail or an interior gap (decides whether Phase 3.2 whitespace compaction is needed —
   see RFI-20).
@@ -250,15 +256,21 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Unit:** `camillus` (source 0, 167–195). **Source folio cited:** 169.
 - **Observed (O1):** running-head fragment `LUS.` + source folio **169** intrude between
   `...non enim neque is jam exsul,` and `neque nos cives sumus...`.
-- **Prior artifacts:** `inner_review/user_t1_371.png`.
+- **Prior artifacts:** `inner_review/user_t1_371.png`. **Generated (2026-10-05):**
+  `rfi-05-O1-p181-overview.png`, `rfi-05-O1-p182-overview.png`, `rfi-05-O1-p182-top.png`,
+  `rfi-05-O1-p182-box.png` (annotated mask).
 - **Confirm:** the `LUS.`/folio rectangle sits between those two Latin lines and clips neither.
-- **Decision:** _pending._
+- **Measured:** source 0 **page 182** (1974×2985); running head `CAMILLUS.` + folio `169` ink
+  rows 226–257; blank gap 258–286; first body line `neque nos cives sumus...` starts row 287.
+- **Proposed mask (normalized):** `[0.0861, 0.0710, 0.9625, 0.0951)`.
+- **Decision:** **CONFIRMED — one mask** (2026-10-05). Frozen in the ledger for source 0 page 182.
 
 ## RFI-06 — O1B: Coriolanus Greek running head before ch. XXII (Tomus II/187)
 
 - **Unit:** `marcius_coriolanus` (source 0). **Observed (O1B):** a Greek running-head fragment
   (user read “ARKIOS”) inside a large gap immediately before chapter XXII.
-- **Prior artifacts:** `inner_review/user_t2_187.png`.
+- **Prior artifacts:** `inner_review/user_t2_187.png`. **Generated (2026-10-05):**
+  `rfi-06-O1B-p286-overview.png`, `rfi-06-O1B-p287-overview.png`.
 - **Confirm:** the Greek header rectangle contains no Latin and the gap handling (RFI-20) is
   separate; measure the associated gap.
 - **Decision:** _pending._
@@ -268,7 +280,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Unit:** `marcius_coriolanus` (source 0). **Source folio cited:** 277.
 - **Observed (O1C):** `RIOLANUS.` + damaged folio **277** after the top prose line and before
   its continuation; a vertical divider survives at the right.
-- **Prior artifacts:** `inner_review/user_t2_204.png`.
+- **Prior artifacts:** `inner_review/user_t2_204.png`. **Generated (2026-10-05):**
+  `rfi-07-O1C-p290-overview.png`, `rfi-07-O1C-p290-top.png`.
 - **Confirm:** the header/folio rectangle and the right-divider rectangle each exclude the
   top line and its continuation.
 - **Decision:** _pending._
@@ -278,7 +291,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Unit:** `timoleon` (source 0). **Source folio cited:** 285.
 - **Observed (O1D/G8B):** prose ends mid-page `...cum`; a large blank interval with a thin
   divider, then `EON.` + folio **285** near the bottom.
-- **Prior artifacts:** `inner_review/user_t2_222.png`.
+- **Prior artifacts:** `inner_review/user_t2_222.png`. **Generated (2026-10-05):**
+  `rfi-08-O1D-G8B-p298-overview.png`.
 - **Confirm:** the `EON.`/folio rectangle and divider fragment exclude the `...cum` line and
   the next page's continuation; classify the blank interval (RFI-20).
 - **Decision:** _pending._
@@ -289,6 +303,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Observed (G5):** large top blank, then `EON.` + folio **295** immediately above continuing
   prose; a divider fragment in the blank region.
 - **Prior artifacts:** `review12/` II/245; `inner_review/user_t2_245.png` (180 DPI).
+  **Generated (2026-10-05):** `rfi-09-G5-p308-overview.png`.
 - **Confirm:** header/folio + divider rectangles exclude the continuing prose line; classify
   the blank (RFI-20).
 - **Decision:** _pending._
@@ -298,7 +313,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Unit:** `lysander` (source 0, 531–552). **Source folio cited:** 537.
 - **Observed (O2):** `NDER.` at left and folio **537** at right below the line ending
   `Haliartii perhibent,`.
-- **Prior artifacts:** `review34/` III/337.
+- **Prior artifacts:** `review34/` III/337. **Generated (2026-10-05):**
+  `rfi-10-O2-p549-overview.png`, `rfi-10-O2-p549-top.png`.
 - **Confirm:** the head/folio rectangles exclude `Haliartii perhibent,` and the following line.
 - **Decision:** _pending._
 
@@ -307,7 +323,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Unit:** `demosthenes` (source 1, 429–446). **Observed (O3):** a partial running head
   ending in Greek letters inside a gap between `...mœrore suo` and `conficiat, sed et levandus...`;
   a right divider remains.
-- **Prior artifacts:** `inner_review/detail_t7_167.png`.
+- **Prior artifacts:** `inner_review/detail_t7_167.png`. **Generated (2026-10-05):**
+  `rfi-11-O3-p441-overview.png`, `rfi-11-O3-p441-top.png`.
 - **Confirm:** header + divider rectangles exclude both framing lines; classify the gap (RFI-20).
 - **Decision:** _pending._
 
@@ -315,7 +332,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 
 - **Unit:** `antonius` (source 1, 513–563). **Observed (O4):** a partial Greek running head and
   divider intrude between the split `Eo impe-` and continuation `trato, hostes...`.
-- **Prior artifacts:** `inner_review/detail_t7_369.png`.
+- **Prior artifacts:** `inner_review/detail_t7_369.png`. **Generated (2026-10-05):**
+  `rfi-12-O4-p538-overview.png`, `rfi-12-O4-p539-overview.png`.
 - **Confirm:** the header + divider rectangles preserve the `Eo impe-`/`trato` split word.
 - **Decision:** _pending._
 
@@ -324,7 +342,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Unit:** `cato_minor` (source 1, 309–363). **Observed (O6):** isolated Greek **`ΩΝ.`** above
   the Latin opening `nonnulli etiam amici Pompeji...`, plus a vertical black rule at right.
   Source classification not proven visually — could be a neighboring-column fragment.
-- **Prior artifacts:** `review56/` VI/329.
+- **Prior artifacts:** `review56/` VI/329. **Generated (2026-10-05):**
+  `rfi-13-O6-p337-overview.png`, `rfi-13-O6-p347-overview.png` (inspect which has `ΩΝ.`+rule).
 - **Confirm:** that `ΩΝ.` and the rule are source furniture (not part of the Latin column) and
   the rectangles exclude `nonnulli etiam...`.
 - **Decision:** _pending._
@@ -347,7 +366,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Unit:** `timoleon` (source 0). **Observed (G1):** 219 has two top lines then a large empty
   area with a divider; 220 has blank space before prose resumes. `ci` / `num` are the two
   halves of one word split across the interruption.
-- **Prior artifacts:** `review12/` II/219–220.
+- **Prior artifacts:** `review12/` II/219–220. **Generated:** none yet — source page unresolved
+  (scan s0 296–318 for the big interior gap page, or anchor via inner PDF p219–220).
 - **Confirm:** that the intervening source rows are copied blank/furniture (removable) and the
   `ci`+`num` word halves are both preserved and rejoin.
 - **Decision:** _pending._
@@ -357,7 +377,9 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Unit:** `timoleon` (source 0). **Observed (G2):** 235 ends with prose; **236 and 237 carry
   no prose** (dividers + generated furniture only); 238 is mostly blank until two bottom lines
   `dam sublime se cursu proripuit...`. Two effectively blank body pages + a wasted third.
-- **Prior artifacts:** `review12/` II/235–238.
+- **Prior artifacts:** `review12/` II/235–238. **Generated (2026-10-05):**
+  `rfi-16-G2-p303-overview.png`, `rfi-16-G2-p304-overview.png`, `rfi-16-G2-p305-overview.png`
+  (`dam sublime se cursu proripuit...` is on source p305).
 - **Confirm:** what Latin precedes `dam sublime se cursu proripuit...`; that the 236–237 regions
   are furniture/blank only; and that removing them loses no line.
 - **Decision:** _pending._
@@ -369,6 +391,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   BRUTUS head/folio); 132 has a top gap + divider fragments then `partem secutus.` and the
   concluding paragraph.
 - **Prior artifacts:** `inner_review/detail_t8_130.png`–`132.png`; `remaining-s1-p0596-column.png`.
+  **Generated (2026-10-05):** `rfi-17-G3-p624-overview.png`, `rfi-17-G3-p625-overview.png`,
+  `rfi-17-G3-p626-overview.png` (`partem secutus.` on p626; `subli-` precedes).
 - **Confirm:** the material between `subli-` and `partem secutus.` — is the word continuation
   present in the source and preserved? Which rows are removable furniture/blank?
 - **Decision:** _pending._
@@ -377,7 +401,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 
 - **Unit:** `pyrrhus` (source 0, 470–497). **Observed (G6):** ~3 line-pitches of gap between
   `...strepitu aquæ` and `verba non percipientibus...` — within a continuous sentence.
-- **Prior artifacts:** `review34/` III/175.
+- **Prior artifacts:** `review34/` III/175. **Generated (2026-10-05):**
+  `rfi-18-G6-p470-overview.png`, `rfi-18-G6-p471-overview.png`.
 - **Confirm:** whether the gap is copied margin/furniture space (remove) or genuine spacing (keep).
 - **Decision:** _pending._
 
@@ -386,7 +411,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Unit:** `theseus` (source 0, 14–33). **Observed:** G7 — ~3 line-heights of whitespace after
   `et mendacia esse.` before chapter XXI, with a scan divider beside it (I/36). G8 — ~4
   line-heights after `...Cynoscephalas exstant.` before chapter XXVIII, with a retained divider (I/46).
-- **Prior artifacts:** `review12/` I/36 and I/46.
+- **Prior artifacts:** `review12/` I/36 and I/46. **Generated (2026-10-05):**
+  `rfi-19-G78-p23-overview.png` (G7), `rfi-19-G78-p28-overview.png` (G8).
 - **Confirm (each):** chapter spacing (keep) vs. scan-artifact padding (remove); and the divider
   rectangle is separable from the Latin.
 - **Decision:** _pending._
@@ -417,7 +443,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Units:** `caius_marius` (source 0, 497–531) ending; `lysander` opens 531. **Observed (O5):**
   no prose — only a black source ornament/rule, a tiny fleck, and generated C. MARIUS head/folio.
   Marius's prose concludes on 297; Lysander opens on 299.
-- **Prior artifacts:** `review34/` III/298.
+- **Prior artifacts:** `review34/` III/298. **Generated (2026-10-05):**
+  `rfi-21-O5-p529-overview.png`, `rfi-21-O5-p530-overview.png` (inspect which is the ornament page).
 - **Confirm:** that Caius Marius ends completely on the preceding body page and the ornament/fleck
   page carries no Latin, so it can emit no body canvas.
 - **Decision:** _pending._
@@ -455,7 +482,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | 02 | D2 | Duplication | pending |
 | 03 | W1 | Watermark/furniture | **CONFIRMED** — 2 masks (s0 p287, p288) |
 | 04 | W2, G4 | Watermark/furniture | pending |
-| 05 | O1 | Watermark/furniture | pending |
+| 05 | O1 | Watermark/furniture | **CONFIRMED** — 1 mask (s0 p182) |
 | 06 | O1B | Watermark/furniture | pending |
 | 07 | O1C | Watermark/furniture | pending |
 | 08 | O1D, G8B | Watermark/furniture | pending |

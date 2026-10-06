@@ -71,6 +71,27 @@
       "neighbor_gap": null,
       "final_seam_spacing": null,
       "human_confirmed": "2026-10-05 RFI-03"
+    },
+    {
+      "finding_ids": ["O1"],
+      "unit_id": "camillus",
+      "source": 0,
+      "source_page": 182,
+      "raster": [1974, 2985],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "(source page 181) ...non enim neque is jam exsul,",
+        "below": "neque nos cives sumus, patria amissa atque ab hostibus occupata."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.08612, 0.071022, 0.962513, 0.095142]],
+      "row_exclusions": null,
+      "preservation_boundary": "Leaked running head 'CAMILLUS.' + folio '169' ink rows 226-257; blank gap rows 258-286; first body line 'neque nos cives sumus...' starts row 287. Mask bottom (row 284) is above the first body pixel; no Latin or Greek glyph in the masked band.",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-05"
     }
   ]
 }
