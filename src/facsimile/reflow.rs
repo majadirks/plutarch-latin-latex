@@ -142,6 +142,132 @@ const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
         right: 1000.0 / 2012.0,
         bottom: 2630.0 / 2998.0,
     },
+    // Google watermark below the final Latin line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 287,
+        left: 0.6,
+        top: 0.9042017,
+        right: 0.8578947,
+        bottom: 1.0,
+    },
+    // Coriolanus running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 288,
+        left: 0.0909091,
+        top: 0.0687,
+        right: 0.8737374,
+        bottom: 0.0931635,
+    },
+    // Camillus running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 182,
+        left: 0.08612,
+        top: 0.071022,
+        right: 0.962513,
+        bottom: 0.095142,
+    },
+    // Coriolanus running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 290,
+        left: 0.08612,
+        top: 0.070998,
+        right: 0.962513,
+        bottom: 0.093101,
+    },
+    // Google watermark below the final Timoleon line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 299,
+        left: 0.6,
+        top: 0.8775,
+        right: 0.8632,
+        bottom: 1.0,
+    },
+    // Greek Coriolanus running head above the chapter XXII body.
+    SourceFurnitureMask {
+        source: 0,
+        page: 281,
+        left: 0.085729,
+        top: 0.061533,
+        right: 0.958932,
+        bottom: 0.080699,
+    },
+    // Timoleon running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 298,
+        left: 0.08593,
+        top: 0.064386,
+        right: 0.962814,
+        bottom: 0.084172,
+    },
+    // Timoleon running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 308,
+        left: 0.085586,
+        top: 0.064386,
+        right: 0.962963,
+        bottom: 0.083501,
+    },
+    // Lysander running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 550,
+        left: 0.085859,
+        top: 0.068265,
+        right: 0.962626,
+        bottom: 0.089244,
+    },
+    // Demosthenes running head above the first body line.
+    SourceFurnitureMask {
+        source: 1,
+        page: 441,
+        left: 0.074508,
+        top: 0.041549,
+        right: 0.904737,
+        bottom: 0.062676,
+    },
+    // Far-right vertical rule beyond the Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 441,
+        left: 0.987759,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Antonius running head and folio above the split-word continuation.
+    SourceFurnitureMask {
+        source: 1,
+        page: 539,
+        left: 0.076754,
+        top: 0.044397,
+        right: 0.926535,
+        bottom: 0.067653,
+    },
+    // Cato running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 1,
+        page: 337,
+        left: 0.084507,
+        top: 0.047216,
+        right: 0.96208,
+        bottom: 0.069063,
+    },
+    // End-of-Life ornament below the complete Marius ending.
+    SourceFurnitureMask {
+        source: 0,
+        page: 530,
+        left: 0.070301,
+        top: 0.387735,
+        right: 0.609272,
+        bottom: 0.40382,
+    },
 ];
 
 fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
@@ -2604,6 +2730,80 @@ mod tests {
         }
     }
 
+    #[test]
+    fn inner_tomi_masks_match_reviewed_ledger() {
+        let ledger = repair_ledger();
+        for repair in ledger["repairs"].as_array().unwrap() {
+            if repair["disposition"] != "mask" {
+                continue;
+            }
+            let masks: Vec<_> = SOURCE_FURNITURE_MASKS
+                .iter()
+                .filter(|mask| {
+                    Some(mask.source as u64) == repair["source"].as_u64()
+                        && Some(mask.page as u64) == repair["source_page"].as_u64()
+                })
+                .collect();
+            let rectangles = repair["mask_rectangles"].as_array().unwrap();
+            assert_eq!(masks.len(), rectangles.len());
+            for (mask, rectangle) in masks.iter().zip(rectangles) {
+                assert_eq!(
+                    [mask.left, mask.top, mask.right, mask.bottom],
+                    std::array::from_fn(|i| rectangle[i].as_f64().unwrap())
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn inner_tomi_masking_restores_separate_line_bands() {
+        let mut original = column(
+            120,
+            100,
+            &[(20, 30, 5, 90), (50, 60, 5, 90), (80, 90, 5, 90)],
+        );
+        for y in 20..90 {
+            for x in 96..100 {
+                original.put_pixel(x, y, Luma([0]));
+            }
+        }
+        assert_eq!(line_bands(&original, LINE_MIN_INK).len(), 1);
+        let mut cleaned = original.clone();
+        apply_source_furniture_mask(
+            &SourceFurnitureMask {
+                source: 1,
+                page: 441,
+                left: 0.96,
+                top: 0.0,
+                right: 1.0,
+                bottom: 1.0,
+            },
+            &mut cleaned,
+        );
+        assert_eq!(
+            line_bands(&cleaned, LINE_MIN_INK),
+            vec![
+                Band {
+                    top: 20,
+                    bottom: 30
+                },
+                Band {
+                    top: 50,
+                    bottom: 60
+                },
+                Band {
+                    top: 80,
+                    bottom: 90
+                },
+            ]
+        );
+        for y in 0..120 {
+            for x in 0..96 {
+                assert_eq!(original.get_pixel(x, y), cleaned.get_pixel(x, y));
+            }
+        }
+    }
+
     fn assert_reviewed_duplicate_sequence(id: &str) {
         let ledger = repair_ledger();
         let repair = ledger["repairs"]
@@ -2688,6 +2888,88 @@ mod tests {
     #[ignore = "requires source PDFs and production-DPI renders"]
     fn agis_repeated_passage_survives_once() {
         assert_reviewed_duplicate_sequence("agis");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn inner_tomi_known_masks_preserve_latin() {
+        let ledger = repair_ledger();
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/masks");
+        std::fs::create_dir_all(dir).unwrap();
+        let mut measurements = Vec::new();
+        for repair in ledger["repairs"].as_array().unwrap() {
+            if repair["disposition"] != "mask" {
+                continue;
+            }
+            let source = repair["source"].as_u64().unwrap() as usize;
+            let page = repair["source_page"].as_u64().unwrap() as u32;
+            let original = real_source_image(source, page);
+            assert_eq!(
+                [original.width() as u64, original.height() as u64],
+                [
+                    repair["raster"][0].as_u64().unwrap(),
+                    repair["raster"][1].as_u64().unwrap()
+                ]
+            );
+            let mut cleaned = original.clone();
+            mask_known_source_furniture(source, page, &mut cleaned);
+            for (x, y, pixel) in original.enumerate_pixels() {
+                let masked = repair["mask_rectangles"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|r| {
+                        let a: [u32; 4] = std::array::from_fn(|i| {
+                            (r[i].as_f64().unwrap()
+                                * if i % 2 == 0 {
+                                    original.width()
+                                } else {
+                                    original.height()
+                                } as f64)
+                                .round() as u32
+                        });
+                        (a[0]..a[2]).contains(&x) && (a[1]..a[3]).contains(&y)
+                    });
+                assert_eq!(
+                    cleaned.get_pixel(x, y),
+                    if masked { &Luma([255]) } else { pixel },
+                    "source {source} page {page} pixel {x},{y}"
+                );
+            }
+            let (_, bands) = render_and_band(source, page, &|_, _| Ok(cleaned.clone())).unwrap();
+            let raw_column = detect_latin_column(&original).unwrap();
+            let raw_crop = crop_column(&original, &raw_column);
+            let before = drop_furniture(&line_bands(&raw_crop, LINE_MIN_INK), original.height());
+            let crop = detect_latin_column(&cleaned).unwrap();
+            let copied_span = |bands: &[Band]| {
+                bands
+                    .last()
+                    .zip(bands.first())
+                    .map_or(0, |(last, first)| last.bottom - first.top)
+            };
+            measurements.push(serde_json::json!({"source":source,"source_page":page,
+                "crop_before":[raw_column.left,raw_column.right],"crop_after":[crop.left,crop.right],
+                "bands_before_zone_filter":line_bands(&raw_crop,LINE_MIN_INK).iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),
+                "bands_before_zone_filter_retained":before.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),
+                "bands_after_zone_filter":bands.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),
+                "copied_span_before_zone_banding":copied_span(&before),"copied_span_after_zone_banding":copied_span(&bands)}));
+            original
+                .save(dir.join(format!("s{source}-p{page:04}-raw.png")))
+                .unwrap();
+            cleaned
+                .save(dir.join(format!("s{source}-p{page:04}-masked.png")))
+                .unwrap();
+            println!(
+                "source {source} page {page}: copied span before/after zone banding {}/{}",
+                copied_span(&before),
+                copied_span(&bands)
+            );
+        }
+        std::fs::write(
+            dir.join("measurements.json"),
+            serde_json::to_vec_pretty(&measurements).unwrap(),
+        )
+        .unwrap();
     }
 
     /// Render a representative source window with the production render/band path and
