@@ -29,5 +29,48 @@
     "width_sampling_ranges": null,
     "note": "global_scale_for samples raw rendered columns across the ranges and applies no furniture masks or duplicate exclusions. Record the measured baseline and final production scale here once a diagnostic trace has run; a material change triggers the narrow resolution specified in Phase 1."
   },
-  "repairs": []
+  "repairs": [
+    {
+      "finding_ids": ["W1"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 287,
+      "raster": [1900, 2975],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "...ceterisque omnibus sibi ad-",
+        "below": "(continues on source page 288) junctis, ad Volumniae quae mater erat Coriolani aedes venit."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.6, 0.9042017, 0.8578947, 1.0]],
+      "row_exclusions": null,
+      "preservation_boundary": "Gray 'Digitized by Google' watermark in the bottom margin, rows ~2721-2934; last Latin line ends row 2568. Mask top (row 2690) is ~120px below the last Latin line; no Latin or Greek glyph lies in the masked band.",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-03"
+    },
+    {
+      "finding_ids": ["W1"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 288,
+      "raster": [1980, 2984],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "(running head) MARCIUS CORIOLANUS. 275",
+        "below": "junctis, ad Volumniae quae mater erat Coriolani aedes venit."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.0909091, 0.0687, 0.8737374, 0.0931635]],
+      "row_exclusions": null,
+      "preservation_boundary": "Running head 'MARCIUS CORIOLANUS.' + folio '275' ink ends row 262; blank gap rows 263-278; first body line starts row 279. Mask bottom (row 278) is above the first body pixel; no body glyph in the masked band.",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-03"
+    }
+  ]
 }

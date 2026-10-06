@@ -127,7 +127,16 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   `user_t2_191.png`.
 - **Confirm:** the watermark rectangle, and separately the running-head/folio rectangle,
   each exclude the prose line that follows.
-- **Decision:** _pending._
+- **Measured (OCR-anchored):** folio = physical − 13 near Coriolanus. Source folio 275 =
+  **physical page 288** (running head + folio, 1980×2984); the watermark is the bottom
+  margin of **physical page 287** (folio 274, 1900×2975). Last Latin on 287 ends row 2568;
+  watermark rows ~2721–2934. On 288 header ink ends row 262, blank gap 263–278, first body
+  line `junctis, ad Volumniae...` starts row 279.
+- **Proposed masks (normalized half-open):** p287 watermark `[0.6000, 0.9042, 0.8579, 1.0000)`;
+  p288 header+folio `[0.0909, 0.0687, 0.8737, 0.0932)`. Evidence:
+  `tmp/pdfs/inner_tomi_repairs/rfi-03-p287-watermark.png`, `rfi-03-p288-header-folio.png`.
+- **Decision:** **CONFIRMED — both masks** (2026-10-05). Frozen in the ledger for source 0
+  pages 287 & 288; to be added to `SOURCE_FURNITURE_MASKS` in Phase 3.1.
 
 ## RFI-04 — W2 / G4: Timoleon watermark in the gap (Tomus II/227)
 
@@ -327,7 +336,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Observed (W3):** full Google Books reproduction notice with logo, URL, QR code — a separately
   inserted front-matter page, not a watermark over prose (`src/facsimile/frontmatter.rs`).
 - **Confirm:** retain as-is (plan desired end-state #7 default).
-- **Decision:** _pending._
+- **Decision:** **CONFIRMED — retain as-is** (2026-10-05). Body cleanup does not touch the
+  W3 notice page in any tomus.
 
 ## RFI-23 — O8: Praefatio typography transition (Tomus V/14–17)
 
@@ -336,7 +346,9 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   Conspicuous scale/weight change + wasted space; not blank, not missing text.
 - **Confirm:** retain as-is, with a recorded diagnosis for a possible separate layout task
   (using the existing Praefatio source inventory in `src/facsimile/praefatio.rs`, not a new tracer).
-- **Decision:** _pending._
+- **Decision:** **CONFIRMED — retain as-is + record diagnosis** (2026-10-05). The denser 15–16
+  scanned block stays; I record its cause from the existing `praefatio.rs` inventory as a
+  candidate separate layout task. No new front-matter tracer; no scale/packing change here.
 
 ---
 
@@ -346,7 +358,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | --- | --- | --- | --- |
 | 01 | D1 | Duplication | pending |
 | 02 | D2 | Duplication | pending |
-| 03 | W1 | Watermark/furniture | pending |
+| 03 | W1 | Watermark/furniture | **CONFIRMED** — 2 masks (s0 p287, p288) |
 | 04 | W2, G4 | Watermark/furniture | pending |
 | 05 | O1 | Watermark/furniture | pending |
 | 06 | O1B | Watermark/furniture | pending |
@@ -366,8 +378,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | 20A | O8B | Sliced line | pending |
 | 20 | (Phase 3.2 whitespace compaction need) | Gap | derived from 04/08/09/11/15–18 |
 | 21 | O5 | Furniture-only page | pending |
-| 22 | W3 | Editorial | pending |
-| 23 | O8 | Editorial | pending |
+| 22 | W3 | Editorial | **CONFIRMED** — retain |
+| 23 | O8 | Editorial | **CONFIRMED** — retain + diagnose |
 
 _Proposed interview order:_ warm up with Group F (RFI-22, 23), then Group B watermarks/furniture
 (RFI-03…14), Group C gaps (RFI-15…19), the sliced line (RFI-20A), the furniture-only page
