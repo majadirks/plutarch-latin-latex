@@ -113,7 +113,7 @@ the modifier to the wrong thing.
 
 This codebase captures non-trivial work in markdown plans under `llm_artifacts/`. A plan is a contract between the planning LLM and the implementing LLM (or a junior developer) — the implementer must be able to pick it up cold, work through it across multiple sessions, and verify each step's correctness without re-deriving design decisions.
 
-**File location and naming.** Plans live in `llm_artifacts/` with filenames following `YYYY_MM_DD_PLAN_NAME.md` — underscore-separated date and time (approximate minute) followed by a descriptive name in UPPER_SNAKE_CASE (e.g. `2026_05_28_11_15_LOGIN_SCREEN_PLAN.md`). The date is the plan's authoring date. The time is the time when the file is created and may be approximate.
+**File location and naming.** Plans live in `llm_artifacts/` with filenames following `YYYY_MM_DD_PLAN_NAME.md` — underscore-separated date and time (approximate minute) followed by a descriptive name in UPPER_SNAKE_CASE (e.g. `2026_05_28_11_15_LOGIN_SCREEN_PLAN.md`). The date is the plan's authoring date. The time is the time when the file is created and may be approximate. Use 24-hour time (eg 1:00 pm is rendered as 13_00)
 
 **Required opening sections.** Every plan begins with three sections and a fourth optional section, in order:
 
@@ -160,3 +160,7 @@ A change need only run the suites its layer touches, but any change that alters 
 **Offer a review after saving a plan.** Once an implementation plan has been generated and saved to `llm_artifacts/`, prompt the user: "Would you like me to review the plan for gaps, inconsistencies, and ambiguities?" If the response is affirmative, do so — re-read the saved plan (and the sources it draws on) and report any missing requirements, internal contradictions, or under-specified steps before implementation begins. The review must also check that the plan is **consistent with extant code patterns** (it follows the idioms, helpers, and conventions the surrounding code already uses, rather than inventing a parallel approach) and that it **avoids duplicated code** (shared logic is extracted into one definition and reused, not copied per call site or per level) — call out any place the plan would diverge from an existing pattern or introduce a near-duplicate of logic that already exists.
 
 **Plans and notes are kept as historical records.** Everything under `llm_artifacts/` — implementation plans and standalone notes alike — is retained after the work is done; do **not** delete or propose deleting a plan/note just because it has been fully implemented or its findings have been resolved. A completed plan documents *why* the code is shaped the way it is, and a note about a problem that has since been fixed still records that the problem existed and how it was handled — both are valuable to a future reader even when no longer "live". Leave them in place as a dated record. (This is the one deliberate exception to the "older versions live in git history" reasoning applied elsewhere: these artifacts are the durable narrative, not the source, so they stay on disk rather than being pruned.)
+
+
+## Agent Agnosticism
+Multiple LLM models work on this project, including Claude and GPT. Do not assume the identity of an implementer when writing plans. For example, avoid section titles like "Prompt for Claude"; prefer "Prompt for Implementor"
