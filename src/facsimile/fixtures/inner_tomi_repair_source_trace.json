@@ -3138,41 +3138,50 @@
   },
   {
     "finding_ids": [
-      "O6"
+      "D3"
     ],
     "unit_id": "cato_minor",
     "source": 1,
-    "source_page": 347,
-    "raster": [
-      1787,
-      2866
+    "source_page": 339,
+    "disposition": "duplicate_page",
+    "skip_pages": [
+      339,
+      340,
+      341,
+      342,
+      343,
+      344,
+      345,
+      346,
+      347,
+      348
     ],
-    "disposition": "mask",
-    "mask_rectangles": [
-      [
-        0.07834359261331841,
-        0.05059316120027914,
-        0.9625069949636262,
-        0.07152826238660154
-      ]
+    "occurrences": [
+      [329, 339],
+      [330, 340],
+      [331, 341],
+      [332, 342],
+      [333, 343],
+      [334, 344],
+      [335, 345],
+      [336, 346],
+      [337, 347],
+      [338, 348]
     ],
-    "mask_rectangle_px": [
-      140,
-      145,
-      1720,
-      205
+    "retain_sequence": [
+      336,
+      337,
+      338,
+      349,
+      350
     ],
-    "crop_edges": null,
-    "bands": null,
     "adjacent_prose": {
-      "above": "(prior page tail)",
-      "below": "nonnulli etiam amici Pompeii atque domestici rei agerentur, videns ipsum saepe inflecti ad gratiam..."
+      "join_above": "(source page 338, folio 935, Cato Minor ch. LI ends) ...Cato senatui auctor fuit summam rerum Pompeio permittendi, ejusdem esse",
+      "join_below": "(source page 349, folio 936) dicens magna mala inferre et depellere. (2) Et Pompeius quidem quum longe..."
     },
-    "preservation_boundary": "Header/folio ink rows 154-193; first body ink begins row 219; mask bottom 205 leaves 14 pixels before Latin. The existing source-337 mask and no-right-rule decision remain unchanged. No right-edge mask is proposed for page 347.",
-    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
-    "repair_role": "header",
-    "expected_first_band": null,
-    "expected_last_band": null
+    "preservation_boundary": "Exact whole-page duplicate scan in the Cato Minor unit (source 1, range 309-363): source pages 339-348 re-scan printed folios 926-935, already scanned as pages 329-338. The printed folio numbers in the running head confirm it page-for-page (328=925, 329..338=926..935, 339..348=926..935 again, 349=936), and per-page text similarity is 0.88-0.997 (the 332/342 outlier at 0.61 is OCR/layout noise; both are folio 929 with identical prose 'haec de dividendo imperio et evertenda republica conjuratio. Erant multi tum ac praeclari viri...'). Keeping the first occurrence yields the contiguous folio sequence ...934(p337) -> 935(p338) -> 936(p349); the join p338 ('...ejusdem esse') + p349 ('dicens magna mala inferre et depellere') is exact. p339-348 carry NO unique prose, and the second occurrence's folio-934 (p347) has the heavier right-edge rule noted as O6, so the cleaner first occurrence is retained. Because p347 is now never rendered, its former header mask (RFI-13B) is removed as dead configuration; the retained folio-934 page is p337, whose existing O6 header mask is unchanged.",
+    "implementation": "skip_known_duplicate_source_page(\"cato_minor\", 1, 339..=348) in unit_body_strips, identity-scoped to the Cato Minor unit, reusing the D1/D2 mechanism.",
+    "human_confirmed": "2026-10-06 user approval (keep p329-338 over p339-348; remove the now-redundant p347 header mask)"
   }
   ],
   "post_rebuild_review": {

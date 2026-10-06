@@ -376,15 +376,6 @@ const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
         right: 1.0,
         bottom: 1.0,
     },
-    // Cato running head and folio above the first body line.
-    SourceFurnitureMask {
-        source: 1,
-        page: 347,
-        left: 140.0 / 1787.0,
-        top: 145.0 / 2866.0,
-        right: 1720.0 / 1787.0,
-        bottom: 205.0 / 2866.0,
-    },
 ];
 
 fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
@@ -579,7 +570,9 @@ fn percentile(widths: &[u32], p: f32) -> u32 {
 fn skip_known_duplicate_source_page(unit_id: &str, source: usize, page: u32) -> bool {
     matches!(
         (unit_id, source, page),
-        ("comparatio_sertorii_et_eumenis", 1, 103 | 104) | ("agis", 1, 369 | 370)
+        ("comparatio_sertorii_et_eumenis", 1, 103 | 104)
+            | ("agis", 1, 369 | 370)
+            | ("cato_minor", 1, 339..=348)
     )
 }
 /// Render, column-detect, crop, band, and de-furniture every source page in a
@@ -3007,7 +3000,14 @@ mod tests {
         assert!(sequence.windows(seam.len()).any(|w| w == seam));
         for (index, (&page, (column, bands))) in sequence.iter().zip(&pages).enumerate() {
             let raw = real_source_image(range.unit.source, page);
-            let crop = detect_latin_column(&raw).unwrap();
+            // Detect the column on the masked image so the crop matches production on
+            // pages that carry a furniture mask (e.g. the retained Cato folio-934 header
+            // on 337 and the right-rule margin on 361). The retained body bands lie
+            // outside those rectangles, so each still compares byte-identical to the raw
+            // source Latin here.
+            let mut masked = raw.clone();
+            mask_known_source_furniture(range.unit.source, page, &mut masked);
+            let crop = detect_latin_column(&masked).unwrap();
             let trace = RetainedSourcePageTrace {
                 source: range.unit.source,
                 page,
@@ -3051,6 +3051,12 @@ mod tests {
     #[ignore = "requires source PDFs and production-DPI renders"]
     fn agis_repeated_passage_survives_once() {
         assert_reviewed_duplicate_sequence("agis");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn cato_minor_repeated_folios_survive_once() {
+        assert_reviewed_duplicate_sequence("cato_minor");
     }
 
     #[test]
