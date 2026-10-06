@@ -92,6 +92,27 @@
       "neighbor_gap": null,
       "final_seam_spacing": null,
       "human_confirmed": "2026-10-05 RFI-05"
+    },
+    {
+      "finding_ids": ["O1C"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 290,
+      "raster": [1974, 2986],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "(source page 289 tail, leaked as the top prose line)",
+        "below": "ter, ut mecum egisti! erexit eam premensque dextram: Obtinuisti, inquit, patriae salutarem..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.08612, 0.070998, 0.962513, 0.093101]],
+      "row_exclusions": null,
+      "preservation_boundary": "Leaked top running head 'MARCIUS CORIOLANUS.' + folio '277' ink rows 220-252; blank gap rows 254-281; first body line starts row 282. Mask bottom (row 278) above first body pixel. No separable right-margin divider exists (the a/b/c/d/e/f are standard edition reference letters, not a rule).",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-07"
     }
   ]
 }

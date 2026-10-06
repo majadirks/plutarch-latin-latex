@@ -284,7 +284,13 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   `rfi-07-O1C-p290-overview.png`, `rfi-07-O1C-p290-top.png`.
 - **Confirm:** the header/folio rectangle and the right-divider rectangle each exclude the
   top line and its continuation.
-- **Decision:** _pending._
+- **Measured:** source 0 **page 290** (1974×2986); top running head `MARCIUS CORIOLANUS.`+folio
+  `277` ink rows 220–252; gap 254–281; first body line `ter, ut mecum egisti!...` starts row 282.
+  No divider ink in the right margin.
+- **Proposed mask (normalized):** `[0.0861, 0.0710, 0.9625, 0.0931)`. Annotated: `rfi-07-O1C-p290-box.png`.
+- **Decision:** **CONFIRMED — one header/folio mask; no divider** (2026-10-05). Frozen in the
+  ledger for source 0 page 290. The finding's "right divider" has no separable rule (edition
+  reference letters / scan edge).
 
 ## RFI-08 — O1D / G8B: Timoleon `EON.`/folio 285 in the gap (Tomus II/222)
 
@@ -295,7 +301,12 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   `rfi-08-O1D-G8B-p298-overview.png`.
 - **Confirm:** the `EON.`/folio rectangle and divider fragment exclude the `...cum` line and
   the next page's continuation; classify the blank interval (RFI-20).
-- **Decision:** _pending._
+- **Measured:** source 0 **page 298** (1990×2982) is a full page; top running head `TIMOLEON.`+folio
+  `285` ink rows 202–235; gap; body starts ~267. (The `...cum` + blank interruption seen in output
+  II/222 is the output placement; the leak to mask is this top header.)
+- **PROPOSED mask (normalized):** `[0.08593, 0.0644, 0.9628, 0.0842)`. Box: `rfi-08-O1D-G8B-p298-box.png`.
+  Awaiting confirmation. (Whitespace/divider = RFI-20/O7, separate.)
+- **Decision:** _pending (box drawn)._
 
 ## RFI-09 — G5: Timoleon `EON.`/folio 295 + divider (Tomus II/245)
 
@@ -306,7 +317,11 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   **Generated (2026-10-05):** `rfi-09-G5-p308-overview.png`.
 - **Confirm:** header/folio + divider rectangles exclude the continuing prose line; classify
   the blank (RFI-20).
-- **Decision:** _pending._
+- **Measured:** source 0 **page 308** (1998×2982); top running head `TIMOLEON.`+folio `295` ink
+  rows 202–235; body starts ~264.
+- **PROPOSED mask (normalized):** `[0.0856, 0.0644, 0.9630, 0.0835)`. Box: `rfi-09-G5-p308-box.png`.
+  Awaiting confirmation.
+- **Decision:** _pending (box drawn)._
 
 ## RFI-10 — O2: Lysander `NDER.`/folio 537 (Tomus III/337)
 
@@ -316,7 +331,13 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Prior artifacts:** `review34/` III/337. **Generated (2026-10-05):**
   `rfi-10-O2-p549-overview.png`, `rfi-10-O2-p549-top.png`.
 - **Confirm:** the head/folio rectangles exclude `Haliartii perhibent,` and the following line.
-- **Decision:** _pending._
+- **Measured (page corrected 549→550):** `Haliartii perhibent,` ends source **page 549**; the leaked
+  header is the TOP running head of source **page 550** (folio 537, recto, 1980×3003): `LYSANDER.`+folio
+  `537` ink rows ~213–267; body `habitasse apud ipsos Rhadamanthum...` starts ~270. (p549's own head is
+  `ΛΥΣΑΝΔΡΟΣ`/536 and is not the O2 leak.)
+- **PROPOSED mask (normalized, page 550):** `[0.0859, 0.0683, 0.9626, 0.0892)`. Box: `rfi-10-O2-p550-box.png`.
+  Awaiting confirmation.
+- **Decision:** _pending (box drawn, page 550)._
 
 ## RFI-11 — O3: Demosthenes header/divider in gap (Tomus VII/167)
 
@@ -326,7 +347,13 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Prior artifacts:** `inner_review/detail_t7_167.png`. **Generated (2026-10-05):**
   `rfi-11-O3-p441-overview.png`, `rfi-11-O3-p441-top.png`.
 - **Confirm:** header + divider rectangles exclude both framing lines; classify the gap (RFI-20).
-- **Decision:** _pending._
+- **Measured:** source 1 **page 441** (1879×2840); `...moerore suo` ends page 440; `conficiat, sed et
+  levandus...` is the FIRST Latin line of page 441. Leaked top Greek running head `ΔΗΜΟΣΘΕΝΗΣ.`+folio
+  ink rows ~130–157; body starts ~188. A real vertical **rule at the far-right edge** (x≈1860–1879,
+  ~half-height) is the finding's "divider"; the Latin text ends ~x1760 so the rule is in the right margin.
+- **PROPOSED masks (normalized):** header `[0.0745, 0.0415, 0.9047, 0.0627)`; right rule
+  `[0.9878, 0.0, 1.0, 1.0)`. Box: `rfi-11-O3-p441-box.png`. Awaiting confirmation.
+- **Decision:** _pending (box drawn)._
 
 ## RFI-12 — O4: Antonius Greek header + divider at split (Tomus VII/369)
 
@@ -335,7 +362,13 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Prior artifacts:** `inner_review/detail_t7_369.png`. **Generated (2026-10-05):**
   `rfi-12-O4-p538-overview.png`, `rfi-12-O4-p539-overview.png`.
 - **Confirm:** the header + divider rectangles preserve the `Eo impe-`/`trato` split word.
-- **Decision:** _pending._
+- **Measured:** source 1 **page 539** (1824×2838); `Eo impe-` ends page 538; `trato, hostes irruentes
+  repulit...` is the FIRST Latin line of page 539. Leaked top Greek running head `ΑΝΤΩΝΙΟΣ.`+folio `1116`
+  ink rows ~140–167; body starts ~198. Right margin has only a short section marker (~315px), not a
+  prominent rule — proposing header mask only.
+- **PROPOSED mask (normalized):** `[0.0768, 0.0444, 0.9265, 0.0677)`. Box: `rfi-12-O4-p539-box.png`.
+  Awaiting confirmation.
+- **Decision:** _pending (box drawn)._
 
 ## RFI-13 — O6: Cato Minor `ΩΝ.` + right rule (Tomus VI/329)
 
@@ -484,7 +517,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | 04 | W2, G4 | Watermark/furniture | pending |
 | 05 | O1 | Watermark/furniture | **CONFIRMED** — 1 mask (s0 p182) |
 | 06 | O1B | Watermark/furniture | pending |
-| 07 | O1C | Watermark/furniture | pending |
+| 07 | O1C | Watermark/furniture | **CONFIRMED** — 1 mask (s0 p290), no divider |
 | 08 | O1D, G8B | Watermark/furniture | pending |
 | 09 | G5 | Watermark/furniture | pending |
 | 10 | O2 | Watermark/furniture | pending |
