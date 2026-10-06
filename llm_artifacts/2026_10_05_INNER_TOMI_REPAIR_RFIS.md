@@ -137,9 +137,9 @@ This table supersedes the per-RFI "candidate source page (UNCONFIRMED)" lines be
 | RFI | Finding | src | Source page(s) | Anchor / note |
 | --- | --- | ---: | --- | --- |
 | 03 | W1 | 0 | **287** (watermark), **288** (header `MARCIUS CORIOLANUS.`+folio 275) | CONFIRMED |
-| 04 | W2, G4 | 0 | **to pin via inner PDF** | "Digitized by Google" is at the bottom (~rows 2854–2925) of **every** Timoleon page and is normally dropped. W2 leaked on one page (like Fabius 233/235). Source ~300 by reader-folio interpolation was WRONG (p300 is full text, watermark far below last line). Pin by rendering `build_facsimile/tomus_2_inner.pdf` p227, reading its Latin, and OCR-anchoring to the source page; then mask that page's bottom watermark. |
+| 04 | W2, G4 | 0 | **299** | pinned via inner p227: `...Corinthiis ipsis inter`→[wm]→`se per otium dividere...`; the latter opens source p300, so the watermark is the page-tail of **p299** (folio 286). Source-page TAIL, not an interior gap → no compaction needed. |
 | 05 | O1 | 0 | seam **181→182**; header `CAMILLUS.`+folio 169 atop **182** | `...jam exsul,`(181) / `neque nos cives`(182) |
-| 06 | O1B | 0 | **re-anchor** | the "XXII" match was a false hit inside "XXXIII" (p281/286/287 are ch. XXXIII, Greek head `ΓΑΙΟΣ ΜΑΡΚΙΟΣ`/274). Find the real Coriolanus ch. XXII page (reader II/187 ≈ earlier than s288), then mask its top Greek running head. |
+| 06 | O1B | 0 | **281** | ch. XXII `Erat vir Antias... Amphidius` begins p281 (folio 268); leaked top Greek head `ΓΑΙΟΣ ΜΑΡΚΙΟΣ.`(→`ΑΡΚΙΟΣ`)+folio 268. (`inde concepisse` ends p280.) |
 | 07 | O1C | 0 | **290** | `RIOLANUS.`+damaged folio 277 + right divider (folio 277=phys 290) |
 | 08 | O1D, G8B | 0 | **298** | `EON.`+folio 285 (folio 285=phys 298); `…cum` then gap |
 | 09 | G5 | 0 | **308** | `EON.`+folio 295 (folio 295=phys 308) + divider |
@@ -257,7 +257,15 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Confirm:** the watermark rectangle; and whether the surrounding empty interval is a source
   page tail or an interior gap (decides whether Phase 3.2 whitespace compaction is needed —
   see RFI-20).
-- **Decision:** _pending._
+- **Measured (pinned via inner PDF):** inner `tomus_2_inner.pdf` p227 shows `...repulsis Corinthiis
+  ipsis inter` → [watermark] → `se per otium dividere insulam liceret...`. `se per otium dividere...`
+  is the first Latin line of source **page 300**, so the watermark is the **page-tail** of source
+  **page 299** (folio 286, 1900×2963). Last Latin row 2568; watermark `Digitized by Google` rows
+  ~2649–2921 (core x≈1220–1590). It is a source page TAIL (not an interior gap), so no whitespace
+  compaction is needed — the tail below the last line simply is not copied once masked.
+- **PROPOSED mask (normalized, page 299):** `[0.6000, 0.8775, 0.8632, 1.0000)`. Box:
+  `rfi-04-W2-p299-box.png`. Awaiting confirmation.
+- **Decision:** _pending (box drawn, page 299)._
 
 ## RFI-05 — O1: Camillus `LUS.`/folio 169 (Tomus I/371)
 
@@ -281,7 +289,14 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   `rfi-06-O1B-p286-overview.png`, `rfi-06-O1B-p287-overview.png`.
 - **Confirm:** the Greek header rectangle contains no Latin and the gap handling (RFI-20) is
   separate; measure the associated gap.
-- **Decision:** _pending._
+- **Measured (pinned via inner PDF p187):** `...inde concepisse.` (end ch. XXI) is on source
+  p280; ch. XXII `Erat vir Antias... Amphidius` begins source **page 281** (folio 268, verso,
+  1948×2974). Leaked top Greek running head `ΓΑΙΟΣ ΜΑΡΚΙΟΣ.` (→ `ΑΡΚΙΟΣ`) + folio `268` ink rows
+  ~193–221; body (ch. XXII) starts row 260. A far-right edge rule exists but is at x≈1935 (page
+  edge), outside the Latin measure.
+- **PROPOSED mask (normalized, page 281):** `[0.0857, 0.0615, 0.9589, 0.0807)`. Box:
+  `rfi-06-O1B-p281-box.png`. Awaiting confirmation.
+- **Decision:** _pending (box drawn, page 281)._
 
 ## RFI-07 — O1C: Coriolanus `RIOLANUS.`/folio 277 + right divider (Tomus II/204)
 
@@ -392,8 +407,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   `nonnulli etiam amici Pompeii...` starts row 204. A partial vertical rule (~494 px) sits in the
   right margin (not at the very edge) — still to locate precisely.
 - **PROPOSED mask (normalized):** header `[0.0845, 0.0472, 0.9621, 0.0691)`. Box: `rfi-13-O6-p337-box.png`.
-  Right rule pending precise measurement. Awaiting confirmation.
-- **Decision:** _pending (header box drawn; right rule TBD)._
+- **Right rule:** **confirmed absent by user (2026-10-06)** — no separable right rule; header mask only.
+- **Decision:** _header box drawn (user reviewed; no right rule); freeze with the batch._
 
 ## RFI-14 — O7: safe divider rectangles on listed pages
 
@@ -528,9 +543,9 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | 01 | D1 | Duplication | pending |
 | 02 | D2 | Duplication | pending |
 | 03 | W1 | Watermark/furniture | **CONFIRMED** — 2 masks (s0 p287, p288) |
-| 04 | W2, G4 | Watermark/furniture | pending — pin page via inner PDF |
+| 04 | W2, G4 | Watermark/furniture | **BOX DRAWN** — watermark mask s0 p299 (page tail) |
 | 05 | O1 | Watermark/furniture | **CONFIRMED** — 1 mask (s0 p182) |
-| 06 | O1B | Watermark/furniture | pending — re-anchor ch. XXII |
+| 06 | O1B | Watermark/furniture | **BOX DRAWN** — header mask s0 p281 |
 | 07 | O1C | Watermark/furniture | **CONFIRMED** — 1 mask (s0 p290), no divider |
 | 08 | O1D, G8B | Watermark/furniture | **BOX DRAWN** — header mask s0 p298 |
 | 09 | G5 | Watermark/furniture | **BOX DRAWN** — header mask s0 p308 |
