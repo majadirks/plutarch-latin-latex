@@ -265,6 +265,23 @@
       "preservation_boundary": "Exact whole-page duplicates: source p103 is content-identical to p101 (folio 708, Eumenes ch. XVII-XVIII, 'Antigonus non ea modo se redditurum...Deinde impetu facto...'); source p104 is content-identical to p102 (folio 700, Eumenes ch. XIX ending '...inspicere posset' + comparison title 'SERTORII CUM EUMENE COMPARATIO' + opening 'Haec sunt quae de Eumene...magno in'). p101 (Eumenes unit 88-102) and p102 (shared tail) carry both; p103/p104 appear only in the comparison unit (102-106) and hold NO unique prose. Skipping p103/p104 in the comparison joins p102 ('...magno in') to p105 ('pretio habitus...') = 'magno in pretio habitus', the correct comparison continuation; the comparison concludes on p105. Eumenes conclusion is unaffected (its range ends at the shared p102).",
       "implementation": "skip_known_duplicate_source_page(\"comparatio_sertorii_et_eumenis\", 1, 103) and (\"comparatio_sertorii_et_eumenis\", 1, 104) in unit_body_strips, identity-scoped to the comparison unit (Phase 2.1).",
       "human_confirmed": "2026-10-06 RFI-01 (keep 101/102 over 103/104)"
+    },
+    {
+      "finding_ids": ["D2"],
+      "unit_id": "agis",
+      "source": 1,
+      "source_page": 369,
+      "disposition": "duplicate_page",
+      "skip_pages": [369, 370],
+      "occurrences": [[367, 369], [368, 370]],
+      "retain_sequence": [366, 367, 368, 371, 372],
+      "adjacent_prose": {
+        "join_above": "(source page 368, folio 953, ch. XI ends) ...precando et suadendo effecerunt ut unius suffragii numero",
+        "join_below": "(source page 371, folio 954) excellerent qui antiquabant legem. (2) Ceterum Lysander, magistratu nondum abdicato actionem intentavit..."
+      },
+      "preservation_boundary": "Exact whole-page duplicates in the Agis unit (source 1, range 363-379): source p369 is content-identical to p367 (folio 952, Agis ch. VII-IX, '...non modo luxum, in quo felicitatem vitae...'); source p370 is content-identical to p368 (folio 953, Agis ch. X-XI, 'ait, quum Apollinem concumbere... XI. His ita dictis, Agidem multitudo secuta est...'). Keeping the first occurrence yields the contiguous folio sequence 951(p366) -> 952(p367) -> 953(p368) -> 954(p371) -> 955(p372). The join p368 ('...ut unius suffragii numero') + p371 ('excellerent qui antiquabant legem') is exact. p369/p370 carry NO unique prose and (per the findings) the second occurrence has heavier right-side divider marks; skipping them loses nothing.",
+      "implementation": "skip_known_duplicate_source_page(\"agis\", 1, 369) and (\"agis\", 1, 370) in unit_body_strips, identity-scoped to the Agis unit (Phase 2.2, reusing the same mechanism as D1).",
+      "human_confirmed": "2026-10-06 RFI-02 (keep p367/p368 over p369/p370)"
     }
   ]
 }

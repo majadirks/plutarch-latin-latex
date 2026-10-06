@@ -225,7 +225,14 @@ choose the retained sequence.
   (b) that the retained occurrence's beginning and end join correctly to the surrounding
   distinct passages; (c) whether this is repeated whole source pages (→ duplicate-page
   exclusion) or a source-selection/boundary error (→ fix the boundary instead).
-- **Decision:** _pending._
+- **Measured & verified (2026-10-06):** Clean two-page whole-page duplicate in the Agis unit
+  (source 1). Folio sequence: p366=951, p367=952, p368=953, **p369=952 (dup of p367)**,
+  **p370=953 (dup of p368)**, p371=954, p372=955. Join p368 (`...ut unius suffragii numero`) +
+  p371 (`excellerent qui antiquabant legem...`) is exact. p369/p370 hold no unique prose; the
+  second occurrence has heavier right-side divider marks.
+- **Decision:** **CONFIRMED — keep p367/p368, drop p369/p370** (user 2026-10-06). Fix = whole-page
+  duplicate exclusion: `skip_known_duplicate_source_page` for Agis source pages 369 & 370
+  (Phase 2.2, same mechanism as D1). Frozen in the ledger.
 
 ---
 
@@ -567,7 +574,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | RFI | Finding(s) | Group | Status |
 | --- | --- | --- | --- |
 | 01 | D1 | Duplication | **CONFIRMED** — skip comparison s1 p103/p104 (dups of p101/p102) |
-| 02 | D2 | Duplication | pending |
+| 02 | D2 | Duplication | **CONFIRMED** — skip Agis s1 p369/p370 (dups of p367/p368) |
 | 03 | W1 | Watermark/furniture | **CONFIRMED** — 2 masks (s0 p287, p288) |
 | 04 | W2, G4 | Watermark/furniture | **CONFIRMED** — watermark mask s0 p299 (page tail) |
 | 05 | O1 | Watermark/furniture | **CONFIRMED** — 1 mask (s0 p182) |
