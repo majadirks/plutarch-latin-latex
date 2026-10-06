@@ -33,6 +33,397 @@ VALIDATION_UNITS = {
     "comparatio_demosthenis_et_ciceronis",
 }
 
+DETECTOR_TYPES = {
+    "core": {"missing_occurrence", "duplicate", "order", "watermark", "head"},
+    "prose": {"missing_occurrence", "duplicate", "order", "terminal_loss"},
+    "furniture": {"watermark", "head", "foreign_scraps"},
+    "layout": {"copied_gap", "rule", "lateral_clipping", "slicing", "blank_body"},
+}
+DETECTOR_TYPES["all"] = set.union(*DETECTOR_TYPES.values())
+RELATIONS = {
+    "missing_occurrence": "missing_expected_position", "duplicate": "repeated_occurrence",
+    "order": "reversal", "watermark": "source_watermark", "head": "source_head",
+    "foreign_scraps": "foreign_column", "copied_gap": "copied_margin",
+    "rule": "vertical_rule", "lateral_clipping": "lateral_loss", "slicing": "horizontal_slice",
+    "blank_body": "blank_body", "terminal_loss": "terminal_loss",
+}
+
+
+class AuditError(Exception):
+    """An actionable configuration or tool failure."""
+
+
+class CalibrationError(AuditError):
+    """An explicitly requested calibration gate failed."""
+
+
+def json_hash(data):
+    return hashlib.sha256(json.dumps(data, ensure_ascii=False, sort_keys=True,
+                                     separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+
+
+def load_benchmark(root, manifest, work, *, include_labels=True):
+    units_path, _ = snapshot_input(root, manifest, role="units")
+    units = json.loads(units_path.read_text(encoding="utf-8"))
+    data, hashes = {}, {}
+    for name in ("splits", "labels", "templates"):
+        path = Path(work) / "spec" / f"{name}.json"
+        hashes[name] = hash_file(path)
+        if name == "labels" and not include_labels:
+            continue
+        data[name] = validate_benchmark(json.loads(path.read_text(encoding="utf-8")),
+                                        manifest, units, splits=data.get("splits"))
+    return units, data, hashes
+
+
+def check_scope(scope, units, splits, *, freeze=None, metadata_only=False, annotation_only=False):
+    """Return a bounded unit selection; detector requests cannot cross split boundaries."""
+    if scope not in ("development", "validation", "all"):
+        raise AuditError("Unknown processing scope")
+    allowed = set(splits["development_units"] if scope == "development" else
+                  splits["validation_units"] if scope == "validation" else
+                  splits["development_units"] + splits["validation_units"])
+    requested = set(units) if units is not None else allowed
+    if not requested or requested - allowed:
+        raise AuditError(f"Unit request expands {scope} scope: {sorted(requested - allowed)}")
+    if not (metadata_only or annotation_only) and requested & set(splits["validation_units"]) and not freeze:
+        raise AuditError("Validation reader OCR/alignment/detection requires a complete frozen development configuration. Metadata inventory and annotation-only gold curation remain available.")
+    return sorted(requested)
+
+
+def check_freeze(path, settings, manifest, hashes, work):
+    freeze_path = Path(path).resolve()
+    freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
+    if (freeze.get("schema_version") != 1 or freeze.get("baseline_id") != manifest["baseline_id"]
+            or freeze.get("complete_final_development") is not True
+            or freeze.get("settings_sha256") != json_hash(settings)
+            or freeze.get("splits_sha256") != hashes["splits"]
+            or freeze.get("templates_sha256") != hashes["templates"]
+            or freeze.get("labels_sha256") != hashes["labels"]
+            or freeze.get("script_sha256") != hash_file(Path(__file__))
+            or freeze.get("input_hashes") != {r["path"]: r["sha256"] for r in manifest["inputs"]}):
+        raise AuditError("Freeze is incomplete or differs from the baseline, settings or benchmark identities")
+    origin = Path(freeze["development_run_dir"]).resolve()
+    if not contained(origin, (Path(work).resolve() / "runs")):
+        raise AuditError("Freeze development run must be beneath this work directory's runs/")
+    for name, key in (("run-manifest.json", "run_manifest_sha256"),
+                      ("candidates.json", "candidates_sha256"),
+                      ("evaluation-development.json", "evaluation_sha256")):
+        if hash_file(origin / name) != freeze[key]:
+            raise AuditError(f"Freeze development evidence changed: {name}")
+    return freeze
+
+
+def overlap(first, second):
+    a, b = first["box"], second["box"]
+    intersection = max(0, min(a[2], b[2]) - max(a[0], b[0])) * max(0, min(a[3], b[3]) - max(a[1], b[1]))
+    area_a, area_b = (a[2] - a[0]) * (a[3] - a[1]), (b[2] - b[0]) * (b[3] - b[1])
+    return {"iou": intersection / (area_a + area_b - intersection),
+            "gold_coverage": intersection / area_b, "candidate_coverage": intersection / area_a}
+
+
+def same_page(first, second):
+    return all(first.get(key) == second.get(key) for key in
+               ("role", "input_sha256", "page", "tomus", "source_index"))
+
+
+def region_matches(candidate, gold, mode="tiny", rules=None):
+    if not same_page(candidate, gold) or candidate.get("box") is None or gold.get("box") is None:
+        return False
+    scores = overlap(candidate, gold)
+    c, g = candidate["box"], gold["box"]
+    if mode == "source_correspondence":
+        return scores["candidate_coverage"] >= 0.5 and scores["gold_coverage"] > 0
+    if mode in ("missing_source", "seam"):
+        pitch = gold.get("line_height")
+        if not pitch or pitch <= 0:
+            return False
+        extra_height = max(0, g[1] - c[1]) + max(0, c[3] - g[3])
+        return (scores["gold_coverage"] >= (0.8 if mode == "missing_source" else 0.5)
+                and extra_height <= pitch + 1e-9
+                and c[0] >= g[0] - 0.02 and c[2] <= g[2] + 0.02)
+    rules = rules or {"tiny_event": "iou", "minimum_iou": 0.1}
+    if rules["tiny_event"] == "iou":
+        return scores["iou"] >= rules["minimum_iou"]
+    if rules["tiny_event"] == "center_distance":
+        pitch = gold.get("line_height")
+        if not pitch:
+            return False
+        distance = math.hypot((c[0] + c[2] - g[0] - g[2]) / 2,
+                              (c[1] + c[3] - g[1] - g[3]) / 2)
+        return distance <= pitch and (c[2] - c[0]) * (c[3] - c[1]) <= 10 * (g[2] - g[0]) * (g[3] - g[1])
+    raise AuditError("Tiny-event localization rule must be chosen before scoring")
+
+
+def localized_match(candidate, case, rules):
+    """Match types, expected source positions and output regions, never Latin anchors."""
+    if candidate["type"] != case["defect_type"] or candidate["unit_id"] != case["unit_id"]:
+        return False
+    relation = "complete_endpoint" if case["label"] == "complete_endpoint" else RELATIONS[case["defect_type"]]
+    if candidate["relation"] != relation:
+        return False
+    output = candidate["output_regions"]
+    sources = candidate["source_regions"]
+    if case["label"] == "negative":
+        return any(region_matches(c, g, rules=rules) for c in output for g in case["output_regions"])
+    if case["defect_type"] == "missing_occurrence":
+        return (all(any(region_matches(c, g, "missing_source") for c in sources) for g in case["source_regions"])
+                and all(any(region_matches(c, g, "seam") for c in output) for g in case["output_regions"])
+                and candidate.get("unique_loss") is True)
+    if case["defect_type"] == "duplicate":
+        contributions = candidate.get("contributions", [])
+        if len(contributions) != 2 or len(case.get("contributions", [])) != 2:
+            return False
+        if candidate.get("incomplete_second_opening", False) != case.get("incomplete_second_opening", False):
+            return False
+        ordered = sorted(contributions, key=lambda c: (c["start_page"], c["start_box"][1]))
+        if (ordered[0]["end_page"], ordered[0]["end_box"][3]) > (ordered[1]["start_page"], ordered[1]["start_box"][1]):
+            return False
+        for c, g in zip(ordered, case["contributions"]):
+            for edge in ("start", "end"):
+                if c[f"{edge}_page"] != g[f"{edge}_page"]:
+                    return False
+                cb, gb = c[f"{edge}_box"], g[f"{edge}_box"]
+                if max(abs(cb[1] - gb[1]), abs(cb[3] - gb[3])) > g.get("line_height", 0):
+                    return False
+                if max(abs(cb[0] - gb[0]), abs(cb[2] - gb[2])) > 0.02:
+                    return False
+        return all(any(region_matches(c, g, "source_correspondence") for c in sources) for g in case["source_regions"])
+    return (all(any(region_matches(c, g, rules=rules) for c in output) for g in case["output_regions"])
+            and all(any(region_matches(c, g, "source_correspondence") for c in sources) for g in case["source_regions"]))
+
+
+def validate_candidates(data, manifest, units, types, selected, body_pages, work):
+    if data.get("schema_version") != 1 or not isinstance(data.get("candidates"), list):
+        raise AuditError("Expected schema_version: 1 and a candidates list")
+    identifiers = set()
+    unit_bounds = {}
+    for index, unit in enumerate(units):
+        following = units[index + 1] if index + 1 < len(units) else None
+        end = following["start_page"] if following and following["source"] == unit["source"] else (637 if unit["source"] == 0 else 708)
+        unit_bounds[unit["id"]] = (unit["source"], unit["start_page"], end)
+    for candidate in data["candidates"]:
+        identifier = candidate["event_id"]
+        if not isinstance(identifier, str) or not re.fullmatch(r"[A-Za-z0-9_:-]+", identifier) or identifier in identifiers:
+            raise AuditError("Candidate event IDs must be unique and stable")
+        identifiers.add(identifier)
+        if candidate["unit_id"] not in selected or candidate["type"] not in types:
+            raise AuditError("Candidate expands requested unit/detector scope")
+        if candidate["confidence"] not in ("high", "low", "unknown") or candidate["status"] not in ("candidate", "inconclusive"):
+            raise AuditError("Invalid candidate confidence/status")
+        relations = {RELATIONS[candidate["type"]]}
+        if candidate["type"] == "terminal_loss":
+            relations.add("complete_endpoint")
+        if candidate["relation"] not in relations:
+            raise AuditError("Invalid candidate relation")
+        if not candidate.get("confidence_reasons") or not candidate.get("evidence_provenance"):
+            raise AuditError("Candidates need evidence provenance and confidence reasons")
+        for region in candidate["source_regions"] + candidate["output_regions"]:
+            validate_box(region["box"])
+            role = region["role"]
+            if role not in ("source_pdf", "reader_pdf"):
+                raise AuditError("Candidate regions must use captured PDFs")
+            _, record = snapshot_input(Path("."), manifest, role=role, tomus=region.get("tomus"), source_index=region.get("source_index"))
+            if region["input_sha256"] != record["sha256"] or region["page"] < 1:
+                raise AuditError("Candidate input identity/page mismatch")
+            limit = manifest["expected_counts"]["physical_by_tomus"][region["tomus"] - 1] if role == "reader_pdf" else (637 if region["source_index"] == 0 else 710)
+            if region["page"] > limit:
+                raise AuditError("Candidate page outside captured input")
+            if role == "reader_pdf":
+                owners = {r["unit_id"] for r in body_pages if r["tomus"] == region["tomus"] and r["page"] == region["page"]}
+                if owners != {candidate["unit_id"]}:
+                    raise AuditError("Candidate output page is not owned by its selected unit; frontmatter/separators cannot be scored as body")
+            else:
+                source_index, start, end = unit_bounds[candidate["unit_id"]]
+                if region["source_index"] != source_index or not start <= region["page"] <= end:
+                    raise AuditError("Candidate source region is outside its unit's inclusive source partition")
+        if not candidate["output_regions"]:
+            raise AuditError("Candidates require localized output evidence")
+        for crop in candidate.get("crops", []):
+            path = (Path(work).resolve() / relative_path(crop["path"])).resolve()
+            if not any(contained(path, Path(work).resolve() / name) for name in ("cache", "runs")) or hash_file(path) != crop["sha256"]:
+                raise AuditError("Candidate crop identity/path mismatch")
+        if not candidate.get("crops"):
+            raise AuditError("Candidates require existing identity-checked evidence crops")
+        for contribution in candidate.get("contributions", []):
+            validate_box(contribution["start_box"])
+            validate_box(contribution["end_box"])
+    return data["candidates"]
+
+
+def evaluate_cases(candidates, labels, selected_units, types, requested_pages):
+    results = []
+    for case in labels["cases"]:
+        pages = {f"{r['tomus']}:{r['page']}" for r in case["output_regions"]}
+        if case["unit_id"] not in selected_units or case["defect_type"] not in types or not pages <= requested_pages:
+            status, matches = "not_requested", []
+        elif case["annotation_status"] != "reviewed":
+            status, matches = "pending_annotation", []
+        else:
+            matches = [c["event_id"] for c in candidates if c["status"] == "candidate"
+                       and localized_match(c, case, labels["localization_rule"])]
+            if case["label"] == "negative":
+                high = {c["event_id"] for c in candidates if c["confidence"] == "high"}
+                status = "negative_violation" if high & set(matches) else "negative_no_high_candidate"
+            else:
+                status = "hit" if matches else "miss"
+        results.append({"case_id": case["case_id"], "unit_id": case["unit_id"],
+                        "type": case["defect_type"], "label": case["label"], "status": status,
+                        "event_ids": matches})
+    counts = {status: sum(r["status"] == status for r in results) for status in
+              ("hit", "miss", "not_requested", "pending_annotation", "negative_violation", "negative_no_high_candidate")}
+    matched = {event for r in results for event in r["event_ids"]}
+    return {"schema_version": 1, "baseline_id": labels["baseline_id"], "counts": counts,
+            "cases": results, "unreviewed_event_ids": sorted(c["event_id"] for c in candidates if c["event_id"] not in matched),
+            "limitations": ["Unreviewed candidates are not negatives.",
+                            "Pending annotations cannot establish hits or clean negatives.",
+                            "Manual candidate verification is not detector performance."]}
+
+
+def freeze_development(run, record, evaluation, candidates, benchmark, hashes, manifest, work, repo):
+    dev = set(benchmark["splits"]["development_units"])
+    pending = [c["case_id"] for c in benchmark["labels"]["cases"]
+               if c["unit_id"] in dev and c["annotation_status"] != "reviewed"]
+    if (record["scope"] != "development" or set(record["units"]) != dev or record["detectors"] != "all"
+            or record.get("final_development") is not True or record.get("complete") is not True
+            or record.get("producer") != "detectors" or record.get("errors")
+            or pending or evaluation["counts"]["pending_annotation"] or evaluation["counts"]["negative_violation"]):
+        raise CalibrationError("Freeze requires a complete final detector run over all development units/types, reviewed annotations and negatives, and no processing errors or negative regressions")
+    requested = set(record.get("requested_body_pages", []))
+    completed = set(record.get("completed_body_pages", []))
+    if not requested or requested != completed:
+        raise CalibrationError("Development coverage is incomplete")
+    body_pages, _ = cached_inventory(Path(work) / "snapshots" / manifest["baseline_id"], manifest, work, repo)
+    actual = {f"{r['tomus']}:{r['page']}" for r in body_pages if r["unit_id"] in dev}
+    if requested != actual:
+        raise CalibrationError("Final development coverage must include every actual development body page")
+    for kind in ("missing_occurrence", "duplicate", "watermark", "head"):
+        high = {c["event_id"] for c in candidates if c["type"] == kind and c["confidence"] == "high"}
+        if not any(r["status"] == "hit" and r["type"] == kind and high & set(r["event_ids"]) for r in evaluation["cases"]):
+            raise CalibrationError(f"Freeze requires a strong localized development positive for {kind}")
+    if not record["settings"].get("thresholds") or not record.get("source_index_identity") or not record.get("versions"):
+        raise CalibrationError("Freeze requires recorded thresholds, source index/profile identities and tool/model versions")
+    freeze = {"schema_version": 1, "baseline_id": manifest["baseline_id"], "complete_final_development": True,
+              "development_run_dir": str(run), "settings": record["settings"], "settings_sha256": json_hash(record["settings"]),
+              "splits_sha256": hashes["splits"], "templates_sha256": hashes["templates"], "labels_sha256": hashes["labels"],
+              "source_index_identity": record["source_index_identity"], "versions": record["versions"],
+              "script_sha256": hash_file(Path(__file__)),
+              "input_hashes": {r["path"]: r["sha256"] for r in manifest["inputs"]},
+              "run_manifest_sha256": hash_file(run / "run-manifest.json"),
+              "candidates_sha256": hash_file(run / "candidates.json"),
+              "evaluation_sha256": hash_file(run / "evaluation-development.json"),
+              "known_misses": [r["case_id"] for r in evaluation["cases"] if r["status"] == "miss"]}
+    if (run / "freeze.json").exists():
+        raise CalibrationError("Freeze already exists; preserve it and use a new run for revisions")
+    write_json(run / "freeze.json", freeze, work, repo)
+
+
+def evaluate_run(args):
+    repo, work = Path(args.repo_root).resolve(), Path(args.work_dir).resolve()
+    run = safe_write_path(args.run_dir, work, repo)
+    record_path, candidates_path = run / "run-manifest.json", run / "candidates.json"
+    record_hash, candidates_hash = hash_file(record_path), hash_file(candidates_path)
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    root, manifest = resolve_baseline(work, record["baseline_id"])
+    units, benchmark, hashes = load_benchmark(root, manifest, work)
+    if (record.get("schema_version") != 1 or record.get("spec_hashes") != hashes
+            or record.get("settings_sha256") != json_hash(record["settings"])
+            or record.get("candidates_sha256") != candidates_hash
+            or record.get("input_hashes") != {r["path"]: r["sha256"] for r in manifest["inputs"]}):
+        raise AuditError("Run manifest differs from its settings, inputs, specs or candidate file; create a new run for changed configuration")
+    freeze = check_freeze(record["freeze_path"], record["settings"], manifest, hashes, work) if record.get("freeze_path") else None
+    selected = check_scope(record["scope"], record["units"], benchmark["splits"], freeze=freeze)
+    if freeze and (record.get("versions") != freeze["versions"] or record.get("source_index_identity") != freeze["source_index_identity"]):
+        raise AuditError("Validation tool/model or source-index identity differs from the frozen development run")
+    if args.split != "all" and args.split != record["scope"]:
+        raise AuditError("Evaluation split must match the requested run scope")
+    if args.split == "all" and record["scope"] != "all":
+        raise AuditError("An all-case evaluation requires an all-unit frozen run")
+    types = DETECTOR_TYPES[record["detectors"]]
+    if record["settings"].get("localization_rule") != benchmark["labels"]["localization_rule"]:
+        raise AuditError("Run localization settings must match the predeclared benchmark rule")
+    body_pages, _ = cached_inventory(root, manifest, work, repo)
+    allowed_pages = {f"{r['tomus']}:{r['page']}" for r in body_pages if r["unit_id"] in selected}
+    requested, completed = record.get("requested_body_pages", []), record.get("completed_body_pages", [])
+    if (not requested or len(set(requested)) != len(requested) or len(set(completed)) != len(completed)
+            or not set(completed) <= set(requested) <= allowed_pages):
+        raise AuditError("Coverage must name distinct actual body pages in the requested unit scope")
+    candidates = validate_candidates(json.loads(candidates_path.read_text(encoding="utf-8")), manifest, units, types, selected, body_pages, work)
+    if any(f"{r['tomus']}:{r['page']}" not in completed for c in candidates for r in c["output_regions"]):
+        raise AuditError("Candidate output regions must belong to completed coverage")
+    evaluation = evaluate_cases(candidates, benchmark["labels"], selected, types, set(requested))
+    evaluation.update({"scope": record["scope"], "units": selected, "detectors": record["detectors"],
+                       "producer": record.get("producer", "unknown"), "spec_hashes": hashes,
+                       "run_manifest_sha256": record_hash, "candidates_sha256": candidates_hash,
+                       "processing_complete": record.get("complete") is True and not record.get("errors") and set(requested) == set(completed),
+                       "requested_coverage": record.get("requested_body_pages", []),
+                       "completed_coverage": record.get("completed_body_pages", [])})
+    evaluation["candidate_burden"] = {
+        "grouped_core_events": sum(c["type"] in DETECTOR_TYPES["core"] for c in candidates),
+        "processed_body_pages": len(completed),
+        "events_per_100_pages": 100 * sum(c["type"] in DETECTOR_TYPES["core"] for c in candidates) / len(completed) if completed else None,
+        "sample_kind": record.get("producer", "unknown"),
+    }
+    evaluation["reviewed_precision"] = {"value": None, "reason": "No separate candidate adjudication sample supplied; benchmark hits are not a representative precision sample."}
+    evaluation["panel_false_positive_rate"] = {"value": None, "fully_reviewed_pages": 0,
+                                               "reason": "Panel page review is pending; no unreviewed page is counted as negative."}
+    with run_directory(run, work, repo):
+        destination = run / f"evaluation-{args.split}.json"
+        if (run / "freeze.json").exists():
+            if not destination.exists() or json.loads(destination.read_text(encoding="utf-8")) != evaluation:
+                raise AuditError("Frozen evaluation cannot be changed; use a new run")
+        else:
+            write_json(destination, evaluation, work, repo)
+        resolve_baseline(work, record["baseline_id"])
+        if hash_file(record_path) != record_hash or hash_file(candidates_path) != candidates_hash:
+            raise AuditError("Run inputs changed during evaluation")
+        if any(hash_file(work / "spec" / f"{name}.json") != digest for name, digest in hashes.items()):
+            raise AuditError("Benchmark specs changed during evaluation")
+        if args.freeze:
+            freeze_development(run, record, evaluation, candidates, benchmark, hashes, manifest, work, repo)
+    progress(json.dumps(evaluation["counts"], indent=2))
+    progress(f"Evaluation: {destination}")
+    if args.enforce_gates and (evaluation["counts"]["miss"] or evaluation["counts"]["pending_annotation"] or evaluation["counts"]["negative_violation"] or not evaluation["processing_complete"] or set(requested) != allowed_pages or record.get("producer") != "detectors"):
+        raise CalibrationError("Requested evaluation gates failed; inspect misses, pending annotations, negative regressions and coverage")
+    return 0 if evaluation["processing_complete"] else 3
+
+
+def request_run(args):
+    repo, work = Path(args.repo_root).resolve(), Path(args.work_dir).resolve()
+    root, manifest = resolve_baseline(work, args.baseline)
+    _, benchmark, hashes = load_benchmark(root, manifest, work, include_labels=False)
+    settings = json.loads(Path(args.config).read_text(encoding="utf-8")) if args.config else {}
+    freeze = check_freeze(args.freeze, settings, manifest, hashes, work) if args.freeze else None
+    selected = check_scope(args.scope, args.units, benchmark["splits"], freeze=freeze)
+    if args.tomus:
+        tomus_units = set()
+        for tomus in args.tomus:
+            tex, _ = snapshot_input(root, manifest, role="reader_tex", tomus=tomus)
+            for asset in parse_tex_refs(tex):
+                match = re.fullmatch(r"facsimile_(.+)_\d+\.png", Path(asset).name)
+                if match:
+                    tomus_units.add(match[1])
+        selected = [u for u in selected if u in tomus_units]
+        if not selected:
+            raise AuditError("Tomus subset contains no units in the requested scope")
+    safe_write_path(args.run_dir, work, repo)
+    progress(f"Authorized {args.scope} scope: {len(selected)} units, {args.detectors} detectors")
+    raise AuditError("Detector stages are not implemented yet; no reader OCR, alignment or detector scores were produced. Annotation and metadata preparation are available.")
+
+
+def cached_inventory(root, manifest, work, repo):
+    metadata = {"inputs": {r["path"]: r["sha256"] for r in manifest["inputs"] if r["role"] in ("reader_pdf", "reader_tex")},
+                "adapter": "displayed-mediabox-occurrences-v1"}
+    path = Path(work) / "cache" / "inventory" / f"{json_hash(metadata)}.json"
+    cached = reusable_entry(path, metadata, work, repo)
+    if cached:
+        return cached["body_pages"], cached["geometry"]
+    with run_directory(path.parent, work, repo):
+        rows, geometry = benchmark_inventory(root, manifest)
+        write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata,
+                          "data": {"body_pages": rows, "geometry": geometry}}, work, repo)
+    return rows, geometry
+
 
 def validate_box(box):
     if (not isinstance(box, list) or len(box) != 4
@@ -216,6 +607,10 @@ def validate_benchmark(data, manifest, units, *, splits=None):
             raise AuditError("Reviewed cases require output localization")
         if splits and "templates" in data and case["unit_id"] not in splits["development_units"]:
             raise AuditError("Templates must belong to development source units")
+        if "templates" in data:
+            byte = hashlib.sha256(f"audit-split-v1|{manifest['baseline_id']}|{case['unit_id']}".encode()).digest()[0]
+            if case["unit_id"] in VALIDATION_UNITS or (case["unit_id"] not in DEVELOPMENT_UNITS and byte % 2):
+                raise AuditError("Validation-unit sources cannot become development templates")
         if "templates" in data and (case.get("output_regions") or len(case.get("source_regions", [])) != 1):
             raise AuditError("A template requires exactly one source region and no output region")
         if case.get("defect_type") == "duplicate" and case.get("label") == "positive":
@@ -225,6 +620,8 @@ def validate_benchmark(data, manifest, units, *, splits=None):
                 for contribution in case["contributions"]:
                     validate_box(contribution["start_box"])
                     validate_box(contribution["end_box"])
+                    if not isinstance(contribution.get("line_height"), (int, float)) or contribution["line_height"] <= 0:
+                        raise AuditError("Reviewed duplicate endpoints need an independently measured reader line height")
         if case.get("case_id") in ("C1", "C2", "C3", "C5"):
             if case.get("missing_line_count") != {"C1": 4, "C2": 2, "C3": 1, "C5": 1}[case["case_id"]]:
                 raise AuditError("Distinct omission counts must retain the final report's 4/2/1/1 lines")
@@ -354,10 +751,6 @@ def annotate_regions(args):
         write_json(output_manifest, {"schema_version": 1, "baseline_id": args.baseline, "labels_sha256": labels_hash,
                    "cases": sorted(requested), "dpi": args.dpi, "annotation_only": True, "complete": True}, work, repo)
         progress(f"Annotation review: {page}")
-
-
-class AuditError(Exception):
-    """An actionable configuration or tool failure."""
 
 
 def hash_file(path):
@@ -638,6 +1031,26 @@ def make_parser():
     annotate.add_argument("--cases", nargs="+")
     annotate.add_argument("--dpi", type=int, default=300)
     annotate.add_argument("--pdftoppm")
+    evaluate = commands.add_parser("evaluate", help="Evaluate localized candidate evidence against reviewed benchmark regions")
+    evaluate.add_argument("--repo-root", default=".")
+    evaluate.add_argument("--work-dir", default="tmp/pdfs/inner_tomi_audit")
+    evaluate.add_argument("--run-dir", required=True)
+    evaluate.add_argument("--split", choices=("development", "validation", "all"), required=True)
+    evaluate.add_argument("--freeze", action="store_true", help="Freeze a complete final development detector run")
+    evaluate.add_argument("--enforce-gates", action="store_true")
+    run = commands.add_parser("run", help="Check protected detector scope; extraction/detection stages are not implemented yet")
+    run.add_argument("--repo-root", default=".")
+    run.add_argument("--work-dir", default="tmp/pdfs/inner_tomi_audit")
+    run.add_argument("--baseline", required=True)
+    run.add_argument("--scope", choices=("development", "validation", "all"), default="development")
+    run.add_argument("--units", nargs="+")
+    run.add_argument("--tomus", nargs="+", type=int, choices=range(1, 9))
+    run.add_argument("--detectors", choices=tuple(DETECTOR_TYPES), default="core")
+    run.add_argument("--run-dir", required=True)
+    run.add_argument("--freeze", help="Explicit development freeze JSON")
+    run.add_argument("--config", help="Semantic settings JSON; must match the freeze")
+    run.add_argument("--resume", action="store_true")
+    run.add_argument("--workers", type=int, choices=range(1, 5), default=1)
     return parser
 
 
@@ -650,7 +1063,14 @@ def main():
             capture_inputs(args)
         elif args.command == "annotate":
             annotate_regions(args)
+        elif args.command == "evaluate":
+            return evaluate_run(args)
+        elif args.command == "run":
+            request_run(args)
         return 0
+    except CalibrationError as exc:
+        print(f"Calibration gate failed: {exc}", file=sys.stderr, flush=True)
+        return 4
     except (AuditError, OSError, ValueError, KeyError, TypeError) as exc:
         print(f"Configuration/tool error: {exc}", file=sys.stderr, flush=True)
         return 2

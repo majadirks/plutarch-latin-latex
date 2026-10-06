@@ -1,7 +1,8 @@
 # Inner-tomi audit setup
 
 `audit_inner_tomi.py` is an offline diagnostic tool. Its commands check
-prerequisites, capture the inspected baseline, and render benchmark annotations.
+prerequisites, capture the inspected baseline, render benchmark annotations,
+and evaluate supplied localized candidate evidence.
 OCR extraction and defect detectors belong to later implementation phases.
 
 Use the existing Python 3.10+ interpreter. If `python` does not resolve in a
@@ -82,6 +83,60 @@ MediaBox/CropBox geometry. Rotated or nonzero-origin
 CropBox cases were not exercised; render metadata identifies unusual geometry
 as requiring independent overlay inspection.
 
+Evaluate an explicit run directory:
+
+```powershell
+python tools/audit_inner_tomi.py evaluate --run-dir tmp/pdfs/inner_tomi_audit/runs/evaluator-localized --split development
+```
+
+Each run contains `run-manifest.json` and `candidates.json`. The manifest binds
+the baseline/input hashes, the working labels/splits/templates file hashes,
+semantic `settings` and their canonical JSON hash, candidate file hash, selected
+`units`, `scope`, `detectors`, and explicit requested/completed body-page lists.
+Body-page keys use `TOMUS:PHYSICAL_PAGE`, such as `1:68`. `producer` distinguishes
+manual evaluator verification from detector output. A changed configuration or
+input requires a new run. The evaluator validates page ownership using cached
+metadata from captured image occurrences, so changing a candidate's unit name
+cannot smuggle a validation page into development.
+
+Candidate JSON has `schema_version: 1` and a `candidates` list. Each event needs
+an `event_id`, `unit_id`, `type`, machine-readable `relation`, source/output
+regions with captured input hashes and normalized boxes, `confidence`,
+`confidence_reasons`, `status`, `evidence_provenance`, and existing `crops` with
+work-relative paths and SHA-256 hashes. Omissions use
+`relation: missing_expected_position` and `unique_loss: true`. Duplicates use
+`relation: repeated_occurrence`, two nonoverlapping `contributions` with measured
+start/end page boxes, and the incomplete-second-opening assessment. Other
+relations are defined in the script's shared `RELATIONS` table. Complete endpoint
+observations use `type: terminal_loss` and `relation: complete_endpoint`.
+
+The evaluator matches types and actual expected source/output positions; it
+never matches Latin anchors. Missing spans require at least 80% source coverage
+with at most one extra source line. Duplicate contribution endpoints must be
+within one measured reader line. Tiny image events use the predeclared IoU
+rule. A full-page warning or another lexical occurrence cannot substitute for
+a localized hit. Results distinguish hits, misses, pending annotations,
+not-requested cases, and reviewed negative regressions. Unmatched events remain
+unreviewed. Candidate burden includes every grouped core event; precision and
+panel false-positive rate remain unset until their review samples exist.
+
+`run` currently checks scope and then reports that detector stages are not yet
+implemented. Development requests cannot expand into validation units through
+`--units` or `--tomus`. Validation/all requests require an explicit complete
+development freeze with matching settings, specs, inputs, tool/model versions,
+and source-index identity. Metadata inventory and annotation-only gold curation
+may cover the corpus before this freeze. Detector dispatch receives unit IDs
+and settings; it does not load label content.
+
+`evaluate --freeze` requires a complete final detector run over all development
+units/types and their actual body pages, reviewed development cases and
+negatives, recorded thresholds/index/tool identities, and a strong localized
+development positive for each core class. Manual or partial verification cannot
+create a freeze. `--enforce-gates` returns exit 4 for calibration failures; these
+are diagnostic checks, not user approval requests. Exit 3 reports incomplete
+requested processing. A frozen evaluation is preserved; revisions use new runs.
+
 Exit codes are 0 for completed requested processing, 2 for configuration/tool
-errors, and 3 for interruption. A successful capture makes no claim that the
+errors, 3 for interruption/incomplete processing, and 4 for an explicitly
+requested calibration gate failure. A successful capture makes no claim that the
 readers are free of defects.
