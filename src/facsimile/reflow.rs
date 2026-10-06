@@ -2891,6 +2891,148 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires all source rasters; writes production-scale repair evidence"]
+    fn inner_tomi_post_mask_composition_evidence() {
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/post_mask");
+        std::fs::create_dir_all(dir).unwrap();
+        let units =
+            crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))
+                .unwrap();
+        let ranges = crate::facsimile::units::ranges(&units, &[638, 711]);
+        let geom = TrimGeom::default();
+        let scale = super::super::global_scale_for(&ranges, geom.content_width(), &|s, p| {
+            Ok(real_source_image(s, p))
+        });
+        let sampling: Vec<_> = ranges.iter().map(|r| serde_json::json!({"unit_id":r.unit.id,"source":r.unit.source,"start_page":r.unit.start_page,"end_page":r.end_page})).collect();
+        let mut evidence = Vec::new();
+        for id in [
+            "marcius_coriolanus",
+            "timoleon",
+            "caius_marius",
+            "brutus",
+            "theseus",
+            "pyrrhus",
+            "comparatio_sertorii_et_eumenis",
+            "agis",
+        ] {
+            let range = operational_range(id);
+            let sequence = std::cell::RefCell::new(Vec::new());
+            let (pages, metrics) = unit_body_strips(&range, |s, p| {
+                sequence.borrow_mut().push(p);
+                Ok(real_source_image(s, p))
+            })
+            .unwrap();
+            let sequence = sequence.into_inner();
+            let canvases = compose_pages(
+                &pages,
+                scale,
+                &geom,
+                geom.first_body_budget(),
+                geom.body_budget(),
+                &metrics,
+            );
+            let mut stream_top = 0;
+            let mut scaled_strips = Vec::new();
+            for strip in strips_in_reading_order(&pages, &metrics) {
+                let scaled =
+                    scale_strip(&pages[strip.page_img_index].0, &strip.band, scale).unwrap();
+                let stream_bottom = stream_top + scaled.height();
+                scaled_strips.push((strip, scaled, stream_top, stream_bottom));
+                stream_top = stream_bottom;
+            }
+            let mut canvas_bottom = 0;
+            let mut seams = Vec::new();
+            for (index, canvas) in canvases
+                .iter()
+                .enumerate()
+                .take(canvases.len().saturating_sub(1))
+            {
+                canvas_bottom += canvas.height() - geom.pad_y;
+                if let Some((strip, scaled, top, _)) = scaled_strips
+                    .iter()
+                    .find(|(_, _, top, bottom)| *top < canvas_bottom && canvas_bottom < *bottom)
+                {
+                    let row = canvas_bottom - top;
+                    let rows = ink_profile_rows(scaled, INK_THRESHOLD);
+                    seams.push(serde_json::json!({"canvas_before":index+1,"canvas_after":index+2,
+                        "source_page":sequence[strip.page_img_index],"strip":[strip.band.top,strip.band.bottom],
+                        "class":format!("{:?}",strip.class),"scaled_cut_row":row,
+                        "source_row_estimate":strip.band.top as f32 + row as f32 / scale,
+                        "ink_before_cut":rows[(row-1) as usize],"ink_after_cut":rows[row as usize]}));
+                }
+            }
+            if id == "timoleon" {
+                assert_eq!(
+                    canvases,
+                    assert_scaled_stream(
+                        &pages,
+                        &metrics,
+                        scale,
+                        &geom,
+                        geom.first_body_budget(),
+                        geom.body_budget()
+                    ),
+                    "production seams trace the complete scaled source row stream"
+                );
+            }
+            for (index, canvas) in canvases.iter().enumerate() {
+                canvas
+                    .save(dir.join(format!("{id}-canvas-{:03}.png", index + 1)))
+                    .unwrap();
+            }
+            let strips: Vec<_> = strips_in_reading_order(&pages,&metrics).iter().map(|strip| serde_json::json!({
+                "source_page":sequence[strip.page_img_index],"top":strip.band.top,"bottom":strip.band.bottom,"class":format!("{:?}",strip.class)
+            })).collect();
+            let bands: Vec<_> = sequence.iter().zip(&pages).map(|(p,(_,bands))|serde_json::json!({"source_page":p,"bands":bands.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>()})).collect();
+            evidence.push(serde_json::json!({"unit_id":id,"source":range.unit.source,"sequence":sequence,"bands":bands,"strips":strips,"canvas_count":canvases.len(),"within_strip_seams":seams}));
+        }
+        let result =
+            serde_json::json!({"scale":scale,"width_sampling_ranges":sampling,"units":evidence});
+        std::fs::write(
+            dir.join("composition.json"),
+            serde_json::to_vec_pretty(&result).unwrap(),
+        )
+        .unwrap();
+        println!(
+            "production scale {scale}; composition evidence {}",
+            dir.display()
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn marius_terminal_furniture_emits_no_body_canvas() {
+        let range = operational_range("caius_marius");
+        let (pages, metrics) =
+            unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+        let ledger = repair_ledger();
+        let repair = ledger["repairs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["finding_ids"][0] == "O5")
+            .unwrap();
+        let page = repair["source_page"].as_u64().unwrap() as u32;
+        let retained = &pages[(page - range.unit.start_page) as usize];
+        let top = (repair["mask_rectangles"][0][1].as_f64().unwrap() * retained.0.height() as f64)
+            .round() as u32;
+        assert!(!retained.1.is_empty(), "complete Marius ending retained");
+        assert!(
+            retained.1.iter().all(|b| b.bottom < top),
+            "ornament contributes no retained band"
+        );
+        let retained_index = (page - range.unit.start_page) as usize;
+        assert!(
+            strips_in_reading_order(&pages, &metrics)
+                .iter()
+                .filter(|strip| strip.page_img_index == retained_index)
+                .all(|strip| strip.band.bottom < top),
+            "production extraction copies no ornament or terminal blank region"
+        );
+        save_retained_crop("marius-repaired-ending", retained);
+    }
+
+    #[test]
     #[ignore = "requires source PDFs and production-DPI renders"]
     fn inner_tomi_known_masks_preserve_latin() {
         let ledger = repair_ledger();
