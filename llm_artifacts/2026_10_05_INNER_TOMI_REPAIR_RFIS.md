@@ -67,6 +67,95 @@ Nothing is erased until its RFI is marked **CONFIRMED** here.
 
 ---
 
+# Session state and resumption guide
+
+**This section exists so the interview can resume in a fresh context with no prior memory.**
+Read it, then continue from the first `pending` RFI in the status tracker at the bottom.
+
+## Interview progress (as of 2026-10-05)
+
+- **CONFIRMED:** RFI-22 (W3 retain), RFI-23 (O8 retain + record diagnosis), RFI-03 (W1 —
+  two masks on source 0 pages 287 & 288, frozen in the ledger).
+- **PENDING:** all other RFIs.
+- **Proposed order:** Group F done → Group B watermarks/furniture (RFI-04…14) → Group C gaps
+  (RFI-15…19) → sliced line (RFI-20A) → furniture-only page (RFI-21) → duplication (RFI-01, 02).
+- **Workflow per item:** I measure (resolve source page, render, draw candidate box), post the
+  crop + the question via the `AskUserQuestion` tool, the human judges, I record the decision
+  here and freeze confirmed numbers into the ledger. Nothing is erased until its RFI is CONFIRMED.
+
+## Branch and files
+
+- Branch `plan/inner-tomi-minimal-repairs`. Commit after each interview round; push.
+- **Numeric ledger (production fixture):** `src/facsimile/fixtures/inner_tomi_repair_source_trace.json`
+  — append one record per source page to `repairs[]` as each RFI is confirmed. The ledger-shape
+  test `inner_tomi_repair_ledger_has_expected_shape` (in `src/facsimile/reflow.rs` tests) requires
+  `finding_ids, unit_id, source, source_page, disposition, preservation_boundary` non-null.
+- **Diagnostic infra (Phase 1.1, committed):** `RetainedSourcePageTrace` + `map_row` +
+  `retained_page` + `repair_trace_maps_skipped_pages_and_deleted_rows` in `src/facsimile/reflow.rs`.
+- Evidence crops: `tmp/pdfs/inner_tomi_repairs/` (gitignored).
+
+## Tooling (Windows)
+
+- Source PDFs in repo root: `Ploutarchou_Bioi_v1.pdf` (= source **0**), `Ploutarchou_Bioi_v2.pdf`
+  (= source **1**). Production render DPI = **300** (`BODY_DPI`).
+- Poppler (Windows paths, for Windows Python / PowerShell):
+  `C:/Users/majad/Downloads/poppler/poppler-25.12.0/Library/bin/pdftoppm.exe` and `.../pdftotext.exe`.
+  In Git Bash, `/mingw64/bin/pdftotext` also works but Windows Python cannot exec that path.
+- Render a page to grayscale PNG:
+  `pdftoppm -gray -r 300 -f N -l N -png Ploutarchou_Bioi_vX.pdf <prefix>`.
+- Dump a page's OCR text layer: `pdftotext -f N -l N Ploutarchou_Bioi_vX.pdf -`.
+  **The text layer exists but mangles `æ`/`œ` and some letters to `�`** — anchor on ASCII-safe
+  fragments (e.g. `de Eumene`, `inspicere posset`, `partem secutus`, not `Græcum`/`mœrore`).
+- Scripts used this session live under the scratchpad: `anchor.py` (source-page resolver),
+  `render_rfis.py` (batch render + crop + watermark scan).
+
+## Folio → source-page offset (method)
+
+Running heads print the **source folio**; the generator uses the **physical source page**. The
+offset drifts (inserted plates), so verify per region by OCR-anchoring the quoted Latin. Measured:
+**folio = physical − 13** near Camillus/Coriolanus/Timoleon (v1); **−12** at Lysander (folio 537 =
+physical 549). To find a page: dump running heads over a span and read the folio, or grep the text
+layer for an ASCII-safe anchor phrase.
+
+## Resolved source pages (OCR-anchored 2026-10-05) — authoritative
+
+This table supersedes the per-RFI "candidate source page (UNCONFIRMED)" lines below.
+
+| RFI | Finding | src | Source page(s) | Anchor / note |
+| --- | --- | ---: | --- | --- |
+| 03 | W1 | 0 | **287** (watermark), **288** (header `MARCIUS CORIOLANUS.`+folio 275) | CONFIRMED |
+| 05 | O1 | 0 | seam **181→182**; header `CAMILLUS.`+folio 169 atop **182** | `...jam exsul,`(181) / `neque nos cives`(182) |
+| 06 | O1B | 0 | ch. XXII near **286/287**; Greek head `ΜΑΡΚΙΟΣ…` (“ARKIOS”) | inspect which page has the pre-XXII gap |
+| 07 | O1C | 0 | **290** | `RIOLANUS.`+damaged folio 277 + right divider (folio 277=phys 290) |
+| 08 | O1D, G8B | 0 | **298** | `EON.`+folio 285 (folio 285=phys 298); `…cum` then gap |
+| 09 | G5 | 0 | **308** | `EON.`+folio 295 (folio 295=phys 308) + divider |
+| 10 | O2 | 0 | **549** | `NDER.`+folio 537 below `Haliartii perhibent,` (folio 537=phys 549) |
+| 11 | O3 | 1 | **441** | between `…moerore suo` and `conficiat, sed et levandus…` (both on 441) |
+| 12 | O4 | 1 | **538→539** | split `Eo impe-`(538)/`trato, hostes…`(539) + Greek head/divider |
+| 13 | O6 | 1 | **337** or **347** | `nonnulli etiam amici Pompeji…` + `ΩΝ.` + right rule; inspect both |
+| 14 | O7 | 0/1 | listed pages | divider sweep; e.g. I/36 ≈ s0 p23, I/46 ≈ s0 p28 |
+| 15 | G1 | 0 | **UNRESOLVED** | Timoleon `ci`/`num` split; scan s0 296–318 for the big interior gap |
+| 16 | G2 | 0 | **303–305** | near-blank pages before resume `dam sublime se cursu proripuit…` (on 305) |
+| 17 | G3 | 1 | **~624–626** | `partem secutus.` on 626; `subli-` split precedes |
+| 18 | G6 | 0 | seam **470→471** | `…strepitu aquae`(470) / `verba non percipientibus…`(471) |
+| 19 | G7, G8 | 0 | **23** (G7), **28** (G8) | G7 before ch. XXI after `et mendacia esse.`; G8 before ch. XXVIII after `…exstant.` |
+| 20A | O8B | 0 | **UNRESOLVED** | Timoleon sliced line (reader folios 232–233); composition/pagination artifact, needs the production trace not a page crop |
+| 21 | O5 | 0 | Marius final ornament page before Lysander (start 531); inspect **529/530** | |
+| 01 | D1 | 1 | **100–105** | dup: `inspicere posset`&`de Eumene` on 102 **&** 104; `Deinde impetu facto` on 101 **&** 103 |
+| 02 | D2 | 1 | **366–370** | Agis opening `non modo luxum, in quo felicitatem vitae` repeats on **367 & 369** |
+
+## How a confirmed mask is measured
+
+1. Render the source page at 300 DPI; note its exact raster dims (each page differs).
+2. Row ink profile (`pixel value < 110` = ink) to find the last Latin row above and first body
+   row below the artifact, guaranteeing the mask cannot clip text.
+3. Gray watermark detection: pixels with value in ~`[130, 232]` (lighter than black text) in the
+   central/bottom band give the watermark bbox.
+4. Propose a normalized half-open `[left, top, right, bottom)` rectangle enclosing only furniture,
+   draw it on an annotated crop, get human confirmation, freeze into the ledger.
+
+---
+
 # Group A — Duplication (read-both decisions)
 
 These cannot be reduced to a rectangle; they need you to read both occurrences and
