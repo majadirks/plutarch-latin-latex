@@ -332,6 +332,13 @@ fn percentile(widths: &[u32], p: f32) -> u32 {
     sorted[idx]
 }
 
+/// Exclude reviewed whole-page repetitions within their owning unit.
+fn skip_known_duplicate_source_page(unit_id: &str, source: usize, page: u32) -> bool {
+    matches!(
+        (unit_id, source, page),
+        ("comparatio_sertorii_et_eumenis", 1, 103 | 104) | ("agis", 1, 369 | 370)
+    )
+}
 /// Render, column-detect, crop, band, and de-furniture every source page in a
 /// unit's range, returning one `(column image, body bands)` per page plus the
 /// unit's robust [`LineMetrics`].
@@ -356,6 +363,9 @@ pub fn unit_body_strips(
     let mut source_pages = Vec::new();
     let mut skipped = 0u32;
     for page in range.unit.start_page..=range.end_page {
+        if skip_known_duplicate_source_page(&range.unit.id, source, page) {
+            continue;
+        }
         match render_and_band(source, page, &render_fn) {
             Ok((col, bands)) => {
                 pages.push((col, bands));
@@ -2563,6 +2573,121 @@ mod tests {
                 assert!(!repair[key].is_null(), "repair record missing {key}");
             }
         }
+    }
+
+    fn repair_ledger() -> serde_json::Value {
+        serde_json::from_str(include_str!("fixtures/inner_tomi_repair_source_trace.json")).unwrap()
+    }
+
+    #[test]
+    fn known_duplicate_page_exclusions_are_identity_scoped() {
+        let ledger = repair_ledger();
+        for repair in ledger["repairs"].as_array().unwrap() {
+            if repair["disposition"] != "duplicate_page" {
+                continue;
+            }
+            let id = repair["unit_id"].as_str().unwrap();
+            let source = repair["source"].as_u64().unwrap() as usize;
+            for page in repair["skip_pages"].as_array().unwrap() {
+                let page = page.as_u64().unwrap() as u32;
+                assert!(skip_known_duplicate_source_page(id, source, page));
+                assert!(!skip_known_duplicate_source_page(id, 0, page));
+                assert!(!skip_known_duplicate_source_page("unrelated", source, page));
+            }
+            for page in repair["retain_sequence"].as_array().unwrap() {
+                assert!(!skip_known_duplicate_source_page(
+                    id,
+                    source,
+                    page.as_u64().unwrap() as u32
+                ));
+            }
+        }
+    }
+
+    fn assert_reviewed_duplicate_sequence(id: &str) {
+        let ledger = repair_ledger();
+        let repair = ledger["repairs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["unit_id"] == id && r["disposition"] == "duplicate_page")
+            .unwrap();
+        let range = operational_range(id);
+        let requested = std::cell::RefCell::new(Vec::new());
+        let (pages, _) = unit_body_strips(&range, |source, page| {
+            requested.borrow_mut().push(page);
+            Ok(real_source_image(source, page))
+        })
+        .unwrap();
+        let sequence = requested.into_inner();
+        assert_eq!(
+            sequence.len(),
+            pages.len(),
+            "every retained page must render successfully"
+        );
+        let expected: Vec<_> = (range.unit.start_page..=range.end_page)
+            .filter(|page| {
+                !repair["skip_pages"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|p| p.as_u64() == Some(*page as u64))
+            })
+            .collect();
+        assert_eq!(sequence, expected);
+        let seam: Vec<_> = repair["retain_sequence"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p.as_u64().unwrap() as u32)
+            .collect();
+        assert!(sequence.windows(seam.len()).any(|w| w == seam));
+        for (index, (&page, (column, bands))) in sequence.iter().zip(&pages).enumerate() {
+            let raw = real_source_image(range.unit.source, page);
+            let crop = detect_latin_column(&raw).unwrap();
+            let trace = RetainedSourcePageTrace {
+                source: range.unit.source,
+                page,
+                retained_index: Some(index),
+                crop: [crop.left, crop.right],
+                bands: bands.iter().map(|b| [b.top, b.bottom]).collect(),
+                deleted_rows: Vec::new(),
+            };
+            for band in bands {
+                for y in band.top..band.bottom {
+                    for x in 0..column.width() {
+                        assert_eq!(
+                            column.get_pixel(x, trace.map_row(y).unwrap()),
+                            raw.get_pixel(crop.left + x, y),
+                            "unit {id} source page {page} pixel {x},{y}"
+                        );
+                    }
+                }
+            }
+        }
+        if id == "comparatio_sertorii_et_eumenis" {
+            let ending = operational_range("eumenes");
+            assert_eq!(ending.end_page, range.unit.start_page);
+            let (ending_pages, _) =
+                unit_body_strips(&ending, |s, p| Ok(real_source_image(s, p))).unwrap();
+            assert!(!ending_pages.last().unwrap().1.is_empty());
+        }
+        println!(
+            "{id}: reviewed retained sequence {sequence:?}; join {:?}",
+            repair["adjacent_prose"]
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn eumenes_comparison_prose_is_complete_and_unique() {
+        assert_reviewed_duplicate_sequence("comparatio_sertorii_et_eumenis");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn agis_repeated_passage_survives_once() {
+        assert_reviewed_duplicate_sequence("agis");
     }
 
     /// Render a representative source window with the production render/band path and
