@@ -4,7 +4,7 @@ Verification performed on 2026-10-06 on `plan/inner-tomi-minimal-repairs`.
 
 ## Handoff review
 
-The selected implementation follows the existing `unit_body_strips`, furniture-mask, banding, and composition paths. No unit-table boundary correction, pin change, whitespace-exclusion framework, threshold change, dependency, or CLI flag was introduced. The frozen ledger has **15 repair records: 13 mask records containing 14 rectangles, plus two duplicate records**. The handoff's final count of 14 records is stale. Its initial list of 13 mask records includes O5; O5 is not an additional fourteenth mask record. The plan's stale diagnosis placeholder has been rewritten in place.
+The selected implementation follows the existing `unit_body_strips`, furniture-mask, banding, and composition paths. No unit-table boundary correction, pin change, whitespace-exclusion framework, threshold change, dependency, or CLI flag was introduced. The initial handoff covered 15 repair records: 13 mask records containing 14 rectangles, plus two duplicate records; its final count of 14 was stale. The user approved thirteen additional masks and both spacing retentions on 2026-10-06. The current ledger has **28 repair records: 26 mask records containing 27 rectangles, plus two duplicate records**. Every approved mask is installed; final composition regressions and a second full rebuild remain pending.
 
 The assumption that the watermark tails and header padding would necessarily disappear after masking proved false. Separate scan-edge ink still merges several retained bands. The confirmed rectangles remain unchanged; a separate reviewed correction is required for that ink.
 
@@ -18,16 +18,26 @@ D1 retains comparison sequence **102 → 105 → 106**. Eumenes retains its shar
 
 O5 retains Marius's final source-page band **271–691** on source 0 page 530. Production extraction copies no strip extending into the ornament region. The complete ending remains available in `tmp/pdfs/recto_units_verification/crops/marius-repaired-ending.png`.
 
+All twelve additional margin masks and the separate source-347 header mask are installed with
+the exact approved pixel bounds. They are appended as separate ledger records; the original
+rectangles remain unchanged. The tests group reviewed rectangles by source/page and verify
+their union, so a header repair and margin repair on the same page share one preservation contract.
+Normalized values are checked with a machine-precision allowance and exact raster-coordinate
+equality; this permits harmless floating-point parsing differences without accepting a pixel change.
+
 ## Local checks
 
 Build artifacts use workspace-local `CARGO_TARGET_DIR=target`. Cargo commands use `--offline`. Poppler variables point to `C:/Users/majad/Downloads/poppler/poppler-25.12.0/Library/bin/`.
 
 - `cargo fmt --all` and `cargo fmt --all --check`: pass.
 - `cargo clippy --offline --all-targets -- -D warnings`: pass.
-- `cargo test --offline`: pass; **364 library tests and 9 facsimile-binary tests passed**, 32 library tests ignored. The final ordinary-suite log is `tmp/inner-tomi-final-tests.log`.
+- `cargo test --offline`: pass after the thirteen additional masks; **364 library tests and 9 facsimile-binary tests passed**, 32 library tests ignored. The current checkpoint log is `tmp/approved-masks-full-tests.log`.
+- `cargo test --offline --release --lib inner_tomi_known_masks_preserve_latin -- --ignored --nocapture`: pass with every additional mask installed. The log is `tmp/check-approved-inner-tomi-masks.log`.
 - `git diff --check`: pass.
 
-The following explicitly selected real-source tests passed with `-- --ignored --nocapture`; logs are `tmp/check-<test-name>.log`:
+The following explicitly selected real-source tests passed for the first repair pass with
+`-- --ignored --nocapture`; logs are `tmp/check-<test-name>.log`. They must be rerun for final
+acceptance after the additional masks, except the mask-preservation test rerun noted above:
 
 - `inner_tomi_duplicate_source_trace`
 - `inner_tomi_timoleon_coriolanus_source_trace`
@@ -44,7 +54,7 @@ The following explicitly selected real-source tests passed with `-- --ignored --
 - `cimon_lucullus_final_source_page_survives_reflow`
 - `inner_tomi_post_mask_composition_evidence`
 
-The two conditional boundary/pin tests are omitted because no boundary or pin correction was selected. Whitespace-table tests and packer-change tests are omitted because those implementation branches were not selected. The Timoleon/Brutus furniture-only and whole-line regressions remain conditional on resolution of their open findings; current output does not meet those claims.
+The two conditional boundary/pin tests are omitted because no boundary or pin correction was selected. Whitespace-table tests and packer-change tests are omitted because those implementation branches were not selected. The four remaining required regressions are `inner_tomi_watermark_cleanup_removes_pixels_and_space`, `inner_tomi_severe_gaps_preserve_all_lines`, `timoleon_reported_page_break_preserves_whole_lines`, and `timoleon_and_brutus_have_no_furniture_only_body_canvases`. They are not implemented at this checkpoint. The current PDFs predate the additional masks and do not meet the final claims.
 
 One initial synthetic divider fixture failed because its ink count equalled the bander's strict threshold. The corrected fixture uses four divider pixels per row and the correct height/width argument order; its final ordinary regression passes. One concurrent debug test command encountered Windows executable locking after its library test passed; the affected dedup tests were rerun successfully using `--release --lib`.
 
@@ -52,7 +62,11 @@ One initial synthetic divider fixture failed because its ink count equalled the 
 
 `inner_tomi_known_masks_preserve_latin` verifies exact raster dimensions, ledger/table rectangle agreement, white pixels inside the masks, and **byte-identical source pixels everywhere outside the masks**, including faint type. Raw and masked evidence and measured bands are under `tmp/pdfs/inner_tomi_repairs/masks/`.
 
-The following extents are source-coordinate spans after zone filtering, **before unit boundary/interior trims**. They are not all blank rows or final canvas heights. The final full-unit bands are recorded separately in the production composition evidence. Cato's increased span reflects rescue of an early body line after header removal.
+The following table records the **first repair pass**, before the thirteen additional masks.
+Its extents are source-coordinate spans after zone filtering, before unit boundary/interior
+trims. They are not all blank rows or final canvas heights. The first-pass full-unit bands are
+recorded separately in the composition evidence. Cato's increased span reflects rescue of an
+early body line after header removal.
 
 | Source/page | Finding | Before span | After span |
 | --- | --- | ---: | ---: |
@@ -70,7 +84,14 @@ The following extents are source-coordinate spans after zone filtering, **before
 | 1/337 | O6 | 2285 | 2332 |
 | 0/530 | O5 | 920 | 420 |
 
-Full-unit extraction still copies source 287 through row 2940 and source 299 through row 2922. Relative to the reviewed last-Latin boundary at row 2568, these are **372 and 354 residual tail rows**, respectively. They contain surviving scan-edge ink; treating them as an authorized inkless interior interval would be incorrect. No row-compaction table has been added.
+The first pass copied source 287 through row 2940 and source 299 through row 2922, leaving
+372/354 rows beyond the approximate reviewed Latin boundary. With the additional masks,
+zone banding ends at **2575/2573**, respectively, matching the saved preview band endpoints.
+The restored raw Latin crops are **940–1727 on source 296**, **917–1709 on source 304**,
+and **980–1767 on source 1 page 625**. Source 306's first retained band is **274–308**;
+the approved margin removes its connecting edge. These measurements are in
+`tmp/pdfs/inner_tomi_repairs/masks/measurements.json`. Full-unit copied-height and seam
+regressions remain to be run. No row-compaction table has been added.
 
 ## Production composition and open findings
 
@@ -90,11 +111,12 @@ slice; the line is distributed across two canvases.
 - **G7/G8:** rebuilt I/36 and I/46 match genuine chapter spacing on source 23 and 28; retention is recommended for human confirmation.
 - **O7:** V/195–196 and the reported VII/21 second-occurrence divider are resolved by D1/D2. VI/358 maps to source 1 page 361's far-right rule. It is distinct from the user-confirmed absent O6 rule on page 337.
 
-The twelve precise candidate margin masks, separate page-347 header occurrence, and source/output evidence are saved in
+The twelve approved margin masks, separate page-347 header occurrence, and source/output evidence are saved in
 [the post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md) and the ledger's
-`post_rebuild_review`. They remain **pending human confirmation**, with none enabled in production.
-The previews repair the omitted columns and sliced line through the existing mask path;
-no row-compaction or general splitter change is proposed. The frozen rectangles are unchanged.
+`post_rebuild_review`, and their production expectations are appended in `repairs[]`.
+They were approved on 2026-10-06 and are installed. The source-pixel preservation check passes;
+full composition regressions and the second PDF rebuild remain pending. The original
+rectangles are unchanged, and no compaction or general splitter change is selected.
 
 W3's Google notice and O8's Praefatio typography transition are retained. O6's alleged right rule was confirmed absent and has not been pursued.
 
@@ -158,13 +180,15 @@ which repeats the same folio-934 passage found on page 337. The frozen source-33
 correctly implemented, but it does not cover page 347's Greek header. The independently
 measured header-only candidate is `[140,145,1720,205)` on a 1787×2866 raster: header ink
 154–193, first body ink 219, 14 pixels clear below the mask. Outside pixels are unchanged.
-It is recorded as **RFI-13B, pending human confirmation**, without changing the source-337
-decision or proposing a right-edge mask for page 347.
+It is recorded as **RFI-13B, approved and installed on 2026-10-06**, without changing the
+source-337 decision or adding a right-edge mask for page 347.
 
-The handoff's final human-judgment gate remains open. Source glyphs have not been retyped,
-and no pending margin candidate was silently enabled. The current PDFs are provisional because
-G1/G2/G3 still omit prose, O8B still splits a line, and the additional page-347 header remains;
-the review document supplies the concrete
-corrections for confirmation and a second verified rebuild.
+The user has closed the mask/spacing decision gate by approving all proposals. Source glyphs
+have not been retyped. **The current PDFs are stale for the generator at this checkpoint**:
+they retain the first-pass omitted columns, sliced line, and additional page-347 header.
+The next session must finish the four composition regressions, rerun the required source tests,
+build the executable from current source, regenerate all sixteen PDFs, and record the final
+locators and copied extents before declaring the original plan complete. No further mask
+approval is needed.
 
 Source PDFs, raw raster caches, transcription caches, `facsimile_units.json`, global thresholds, and body scale are unchanged by the implementation.

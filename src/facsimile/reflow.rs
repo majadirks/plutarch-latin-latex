@@ -268,6 +268,123 @@ const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
         right: 0.609272,
         bottom: 0.40382,
     },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 281,
+        left: 1900.0 / 1948.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 287,
+        left: 1875.0 / 1900.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 296,
+        left: 1965.0 / 1990.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 298,
+        left: 1965.0 / 1990.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 299,
+        left: 1875.0 / 1900.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 304,
+        left: 1963.0 / 1988.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 306,
+        left: 1976.0 / 2001.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 308,
+        left: 1973.0 / 1998.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 470,
+        left: 1991.0 / 2016.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 361,
+        left: 1785.0 / 1810.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 539,
+        left: 1799.0 / 1824.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 625,
+        left: 1791.0 / 1816.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Cato running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 1,
+        page: 347,
+        left: 140.0 / 1787.0,
+        top: 145.0 / 2866.0,
+        right: 1720.0 / 1787.0,
+        bottom: 205.0 / 2866.0,
+    },
 ];
 
 fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
@@ -2705,6 +2822,27 @@ mod tests {
         serde_json::from_str(include_str!("fixtures/inner_tomi_repair_source_trace.json")).unwrap()
     }
 
+    /// Reviewed rectangles grouped by source identity, including separate repairs on one page.
+    fn reviewed_page_masks(
+        ledger: &serde_json::Value,
+    ) -> std::collections::BTreeMap<(usize, u32), Vec<[f64; 4]>> {
+        let mut pages = std::collections::BTreeMap::new();
+        for repair in ledger["repairs"].as_array().unwrap() {
+            if repair["disposition"] != "mask" {
+                continue;
+            }
+            let identity = (
+                repair["source"].as_u64().unwrap() as usize,
+                repair["source_page"].as_u64().unwrap() as u32,
+            );
+            let rectangles: &mut Vec<[f64; 4]> = pages.entry(identity).or_default();
+            for rectangle in repair["mask_rectangles"].as_array().unwrap() {
+                rectangles.push(std::array::from_fn(|i| rectangle[i].as_f64().unwrap()));
+            }
+        }
+        pages
+    }
+
     #[test]
     fn known_duplicate_page_exclusions_are_identity_scoped() {
         let ledger = repair_ledger();
@@ -2733,23 +2871,40 @@ mod tests {
     #[test]
     fn inner_tomi_masks_match_reviewed_ledger() {
         let ledger = repair_ledger();
-        for repair in ledger["repairs"].as_array().unwrap() {
-            if repair["disposition"] != "mask" {
-                continue;
-            }
+        for ((source, page), rectangles) in reviewed_page_masks(&ledger) {
+            let record = ledger["repairs"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|r| {
+                    r["disposition"] == "mask"
+                        && r["source"].as_u64() == Some(source as u64)
+                        && r["source_page"].as_u64() == Some(page as u64)
+                })
+                .unwrap();
+            let raster = [
+                record["raster"][0].as_u64().unwrap(),
+                record["raster"][1].as_u64().unwrap(),
+            ];
+            let pixels = |rect: [f64; 4]| -> [u32; 4] {
+                std::array::from_fn(|i| (rect[i] * raster[i % 2] as f64).round() as u32)
+            };
             let masks: Vec<_> = SOURCE_FURNITURE_MASKS
                 .iter()
-                .filter(|mask| {
-                    Some(mask.source as u64) == repair["source"].as_u64()
-                        && Some(mask.page as u64) == repair["source_page"].as_u64()
-                })
+                .filter(|mask| mask.source == source && mask.page == page)
                 .collect();
-            let rectangles = repair["mask_rectangles"].as_array().unwrap();
             assert_eq!(masks.len(), rectangles.len());
-            for (mask, rectangle) in masks.iter().zip(rectangles) {
-                assert_eq!(
-                    [mask.left, mask.top, mask.right, mask.bottom],
-                    std::array::from_fn(|i| rectangle[i].as_f64().unwrap())
+            for rectangle in rectangles {
+                assert!(
+                    masks.iter().any(|mask| {
+                        let actual = [mask.left, mask.top, mask.right, mask.bottom];
+                        actual
+                            .iter()
+                            .zip(rectangle)
+                            .all(|(a, b)| (a - b).abs() <= 4.0 * f64::EPSILON)
+                            && pixels(actual) == pixels(rectangle)
+                    }),
+                    "source {source} page {page}: every reviewed rectangle is installed"
                 );
             }
         }
@@ -3051,6 +3206,7 @@ mod tests {
     #[ignore = "requires source PDFs and production-DPI renders"]
     fn inner_tomi_known_masks_preserve_latin() {
         let ledger = repair_ledger();
+        let page_masks = reviewed_page_masks(&ledger);
         let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/masks");
         std::fs::create_dir_all(dir).unwrap();
         let mut measurements = Vec::new();
@@ -3070,23 +3226,24 @@ mod tests {
             );
             let mut cleaned = original.clone();
             mask_known_source_furniture(source, page, &mut cleaned);
+            let rectangles: Vec<[u32; 4]> = page_masks[&(source, page)]
+                .iter()
+                .map(|r| {
+                    std::array::from_fn(|i| {
+                        (r[i]
+                            * if i % 2 == 0 {
+                                original.width()
+                            } else {
+                                original.height()
+                            } as f64)
+                            .round() as u32
+                    })
+                })
+                .collect();
             for (x, y, pixel) in original.enumerate_pixels() {
-                let masked = repair["mask_rectangles"]
-                    .as_array()
-                    .unwrap()
+                let masked = rectangles
                     .iter()
-                    .any(|r| {
-                        let a: [u32; 4] = std::array::from_fn(|i| {
-                            (r[i].as_f64().unwrap()
-                                * if i % 2 == 0 {
-                                    original.width()
-                                } else {
-                                    original.height()
-                                } as f64)
-                                .round() as u32
-                        });
-                        (a[0]..a[2]).contains(&x) && (a[1]..a[3]).contains(&y)
-                    });
+                    .any(|a| (a[0]..a[2]).contains(&x) && (a[1]..a[3]).contains(&y));
                 assert_eq!(
                     cleaned.get_pixel(x, y),
                     if masked { &Luma([255]) } else { pixel },

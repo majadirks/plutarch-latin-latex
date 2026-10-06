@@ -1,6 +1,6 @@
 # Post-rebuild inner-tomi review
 
-The frozen repairs are implemented and all eight inner and eight imposed PDFs were rebuilt on 2026-10-06. The following decisions concern findings deliberately left open in the handoff. **The candidate masks below have not been added to production.** They were applied to independent owned-image previews using the existing extraction/composition functions, at the unchanged production scale 1.2023952007293701.
+The frozen repairs are implemented and all eight inner and eight imposed PDFs were rebuilt on 2026-10-06. The following decisions concern findings deliberately left open in the handoff. **All twelve margin masks and the separate page-347 header mask were approved on 2026-10-06 and are installed in the generator. The current PDFs still reflect the first-stage build; final composition regressions and a new rebuild remain pending.** They were applied to independent owned-image previews using the existing extraction/composition functions, at the unchanged production scale 1.2023952007293701.
 
 ## Findings requiring additional corrections
 
@@ -35,7 +35,7 @@ Coordinates are **half-open full-source pixels at 300 DPI**. Each normalized pro
 | 1/539 | 1824×2838 | [1799, 0, 1824, 2838] | 971–1771 | O4 connected scan edge |
 | 1/625 | 1816×2842 | [1791, 0, 1816, 2842] | 980–1767 | G3 omitted prose |
 
-The proposed left edges are beyond the candidate Latin crop's right edge on every page, with a visible white margin separating the type and scan edge. The source is never retyped. Full source images with a gray boundary marker, independent cleaned-column crops, and candidate canvases are retained under `tmp/pdfs/inner_tomi_repairs/candidate_rules/`. The authoritative mask/duplicate ledger will be amended only after human confirmation.
+The proposed left edges are beyond the candidate Latin crop's right edge on every page, with a visible white margin separating the type and scan edge. The source is never retyped. Full source images with a gray boundary marker, independent cleaned-column crops, and candidate canvases are retained under `tmp/pdfs/inner_tomi_repairs/candidate_rules/`. The approved rectangles are frozen as separate records in the authoritative ledger, preserving the original rectangles.
 
 The candidate unit canvas counts are Timoleon 50 (current 51), Coriolanus 48 (48), Brutus 62 (62), Pyrrhus 57 (57), Cato minor 112 (112), and Antonius 102 (102). Counts alone are not preservation evidence: the restored Latin and complete seams are the acceptance criteria.
 
@@ -70,4 +70,4 @@ This is a separate uncovered occurrence, not a remeasurement or expansion of the
 
 ## Review decision
 
-Pending human review: approve the twelve exact margin masks, the separately measured page-347 header mask, and the G7/G8 spacing retentions, or identify particular rows that should remain unchanged. After confirmation, freeze the decisions in the ledger, extend the existing mask tests to handle multiple reviewed records for one source page, add source-pixel/continuation/whole-line regressions, rebuild all sixteen PDFs again, and verify the new locators. The current sixteen PDFs contain the confirmed first-stage repairs and the unresolved defects illustrated above.
+The user approved all twelve margin masks, the separate page-347 header mask, and both G7/G8 spacing retentions on 2026-10-06. The masks are installed, and the ledger and mask tests support multiple reviewed records for one source page. The source-pixel preservation regression passes. Remaining work is to add and run the composition/continuation/whole-line regressions, measure final copied extents, rebuild all sixteen PDFs, and verify the new locators. The current PDFs still contain the first-stage content illustrated above.

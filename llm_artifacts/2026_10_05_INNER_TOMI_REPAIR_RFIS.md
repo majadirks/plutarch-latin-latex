@@ -75,30 +75,33 @@ Nothing is erased until its RFI is marked **CONFIRMED** here.
 # Session state and resumption guide
 
 **This section exists so the interview can resume in a fresh context with no prior memory.**
-Read it, then continue from the first `pending` RFI in the status tracker at the bottom.
+Read it, then continue with final composition verification and the fresh PDF rebuild.
+The approval interview is complete; the remaining tracker entries concern verification.
 
-The confirmed repairs are implemented and pushed in commits `99c5e83`, `61fa3ae`, and
-`0e4893f`. All eight inner and eight imposed PDFs compiled on 2026-10-06. The full ordinary
-suite and all selected source regressions passed. The production contract remains the 15
-frozen ledger records: 13 mask records (14 rectangles) and two duplicate records.
+The first-stage repairs are pushed in commits `99c5e83`, `61fa3ae`, and `0e4893f`.
+All eight inner and eight imposed PDFs compiled on 2026-10-06 for those repairs, and
+their ordinary suite and selected source regressions passed. Those PDFs predate the
+thirteen additional approved masks. The current production contract contains 28 ledger
+records: 26 mask records (27 rectangles) and two duplicate records. The current ordinary
+suite and source-pixel preservation test pass; final composition and PDF verification remain.
 
-The next decision is human review of [the post-rebuild evidence](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md):
-twelve exact right-margin masks, plus retention of genuine Theseus chapter gaps G7/G8. Proposed
-coordinates are in the ledger's `post_rebuild_review`; none is enabled in production before confirmation.
+The user approved all corrections in [the post-rebuild evidence](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md) on 2026-10-06:
+twelve exact right-margin masks, the separate source-347 header mask, and retention of genuine Theseus chapter gaps G7/G8. Approved
+coordinates are frozen in `repairs[]`. All thirteen additional masks are installed; final composition checks and a new PDF rebuild remain pending. The ledger now has 26 mask records (27 rectangles) and two duplicate records.
 
 ## Interview progress (as of 2026-10-06)
 
 - **Implemented and verified:** RFI-01/02 duplication, RFI-03–13 header/watermark masks,
   RFI-21 Marius ornament, and RFI-22/23 editorial retentions.
-- **Reassessed; awaiting human review:** RFI-14–19 and RFI-20A. G1/G2/G3 are omitted Latin
+- **Reassessed and approved:** RFI-14–19 and RFI-20A. G1/G2/G3 are omitted Latin
   columns caused by scan-edge column selection, not merely copied blanks. The source 306 edge
   merges the O8B line; the candidate restores whole-line banding. G6 is copied tail padding.
   G7/G8 match genuine chapter spacing.
 - **Whitespace decision:** no row-compaction table has been introduced. Residual intervals
   contain scan-edge ink; the bounded margin-mask previews address that ink upstream.
-- **Workflow per item:** I measure (resolve source page, render, draw candidate box), post the
-  crop + the question via the `AskUserQuestion` tool, the human judges, I record the decision
-  here and freeze confirmed numbers into the ledger. Nothing is erased until its RFI is CONFIRMED.
+- **Remaining workflow:** verify the approved masks through production composition,
+  rebuild all sixteen PDFs from the current executable, and inspect the affected passages
+  and imposed sheets. The recorded approvals authorize these steps; do not repeat the interview.
 
 ## Branch and files
 
@@ -439,7 +442,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Separate measured occurrence:** source 1 page 347 is 1787×2866; header/folio ink spans rows 154–193; body begins at row 219. Proposed header rectangle: `[140, 145, 1720, 205)` at 300 DPI, leaving a 14-pixel gap before body ink.
 - **Preservation:** all outside pixels are unchanged in the independent preview. The page-337 rectangle and no-right-rule decision remain intact. No right-edge mask is proposed for page 347.
 - **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), with the fresh VI/329, marked source crop, and header-only candidate.
-- **Decision:** **pending human review of the separate header occurrence**.
+- **Decision:** **CONFIRMED** (2026-10-06) — separate header mask installed; final composition verification pending.
 
 ## RFI-14 — O7: safe divider rectangles on listed pages
 
@@ -447,7 +450,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Mapped surviving standalone rule:** VI/358 is source 1 page **361**, whose far-right edge lies beyond the Latin crop. The candidate rectangle is `[1785, 0, 1810, 2848)` at 300 DPI. O6 page 337 remains confirmed without a right rule and is not revisited.
 - **Related cases:** G1/G2/G3 map to source 0 pages 296/304 and source 1 page 625; scan-edge column selection omitted Latin. I/36 and I/46 retain genuine chapter spacing; their near-column rules are not erased by a spacing disposition.
 - **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md).
-- **Decision:** D1/D2 cases resolved by the confirmed exclusions; the specific remaining mask and spacing dispositions are **pending human review**.
+- **Decision:** D1/D2 cases resolved by the confirmed exclusions; all listed margin-mask and spacing dispositions are **CONFIRMED** (2026-10-06).
 
 ---
 
@@ -460,7 +463,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Measured:** source 296 is 1990×2984. The detector selects x=1980–1990, a 10-pixel scan edge. Its Latin contains the complete intervening chapters II/III and the continuation to source 297.
 - **Proposed correction:** mask `[1965, 0, 1990, 2984)` at 300 DPI. The candidate detects Latin crop x=940–1727 and restores the intervening prose.
 - **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), with fresh II/219–220 and independent candidate images.
-- **Decision:** **pending human review of the measured margin mask**.
+- **Decision:** **CONFIRMED** (2026-10-06) — approved mask installed; final composition verification pending.
 
 ## RFI-16 — G2: Timoleon near-blank pages (Tomus II/235–238)
 
@@ -469,7 +472,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Measured:** source 304 is 1988×2985. The detector selects x=1977–1988, so **source 304's Latin is omitted**. The production trace maps the blank canvases to its tall strip, rows 58–1603.
 - **Proposed correction:** mask `[1963, 0, 1988, 2985)` at 300 DPI. The candidate detects x=917–1709 and restores the intervening Latin and `...ad saxum quod-` / `dam sublime...` seam.
 - **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md).
-- **Decision:** **pending human review of the measured margin mask**.
+- **Decision:** **CONFIRMED** (2026-10-06) — approved mask installed; final composition verification pending.
 
 ## RFI-17 — G3: Brutus divider-only page + split word (Tomus VIII/130–132)
 
@@ -478,7 +481,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Measured:** source 625 is 1816×2842. The detector selects x=1803–1816. The missing page contains the `dens` continuation, complete intervening Latin, and the sentence continuing onto 626.
 - **Proposed correction:** mask `[1791, 0, 1816, 2842)` at 300 DPI. The candidate detects x=980–1767 and restores the complete page without retyping Latin.
 - **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), including candidate Brutus canvas 60 and fresh VIII/130–132.
-- **Decision:** **pending human review of the measured margin mask**.
+- **Decision:** **CONFIRMED** (2026-10-06) — approved mask installed; final composition verification pending.
 
 ## RFI-18 — G6: Pyrrhus mid-sentence gap (Tomus III/175)
 
@@ -487,7 +490,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Measured:** source 470 is 2016×3023. Its final retained band extends through row 2782 because right-edge ink connects the body and lower margin.
 - **Proposed correction:** mask `[1991, 0, 2016, 3023)` at 300 DPI. The candidate detects x=972–1805 and restores ordinary sentence-seam spacing.
 - **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), including fresh III/175 and candidate Pyrrhus canvas 3.
-- **Decision:** **pending human review of the measured margin mask**.
+- **Decision:** **CONFIRMED** (2026-10-06) — approved mask installed; final composition verification pending.
 
 ## RFI-19 — G7 / G8: Theseus chapter-transition gaps (Tomus I/36 and I/46)
 
@@ -495,7 +498,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Fresh output/source comparison:** I/36 matches source 23's genuine gap above chapter XXI; I/46 matches source 28's genuine gap above chapter XXVIII. The same chapter boundaries and spacing appear in the edition. Nearby vertical rules are separate findings.
 - **Recommendation:** **retain both gaps as genuine source chapter spacing**; introduce no row exclusions.
 - **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), with fresh I/36 and I/46 and source overviews.
-- **Decision:** **pending human confirmation of both retentions**.
+- **Decision:** **CONFIRMED — retain both source chapter gaps** (2026-10-06).
 
 ---
 
@@ -508,7 +511,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Production trace:** source **306**, original strip **333–441**, canvases **24/25**, resized-strip cut row **23**, estimated original row **352.12848**. Adjacent rows contain **520/495 ink pixels**, proving the cut crosses type. The full scaled pixel-stream regression passes: the line is split, not missing.
 - **Proposed upstream correction:** mask the far-right scan edge `[1976, 0, 2001, 2988)` at 300 DPI. It restores separate body bands; candidate Timoleon canvas 23 holds both early source lines whole. No general splitter or scale change is proposed.
 - **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md) and `tmp/pdfs/inner_tomi_repairs/post_mask/composition.json`.
-- **Decision:** **pending human review of the measured margin mask**.
+- **Decision:** **CONFIRMED** (2026-10-06) — approved mask installed; final composition verification pending.
 
 ---
 
@@ -575,14 +578,14 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | 11 | O3 | Watermark/furniture | **CONFIRMED** — header + right rule s1 p441 |
 | 12 | O4 | Watermark/furniture | **CONFIRMED** — header mask s1 p539 |
 | 13 | O6 | Watermark/furniture | **CONFIRMED** — header mask s1 p337 (no rule) |
-| 13B | O6 second occurrence | Watermark/furniture | s1 p347 header on VI/329; separately measured mask pending review |
-| 14 | O7 | Dividers | D1/D2 cases resolved; s1 p361 margin mask pending review |
-| 15 | G1 | Gap | s0 p296 omitted Latin; restoring margin mask pending review |
-| 16 | G2 | Gap | s0 p304 omitted Latin; restoring margin mask pending review |
-| 17 | G3 | Gap | s1 p625 omitted Latin; restoring margin mask pending review |
-| 18 | G6 | Gap | s0 p470 copied tail; margin mask pending review |
-| 19 | G7, G8 | Gap | recommend genuine-spacing retention; pending review |
-| 20A | O8B | Sliced line | s0 p306 traced cut; upstream margin mask pending review |
+| 13B | O6 second occurrence | Watermark/furniture | s1 p347 header on VI/329; separately measured mask approved 2026-10-06; installed, final verification pending |
+| 14 | O7 | Dividers | D1/D2 cases resolved; s1 p361 margin mask approved 2026-10-06; installed, final verification pending |
+| 15 | G1 | Gap | s0 p296 omitted Latin; restoring margin mask approved 2026-10-06; installed, final verification pending |
+| 16 | G2 | Gap | s0 p304 omitted Latin; restoring margin mask approved 2026-10-06; installed, final verification pending |
+| 17 | G3 | Gap | s1 p625 omitted Latin; restoring margin mask approved 2026-10-06; installed, final verification pending |
+| 18 | G6 | Gap | s0 p470 copied tail; margin mask approved 2026-10-06; installed, final verification pending |
+| 19 | G7, G8 | Gap | recommend genuine-spacing retention; approved 2026-10-06; installed, final verification pending |
+| 20A | O8B | Sliced line | s0 p306 traced cut; upstream margin mask approved 2026-10-06; installed, final verification pending |
 | 20 | (Phase 3.2 whitespace compaction need) | Gap | no row compaction proposed; residual scan-edge ink is handled upstream |
 | 21 | O5 | Furniture-only page | **CONFIRMED** — ornament mask s0 p530 (Marius ends complete) |
 | 22 | W3 | Editorial | **CONFIRMED** — retain |
