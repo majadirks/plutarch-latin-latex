@@ -113,6 +113,126 @@
       "neighbor_gap": null,
       "final_seam_spacing": null,
       "human_confirmed": "2026-10-05 RFI-07"
+    },
+    {
+      "finding_ids": ["W2", "G4"],
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page": 299,
+      "raster": [1900, 2963],
+      "adjacent_prose": {
+        "above": "...sed repulsis Corinthiis ipsis inter",
+        "below": "(source page 300) se per otium dividere insulam liceret. (3) Igitur hi triremes..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.6, 0.8775, 0.8632, 1.0]],
+      "preservation_boundary": "Google watermark in the page-tail bottom margin (rows ~2649-2921); last Latin row 2568; mask top (~row 2600) is below all Latin. This is a source-page tail (next line opens page 300), so once masked the tail is simply not copied; no whitespace compaction needed.",
+      "human_confirmed": "2026-10-06 RFI-04"
+    },
+    {
+      "finding_ids": ["O1B"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 281,
+      "raster": [1948, 2974],
+      "adjacent_prose": {
+        "above": "(source page 280) ...inde concepisse. (end of chapter XXI)",
+        "below": "XXII. Erat vir Antias, divitiarum, fortitudinis nobilitatisque causa inter Volscos regiae dignitatis, nomine Tullus Amphidius."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.085729, 0.061533, 0.958932, 0.080699]],
+      "preservation_boundary": "Leaked top Greek running head 'ΓΑΙΟΣ ΜΑΡΚΙΟΣ.' (-> 'ΑΡΚΙΟΣ') + folio '268' ink rows 193-221; body (chapter XXII) starts row 260; mask bottom (row 240) above the first body pixel. Far-right edge rule (x~1935) is outside the Latin measure and not masked.",
+      "human_confirmed": "2026-10-06 RFI-06"
+    },
+    {
+      "finding_ids": ["O1D", "G8B"],
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page": 298,
+      "raster": [1990, 2982],
+      "adjacent_prose": {
+        "above": "(output places this header after the ...cum interruption on II/222)",
+        "below": "deprecatum ivisset, ea neque aspectum ipsius pertulit domumque venienti occlusit..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.08593, 0.064386, 0.962814, 0.084172]],
+      "preservation_boundary": "Leaked top running head 'TIMOLEON.' + folio '285' ink rows 202-235; body starts ~row 267; mask bottom (row 251) above the first body pixel. Whitespace/divider (G8B/O7) is a separate disposition.",
+      "human_confirmed": "2026-10-06 RFI-08"
+    },
+    {
+      "finding_ids": ["G5"],
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page": 308,
+      "raster": [1998, 2982],
+      "adjacent_prose": {
+        "above": "(large top blank in output II/245)",
+        "below": "neque vulnus accepit, Timoleontis fortunae opus est, certare quodammodo cum virtute ejus visae..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.085586, 0.064386, 0.962963, 0.083501]],
+      "preservation_boundary": "Leaked top running head 'TIMOLEON.' + folio '295' ink rows 202-235; body starts ~row 264; mask bottom (row 249) above the first body pixel. Divider fragment (O7) is a separate disposition.",
+      "human_confirmed": "2026-10-06 RFI-09"
+    },
+    {
+      "finding_ids": ["O2"],
+      "unit_id": "lysander",
+      "source": 0,
+      "source_page": 550,
+      "raster": [1980, 3003],
+      "adjacent_prose": {
+        "above": "(source page 549) ...Haliartii perhibent,",
+        "below": "habitasse apud ipsos Rhadamanthum, cujus etiam sepulcrum ostendunt, Alea vocantes."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.085859, 0.068265, 0.962626, 0.089244]],
+      "preservation_boundary": "Leaked top running head 'LYSANDER.' + folio '537' ink rows ~213-267; body ('habitasse apud ipsos...') starts ~row 270; mask bottom (row 268) above the first body pixel. (Page corrected from 549: p549's own head is the Greek ΛΥΣΑΝΔΡΟΣ/536, not the O2 leak.)",
+      "human_confirmed": "2026-10-06 RFI-10"
+    },
+    {
+      "finding_ids": ["O3"],
+      "unit_id": "demosthenes",
+      "source": 1,
+      "source_page": 441,
+      "raster": [1879, 2840],
+      "adjacent_prose": {
+        "above": "(source page 440) ...moerore suo",
+        "below": "conficiat, sed et levandus verbis ejus dolor est, et abducendus ad rerum laetiorum cogitationem animus..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.074508, 0.041549, 0.904737, 0.062676], [0.987759, 0.0, 1.0, 1.0]],
+      "preservation_boundary": "Leaked top Greek running head 'ΔΗΜΟΣΘΕΝΗΣ.' + folio ink rows 130-157; body ('conficiat...') starts ~row 188; header mask bottom (row 178) above the first body pixel. Second rectangle is the far-right vertical rule (x~1860-1879); Latin text ends ~x1760, so the rule is in the right margin.",
+      "human_confirmed": "2026-10-06 RFI-11"
+    },
+    {
+      "finding_ids": ["O4"],
+      "unit_id": "antonius",
+      "source": 1,
+      "source_page": 539,
+      "raster": [1824, 2838],
+      "adjacent_prose": {
+        "above": "(source page 538) ...Eo impe-",
+        "below": "trato, hostes irruentes repulit, non, ut ante, simul ad aciem peditum retro cedens..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.076754, 0.044397, 0.926535, 0.067653]],
+      "preservation_boundary": "Leaked top Greek running head 'ΑΝΤΩΝΙΟΣ.' + folio '1116' ink rows 140-167; body ('trato, hostes...') starts ~row 198; mask bottom (row 192) above the first body pixel. Preserves the 'Eo impe-'/'trato' split word. Right margin has only a short section marker, not a rule.",
+      "human_confirmed": "2026-10-06 RFI-12"
+    },
+    {
+      "finding_ids": ["O6"],
+      "unit_id": "cato_minor",
+      "source": 1,
+      "source_page": 337,
+      "raster": [1846, 2838],
+      "adjacent_prose": {
+        "above": "(prior page tail)",
+        "below": "nonnulli etiam amici Pompeii atque domestici rei agerentur, videns ipsum saepe inflecti ad gratiam..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.084507, 0.047216, 0.96208, 0.069063]],
+      "preservation_boundary": "Leaked top Greek running head 'ΚΑΤΩΝ.' (-> 'ΩΝ.') + folio '934' ink rows ~142-170; clean gap 174-203; body ('nonnulli etiam amici Pompeii...') starts row 204; mask bottom (row 196) above the first body pixel. No separable right rule (user-confirmed absent).",
+      "human_confirmed": "2026-10-06 RFI-13"
     }
   ]
 }

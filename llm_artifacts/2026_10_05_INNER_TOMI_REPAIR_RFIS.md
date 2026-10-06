@@ -79,19 +79,18 @@ Read it, then continue from the first `pending` RFI in the status tracker at the
 
 ## Interview progress (as of 2026-10-05)
 
-- **CONFIRMED (frozen in ledger):** RFI-22 (W3 retain), RFI-23 (O8 retain + diagnose),
-  RFI-03 (W1, s0 p287+p288), RFI-05 (O1, s0 p182), RFI-07 (O1C, s0 p290, no divider).
-- **BOX DRAWN, awaiting confirmation** (proposed normalized coords in each RFI; box PNGs
-  `rfi-NN-...-box.png`): RFI-08 (O1D s0 p298), RFI-09 (G5 s0 p308), RFI-10 (O2 s0 **p550**),
-  RFI-11 (O3 s1 p441 + right rule), RFI-12 (O4 s1 p539), RFI-13 (O6 s1 **p337**; right rule TBD).
-  All six are the same top-running-head-leak pattern, verified visually to clear the first body line.
-- **NEEDS MORE PREP:** RFI-04 (W2, pin via inner PDF), RFI-06 (O1B, re-anchor to Coriolanus ch.
-  XXII — the "XXII" OCR match was a false hit inside "XXXIII"), RFI-15 (G1, pin page).
-- **JUDGEMENT-TYPE (no single box; evidence = overviews):** RFI-14 (O7 divider sweep),
-  RFI-16/17/18/19 (gaps: keep vs remove), RFI-20A (O8B sliced line = pagination), RFI-21 (O5
-  ornament page: confirm no Latin), RFI-01/02 (D1/D2 duplication: read-both and choose).
-- **Proposed order:** confirm the six box-drawn masks → finish O6 right rule, O1B, W2 →
-  O7 dividers → gaps (15–19) → O8B → O5 → duplication (01, 02).
+- **CONFIRMED & frozen in ledger (15):** RFI-22 (W3 retain), RFI-23 (O8 retain + diagnose),
+  and all 13 header/watermark furniture masks: RFI-03 (W1 s0 p287+288), 04 (W2 s0 p299, page tail),
+  05 (O1 s0 p182), 06 (O1B s0 p281), 07 (O1C s0 p290), 08 (O1D s0 p298), 09 (G5 s0 p308),
+  10 (O2 s0 p550), 11 (O3 s1 p441 + right rule), 12 (O4 s1 p539), 13 (O6 s1 p337).
+  Confirmed by user 2026-10-05/06. These become `SOURCE_FURNITURE_MASKS` entries in Phase 3.1.
+- **REMAINING — all judgement-type (evidence = overviews, not single boxes):**
+  RFI-14 (O7 divider sweep — each divider sits in a gap, so measured with the gap review),
+  RFI-15/16/17/18/19 (gaps G1/G2/G3/G6/G7/G8: keep vs remove + any divider/whitespace),
+  RFI-20A (O8B sliced line = pagination), RFI-21 (O5 ornament page: confirm no Latin),
+  RFI-01/02 (D1/D2 duplication: read-both and choose).
+- **Proposed order:** gaps + their O7 dividers (resolve source pages: G1 II/219-220, and the
+  standalone O7 pages V/195-196, VI/358, VII/21) → O8B → O5 → duplication (01, 02).
 - **Workflow per item:** I measure (resolve source page, render, draw candidate box), post the
   crop + the question via the `AskUserQuestion` tool, the human judges, I record the decision
   here and freeze confirmed numbers into the ledger. Nothing is erased until its RFI is CONFIRMED.
@@ -265,7 +264,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   compaction is needed — the tail below the last line simply is not copied once masked.
 - **PROPOSED mask (normalized, page 299):** `[0.6000, 0.8775, 0.8632, 1.0000)`. Box:
   `rfi-04-W2-p299-box.png`. Awaiting confirmation.
-- **Decision:** _pending (box drawn, page 299)._
+- **Decision:** **CONFIRMED** (2026-10-06) — watermark mask s0 p299 frozen in the ledger.
 
 ## RFI-05 — O1: Camillus `LUS.`/folio 169 (Tomus I/371)
 
@@ -296,7 +295,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   edge), outside the Latin measure.
 - **PROPOSED mask (normalized, page 281):** `[0.0857, 0.0615, 0.9589, 0.0807)`. Box:
   `rfi-06-O1B-p281-box.png`. Awaiting confirmation.
-- **Decision:** _pending (box drawn, page 281)._
+- **Decision:** **CONFIRMED** (2026-10-06) — header mask s0 p281 frozen in the ledger.
 
 ## RFI-07 — O1C: Coriolanus `RIOLANUS.`/folio 277 + right divider (Tomus II/204)
 
@@ -329,7 +328,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   II/222 is the output placement; the leak to mask is this top header.)
 - **PROPOSED mask (normalized):** `[0.08593, 0.0644, 0.9628, 0.0842)`. Box: `rfi-08-O1D-G8B-p298-box.png`.
   Awaiting confirmation. (Whitespace/divider = RFI-20/O7, separate.)
-- **Decision:** _pending (box drawn)._
+- **Decision:** **CONFIRMED** (2026-10-06) — frozen in the ledger.
 
 ## RFI-09 — G5: Timoleon `EON.`/folio 295 + divider (Tomus II/245)
 
@@ -344,7 +343,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   rows 202–235; body starts ~264.
 - **PROPOSED mask (normalized):** `[0.0856, 0.0644, 0.9630, 0.0835)`. Box: `rfi-09-G5-p308-box.png`.
   Awaiting confirmation.
-- **Decision:** _pending (box drawn)._
+- **Decision:** **CONFIRMED** (2026-10-06) — frozen in the ledger.
 
 ## RFI-10 — O2: Lysander `NDER.`/folio 537 (Tomus III/337)
 
@@ -360,7 +359,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   `ΛΥΣΑΝΔΡΟΣ`/536 and is not the O2 leak.)
 - **PROPOSED mask (normalized, page 550):** `[0.0859, 0.0683, 0.9626, 0.0892)`. Box: `rfi-10-O2-p550-box.png`.
   Awaiting confirmation.
-- **Decision:** _pending (box drawn, page 550)._
+- **Decision:** **CONFIRMED** (2026-10-06) — header mask s0 p550 frozen in the ledger.
 
 ## RFI-11 — O3: Demosthenes header/divider in gap (Tomus VII/167)
 
@@ -376,7 +375,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   ~half-height) is the finding's "divider"; the Latin text ends ~x1760 so the rule is in the right margin.
 - **PROPOSED masks (normalized):** header `[0.0745, 0.0415, 0.9047, 0.0627)`; right rule
   `[0.9878, 0.0, 1.0, 1.0)`. Box: `rfi-11-O3-p441-box.png`. Awaiting confirmation.
-- **Decision:** _pending (box drawn)._
+- **Decision:** **CONFIRMED** (2026-10-06) — frozen in the ledger.
 
 ## RFI-12 — O4: Antonius Greek header + divider at split (Tomus VII/369)
 
@@ -391,7 +390,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   prominent rule — proposing header mask only.
 - **PROPOSED mask (normalized):** `[0.0768, 0.0444, 0.9265, 0.0677)`. Box: `rfi-12-O4-p539-box.png`.
   Awaiting confirmation.
-- **Decision:** _pending (box drawn)._
+- **Decision:** **CONFIRMED** (2026-10-06) — frozen in the ledger.
 
 ## RFI-13 — O6: Cato Minor `ΩΝ.` + right rule (Tomus VI/329)
 
@@ -408,7 +407,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   right margin (not at the very edge) — still to locate precisely.
 - **PROPOSED mask (normalized):** header `[0.0845, 0.0472, 0.9621, 0.0691)`. Box: `rfi-13-O6-p337-box.png`.
 - **Right rule:** **confirmed absent by user (2026-10-06)** — no separable right rule; header mask only.
-- **Decision:** _header box drawn (user reviewed; no right rule); freeze with the batch._
+- **Decision:** **CONFIRMED** (2026-10-06) — header mask s0... s1 p337 frozen in the ledger; no right rule.
 
 ## RFI-14 — O7: safe divider rectangles on listed pages
 
@@ -543,16 +542,16 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | 01 | D1 | Duplication | pending |
 | 02 | D2 | Duplication | pending |
 | 03 | W1 | Watermark/furniture | **CONFIRMED** — 2 masks (s0 p287, p288) |
-| 04 | W2, G4 | Watermark/furniture | **BOX DRAWN** — watermark mask s0 p299 (page tail) |
+| 04 | W2, G4 | Watermark/furniture | **CONFIRMED** — watermark mask s0 p299 (page tail) |
 | 05 | O1 | Watermark/furniture | **CONFIRMED** — 1 mask (s0 p182) |
-| 06 | O1B | Watermark/furniture | **BOX DRAWN** — header mask s0 p281 |
+| 06 | O1B | Watermark/furniture | **CONFIRMED** — header mask s0 p281 |
 | 07 | O1C | Watermark/furniture | **CONFIRMED** — 1 mask (s0 p290), no divider |
-| 08 | O1D, G8B | Watermark/furniture | **BOX DRAWN** — header mask s0 p298 |
-| 09 | G5 | Watermark/furniture | **BOX DRAWN** — header mask s0 p308 |
-| 10 | O2 | Watermark/furniture | **BOX DRAWN** — header mask s0 p550 |
-| 11 | O3 | Watermark/furniture | **BOX DRAWN** — header + right rule s1 p441 |
-| 12 | O4 | Watermark/furniture | **BOX DRAWN** — header mask s1 p539 |
-| 13 | O6 | Watermark/furniture | **BOX DRAWN** — header mask s1 p337 (rule TBD) |
+| 08 | O1D, G8B | Watermark/furniture | **CONFIRMED** — header mask s0 p298 |
+| 09 | G5 | Watermark/furniture | **CONFIRMED** — header mask s0 p308 |
+| 10 | O2 | Watermark/furniture | **CONFIRMED** — header mask s0 p550 |
+| 11 | O3 | Watermark/furniture | **CONFIRMED** — header + right rule s1 p441 |
+| 12 | O4 | Watermark/furniture | **CONFIRMED** — header mask s1 p539 |
+| 13 | O6 | Watermark/furniture | **CONFIRMED** — header mask s1 p337 (no rule) |
 | 14 | O7 | Dividers | pending |
 | 15 | G1 | Gap | pending |
 | 16 | G2 | Gap | pending |
