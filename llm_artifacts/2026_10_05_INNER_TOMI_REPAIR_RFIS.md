@@ -522,7 +522,8 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **PROPOSED fix:** mask the ornament `[0.0703, 0.3877, 0.6093, 0.4038)` so the furniture-only strip
   carries no ink and emits no body canvas (alternative: the Phase 4.1 empty-canvas check). Box:
   `rfi-21-O5-p530-box.png`. Awaiting confirmation.
-- **Decision:** _pending (ornament box drawn, page 530)._
+- **Decision:** **CONFIRMED** (2026-10-06) — ornament mask s0 p530 frozen in the ledger; Marius
+  ends complete, no Latin below.
 
 ---
 
@@ -574,7 +575,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | 19 | G7, G8 | Gap | pending |
 | 20A | O8B | Sliced line | pending |
 | 20 | (Phase 3.2 whitespace compaction need) | Gap | derived from 04/08/09/11/15–18 |
-| 21 | O5 | Furniture-only page | **BOX DRAWN** — ornament mask s0 p530 (Marius ends complete) |
+| 21 | O5 | Furniture-only page | **CONFIRMED** — ornament mask s0 p530 (Marius ends complete) |
 | 22 | W3 | Editorial | **CONFIRMED** — retain |
 | 23 | O8 | Editorial | **CONFIRMED** — retain + diagnose |
 

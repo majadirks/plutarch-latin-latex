@@ -233,6 +233,21 @@
       "mask_rectangles": [[0.084507, 0.047216, 0.96208, 0.069063]],
       "preservation_boundary": "Leaked top Greek running head 'ΚΑΤΩΝ.' (-> 'ΩΝ.') + folio '934' ink rows ~142-170; clean gap 174-203; body ('nonnulli etiam amici Pompeii...') starts row 204; mask bottom (row 196) above the first body pixel. No separable right rule (user-confirmed absent).",
       "human_confirmed": "2026-10-06 RFI-13"
+    },
+    {
+      "finding_ids": ["O5"],
+      "unit_id": "caius_marius",
+      "source": 0,
+      "source_page": 530,
+      "raster": [1963, 2984],
+      "adjacent_prose": {
+        "above": "...quae causa multa frustra tentasset et capta urbe effugere non posset, mortem sibi ipse conscivit. (Marius's complete terminal sentence)",
+        "below": "(end of the Life; only the decorative ornament and blank margin follow)"
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.070301, 0.387735, 0.609272, 0.40382]],
+      "preservation_boundary": "Marius's prose ends complete at rows 202-687 ('...mortem sibi ipse conscivit.' / '...αὐτὸς αὑτὸν ἀπέκτεινεν.'); then ~485 blank rows; then a decorative end-of-Life ornament (horizontal flourish) at rows 1172-1190, x 168-1166, with no Latin. Masking the ornament leaves the terminal region inkless, so it emits no furniture-only body canvas. Large blank below carries no ink and produces no strip.",
+      "human_confirmed": "2026-10-06 RFI-21"
     }
   ]
 }
