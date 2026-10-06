@@ -77,26 +77,25 @@ Nothing is erased until its RFI is marked **CONFIRMED** here.
 **This section exists so the interview can resume in a fresh context with no prior memory.**
 Read it, then continue from the first `pending` RFI in the status tracker at the bottom.
 
-> **IMPLEMENTATION HANDOFF:** diagnosis is substantially done and 18 repairs are frozen. The next
-> step is **Option 1 — implement the confirmed repairs (Phases 2–3), rebuild, then re-assess the
-> open gaps.** The explicit implementation prompt is
-> [`2026_10_06_INNER_TOMI_IMPLEMENTATION_HANDOFF.md`](2026_10_06_INNER_TOMI_IMPLEMENTATION_HANDOFF.md).
-> The confirmed numbers live in `src/facsimile/fixtures/inner_tomi_repair_source_trace.json`.
+The confirmed repairs are implemented and pushed in commits `99c5e83`, `61fa3ae`, and
+`0e4893f`. All eight inner and eight imposed PDFs compiled on 2026-10-06. The full ordinary
+suite and all selected source regressions passed. The production contract remains the 15
+frozen ledger records: 13 mask records (14 rectangles) and two duplicate records.
 
-## Interview progress (as of 2026-10-05)
+The next decision is human review of [the post-rebuild evidence](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md):
+twelve exact right-margin masks, plus retention of genuine Theseus chapter gaps G7/G8. Proposed
+coordinates are in the ledger's `post_rebuild_review`; none is enabled in production before confirmation.
 
-- **CONFIRMED & frozen in ledger (15):** RFI-22 (W3 retain), RFI-23 (O8 retain + diagnose),
-  and all 13 header/watermark furniture masks: RFI-03 (W1 s0 p287+288), 04 (W2 s0 p299, page tail),
-  05 (O1 s0 p182), 06 (O1B s0 p281), 07 (O1C s0 p290), 08 (O1D s0 p298), 09 (G5 s0 p308),
-  10 (O2 s0 p550), 11 (O3 s1 p441 + right rule), 12 (O4 s1 p539), 13 (O6 s1 p337).
-  Confirmed by user 2026-10-05/06. These become `SOURCE_FURNITURE_MASKS` entries in Phase 3.1.
-- **REMAINING — all judgement-type (evidence = overviews, not single boxes):**
-  RFI-14 (O7 divider sweep — each divider sits in a gap, so measured with the gap review),
-  RFI-15/16/17/18/19 (gaps G1/G2/G3/G6/G7/G8: keep vs remove + any divider/whitespace),
-  RFI-20A (O8B sliced line = pagination), RFI-21 (O5 ornament page: confirm no Latin),
-  RFI-01/02 (D1/D2 duplication: read-both and choose).
-- **Proposed order:** gaps + their O7 dividers (resolve source pages: G1 II/219-220, and the
-  standalone O7 pages V/195-196, VI/358, VII/21) → O8B → O5 → duplication (01, 02).
+## Interview progress (as of 2026-10-06)
+
+- **Implemented and verified:** RFI-01/02 duplication, RFI-03–13 header/watermark masks,
+  RFI-21 Marius ornament, and RFI-22/23 editorial retentions.
+- **Reassessed; awaiting human review:** RFI-14–19 and RFI-20A. G1/G2/G3 are omitted Latin
+  columns caused by scan-edge column selection, not merely copied blanks. The source 306 edge
+  merges the O8B line; the candidate restores whole-line banding. G6 is copied tail padding.
+  G7/G8 match genuine chapter spacing.
+- **Whitespace decision:** no row-compaction table has been introduced. Residual intervals
+  contain scan-edge ink; the bounded margin-mask previews address that ink upstream.
 - **Workflow per item:** I measure (resolve source page, render, draw candidate box), post the
   crop + the question via the `AskUserQuestion` tool, the human judges, I record the decision
   here and freeze confirmed numbers into the ledger. Nothing is erased until its RFI is CONFIRMED.
@@ -110,7 +109,7 @@ Read it, then continue from the first `pending` RFI in the status tracker at the
   `finding_ids, unit_id, source, source_page, disposition, preservation_boundary` non-null.
 - **Diagnostic infra (Phase 1.1, committed):** `RetainedSourcePageTrace` + `map_row` +
   `retained_page` + `repair_trace_maps_skipped_pages_and_deleted_rows` in `src/facsimile/reflow.rs`.
-- Evidence crops: `tmp/pdfs/inner_tomi_repairs/` (gitignored).
+- Evidence crops and local diagnostic files: `tmp/pdfs/inner_tomi_repairs/`, retained locally and uncommitted.
 
 ## Tooling (Windows)
 
@@ -288,7 +287,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   ~2649–2921 (core x≈1220–1590). It is a source page TAIL (not an interior gap), so no whitespace
   compaction is needed — the tail below the last line simply is not copied once masked.
 - **PROPOSED mask (normalized, page 299):** `[0.6000, 0.8775, 0.8632, 1.0000)`. Box:
-  `rfi-04-W2-p299-box.png`. Awaiting confirmation.
+  `rfi-04-W2-p299-box.png`. Confirmed; see the decision below.
 - **Decision:** **CONFIRMED** (2026-10-06) — watermark mask s0 p299 frozen in the ledger.
 
 ## RFI-05 — O1: Camillus `LUS.`/folio 169 (Tomus I/371)
@@ -319,7 +318,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   ~193–221; body (ch. XXII) starts row 260. A far-right edge rule exists but is at x≈1935 (page
   edge), outside the Latin measure.
 - **PROPOSED mask (normalized, page 281):** `[0.0857, 0.0615, 0.9589, 0.0807)`. Box:
-  `rfi-06-O1B-p281-box.png`. Awaiting confirmation.
+  `rfi-06-O1B-p281-box.png`. Confirmed; see the decision below.
 - **Decision:** **CONFIRMED** (2026-10-06) — header mask s0 p281 frozen in the ledger.
 
 ## RFI-07 — O1C: Coriolanus `RIOLANUS.`/folio 277 + right divider (Tomus II/204)
@@ -352,7 +351,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   `285` ink rows 202–235; gap; body starts ~267. (The `...cum` + blank interruption seen in output
   II/222 is the output placement; the leak to mask is this top header.)
 - **PROPOSED mask (normalized):** `[0.08593, 0.0644, 0.9628, 0.0842)`. Box: `rfi-08-O1D-G8B-p298-box.png`.
-  Awaiting confirmation. (Whitespace/divider = RFI-20/O7, separate.)
+  Confirmed; see the decision below. (Whitespace/divider = RFI-20/O7, separate.)
 - **Decision:** **CONFIRMED** (2026-10-06) — frozen in the ledger.
 
 ## RFI-09 — G5: Timoleon `EON.`/folio 295 + divider (Tomus II/245)
@@ -367,7 +366,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Measured:** source 0 **page 308** (1998×2982); top running head `TIMOLEON.`+folio `295` ink
   rows 202–235; body starts ~264.
 - **PROPOSED mask (normalized):** `[0.0856, 0.0644, 0.9630, 0.0835)`. Box: `rfi-09-G5-p308-box.png`.
-  Awaiting confirmation.
+  Confirmed; see the decision below.
 - **Decision:** **CONFIRMED** (2026-10-06) — frozen in the ledger.
 
 ## RFI-10 — O2: Lysander `NDER.`/folio 537 (Tomus III/337)
@@ -383,7 +382,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   `537` ink rows ~213–267; body `habitasse apud ipsos Rhadamanthum...` starts ~270. (p549's own head is
   `ΛΥΣΑΝΔΡΟΣ`/536 and is not the O2 leak.)
 - **PROPOSED mask (normalized, page 550):** `[0.0859, 0.0683, 0.9626, 0.0892)`. Box: `rfi-10-O2-p550-box.png`.
-  Awaiting confirmation.
+  Confirmed; see the decision below.
 - **Decision:** **CONFIRMED** (2026-10-06) — header mask s0 p550 frozen in the ledger.
 
 ## RFI-11 — O3: Demosthenes header/divider in gap (Tomus VII/167)
@@ -399,7 +398,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   ink rows ~130–157; body starts ~188. A real vertical **rule at the far-right edge** (x≈1860–1879,
   ~half-height) is the finding's "divider"; the Latin text ends ~x1760 so the rule is in the right margin.
 - **PROPOSED masks (normalized):** header `[0.0745, 0.0415, 0.9047, 0.0627)`; right rule
-  `[0.9878, 0.0, 1.0, 1.0)`. Box: `rfi-11-O3-p441-box.png`. Awaiting confirmation.
+  `[0.9878, 0.0, 1.0, 1.0)`. Box: `rfi-11-O3-p441-box.png`. Confirmed; see the decision below.
 - **Decision:** **CONFIRMED** (2026-10-06) — frozen in the ledger.
 
 ## RFI-12 — O4: Antonius Greek header + divider at split (Tomus VII/369)
@@ -411,10 +410,10 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Confirm:** the header + divider rectangles preserve the `Eo impe-`/`trato` split word.
 - **Measured:** source 1 **page 539** (1824×2838); `Eo impe-` ends page 538; `trato, hostes irruentes
   repulit...` is the FIRST Latin line of page 539. Leaked top Greek running head `ΑΝΤΩΝΙΟΣ.`+folio `1116`
-  ink rows ~140–167; body starts ~198. Right margin has only a short section marker (~315px), not a
-  prominent rule — proposing header mask only.
+  ink rows ~140–167; body starts ~198. A far-right photographic scan edge remains outside
+  the confirmed header mask; its separate correction is proposed in the post-rebuild review.
 - **PROPOSED mask (normalized):** `[0.0768, 0.0444, 0.9265, 0.0677)`. Box: `rfi-12-O4-p539-box.png`.
-  Awaiting confirmation.
+  Confirmed; see the decision below.
 - **Decision:** **CONFIRMED** (2026-10-06) — frozen in the ledger.
 
 ## RFI-13 — O6: Cato Minor `ΩΝ.` + right rule (Tomus VI/329)
@@ -428,20 +427,27 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   the rectangles exclude `nonnulli etiam...`.
 - **Measured (page is 337, not 347):** source 1 **page 337** (1846×2838); top Greek running head
   `ΚΑΤΩΝ.` (→ `ΩΝ.` fragment) + folio `934` ink rows ~142–170; clean gap 174–203; body
-  `nonnulli etiam amici Pompeii...` starts row 204. A partial vertical rule (~494 px) sits in the
-  right margin (not at the very edge) — still to locate precisely.
+  `nonnulli etiam amici Pompeii...` starts row 204. The user confirmed that the alleged right
+  rule is absent; no rule rectangle is authorized for this page.
 - **PROPOSED mask (normalized):** header `[0.0845, 0.0472, 0.9621, 0.0691)`. Box: `rfi-13-O6-p337-box.png`.
 - **Right rule:** **confirmed absent by user (2026-10-06)** — no separable right rule; header mask only.
-- **Decision:** **CONFIRMED** (2026-10-06) — header mask s0... s1 p337 frozen in the ledger; no right rule.
+- **Decision:** **CONFIRMED** (2026-10-06) — header mask s1 p337 frozen in the ledger; no right rule.
+
+## RFI-13B — O6: second Cato header occurrence on source 347
+
+- **Verified production mapping:** the confirmed source-337 mask appears on fresh VI/308–310. VI/329 still leaks the Greek header from the same folio-934 passage on source **347**.
+- **Separate measured occurrence:** source 1 page 347 is 1787×2866; header/folio ink spans rows 154–193; body begins at row 219. Proposed header rectangle: `[140, 145, 1720, 205)` at 300 DPI, leaving a 14-pixel gap before body ink.
+- **Preservation:** all outside pixels are unchanged in the independent preview. The page-337 rectangle and no-right-rule decision remain intact. No right-edge mask is proposed for page 347.
+- **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), with the fresh VI/329, marked source crop, and header-only candidate.
+- **Decision:** **pending human review of the separate header occurrence**.
 
 ## RFI-14 — O7: safe divider rectangles on listed pages
 
-- **Observed (O7):** thin/thick/broken vertical source dividers survive beside Latin on, e.g.,
-  I/36, I/46, II/219–220, II/236–238, V/195–196, VI/329, **VI/358**, VII/21, VIII/130–132.
-- **Confirm:** for each divider I measure, that its rectangle is safely separable from all
-  adjacent Latin pixels; dividers fused to glyphs are **retained** and recorded. This item is a
-  bounded sweep of the listed pages, not a corpus-wide cleanup.
-- **Decision:** _pending._
+- **Fresh output:** V/195–196 has one comparison opening and the `magno in pretio habitus` join after D1. The reported VII/21 second-occurrence divider is excluded by D2.
+- **Mapped surviving standalone rule:** VI/358 is source 1 page **361**, whose far-right edge lies beyond the Latin crop. The candidate rectangle is `[1785, 0, 1810, 2848)` at 300 DPI. O6 page 337 remains confirmed without a right rule and is not revisited.
+- **Related cases:** G1/G2/G3 map to source 0 pages 296/304 and source 1 page 625; scan-edge column selection omitted Latin. I/36 and I/46 retain genuine chapter spacing; their near-column rules are not erased by a spacing disposition.
+- **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md).
+- **Decision:** D1/D2 cases resolved by the confirmed exclusions; the specific remaining mask and spacing dispositions are **pending human review**.
 
 ---
 
@@ -449,66 +455,47 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 
 ## RFI-15 — G1: Timoleon word-split gap (Tomus II/219–220)
 
-- **Unit:** `timoleon` (source 0). **Observed (G1):** 219 has two top lines then a large empty
-  area with a divider; 220 has blank space before prose resumes. `ci` / `num` are the two
-  halves of one word split across the interruption.
-- **Prior artifacts:** `review12/` II/219–220. **Generated (2026-10-06):** `inner2_g1-219.png`,
-  `inner2_g1-220.png` (inner-PDF renders in scratchpad).
-- **Measured (partial):** inner p219 shows TIMOLEON + two lines `...optimi vero et nobilissimi civium /
-  ad Icetam Leontinorum principem confugerunt seque ei`, then a large blank with a prominent **vertical
-  divider rule** down the left, then blank. By reader-folio position (reader 211, between O1C s290 and
-  G8B s298) the source page is ~**296–297**; OCR anchoring failed (the early Icetas/Leontini mention
-  OCRs poorly; `Leontin` matches later p305/309/314). **To finish:** render s0 296–298, visually match
-  the two-line anchor to the page whose text ends there and is followed by a blank + vertical rule;
-  that rule is the O7 divider to mask, and the blank is the whitespace to classify (keep/remove).
-- **Confirm:** that the intervening source rows are copied blank/furniture (removable) and the
-  `ci`+`num` word halves are both preserved and rejoin.
-- **Decision:** _pending._
+- **Unit:** `timoleon`, source 0.
+- **Fresh output:** II/219 ends with source 295, followed by a rule; II/220 resumes with source 297. **Source 296's Latin is omitted.**
+- **Measured:** source 296 is 1990×2984. The detector selects x=1980–1990, a 10-pixel scan edge. Its Latin contains the complete intervening chapters II/III and the continuation to source 297.
+- **Proposed correction:** mask `[1965, 0, 1990, 2984)` at 300 DPI. The candidate detects Latin crop x=940–1727 and restores the intervening prose.
+- **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), with fresh II/219–220 and independent candidate images.
+- **Decision:** **pending human review of the measured margin mask**.
 
 ## RFI-16 — G2: Timoleon near-blank pages (Tomus II/235–238)
 
-- **Unit:** `timoleon` (source 0). **Observed (G2):** 235 ends with prose; **236 and 237 carry
-  no prose** (dividers + generated furniture only); 238 is mostly blank until two bottom lines
-  `dam sublime se cursu proripuit...`. Two effectively blank body pages + a wasted third.
-- **Prior artifacts:** `review12/` II/235–238. **Generated (2026-10-05):**
-  `rfi-16-G2-p303-overview.png`, `rfi-16-G2-p304-overview.png`, `rfi-16-G2-p305-overview.png`
-  (`dam sublime se cursu proripuit...` is on source p305).
-- **Confirm:** what Latin precedes `dam sublime se cursu proripuit...`; that the 236–237 regions
-  are furniture/blank only; and that removing them loses no line.
-- **Decision:** _pending._
+- **Unit:** `timoleon`, source 0.
+- **Fresh output:** II/236–237 still carry scan-edge ink without prose; II/238 resumes with source 305's `dam sublime se cursu proripuit...`.
+- **Measured:** source 304 is 1988×2985. The detector selects x=1977–1988, so **source 304's Latin is omitted**. The production trace maps the blank canvases to its tall strip, rows 58–1603.
+- **Proposed correction:** mask `[1963, 0, 1988, 2985)` at 300 DPI. The candidate detects x=917–1709 and restores the intervening Latin and `...ad saxum quod-` / `dam sublime...` seam.
+- **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md).
+- **Decision:** **pending human review of the measured margin mask**.
 
 ## RFI-17 — G3: Brutus divider-only page + split word (Tomus VIII/130–132)
 
-- **Unit:** `brutus` (source 1, 596–626). **Observed (G3):** 130 has four top lines ending
-  `subli-`, then a long divider through empty space; **131 has no prose** (divider + generated
-  BRUTUS head/folio); 132 has a top gap + divider fragments then `partem secutus.` and the
-  concluding paragraph.
-- **Prior artifacts:** `inner_review/detail_t8_130.png`–`132.png`; `remaining-s1-p0596-column.png`.
-  **Generated (2026-10-05):** `rfi-17-G3-p624-overview.png`, `rfi-17-G3-p625-overview.png`,
-  `rfi-17-G3-p626-overview.png` (`partem secutus.` on p626; `subli-` precedes).
-- **Confirm:** the material between `subli-` and `partem secutus.` — is the word continuation
-  present in the source and preserved? Which rows are removable furniture/blank?
-- **Decision:** _pending._
+- **Unit:** `brutus`, source 1, 596–626.
+- **Fresh output:** VIII/130 ends with `subli-`; VIII/131 carries only a scan edge; VIII/132 resumes at source 626's `partem secutus.`. **Source 625's Latin is omitted.**
+- **Measured:** source 625 is 1816×2842. The detector selects x=1803–1816. The missing page contains the `dens` continuation, complete intervening Latin, and the sentence continuing onto 626.
+- **Proposed correction:** mask `[1791, 0, 1816, 2842)` at 300 DPI. The candidate detects x=980–1767 and restores the complete page without retyping Latin.
+- **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), including candidate Brutus canvas 60 and fresh VIII/130–132.
+- **Decision:** **pending human review of the measured margin mask**.
 
 ## RFI-18 — G6: Pyrrhus mid-sentence gap (Tomus III/175)
 
-- **Unit:** `pyrrhus` (source 0, 470–497). **Observed (G6):** ~3 line-pitches of gap between
-  `...strepitu aquæ` and `verba non percipientibus...` — within a continuous sentence.
-- **Prior artifacts:** `review34/` III/175. **Generated (2026-10-05):**
-  `rfi-18-G6-p470-overview.png`, `rfi-18-G6-p471-overview.png`.
-- **Confirm:** whether the gap is copied margin/furniture space (remove) or genuine spacing (keep).
-- **Decision:** _pending._
+- **Unit:** `pyrrhus`, source 0, 470–497.
+- **Fresh output:** III/175 retains the gap between the end of source 470 and `verba non percipientibus...` on 471.
+- **Measured:** source 470 is 2016×3023. Its final retained band extends through row 2782 because right-edge ink connects the body and lower margin.
+- **Proposed correction:** mask `[1991, 0, 2016, 3023)` at 300 DPI. The candidate detects x=972–1805 and restores ordinary sentence-seam spacing.
+- **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), including fresh III/175 and candidate Pyrrhus canvas 3.
+- **Decision:** **pending human review of the measured margin mask**.
 
 ## RFI-19 — G7 / G8: Theseus chapter-transition gaps (Tomus I/36 and I/46)
 
-- **Unit:** `theseus` (source 0, 14–33). **Observed:** G7 — ~3 line-heights of whitespace after
-  `et mendacia esse.` before chapter XXI, with a scan divider beside it (I/36). G8 — ~4
-  line-heights after `...Cynoscephalas exstant.` before chapter XXVIII, with a retained divider (I/46).
-- **Prior artifacts:** `review12/` I/36 and I/46. **Generated (2026-10-05):**
-  `rfi-19-G78-p23-overview.png` (G7), `rfi-19-G78-p28-overview.png` (G8).
-- **Confirm (each):** chapter spacing (keep) vs. scan-artifact padding (remove); and the divider
-  rectangle is separable from the Latin.
-- **Decision:** _pending._
+- **Unit:** `theseus`, source 0, 14–33.
+- **Fresh output/source comparison:** I/36 matches source 23's genuine gap above chapter XXI; I/46 matches source 28's genuine gap above chapter XXVIII. The same chapter boundaries and spacing appear in the edition. Nearby vertical rules are separate findings.
+- **Recommendation:** **retain both gaps as genuine source chapter spacing**; introduce no row exclusions.
+- **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), with fresh I/36 and I/46 and source overviews.
+- **Decision:** **pending human confirmation of both retentions**.
 
 ---
 
@@ -516,16 +503,12 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 
 ## RFI-20A — O8B: Timoleon line cut across the page break (Tomus II/240–241)
 
-- **Unit:** `timoleon` (source 0). **Observed (O8B):** the bottom line on 240 is sliced
-  horizontally through its letters; the lower halves appear clipped at the top of 241. A raster
-  page break fell through a text line instead of between lines.
-- **Prior artifacts:** `inner_review/user_t2_cut_240.png`, `user_t2_split-241.png`–`242.png`.
-- **What I will produce:** the source band for that line and the selected cut row, at production
-  global scale, before/after candidate cleanup (the cut may be an upstream divider-merge, fixed
-  by Group B/C, not a packer change).
-- **Confirm:** the identity of the single sliced source line, so the fix keeps both halves on
-  one composed canvas; and whether Group B/C cleanup already resolves it.
-- **Decision:** _pending._
+- **Unit:** `timoleon`, source 0.
+- **Fresh output:** II/240–241 still slice the line beginning `segniter negligenterque agere...`.
+- **Production trace:** source **306**, original strip **333–441**, canvases **24/25**, resized-strip cut row **23**, estimated original row **352.12848**. Adjacent rows contain **520/495 ink pixels**, proving the cut crosses type. The full scaled pixel-stream regression passes: the line is split, not missing.
+- **Proposed upstream correction:** mask the far-right scan edge `[1976, 0, 2001, 2988)` at 300 DPI. It restores separate body bands; candidate Timoleon canvas 23 holds both early source lines whole. No general splitter or scale change is proposed.
+- **Evidence:** [post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md) and `tmp/pdfs/inner_tomi_repairs/post_mask/composition.json`.
+- **Decision:** **pending human review of the measured margin mask**.
 
 ---
 
@@ -546,7 +529,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   x 168–1166; then blank + the page-bottom watermark. No Latin below the ending.
 - **PROPOSED fix:** mask the ornament `[0.0703, 0.3877, 0.6093, 0.4038)` so the furniture-only strip
   carries no ink and emits no body canvas (alternative: the Phase 4.1 empty-canvas check). Box:
-  `rfi-21-O5-p530-box.png`. Awaiting confirmation.
+  `rfi-21-O5-p530-box.png`. Confirmed; see the decision below.
 - **Decision:** **CONFIRMED** (2026-10-06) — ornament mask s0 p530 frozen in the ledger; Marius
   ends complete, no Latin below.
 
@@ -592,14 +575,15 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | 11 | O3 | Watermark/furniture | **CONFIRMED** — header + right rule s1 p441 |
 | 12 | O4 | Watermark/furniture | **CONFIRMED** — header mask s1 p539 |
 | 13 | O6 | Watermark/furniture | **CONFIRMED** — header mask s1 p337 (no rule) |
-| 14 | O7 | Dividers | pending |
-| 15 | G1 | Gap | pending |
-| 16 | G2 | Gap | pending |
-| 17 | G3 | Gap | pending |
-| 18 | G6 | Gap | pending |
-| 19 | G7, G8 | Gap | pending |
-| 20A | O8B | Sliced line | pending |
-| 20 | (Phase 3.2 whitespace compaction need) | Gap | derived from 04/08/09/11/15–18 |
+| 13B | O6 second occurrence | Watermark/furniture | s1 p347 header on VI/329; separately measured mask pending review |
+| 14 | O7 | Dividers | D1/D2 cases resolved; s1 p361 margin mask pending review |
+| 15 | G1 | Gap | s0 p296 omitted Latin; restoring margin mask pending review |
+| 16 | G2 | Gap | s0 p304 omitted Latin; restoring margin mask pending review |
+| 17 | G3 | Gap | s1 p625 omitted Latin; restoring margin mask pending review |
+| 18 | G6 | Gap | s0 p470 copied tail; margin mask pending review |
+| 19 | G7, G8 | Gap | recommend genuine-spacing retention; pending review |
+| 20A | O8B | Sliced line | s0 p306 traced cut; upstream margin mask pending review |
+| 20 | (Phase 3.2 whitespace compaction need) | Gap | no row compaction proposed; residual scan-edge ink is handled upstream |
 | 21 | O5 | Furniture-only page | **CONFIRMED** — ornament mask s0 p530 (Marius ends complete) |
 | 22 | W3 | Editorial | **CONFIRMED** — retain |
 | 23 | O8 | Editorial | **CONFIRMED** — retain + diagnose |

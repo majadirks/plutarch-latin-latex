@@ -283,5 +283,686 @@
       "implementation": "skip_known_duplicate_source_page(\"agis\", 1, 369) and (\"agis\", 1, 370) in unit_body_strips, identity-scoped to the Agis unit (Phase 2.2, reusing the same mechanism as D1).",
       "human_confirmed": "2026-10-06 RFI-02 (keep p367/p368 over p369/p370)"
     }
-  ]
+  ],
+  "post_rebuild_review": {
+    "confirmed_mask_output_locators": [
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      197,
+      198,
+      199
+    ],
+    "canvas_indices": [
+      37,
+      38,
+      39
+    ],
+    "source_page": 287,
+    "unit_id": "marcius_coriolanus"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      199,
+      200,
+      201
+    ],
+    "canvas_indices": [
+      39,
+      40,
+      41
+    ],
+    "source_page": 288,
+    "unit_id": "marcius_coriolanus"
+  },
+  {
+    "source": 0,
+    "tomus": 1,
+    "physical_pages": [
+      371,
+      372,
+      373
+    ],
+    "canvas_indices": [
+      31,
+      32,
+      33
+    ],
+    "source_page": 182,
+    "unit_id": "camillus"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      204,
+      205,
+      206
+    ],
+    "canvas_indices": [
+      44,
+      45,
+      46
+    ],
+    "source_page": 290,
+    "unit_id": "marcius_coriolanus"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      225,
+      226,
+      227
+    ],
+    "canvas_indices": [
+      9,
+      10,
+      11
+    ],
+    "source_page": 299,
+    "unit_id": "timoleon"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      187,
+      188,
+      189
+    ],
+    "canvas_indices": [
+      27,
+      28,
+      29
+    ],
+    "source_page": 281,
+    "unit_id": "marcius_coriolanus"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      222,
+      223,
+      224,
+      225
+    ],
+    "canvas_indices": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "source_page": 298,
+    "unit_id": "timoleon"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      245,
+      246,
+      247
+    ],
+    "canvas_indices": [
+      29,
+      30,
+      31
+    ],
+    "source_page": 308,
+    "unit_id": "timoleon"
+  },
+  {
+    "source": 0,
+    "tomus": 3,
+    "physical_pages": [
+      337,
+      338,
+      339,
+      340
+    ],
+    "canvas_indices": [
+      39,
+      40,
+      41,
+      42
+    ],
+    "source_page": 550,
+    "unit_id": "lysander"
+  },
+  {
+    "source": 1,
+    "tomus": 7,
+    "physical_pages": [
+      163,
+      164,
+      165
+    ],
+    "canvas_indices": [
+      25,
+      26,
+      27
+    ],
+    "source_page": 441,
+    "unit_id": "demosthenes"
+  },
+  {
+    "source": 1,
+    "tomus": 7,
+    "physical_pages": [
+      365,
+      366,
+      367
+    ],
+    "canvas_indices": [
+      53,
+      54,
+      55
+    ],
+    "source_page": 539,
+    "unit_id": "antonius"
+  },
+  {
+    "source": 1,
+    "tomus": 6,
+    "physical_pages": [
+      308,
+      309,
+      310
+    ],
+    "canvas_indices": [
+      58,
+      59,
+      60
+    ],
+    "source_page": 337,
+    "unit_id": "cato_minor"
+  },
+  {
+    "source": 0,
+    "tomus": 3,
+    "physical_pages": [
+      297
+    ],
+    "canvas_indices": [
+      67
+    ],
+    "source_page": 530,
+    "unit_id": "caius_marius"
+  }
+],
+    "additional_header_occurrence": {
+  "finding_ids": [
+    "O6"
+  ],
+  "source": 1,
+  "source_page": 347,
+  "raster": [
+    1787,
+    2866
+  ],
+  "original_confirmed_occurrence": 337,
+  "output": "VI/329",
+  "status": "pending_human_review",
+  "proposed_mask_rectangles": [
+    [
+      0.07834359261331841,
+      0.05059316120027914,
+      0.9625069949636262,
+      0.07152826238660154
+    ]
+  ],
+  "proposed_mask_rectangle_px": [
+    140,
+    145,
+    1720,
+    205
+  ],
+  "preservation_boundary": "Header/folio ink rows 154-193; first body ink begins row 219; mask bottom 205 leaves 14 pixels before Latin. The existing source-337 mask and no-right-rule decision remain unchanged. No right-edge mask is proposed for page 347.",
+  "evidence": "llm_artifacts/2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md"
+},
+  "date": "2026-10-06",
+  "document": "llm_artifacts/2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md",
+  "production_rebuild": "all eight inner and eight imposed PDFs compiled; current production includes only frozen repairs[]",
+  "candidate_margin_masks": [
+    {
+      "finding_ids": [
+        "O1B"
+      ],
+      "source": 0,
+      "source_page": 281,
+      "raster": [
+        1948,
+        2974
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9753593429158111,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1900,
+        0,
+        1948,
+        2974
+      ],
+      "candidate_crop_edges": [
+        1068,
+        1859
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1900, beyond the candidate Latin crop's right edge x=1859; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "W1"
+      ],
+      "source": 0,
+      "source_page": 287,
+      "raster": [
+        1900,
+        2975
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9868421052631579,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1875,
+        0,
+        1900,
+        2975
+      ],
+      "candidate_crop_edges": [
+        1073,
+        1829
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1875, beyond the candidate Latin crop's right edge x=1829; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "G1",
+        "O7"
+      ],
+      "source": 0,
+      "source_page": 296,
+      "raster": [
+        1990,
+        2984
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9874371859296482,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1965,
+        0,
+        1990,
+        2984
+      ],
+      "candidate_crop_edges": [
+        940,
+        1727
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1965, beyond the candidate Latin crop's right edge x=1727; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "O1D",
+        "G8B"
+      ],
+      "source": 0,
+      "source_page": 298,
+      "raster": [
+        1990,
+        2982
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9874371859296482,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1965,
+        0,
+        1990,
+        2982
+      ],
+      "candidate_crop_edges": [
+        948,
+        1741
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1965, beyond the candidate Latin crop's right edge x=1741; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "W2",
+        "G4"
+      ],
+      "source": 0,
+      "source_page": 299,
+      "raster": [
+        1900,
+        2963
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9868421052631579,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1875,
+        0,
+        1900,
+        2963
+      ],
+      "candidate_crop_edges": [
+        1039,
+        1823
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1875, beyond the candidate Latin crop's right edge x=1823; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "G2",
+        "O7"
+      ],
+      "source": 0,
+      "source_page": 304,
+      "raster": [
+        1988,
+        2985
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9874245472837022,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1963,
+        0,
+        1988,
+        2985
+      ],
+      "candidate_crop_edges": [
+        917,
+        1709
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1963, beyond the candidate Latin crop's right edge x=1709; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "O8B"
+      ],
+      "source": 0,
+      "source_page": 306,
+      "raster": [
+        2001,
+        2988
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9875062468765617,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1976,
+        0,
+        2001,
+        2988
+      ],
+      "candidate_crop_edges": [
+        941,
+        1726
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1976, beyond the candidate Latin crop's right edge x=1726; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "G5"
+      ],
+      "source": 0,
+      "source_page": 308,
+      "raster": [
+        1998,
+        2982
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9874874874874875,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1973,
+        0,
+        1998,
+        2982
+      ],
+      "candidate_crop_edges": [
+        949,
+        1734
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1973, beyond the candidate Latin crop's right edge x=1734; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "G6"
+      ],
+      "source": 0,
+      "source_page": 470,
+      "raster": [
+        2016,
+        3023
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9875992063492064,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1991,
+        0,
+        2016,
+        3023
+      ],
+      "candidate_crop_edges": [
+        972,
+        1805
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1991, beyond the candidate Latin crop's right edge x=1805; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "O7"
+      ],
+      "source": 1,
+      "source_page": 361,
+      "raster": [
+        1810,
+        2848
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9861878453038674,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1785,
+        0,
+        1810,
+        2848
+      ],
+      "candidate_crop_edges": [
+        1000,
+        1773
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1785, beyond the candidate Latin crop's right edge x=1773; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "O4"
+      ],
+      "source": 1,
+      "source_page": 539,
+      "raster": [
+        1824,
+        2838
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9862938596491229,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1799,
+        0,
+        1824,
+        2838
+      ],
+      "candidate_crop_edges": [
+        971,
+        1771
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1799, beyond the candidate Latin crop's right edge x=1771; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "G3",
+        "O7"
+      ],
+      "source": 1,
+      "source_page": 625,
+      "raster": [
+        1816,
+        2842
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9862334801762115,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1791,
+        0,
+        1816,
+        2842
+      ],
+      "candidate_crop_edges": [
+        980,
+        1767
+      ],
+      "status": "pending_human_review",
+      "preservation_boundary": "Right-margin rectangle begins at x=1791, beyond the candidate Latin crop's right edge x=1767; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    }
+  ],
+  "spacing_dispositions": [
+    {
+      "finding_ids": [
+        "G7"
+      ],
+      "source": 0,
+      "source_page": 23,
+      "output": "I/36",
+      "recommended_disposition": "retain_genuine_chapter_spacing",
+      "status": "pending_human_review"
+    },
+    {
+      "finding_ids": [
+        "G8"
+      ],
+      "source": 0,
+      "source_page": 28,
+      "output": "I/46",
+      "recommended_disposition": "retain_genuine_chapter_spacing",
+      "status": "pending_human_review"
+    }
+  ],
+  "resolved_dividers": [
+    {
+      "finding_ids": [
+        "O7"
+      ],
+      "output": "V/195-196",
+      "disposition": "resolved_by_D1_duplicate_exclusions"
+    },
+    {
+      "finding_ids": [
+        "O7"
+      ],
+      "output": "VII/21",
+      "disposition": "reported_second_occurrence_excluded_by_D2"
+    }
+  ],
+  "phase_3_2": "No row-compaction table: the measured residual intervals contain scan-edge ink. Candidate margin masks address them upstream.",
+  "sliced_line": {
+    "finding_id": "O8B",
+    "source": 0,
+    "source_page": 306,
+    "strip": [
+      333,
+      441
+    ],
+    "canvas_seam": [
+      24,
+      25
+    ],
+    "scaled_cut_row": 23,
+    "source_row_estimate": 352.12847900390625,
+    "ink_before_cut": 520,
+    "ink_after_cut": 495,
+    "candidate_result": "whole source line on candidate Timoleon canvas 23"
+  }
+}
 }
