@@ -79,11 +79,19 @@ Read it, then continue from the first `pending` RFI in the status tracker at the
 
 ## Interview progress (as of 2026-10-05)
 
-- **CONFIRMED:** RFI-22 (W3 retain), RFI-23 (O8 retain + record diagnosis), RFI-03 (W1 —
-  two masks on source 0 pages 287 & 288, frozen in the ledger).
-- **PENDING:** all other RFIs.
-- **Proposed order:** Group F done → Group B watermarks/furniture (RFI-04…14) → Group C gaps
-  (RFI-15…19) → sliced line (RFI-20A) → furniture-only page (RFI-21) → duplication (RFI-01, 02).
+- **CONFIRMED (frozen in ledger):** RFI-22 (W3 retain), RFI-23 (O8 retain + diagnose),
+  RFI-03 (W1, s0 p287+p288), RFI-05 (O1, s0 p182), RFI-07 (O1C, s0 p290, no divider).
+- **BOX DRAWN, awaiting confirmation** (proposed normalized coords in each RFI; box PNGs
+  `rfi-NN-...-box.png`): RFI-08 (O1D s0 p298), RFI-09 (G5 s0 p308), RFI-10 (O2 s0 **p550**),
+  RFI-11 (O3 s1 p441 + right rule), RFI-12 (O4 s1 p539), RFI-13 (O6 s1 **p337**; right rule TBD).
+  All six are the same top-running-head-leak pattern, verified visually to clear the first body line.
+- **NEEDS MORE PREP:** RFI-04 (W2, pin via inner PDF), RFI-06 (O1B, re-anchor to Coriolanus ch.
+  XXII — the "XXII" OCR match was a false hit inside "XXXIII"), RFI-15 (G1, pin page).
+- **JUDGEMENT-TYPE (no single box; evidence = overviews):** RFI-14 (O7 divider sweep),
+  RFI-16/17/18/19 (gaps: keep vs remove), RFI-20A (O8B sliced line = pagination), RFI-21 (O5
+  ornament page: confirm no Latin), RFI-01/02 (D1/D2 duplication: read-both and choose).
+- **Proposed order:** confirm the six box-drawn masks → finish O6 right rule, O1B, W2 →
+  O7 dividers → gaps (15–19) → O8B → O5 → duplication (01, 02).
 - **Workflow per item:** I measure (resolve source page, render, draw candidate box), post the
   crop + the question via the `AskUserQuestion` tool, the human judges, I record the decision
   here and freeze confirmed numbers into the ledger. Nothing is erased until its RFI is CONFIRMED.
@@ -131,14 +139,14 @@ This table supersedes the per-RFI "candidate source page (UNCONFIRMED)" lines be
 | 03 | W1 | 0 | **287** (watermark), **288** (header `MARCIUS CORIOLANUS.`+folio 275) | CONFIRMED |
 | 04 | W2, G4 | 0 | **to pin via inner PDF** | "Digitized by Google" is at the bottom (~rows 2854–2925) of **every** Timoleon page and is normally dropped. W2 leaked on one page (like Fabius 233/235). Source ~300 by reader-folio interpolation was WRONG (p300 is full text, watermark far below last line). Pin by rendering `build_facsimile/tomus_2_inner.pdf` p227, reading its Latin, and OCR-anchoring to the source page; then mask that page's bottom watermark. |
 | 05 | O1 | 0 | seam **181→182**; header `CAMILLUS.`+folio 169 atop **182** | `...jam exsul,`(181) / `neque nos cives`(182) |
-| 06 | O1B | 0 | ch. XXII near **286/287**; Greek head `ΜΑΡΚΙΟΣ…` (“ARKIOS”) | inspect which page has the pre-XXII gap |
+| 06 | O1B | 0 | **re-anchor** | the "XXII" match was a false hit inside "XXXIII" (p281/286/287 are ch. XXXIII, Greek head `ΓΑΙΟΣ ΜΑΡΚΙΟΣ`/274). Find the real Coriolanus ch. XXII page (reader II/187 ≈ earlier than s288), then mask its top Greek running head. |
 | 07 | O1C | 0 | **290** | `RIOLANUS.`+damaged folio 277 + right divider (folio 277=phys 290) |
 | 08 | O1D, G8B | 0 | **298** | `EON.`+folio 285 (folio 285=phys 298); `…cum` then gap |
 | 09 | G5 | 0 | **308** | `EON.`+folio 295 (folio 295=phys 308) + divider |
-| 10 | O2 | 0 | **549** | `NDER.`+folio 537 below `Haliartii perhibent,` (folio 537=phys 549) |
+| 10 | O2 | 0 | **550** | `Haliartii perhibent,` ends p549; leaked header is `LYSANDER.`+folio 537 atop **p550** (folio 537=phys 550). p549's own head is `ΛΥΣΑΝΔΡΟΣ`/536, not the O2 leak. |
 | 11 | O3 | 1 | **441** | between `…moerore suo` and `conficiat, sed et levandus…` (both on 441) |
 | 12 | O4 | 1 | **538→539** | split `Eo impe-`(538)/`trato, hostes…`(539) + Greek head/divider |
-| 13 | O6 | 1 | **337** or **347** | `nonnulli etiam amici Pompeji…` + `ΩΝ.` + right rule; inspect both |
+| 13 | O6 | 1 | **337** | top Greek head `ΚΑΤΩΝ.` (→`ΩΝ.`) + folio 934; body `nonnulli etiam amici Pompeii…` starts row 204; partial right-margin rule (~494px) still to locate |
 | 14 | O7 | 0/1 | listed pages | divider sweep; e.g. I/36 ≈ s0 p23, I/46 ≈ s0 p28 |
 | 15 | G1 | 0 | **UNRESOLVED** | Timoleon `ci`/`num` split; scan s0 296–318 for the big interior gap |
 | 16 | G2 | 0 | **303–305** | near-blank pages before resume `dam sublime se cursu proripuit…` (on 305) |
@@ -379,7 +387,13 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   `rfi-13-O6-p337-overview.png`, `rfi-13-O6-p347-overview.png` (inspect which has `ΩΝ.`+rule).
 - **Confirm:** that `ΩΝ.` and the rule are source furniture (not part of the Latin column) and
   the rectangles exclude `nonnulli etiam...`.
-- **Decision:** _pending._
+- **Measured (page is 337, not 347):** source 1 **page 337** (1846×2838); top Greek running head
+  `ΚΑΤΩΝ.` (→ `ΩΝ.` fragment) + folio `934` ink rows ~142–170; clean gap 174–203; body
+  `nonnulli etiam amici Pompeii...` starts row 204. A partial vertical rule (~494 px) sits in the
+  right margin (not at the very edge) — still to locate precisely.
+- **PROPOSED mask (normalized):** header `[0.0845, 0.0472, 0.9621, 0.0691)`. Box: `rfi-13-O6-p337-box.png`.
+  Right rule pending precise measurement. Awaiting confirmation.
+- **Decision:** _pending (header box drawn; right rule TBD)._
 
 ## RFI-14 — O7: safe divider rectangles on listed pages
 
@@ -514,16 +528,16 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | 01 | D1 | Duplication | pending |
 | 02 | D2 | Duplication | pending |
 | 03 | W1 | Watermark/furniture | **CONFIRMED** — 2 masks (s0 p287, p288) |
-| 04 | W2, G4 | Watermark/furniture | pending |
+| 04 | W2, G4 | Watermark/furniture | pending — pin page via inner PDF |
 | 05 | O1 | Watermark/furniture | **CONFIRMED** — 1 mask (s0 p182) |
-| 06 | O1B | Watermark/furniture | pending |
+| 06 | O1B | Watermark/furniture | pending — re-anchor ch. XXII |
 | 07 | O1C | Watermark/furniture | **CONFIRMED** — 1 mask (s0 p290), no divider |
-| 08 | O1D, G8B | Watermark/furniture | pending |
-| 09 | G5 | Watermark/furniture | pending |
-| 10 | O2 | Watermark/furniture | pending |
-| 11 | O3 | Watermark/furniture | pending |
-| 12 | O4 | Watermark/furniture | pending |
-| 13 | O6 | Watermark/furniture | pending |
+| 08 | O1D, G8B | Watermark/furniture | **BOX DRAWN** — header mask s0 p298 |
+| 09 | G5 | Watermark/furniture | **BOX DRAWN** — header mask s0 p308 |
+| 10 | O2 | Watermark/furniture | **BOX DRAWN** — header mask s0 p550 |
+| 11 | O3 | Watermark/furniture | **BOX DRAWN** — header + right rule s1 p441 |
+| 12 | O4 | Watermark/furniture | **BOX DRAWN** — header mask s1 p539 |
+| 13 | O6 | Watermark/furniture | **BOX DRAWN** — header mask s1 p337 (rule TBD) |
 | 14 | O7 | Dividers | pending |
 | 15 | G1 | Gap | pending |
 | 16 | G2 | Gap | pending |
