@@ -427,8 +427,15 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 - **Unit:** `timoleon` (source 0). **Observed (G1):** 219 has two top lines then a large empty
   area with a divider; 220 has blank space before prose resumes. `ci` / `num` are the two
   halves of one word split across the interruption.
-- **Prior artifacts:** `review12/` II/219–220. **Generated:** none yet — source page unresolved
-  (scan s0 296–318 for the big interior gap page, or anchor via inner PDF p219–220).
+- **Prior artifacts:** `review12/` II/219–220. **Generated (2026-10-06):** `inner2_g1-219.png`,
+  `inner2_g1-220.png` (inner-PDF renders in scratchpad).
+- **Measured (partial):** inner p219 shows TIMOLEON + two lines `...optimi vero et nobilissimi civium /
+  ad Icetam Leontinorum principem confugerunt seque ei`, then a large blank with a prominent **vertical
+  divider rule** down the left, then blank. By reader-folio position (reader 211, between O1C s290 and
+  G8B s298) the source page is ~**296–297**; OCR anchoring failed (the early Icetas/Leontini mention
+  OCRs poorly; `Leontin` matches later p305/309/314). **To finish:** render s0 296–298, visually match
+  the two-line anchor to the page whose text ends there and is followed by a blank + vertical rule;
+  that rule is the O7 divider to mask, and the blank is the whitespace to classify (keep/remove).
 - **Confirm:** that the intervening source rows are copied blank/furniture (removable) and the
   `ci`+`num` word halves are both preserved and rejoin.
 - **Decision:** _pending._
@@ -508,7 +515,14 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
   `rfi-21-O5-p529-overview.png`, `rfi-21-O5-p530-overview.png` (inspect which is the ornament page).
 - **Confirm:** that Caius Marius ends completely on the preceding body page and the ornament/fleck
   page carries no Latin, so it can emit no body canvas.
-- **Decision:** _pending._
+- **Measured:** source 0 **page 530** (1963×2984, folio 517) is Marius's LAST page. Prose ends rows
+  202–687 with `...αὐτὸς αὑτὸν ἀπέκτεινεν.` / `posset, mortem sibi ipse conscivit.` (complete); then a
+  ~485-row blank; then a decorative end-of-Life ornament (horizontal flourish) at rows 1172–1190,
+  x 168–1166; then blank + the page-bottom watermark. No Latin below the ending.
+- **PROPOSED fix:** mask the ornament `[0.0703, 0.3877, 0.6093, 0.4038)` so the furniture-only strip
+  carries no ink and emits no body canvas (alternative: the Phase 4.1 empty-canvas check). Box:
+  `rfi-21-O5-p530-box.png`. Awaiting confirmation.
+- **Decision:** _pending (ornament box drawn, page 530)._
 
 ---
 
@@ -560,7 +574,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 | 19 | G7, G8 | Gap | pending |
 | 20A | O8B | Sliced line | pending |
 | 20 | (Phase 3.2 whitespace compaction need) | Gap | derived from 04/08/09/11/15–18 |
-| 21 | O5 | Furniture-only page | pending |
+| 21 | O5 | Furniture-only page | **BOX DRAWN** — ornament mask s0 p530 (Marius ends complete) |
 | 22 | W3 | Editorial | **CONFIRMED** — retain |
 | 23 | O8 | Editorial | **CONFIRMED** — retain + diagnose |
 
