@@ -129,7 +129,7 @@ This table supersedes the per-RFI "candidate source page (UNCONFIRMED)" lines be
 | RFI | Finding | src | Source page(s) | Anchor / note |
 | --- | --- | ---: | --- | --- |
 | 03 | W1 | 0 | **287** (watermark), **288** (header `MARCIUS CORIOLANUS.`+folio 275) | CONFIRMED |
-| 04 | W2, G4 | 0 | **~300** (to pin) | "Digitized by Google" is at the bottom (~rows 2854–2925) of **every** Timoleon page; W2 is a sparse page whose bottom watermark lands in an output gap. II/227 ≈ s300 by reader-folio interpolation (214→s298, 237→s308). Pin by finding the sparse ~2-line page near 300. |
+| 04 | W2, G4 | 0 | **to pin via inner PDF** | "Digitized by Google" is at the bottom (~rows 2854–2925) of **every** Timoleon page and is normally dropped. W2 leaked on one page (like Fabius 233/235). Source ~300 by reader-folio interpolation was WRONG (p300 is full text, watermark far below last line). Pin by rendering `build_facsimile/tomus_2_inner.pdf` p227, reading its Latin, and OCR-anchoring to the source page; then mask that page's bottom watermark. |
 | 05 | O1 | 0 | seam **181→182**; header `CAMILLUS.`+folio 169 atop **182** | `...jam exsul,`(181) / `neque nos cives`(182) |
 | 06 | O1B | 0 | ch. XXII near **286/287**; Greek head `ΜΑΡΚΙΟΣ…` (“ARKIOS”) | inspect which page has the pre-XXII gap |
 | 07 | O1C | 0 | **290** | `RIOLANUS.`+damaged folio 277 + right divider (folio 277=phys 290) |
