@@ -1,0 +1,374 @@
+# Inner tomi repair — Requests for Information (RFIs)
+
+Companion to [the minimal repairs plan](2026_10_05_INNER_TOMI_MINIMAL_REPAIRS_PLAN.md) and
+[the visual review findings](2026_10_05_INNER_TOMI_VISUAL_REVIEW_FINDINGS.md). It
+enumerates every judgement a human must supply before a source region is erased or a
+duplicate occurrence is dropped. The plan gates those edits on human verification
+because a wrong rectangle permanently deletes genuine Latin, and OCR can locate a
+passage but cannot prove preservation.
+
+## Interview protocol
+
+For each RFI:
+
+1. **I measure first.** I render the candidate source page at the production DPI
+   (300), locate the passage by OCR-anchoring the quoted Latin, draw the proposed
+   erase rectangle (or identify the duplicate/boundary), and save an evidence crop.
+2. **I pose the question** with that crop and the adjacent Latin landmarks.
+3. **You judge** — confirm / correct / reject. Free-text nuance is welcome.
+4. **I record** your answer in the "Decision" field here and, once frozen, in the
+   numeric ledger `src/facsimile/fixtures/inner_tomi_repair_source_trace.json`.
+
+Nothing is erased until its RFI is marked **CONFIRMED** here.
+
+## Conventions
+
+- **Inner-PDF page** = one-based physical page of the current `build_facsimile/tomus_N_inner.pdf`
+  (what the findings cite). **Reader folio** = the printed page number visible on the
+  reader page. **Source folio** = the printed page number in the 19th-c. scan.
+  **Source page** = one-based physical page of `Ploutarchou_Bioi_vN.pdf` — the only
+  coordinate the generator uses, and the one I must confirm.
+- Source index: `0` = `Ploutarchou_Bioi_v1.pdf`, `1` = `Ploutarchou_Bioi_v2.pdf`.
+- The source folio and source page differ by a drifting offset (inserted plates), so
+  candidate source pages below are **pre-measurement estimates, UNCONFIRMED**; part of
+  what I show you is the OCR anchor proving the page is the right one.
+- Mask rectangles are normalized half-open `[left, top, right, bottom)` on the full
+  source raster, matching `SOURCE_FURNITURE_MASKS` in `src/facsimile/reflow.rs`.
+
+## Unit → source map (from `facsimile_units.json`, factual)
+
+| Unit | id | source | start_page | shares last page with |
+| --- | --- | ---: | ---: | --- |
+| Theseus | `theseus` | 0 | 14 | Romulus (33) |
+| Camillus | `camillus` | 0 | 167 | Pericles (195) |
+| Marcius Coriolanus | `marcius_coriolanus` | 0 | 268 | Comp. Alc./Cor. (292) |
+| Timoleon | `timoleon` | 0 | 295 | Aemilius Paulus (318) |
+| Caius Marius | `caius_marius` | 0 | 497 | Lysander (531) |
+| Lysander | `lysander` | 0 | 531 | Sylla (552) |
+| Pyrrhus | `pyrrhus` | 0 | 470 | Caius Marius (497) |
+| Cato Minor | `cato_minor` | 1 | 309 | Agis (363) |
+| Demosthenes | `demosthenes` | 1 | 429 | Cicero (446) |
+| Antonius | `antonius` | 1 | 513 | Comp. Dem./Ant. (563) |
+| Eumenes | `eumenes` | 1 | 88 | Comp. Sert./Eum. (102) |
+| Comp. Sertorii et Eumenis | `comparatio_sertorii_et_eumenis` | 1 | 102 | Agesilaus (106) |
+| Agis | `agis` | 1 | 363 | Cleomenes (379) |
+| Brutus | `brutus` | 1 | 596 | Comp. Dionis/Bruti (626) |
+
+## Supporting artifacts
+
+- **This session (committed trace helper output, gitignored):**
+  `tmp/pdfs/inner_tomi_repairs/` — representative before-repair column crops and trace
+  JSON: `duplicate.*` (Eumenes p88, Comp. p102, Agis p363), `timoleon_coriolanus.*`
+  (Coriolanus p268, Timoleon p295), `remaining.*` (Brutus p596).
+- **Prior review renders cited in the findings** (under `tmp/pdfs/inner_review/`,
+  `review12/`, `review34/`, `review56/`; may need regeneration). Per-item pointers below.
+- **Per-item crops I will generate** at interview time: named
+  `tmp/pdfs/inner_tomi_repairs/rfi-<id>-*.png`.
+
+---
+
+# Group A — Duplication (read-both decisions)
+
+These cannot be reduced to a rectangle; they need you to read both occurrences and
+choose the retained sequence.
+
+## RFI-01 — D1: Eumenes / comparison reading order (Tomus V, source 1)
+
+- **Inner-PDF:** V/194–201. **Units:** `eumenes` (start 88), `comparatio_sertorii_et_eumenis`
+  (start 102), next `agesilaus` (106). **Candidate source pages (UNCONFIRMED):** Eumenes
+  body ~88–101; comparison body ~102–105.
+- **Observed (findings D1):** 194 ends Eumenes `...Græcum mare inspicere posset.` 195 opens
+  **SERTORII CUM EUMENE COMPARATIO** `Hæc sunt quæ de Eumene...`, last line `...ducibus que-`.
+  196–198 return to Eumenes (196 starts `rentes. Deinde impetu facto...`; 198 repeats the
+  Eumenes ending already on 194) yet carry the comparison running head. 199 repeats the
+  comparison opening; comparison runs to its true end on 201. So Eumenes material **and**
+  the comparison opening each appear twice, and 195→196 does not continue the sentence.
+- **What I will produce:** source renders of the Eumenes tail and both comparison openings,
+  with OCR anchors for `posset.`, `Hæc sunt quæ`, `que-`/`rentes.`, and the second
+  comparison opening; a line-by-line table of what is unique vs. repeated.
+- **I need you to confirm:** (a) the correct reading order; (b) which physical occurrence
+  of the comparison opening to keep; (c) that the `que-` → `rentes.` join belongs to the
+  comparison (not Eumenes), so the retained sequence loses no unique line; (d) whether the
+  fix is a boundary correction (fixing `eumenes`/comparison `start_page`/fracs + pin) or a
+  whole-/partial-page duplicate exclusion.
+- **Decision:** _pending._
+
+## RFI-02 — D2: Agis repeated passage (Tomus VII, source 1)
+
+- **Inner-PDF:** VII/17–24 (first occ. 17–20, second 21–24). **Unit:** `agis` (start 363),
+  next `cleomenes` (379). **Candidate source pages (UNCONFIRMED):** ~363–370 region.
+- **Observed (findings D2):** 17 and 21 both open `non modo luxum, in quo felicitatem vitæ...`
+  and both carry chapter VIII; the same progression repeats across the next three pages. The
+  second occurrence has heavier right-side divider marks. Repeated textual content from
+  differing image appearances — not necessarily byte-identical rasters.
+- **What I will produce:** source renders of both occurrences with OCR anchors on the shared
+  opening and chapter VIII; a comparison of the start/end seams of each occurrence.
+- **I need you to confirm:** (a) which occurrence to retain (cleaner image vs. divider marks);
+  (b) that the retained occurrence's beginning and end join correctly to the surrounding
+  distinct passages; (c) whether this is repeated whole source pages (→ duplicate-page
+  exclusion) or a source-selection/boundary error (→ fix the boundary instead).
+- **Decision:** _pending._
+
+---
+
+# Group B — Watermark & leaked furniture ("my page + my box are right" — yes/no each)
+
+For each: I show the source render with the proposed whiten-rectangle outlined and the
+nearest Latin line above/below. You confirm the box covers **only** the artifact (Google
+watermark / running head / folio / divider) and touches no glyph or pale type.
+
+## RFI-03 — W1: Coriolanus watermark + `RIOLANUS.`/folio 275 (Tomus II/199)
+
+- **Unit:** `marcius_coriolanus` (source 0, 268–292). **Source folio cited:** 275.
+  **Candidate source page (UNCONFIRMED):** ~275–285.
+- **Observed (W1):** large gray **Digitized by Google** below the main prose block, then a
+  copied running-head fragment `RIOLANUS.` and source folio **275**, then another prose line.
+- **Prior artifacts:** `review12/` II/199; `inner_review/user_t2_near-199.png`–`near-203.png`,
+  `user_t2_191.png`.
+- **Confirm:** the watermark rectangle, and separately the running-head/folio rectangle,
+  each exclude the prose line that follows.
+- **Decision:** _pending._
+
+## RFI-04 — W2 / G4: Timoleon watermark in the gap (Tomus II/227)
+
+- **Unit:** `timoleon` (source 0, 295–318). **Candidate source page (UNCONFIRMED):** ~227-region
+  of the source — to be OCR-anchored on the two lines above and the continuation below.
+- **Observed (W2/G4):** two lines near the top, then a large empty interval containing a gray
+  **Digitized by Google**, then continuing prose. Interior gap + watermark together.
+- **Prior artifacts:** `review12/` II/227.
+- **Confirm:** the watermark rectangle; and whether the surrounding empty interval is a source
+  page tail or an interior gap (decides whether Phase 3.2 whitespace compaction is needed —
+  see RFI-20).
+- **Decision:** _pending._
+
+## RFI-05 — O1: Camillus `LUS.`/folio 169 (Tomus I/371)
+
+- **Unit:** `camillus` (source 0, 167–195). **Source folio cited:** 169.
+- **Observed (O1):** running-head fragment `LUS.` + source folio **169** intrude between
+  `...non enim neque is jam exsul,` and `neque nos cives sumus...`.
+- **Prior artifacts:** `inner_review/user_t1_371.png`.
+- **Confirm:** the `LUS.`/folio rectangle sits between those two Latin lines and clips neither.
+- **Decision:** _pending._
+
+## RFI-06 — O1B: Coriolanus Greek running head before ch. XXII (Tomus II/187)
+
+- **Unit:** `marcius_coriolanus` (source 0). **Observed (O1B):** a Greek running-head fragment
+  (user read “ARKIOS”) inside a large gap immediately before chapter XXII.
+- **Prior artifacts:** `inner_review/user_t2_187.png`.
+- **Confirm:** the Greek header rectangle contains no Latin and the gap handling (RFI-20) is
+  separate; measure the associated gap.
+- **Decision:** _pending._
+
+## RFI-07 — O1C: Coriolanus `RIOLANUS.`/folio 277 + right divider (Tomus II/204)
+
+- **Unit:** `marcius_coriolanus` (source 0). **Source folio cited:** 277.
+- **Observed (O1C):** `RIOLANUS.` + damaged folio **277** after the top prose line and before
+  its continuation; a vertical divider survives at the right.
+- **Prior artifacts:** `inner_review/user_t2_204.png`.
+- **Confirm:** the header/folio rectangle and the right-divider rectangle each exclude the
+  top line and its continuation.
+- **Decision:** _pending._
+
+## RFI-08 — O1D / G8B: Timoleon `EON.`/folio 285 in the gap (Tomus II/222)
+
+- **Unit:** `timoleon` (source 0). **Source folio cited:** 285.
+- **Observed (O1D/G8B):** prose ends mid-page `...cum`; a large blank interval with a thin
+  divider, then `EON.` + folio **285** near the bottom.
+- **Prior artifacts:** `inner_review/user_t2_222.png`.
+- **Confirm:** the `EON.`/folio rectangle and divider fragment exclude the `...cum` line and
+  the next page's continuation; classify the blank interval (RFI-20).
+- **Decision:** _pending._
+
+## RFI-09 — G5: Timoleon `EON.`/folio 295 + divider (Tomus II/245)
+
+- **Unit:** `timoleon` (source 0). **Source folio cited:** 295.
+- **Observed (G5):** large top blank, then `EON.` + folio **295** immediately above continuing
+  prose; a divider fragment in the blank region.
+- **Prior artifacts:** `review12/` II/245; `inner_review/user_t2_245.png` (180 DPI).
+- **Confirm:** header/folio + divider rectangles exclude the continuing prose line; classify
+  the blank (RFI-20).
+- **Decision:** _pending._
+
+## RFI-10 — O2: Lysander `NDER.`/folio 537 (Tomus III/337)
+
+- **Unit:** `lysander` (source 0, 531–552). **Source folio cited:** 537.
+- **Observed (O2):** `NDER.` at left and folio **537** at right below the line ending
+  `Haliartii perhibent,`.
+- **Prior artifacts:** `review34/` III/337.
+- **Confirm:** the head/folio rectangles exclude `Haliartii perhibent,` and the following line.
+- **Decision:** _pending._
+
+## RFI-11 — O3: Demosthenes header/divider in gap (Tomus VII/167)
+
+- **Unit:** `demosthenes` (source 1, 429–446). **Observed (O3):** a partial running head
+  ending in Greek letters inside a gap between `...mœrore suo` and `conficiat, sed et levandus...`;
+  a right divider remains.
+- **Prior artifacts:** `inner_review/detail_t7_167.png`.
+- **Confirm:** header + divider rectangles exclude both framing lines; classify the gap (RFI-20).
+- **Decision:** _pending._
+
+## RFI-12 — O4: Antonius Greek header + divider at split (Tomus VII/369)
+
+- **Unit:** `antonius` (source 1, 513–563). **Observed (O4):** a partial Greek running head and
+  divider intrude between the split `Eo impe-` and continuation `trato, hostes...`.
+- **Prior artifacts:** `inner_review/detail_t7_369.png`.
+- **Confirm:** the header + divider rectangles preserve the `Eo impe-`/`trato` split word.
+- **Decision:** _pending._
+
+## RFI-13 — O6: Cato Minor `ΩΝ.` + right rule (Tomus VI/329)
+
+- **Unit:** `cato_minor` (source 1, 309–363). **Observed (O6):** isolated Greek **`ΩΝ.`** above
+  the Latin opening `nonnulli etiam amici Pompeji...`, plus a vertical black rule at right.
+  Source classification not proven visually — could be a neighboring-column fragment.
+- **Prior artifacts:** `review56/` VI/329.
+- **Confirm:** that `ΩΝ.` and the rule are source furniture (not part of the Latin column) and
+  the rectangles exclude `nonnulli etiam...`.
+- **Decision:** _pending._
+
+## RFI-14 — O7: safe divider rectangles on listed pages
+
+- **Observed (O7):** thin/thick/broken vertical source dividers survive beside Latin on, e.g.,
+  I/36, I/46, II/219–220, II/236–238, V/195–196, VI/329, **VI/358**, VII/21, VIII/130–132.
+- **Confirm:** for each divider I measure, that its rectangle is safely separable from all
+  adjacent Latin pixels; dividers fused to glyphs are **retained** and recorded. This item is a
+  bounded sweep of the listed pages, not a corpus-wide cleanup.
+- **Decision:** _pending._
+
+---
+
+# Group C — Gap classification (removable copied space vs. genuine spacing)
+
+## RFI-15 — G1: Timoleon word-split gap (Tomus II/219–220)
+
+- **Unit:** `timoleon` (source 0). **Observed (G1):** 219 has two top lines then a large empty
+  area with a divider; 220 has blank space before prose resumes. `ci` / `num` are the two
+  halves of one word split across the interruption.
+- **Prior artifacts:** `review12/` II/219–220.
+- **Confirm:** that the intervening source rows are copied blank/furniture (removable) and the
+  `ci`+`num` word halves are both preserved and rejoin.
+- **Decision:** _pending._
+
+## RFI-16 — G2: Timoleon near-blank pages (Tomus II/235–238)
+
+- **Unit:** `timoleon` (source 0). **Observed (G2):** 235 ends with prose; **236 and 237 carry
+  no prose** (dividers + generated furniture only); 238 is mostly blank until two bottom lines
+  `dam sublime se cursu proripuit...`. Two effectively blank body pages + a wasted third.
+- **Prior artifacts:** `review12/` II/235–238.
+- **Confirm:** what Latin precedes `dam sublime se cursu proripuit...`; that the 236–237 regions
+  are furniture/blank only; and that removing them loses no line.
+- **Decision:** _pending._
+
+## RFI-17 — G3: Brutus divider-only page + split word (Tomus VIII/130–132)
+
+- **Unit:** `brutus` (source 1, 596–626). **Observed (G3):** 130 has four top lines ending
+  `subli-`, then a long divider through empty space; **131 has no prose** (divider + generated
+  BRUTUS head/folio); 132 has a top gap + divider fragments then `partem secutus.` and the
+  concluding paragraph.
+- **Prior artifacts:** `inner_review/detail_t8_130.png`–`132.png`; `remaining-s1-p0596-column.png`.
+- **Confirm:** the material between `subli-` and `partem secutus.` — is the word continuation
+  present in the source and preserved? Which rows are removable furniture/blank?
+- **Decision:** _pending._
+
+## RFI-18 — G6: Pyrrhus mid-sentence gap (Tomus III/175)
+
+- **Unit:** `pyrrhus` (source 0, 470–497). **Observed (G6):** ~3 line-pitches of gap between
+  `...strepitu aquæ` and `verba non percipientibus...` — within a continuous sentence.
+- **Prior artifacts:** `review34/` III/175.
+- **Confirm:** whether the gap is copied margin/furniture space (remove) or genuine spacing (keep).
+- **Decision:** _pending._
+
+## RFI-19 — G7 / G8: Theseus chapter-transition gaps (Tomus I/36 and I/46)
+
+- **Unit:** `theseus` (source 0, 14–33). **Observed:** G7 — ~3 line-heights of whitespace after
+  `et mendacia esse.` before chapter XXI, with a scan divider beside it (I/36). G8 — ~4
+  line-heights after `...Cynoscephalas exstant.` before chapter XXVIII, with a retained divider (I/46).
+- **Prior artifacts:** `review12/` I/36 and I/46.
+- **Confirm (each):** chapter spacing (keep) vs. scan-artifact padding (remove); and the divider
+  rectangle is separable from the Latin.
+- **Decision:** _pending._
+
+---
+
+# Group D — Sliced line
+
+## RFI-20A — O8B: Timoleon line cut across the page break (Tomus II/240–241)
+
+- **Unit:** `timoleon` (source 0). **Observed (O8B):** the bottom line on 240 is sliced
+  horizontally through its letters; the lower halves appear clipped at the top of 241. A raster
+  page break fell through a text line instead of between lines.
+- **Prior artifacts:** `inner_review/user_t2_cut_240.png`, `user_t2_split-241.png`–`242.png`.
+- **What I will produce:** the source band for that line and the selected cut row, at production
+  global scale, before/after candidate cleanup (the cut may be an upstream divider-merge, fixed
+  by Group B/C, not a packer change).
+- **Confirm:** the identity of the single sliced source line, so the fix keeps both halves on
+  one composed canvas; and whether Group B/C cleanup already resolves it.
+- **Decision:** _pending._
+
+---
+
+# Group E — Furniture-only page
+
+## RFI-21 — O5: Marius terminal ornament page (Tomus III/298)
+
+- **Units:** `caius_marius` (source 0, 497–531) ending; `lysander` opens 531. **Observed (O5):**
+  no prose — only a black source ornament/rule, a tiny fleck, and generated C. MARIUS head/folio.
+  Marius's prose concludes on 297; Lysander opens on 299.
+- **Prior artifacts:** `review34/` III/298.
+- **Confirm:** that Caius Marius ends completely on the preceding body page and the ornament/fleck
+  page carries no Latin, so it can emit no body canvas.
+- **Decision:** _pending._
+
+---
+
+# Group F — Editorial retentions (confirm the default)
+
+## RFI-22 — W3: Google Books notice page (all tomi, physical page 8)
+
+- **Observed (W3):** full Google Books reproduction notice with logo, URL, QR code — a separately
+  inserted front-matter page, not a watermark over prose (`src/facsimile/frontmatter.rs`).
+- **Confirm:** retain as-is (plan desired end-state #7 default).
+- **Decision:** _pending._
+
+## RFI-23 — O8: Praefatio typography transition (Tomus V/14–17)
+
+- **Observed (O8):** page 14 ends mid-page after `...in duarum vitarum exemplis consistam, Ages.`;
+  15–16 continue in denser/darker scanned typography; ordinary typeset prose resumes on 17.
+  Conspicuous scale/weight change + wasted space; not blank, not missing text.
+- **Confirm:** retain as-is, with a recorded diagnosis for a possible separate layout task
+  (using the existing Praefatio source inventory in `src/facsimile/praefatio.rs`, not a new tracer).
+- **Decision:** _pending._
+
+---
+
+# RFI status tracker
+
+| RFI | Finding(s) | Group | Status |
+| --- | --- | --- | --- |
+| 01 | D1 | Duplication | pending |
+| 02 | D2 | Duplication | pending |
+| 03 | W1 | Watermark/furniture | pending |
+| 04 | W2, G4 | Watermark/furniture | pending |
+| 05 | O1 | Watermark/furniture | pending |
+| 06 | O1B | Watermark/furniture | pending |
+| 07 | O1C | Watermark/furniture | pending |
+| 08 | O1D, G8B | Watermark/furniture | pending |
+| 09 | G5 | Watermark/furniture | pending |
+| 10 | O2 | Watermark/furniture | pending |
+| 11 | O3 | Watermark/furniture | pending |
+| 12 | O4 | Watermark/furniture | pending |
+| 13 | O6 | Watermark/furniture | pending |
+| 14 | O7 | Dividers | pending |
+| 15 | G1 | Gap | pending |
+| 16 | G2 | Gap | pending |
+| 17 | G3 | Gap | pending |
+| 18 | G6 | Gap | pending |
+| 19 | G7, G8 | Gap | pending |
+| 20A | O8B | Sliced line | pending |
+| 20 | (Phase 3.2 whitespace compaction need) | Gap | derived from 04/08/09/11/15–18 |
+| 21 | O5 | Furniture-only page | pending |
+| 22 | W3 | Editorial | pending |
+| 23 | O8 | Editorial | pending |
+
+_Proposed interview order:_ warm up with Group F (RFI-22, 23), then Group B watermarks/furniture
+(RFI-03…14), Group C gaps (RFI-15…19), the sliced line (RFI-20A), the furniture-only page
+(RFI-21), and finally the two read-both duplication decisions (RFI-01, 02).
