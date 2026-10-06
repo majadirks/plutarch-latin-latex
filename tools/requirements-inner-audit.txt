@@ -1,0 +1,7 @@
+# Offline runtime dependencies; install separately with the existing interpreter.
+numpy==2.4.3
+Pillow==12.1.1
+opencv-python-headless==4.13.0.92
+scikit-learn==1.9.0
+RapidFuzz==3.14.3
+PyMuPDF==1.27.2
