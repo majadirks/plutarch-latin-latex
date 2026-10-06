@@ -248,6 +248,23 @@
       "mask_rectangles": [[0.070301, 0.387735, 0.609272, 0.40382]],
       "preservation_boundary": "Marius's prose ends complete at rows 202-687 ('...mortem sibi ipse conscivit.' / '...αὐτὸς αὑτὸν ἀπέκτεινεν.'); then ~485 blank rows; then a decorative end-of-Life ornament (horizontal flourish) at rows 1172-1190, x 168-1166, with no Latin. Masking the ornament leaves the terminal region inkless, so it emits no furniture-only body canvas. Large blank below carries no ink and produces no strip.",
       "human_confirmed": "2026-10-06 RFI-21"
+    },
+    {
+      "finding_ids": ["D1"],
+      "unit_id": "comparatio_sertorii_et_eumenis",
+      "source": 1,
+      "source_page": 103,
+      "disposition": "duplicate_page",
+      "skip_pages": [103, 104],
+      "occurrences": [[101, 103], [102, 104]],
+      "retain_sequence": [102, 105, 106],
+      "adjacent_prose": {
+        "join_above": "(source page 102, comparison opening ends) ...Sertorius senatoria dignitate et imperiis gestis magno in",
+        "join_below": "(source page 105, comparison continues) pretio habitus, Eumenes ob scribae munus obitum contemptus, ad principatum progressi sunt."
+      },
+      "preservation_boundary": "Exact whole-page duplicates: source p103 is content-identical to p101 (folio 708, Eumenes ch. XVII-XVIII, 'Antigonus non ea modo se redditurum...Deinde impetu facto...'); source p104 is content-identical to p102 (folio 700, Eumenes ch. XIX ending '...inspicere posset' + comparison title 'SERTORII CUM EUMENE COMPARATIO' + opening 'Haec sunt quae de Eumene...magno in'). p101 (Eumenes unit 88-102) and p102 (shared tail) carry both; p103/p104 appear only in the comparison unit (102-106) and hold NO unique prose. Skipping p103/p104 in the comparison joins p102 ('...magno in') to p105 ('pretio habitus...') = 'magno in pretio habitus', the correct comparison continuation; the comparison concludes on p105. Eumenes conclusion is unaffected (its range ends at the shared p102).",
+      "implementation": "skip_known_duplicate_source_page(\"comparatio_sertorii_et_eumenis\", 1, 103) and (\"comparatio_sertorii_et_eumenis\", 1, 104) in unit_body_strips, identity-scoped to the comparison unit (Phase 2.1).",
+      "human_confirmed": "2026-10-06 RFI-01 (keep 101/102 over 103/104)"
     }
   ]
 }

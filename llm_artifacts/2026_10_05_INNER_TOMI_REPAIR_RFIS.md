@@ -195,7 +195,19 @@ choose the retained sequence.
   comparison (not Eumenes), so the retained sequence loses no unique line; (d) whether the
   fix is a boundary correction (fixing `eumenes`/comparison `start_page`/fracs + pin) or a
   whole-/partial-page duplicate exclusion.
-- **Decision:** _pending._
+- **Measured & verified (2026-10-06):** The duplication is an **exact whole-page repeat**:
+  source **p103 = p101** (folio 708, Eumenes ch. XVII–XVIII, `Antigonus non ea modo...Deinde
+  impetu facto...`) and source **p104 = p102** (folio 700, Eumenes ch. XIX end `...inspicere
+  posset` + comparison title + opening `Haec sunt quae de Eumene...magno in`). p101 is in the
+  Eumenes unit (88–102); p102 is the shared tail; **p103/p104 appear only in the comparison
+  unit (102–106) and hold NO unique prose.** The `...ducibus querentes. Deinde impetu facto`
+  passage is Eumenes text on p101 (kept once). After skipping p103/p104, p102 (`...magno in`)
+  joins **p105** (`pretio habitus...`) = `magno in pretio habitus` — the correct comparison
+  continuation; the comparison concludes on p105.
+- **Decision:** **CONFIRMED — keep 101/102, drop 103/104** (user 2026-10-06). Fix = whole-page
+  duplicate exclusion (not a boundary change): `skip_known_duplicate_source_page` for comparison
+  source pages 103 & 104 (Phase 2.1), identity-scoped to `comparatio_sertorii_et_eumenis`. Frozen
+  in the ledger.
 
 ## RFI-02 — D2: Agis repeated passage (Tomus VII, source 1)
 
@@ -554,7 +566,7 @@ watermark / running head / folio / divider) and touches no glyph or pale type.
 
 | RFI | Finding(s) | Group | Status |
 | --- | --- | --- | --- |
-| 01 | D1 | Duplication | pending |
+| 01 | D1 | Duplication | **CONFIRMED** — skip comparison s1 p103/p104 (dups of p101/p102) |
 | 02 | D2 | Duplication | pending |
 | 03 | W1 | Watermark/furniture | **CONFIRMED** — 2 masks (s0 p287, p288) |
 | 04 | W2, G4 | Watermark/furniture | **CONFIRMED** — watermark mask s0 p299 (page tail) |
