@@ -142,6 +142,249 @@ const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
         right: 1000.0 / 2012.0,
         bottom: 2630.0 / 2998.0,
     },
+    // Google watermark below the final Latin line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 287,
+        left: 0.6,
+        top: 0.9042017,
+        right: 0.8578947,
+        bottom: 1.0,
+    },
+    // Coriolanus running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 288,
+        left: 0.0909091,
+        top: 0.0687,
+        right: 0.8737374,
+        bottom: 0.0931635,
+    },
+    // Camillus running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 182,
+        left: 0.08612,
+        top: 0.071022,
+        right: 0.962513,
+        bottom: 0.095142,
+    },
+    // Coriolanus running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 290,
+        left: 0.08612,
+        top: 0.070998,
+        right: 0.962513,
+        bottom: 0.093101,
+    },
+    // Google watermark below the final Timoleon line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 299,
+        left: 0.6,
+        top: 0.8775,
+        right: 0.8632,
+        bottom: 1.0,
+    },
+    // Greek Coriolanus running head above the chapter XXII body.
+    SourceFurnitureMask {
+        source: 0,
+        page: 281,
+        left: 0.085729,
+        top: 0.061533,
+        right: 0.958932,
+        bottom: 0.080699,
+    },
+    // Timoleon running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 298,
+        left: 0.08593,
+        top: 0.064386,
+        right: 0.962814,
+        bottom: 0.084172,
+    },
+    // Timoleon running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 308,
+        left: 0.085586,
+        top: 0.064386,
+        right: 0.962963,
+        bottom: 0.083501,
+    },
+    // Lysander running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 550,
+        left: 0.085859,
+        top: 0.068265,
+        right: 0.962626,
+        bottom: 0.089244,
+    },
+    // Demosthenes running head above the first body line.
+    SourceFurnitureMask {
+        source: 1,
+        page: 441,
+        left: 0.074508,
+        top: 0.041549,
+        right: 0.904737,
+        bottom: 0.062676,
+    },
+    // Far-right vertical rule beyond the Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 441,
+        left: 0.987759,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Antonius running head and folio above the split-word continuation.
+    SourceFurnitureMask {
+        source: 1,
+        page: 539,
+        left: 0.076754,
+        top: 0.044397,
+        right: 0.926535,
+        bottom: 0.067653,
+    },
+    // Cato running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 1,
+        page: 337,
+        left: 0.084507,
+        top: 0.047216,
+        right: 0.96208,
+        bottom: 0.069063,
+    },
+    // End-of-Life ornament below the complete Marius ending.
+    SourceFurnitureMask {
+        source: 0,
+        page: 530,
+        left: 0.070301,
+        top: 0.387735,
+        right: 0.609272,
+        bottom: 0.40382,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 281,
+        left: 1900.0 / 1948.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 287,
+        left: 1875.0 / 1900.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 296,
+        left: 1965.0 / 1990.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 298,
+        left: 1965.0 / 1990.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 299,
+        left: 1875.0 / 1900.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 304,
+        left: 1963.0 / 1988.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 306,
+        left: 1976.0 / 2001.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 308,
+        left: 1973.0 / 1998.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 470,
+        left: 1991.0 / 2016.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 361,
+        left: 1785.0 / 1810.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 539,
+        left: 1799.0 / 1824.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Far-right scan edge beyond the retained Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 625,
+        left: 1791.0 / 1816.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Cato running head and folio above the first body line.
+    SourceFurnitureMask {
+        source: 1,
+        page: 347,
+        left: 140.0 / 1787.0,
+        top: 145.0 / 2866.0,
+        right: 1720.0 / 1787.0,
+        bottom: 205.0 / 2866.0,
+    },
 ];
 
 fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
@@ -332,6 +575,13 @@ fn percentile(widths: &[u32], p: f32) -> u32 {
     sorted[idx]
 }
 
+/// Exclude reviewed whole-page repetitions within their owning unit.
+fn skip_known_duplicate_source_page(unit_id: &str, source: usize, page: u32) -> bool {
+    matches!(
+        (unit_id, source, page),
+        ("comparatio_sertorii_et_eumenis", 1, 103 | 104) | ("agis", 1, 369 | 370)
+    )
+}
 /// Render, column-detect, crop, band, and de-furniture every source page in a
 /// unit's range, returning one `(column image, body bands)` per page plus the
 /// unit's robust [`LineMetrics`].
@@ -356,6 +606,9 @@ pub fn unit_body_strips(
     let mut source_pages = Vec::new();
     let mut skipped = 0u32;
     for page in range.unit.start_page..=range.end_page {
+        if skip_known_duplicate_source_page(&range.unit.id, source, page) {
+            continue;
+        }
         match render_and_band(source, page, &render_fn) {
             Ok((col, bands)) => {
                 pages.push((col, bands));
@@ -1487,18 +1740,26 @@ mod tests {
         canvases
     }
 
-    fn verify_real_composition(id: &str, pages: &[PageBands], m: &LineMetrics) {
-        let geom = TrimGeom::default();
+    /// The one production body scale, sampled once over the raw rendered column
+    /// widths across the full reading order. The width pass detects columns on the
+    /// unmasked rasters, so furniture masks and duplicate exclusions leave it
+    /// unchanged; every production-DPI regression that composes must use this value.
+    fn production_body_scale() -> f32 {
         static SCALE: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
-        let scale = *SCALE.get_or_init(|| {
+        *SCALE.get_or_init(|| {
             let units =
                 crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))
                     .unwrap();
             let ranges = crate::facsimile::units::ranges(&units, &[638, 711]);
-            super::super::global_scale_for(&ranges, geom.content_width(), &|s, p| {
+            super::super::global_scale_for(&ranges, TrimGeom::default().content_width(), &|s, p| {
                 Ok(real_source_image(s, p))
             })
-        });
+        })
+    }
+
+    fn verify_real_composition(id: &str, pages: &[PageBands], m: &LineMetrics) {
+        let geom = TrimGeom::default();
+        let scale = production_body_scale();
         let canvases = assert_scaled_stream(
             pages,
             m,
@@ -2431,6 +2692,1118 @@ mod tests {
             .save(&path)
             .unwrap();
         println!("retained crop: {}", path.display());
+    }
+
+    /// A test-only record of one source page after the inner-tomi repairs (duplicate
+    /// exclusion, furniture masking, and interior-whitespace compaction). Every row is
+    /// an **original** (full-source) coordinate; the retained-image row is derived with
+    /// [`RetainedSourcePageTrace::map_row`]. A skipped page (a verified whole-page
+    /// duplicate) has `retained_index: None` and contributes no retained image, so its
+    /// index must never be reconstructed as `page - start_page`.
+    #[derive(Clone, serde::Serialize)]
+    struct RetainedSourcePageTrace {
+        source: usize,
+        page: u32,
+        /// Position in the retained `pages` vector, or `None` for a skipped page.
+        retained_index: Option<usize>,
+        /// Original `[left, right)` Latin-column crop edges.
+        crop: [u32; 2],
+        /// Retained body bands in original-source row coordinates.
+        bands: Vec<[u32; 2]>,
+        /// Half-open `[top, bottom)` row intervals deleted by masking/compaction, in
+        /// original-source coordinates. Must be sorted and non-overlapping.
+        deleted_rows: Vec<[u32; 2]>,
+    }
+
+    impl RetainedSourcePageTrace {
+        /// Map an original-source row to its row in the retained (compacted) image, or
+        /// `None` when the row itself was deleted. Subtracts the total height of every
+        /// deletion interval ending at or before `row`; a row inside a deletion
+        /// interval has no mapped coordinate. `deleted_rows` must be sorted ascending.
+        fn map_row(&self, row: u32) -> Option<u32> {
+            let mut shift = 0u32;
+            for &[top, bottom] in &self.deleted_rows {
+                if bottom <= row {
+                    shift += bottom - top;
+                } else if top <= row {
+                    return None;
+                } else {
+                    break;
+                }
+            }
+            Some(row - shift)
+        }
+    }
+
+    /// Look a retained page up by identity. The one shared lookup used by the
+    /// duplication, mask, and compaction regressions — never `page - start_page`.
+    fn retained_page(
+        traces: &[RetainedSourcePageTrace],
+        source: usize,
+        page: u32,
+    ) -> Option<&RetainedSourcePageTrace> {
+        traces.iter().find(|t| t.source == source && t.page == page)
+    }
+
+    #[test]
+    fn repair_trace_maps_skipped_pages_and_deleted_rows() {
+        let traces = vec![
+            // A retained page with no deletions: an identity mapping.
+            RetainedSourcePageTrace {
+                source: 1,
+                page: 17,
+                retained_index: Some(0),
+                crop: [100, 900],
+                bands: vec![[200, 240]],
+                deleted_rows: vec![],
+            },
+            // A verified duplicate whole page, skipped: no retained index at all.
+            RetainedSourcePageTrace {
+                source: 1,
+                page: 21,
+                retained_index: None,
+                crop: [100, 900],
+                bands: vec![],
+                deleted_rows: vec![],
+            },
+            // An interior watermark band and a footer tail deleted in original coords.
+            RetainedSourcePageTrace {
+                source: 0,
+                page: 227,
+                retained_index: Some(1),
+                crop: [1040, 1950],
+                bands: vec![[300, 340], [1800, 1840]],
+                deleted_rows: vec![[1500, 1700], [2600, 2900]],
+            },
+        ];
+        // A skipped page is found by identity and carries no retained index.
+        assert_eq!(retained_page(&traces, 1, 21).unwrap().retained_index, None);
+        // Identity mapping for a page with no deletions.
+        let clean = retained_page(&traces, 1, 17).unwrap();
+        assert_eq!(clean.map_row(220), Some(220));
+        // Deleted-row semantics on the masked page.
+        let p = retained_page(&traces, 0, 227).unwrap();
+        assert_eq!(p.map_row(300), Some(300));
+        assert_eq!(p.map_row(1499), Some(1499));
+        assert_eq!(p.map_row(1500), None, "inclusive top of a deletion");
+        assert_eq!(p.map_row(1600), None);
+        assert_eq!(p.map_row(1699), None);
+        assert_eq!(p.map_row(1700), Some(1500), "shift by the 200-row deletion");
+        assert_eq!(p.map_row(1800), Some(1600));
+        assert_eq!(p.map_row(2599), Some(2399));
+        assert_eq!(p.map_row(2700), None, "inside the second deletion");
+        assert_eq!(p.map_row(2900), Some(2400), "shift by 200 + 300 rows");
+        // Every field participates (crop/bands are read by the evidence tracer).
+        assert_eq!(p.crop, [1040, 1950]);
+        assert_eq!(p.bands.len(), 2);
+        assert_eq!(p.page, 227);
+    }
+
+    #[test]
+    fn inner_tomi_repair_ledger_has_expected_shape() {
+        let ledger: serde_json::Value =
+            serde_json::from_str(include_str!("fixtures/inner_tomi_repair_source_trace.json"))
+                .expect("committed repair ledger parses");
+        assert!(ledger["description"].is_string());
+        assert!(ledger["schema"]["repair_record"].is_array());
+        assert!(
+            ledger["repairs"].is_array(),
+            "repairs is the list of reviewed, frozen repair records"
+        );
+        // Every present repair record must carry the mandatory diagnostic keys, so a
+        // guessed or half-filled record cannot slip in unnoticed.
+        for repair in ledger["repairs"].as_array().unwrap() {
+            for key in [
+                "finding_ids",
+                "unit_id",
+                "source",
+                "source_page",
+                "disposition",
+                "preservation_boundary",
+            ] {
+                assert!(!repair[key].is_null(), "repair record missing {key}");
+            }
+        }
+    }
+
+    fn repair_ledger() -> serde_json::Value {
+        serde_json::from_str(include_str!("fixtures/inner_tomi_repair_source_trace.json")).unwrap()
+    }
+
+    /// Reviewed rectangles grouped by source identity, including separate repairs on one page.
+    fn reviewed_page_masks(
+        ledger: &serde_json::Value,
+    ) -> std::collections::BTreeMap<(usize, u32), Vec<[f64; 4]>> {
+        let mut pages = std::collections::BTreeMap::new();
+        for repair in ledger["repairs"].as_array().unwrap() {
+            if repair["disposition"] != "mask" {
+                continue;
+            }
+            let identity = (
+                repair["source"].as_u64().unwrap() as usize,
+                repair["source_page"].as_u64().unwrap() as u32,
+            );
+            let rectangles: &mut Vec<[f64; 4]> = pages.entry(identity).or_default();
+            for rectangle in repair["mask_rectangles"].as_array().unwrap() {
+                rectangles.push(std::array::from_fn(|i| rectangle[i].as_f64().unwrap()));
+            }
+        }
+        pages
+    }
+
+    #[test]
+    fn known_duplicate_page_exclusions_are_identity_scoped() {
+        let ledger = repair_ledger();
+        for repair in ledger["repairs"].as_array().unwrap() {
+            if repair["disposition"] != "duplicate_page" {
+                continue;
+            }
+            let id = repair["unit_id"].as_str().unwrap();
+            let source = repair["source"].as_u64().unwrap() as usize;
+            for page in repair["skip_pages"].as_array().unwrap() {
+                let page = page.as_u64().unwrap() as u32;
+                assert!(skip_known_duplicate_source_page(id, source, page));
+                assert!(!skip_known_duplicate_source_page(id, 0, page));
+                assert!(!skip_known_duplicate_source_page("unrelated", source, page));
+            }
+            for page in repair["retain_sequence"].as_array().unwrap() {
+                assert!(!skip_known_duplicate_source_page(
+                    id,
+                    source,
+                    page.as_u64().unwrap() as u32
+                ));
+            }
+        }
+    }
+
+    #[test]
+    fn inner_tomi_masks_match_reviewed_ledger() {
+        let ledger = repair_ledger();
+        for ((source, page), rectangles) in reviewed_page_masks(&ledger) {
+            let record = ledger["repairs"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|r| {
+                    r["disposition"] == "mask"
+                        && r["source"].as_u64() == Some(source as u64)
+                        && r["source_page"].as_u64() == Some(page as u64)
+                })
+                .unwrap();
+            let raster = [
+                record["raster"][0].as_u64().unwrap(),
+                record["raster"][1].as_u64().unwrap(),
+            ];
+            let pixels = |rect: [f64; 4]| -> [u32; 4] {
+                std::array::from_fn(|i| (rect[i] * raster[i % 2] as f64).round() as u32)
+            };
+            let masks: Vec<_> = SOURCE_FURNITURE_MASKS
+                .iter()
+                .filter(|mask| mask.source == source && mask.page == page)
+                .collect();
+            assert_eq!(masks.len(), rectangles.len());
+            for rectangle in rectangles {
+                assert!(
+                    masks.iter().any(|mask| {
+                        let actual = [mask.left, mask.top, mask.right, mask.bottom];
+                        actual
+                            .iter()
+                            .zip(rectangle)
+                            .all(|(a, b)| (a - b).abs() <= 4.0 * f64::EPSILON)
+                            && pixels(actual) == pixels(rectangle)
+                    }),
+                    "source {source} page {page}: every reviewed rectangle is installed"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn inner_tomi_masking_restores_separate_line_bands() {
+        let mut original = column(
+            120,
+            100,
+            &[(20, 30, 5, 90), (50, 60, 5, 90), (80, 90, 5, 90)],
+        );
+        for y in 20..90 {
+            for x in 96..100 {
+                original.put_pixel(x, y, Luma([0]));
+            }
+        }
+        assert_eq!(line_bands(&original, LINE_MIN_INK).len(), 1);
+        let mut cleaned = original.clone();
+        apply_source_furniture_mask(
+            &SourceFurnitureMask {
+                source: 1,
+                page: 441,
+                left: 0.96,
+                top: 0.0,
+                right: 1.0,
+                bottom: 1.0,
+            },
+            &mut cleaned,
+        );
+        assert_eq!(
+            line_bands(&cleaned, LINE_MIN_INK),
+            vec![
+                Band {
+                    top: 20,
+                    bottom: 30
+                },
+                Band {
+                    top: 50,
+                    bottom: 60
+                },
+                Band {
+                    top: 80,
+                    bottom: 90
+                },
+            ]
+        );
+        for y in 0..120 {
+            for x in 0..96 {
+                assert_eq!(original.get_pixel(x, y), cleaned.get_pixel(x, y));
+            }
+        }
+    }
+
+    fn assert_reviewed_duplicate_sequence(id: &str) {
+        let ledger = repair_ledger();
+        let repair = ledger["repairs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["unit_id"] == id && r["disposition"] == "duplicate_page")
+            .unwrap();
+        let range = operational_range(id);
+        let requested = std::cell::RefCell::new(Vec::new());
+        let (pages, _) = unit_body_strips(&range, |source, page| {
+            requested.borrow_mut().push(page);
+            Ok(real_source_image(source, page))
+        })
+        .unwrap();
+        let sequence = requested.into_inner();
+        assert_eq!(
+            sequence.len(),
+            pages.len(),
+            "every retained page must render successfully"
+        );
+        let expected: Vec<_> = (range.unit.start_page..=range.end_page)
+            .filter(|page| {
+                !repair["skip_pages"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|p| p.as_u64() == Some(*page as u64))
+            })
+            .collect();
+        assert_eq!(sequence, expected);
+        let seam: Vec<_> = repair["retain_sequence"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p.as_u64().unwrap() as u32)
+            .collect();
+        assert!(sequence.windows(seam.len()).any(|w| w == seam));
+        for (index, (&page, (column, bands))) in sequence.iter().zip(&pages).enumerate() {
+            let raw = real_source_image(range.unit.source, page);
+            let crop = detect_latin_column(&raw).unwrap();
+            let trace = RetainedSourcePageTrace {
+                source: range.unit.source,
+                page,
+                retained_index: Some(index),
+                crop: [crop.left, crop.right],
+                bands: bands.iter().map(|b| [b.top, b.bottom]).collect(),
+                deleted_rows: Vec::new(),
+            };
+            for band in bands {
+                for y in band.top..band.bottom {
+                    for x in 0..column.width() {
+                        assert_eq!(
+                            column.get_pixel(x, trace.map_row(y).unwrap()),
+                            raw.get_pixel(crop.left + x, y),
+                            "unit {id} source page {page} pixel {x},{y}"
+                        );
+                    }
+                }
+            }
+        }
+        if id == "comparatio_sertorii_et_eumenis" {
+            let ending = operational_range("eumenes");
+            assert_eq!(ending.end_page, range.unit.start_page);
+            let (ending_pages, _) =
+                unit_body_strips(&ending, |s, p| Ok(real_source_image(s, p))).unwrap();
+            assert!(!ending_pages.last().unwrap().1.is_empty());
+        }
+        println!(
+            "{id}: reviewed retained sequence {sequence:?}; join {:?}",
+            repair["adjacent_prose"]
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn eumenes_comparison_prose_is_complete_and_unique() {
+        assert_reviewed_duplicate_sequence("comparatio_sertorii_et_eumenis");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn agis_repeated_passage_survives_once() {
+        assert_reviewed_duplicate_sequence("agis");
+    }
+
+    #[test]
+    #[ignore = "requires all source rasters; writes production-scale repair evidence"]
+    fn inner_tomi_post_mask_composition_evidence() {
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/post_mask");
+        std::fs::create_dir_all(dir).unwrap();
+        let units =
+            crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))
+                .unwrap();
+        let ranges = crate::facsimile::units::ranges(&units, &[638, 711]);
+        let geom = TrimGeom::default();
+        let scale = super::super::global_scale_for(&ranges, geom.content_width(), &|s, p| {
+            Ok(real_source_image(s, p))
+        });
+        let sampling: Vec<_> = ranges.iter().map(|r| serde_json::json!({"unit_id":r.unit.id,"source":r.unit.source,"start_page":r.unit.start_page,"end_page":r.end_page})).collect();
+        let mut evidence = Vec::new();
+        for id in [
+            "marcius_coriolanus",
+            "timoleon",
+            "caius_marius",
+            "brutus",
+            "theseus",
+            "pyrrhus",
+            "comparatio_sertorii_et_eumenis",
+            "agis",
+            "camillus",
+            "lysander",
+            "demosthenes",
+            "antonius",
+            "cato_minor",
+        ] {
+            let range = operational_range(id);
+            let sequence = std::cell::RefCell::new(Vec::new());
+            let (pages, metrics) = unit_body_strips(&range, |s, p| {
+                sequence.borrow_mut().push(p);
+                Ok(real_source_image(s, p))
+            })
+            .unwrap();
+            let sequence = sequence.into_inner();
+            let canvases = compose_pages(
+                &pages,
+                scale,
+                &geom,
+                geom.first_body_budget(),
+                geom.body_budget(),
+                &metrics,
+            );
+            let mut stream_top = 0;
+            let mut scaled_strips = Vec::new();
+            for strip in strips_in_reading_order(&pages, &metrics) {
+                let scaled =
+                    scale_strip(&pages[strip.page_img_index].0, &strip.band, scale).unwrap();
+                let stream_bottom = stream_top + scaled.height();
+                scaled_strips.push((strip, scaled, stream_top, stream_bottom));
+                stream_top = stream_bottom;
+            }
+            let mut canvas_bottom = 0;
+            let mut seams = Vec::new();
+            for (index, canvas) in canvases
+                .iter()
+                .enumerate()
+                .take(canvases.len().saturating_sub(1))
+            {
+                canvas_bottom += canvas.height() - geom.pad_y;
+                if let Some((strip, scaled, top, _)) = scaled_strips
+                    .iter()
+                    .find(|(_, _, top, bottom)| *top < canvas_bottom && canvas_bottom < *bottom)
+                {
+                    let row = canvas_bottom - top;
+                    let rows = ink_profile_rows(scaled, INK_THRESHOLD);
+                    seams.push(serde_json::json!({"canvas_before":index+1,"canvas_after":index+2,
+                        "source_page":sequence[strip.page_img_index],"strip":[strip.band.top,strip.band.bottom],
+                        "class":format!("{:?}",strip.class),"scaled_cut_row":row,
+                        "source_row_estimate":strip.band.top as f32 + row as f32 / scale,
+                        "ink_before_cut":rows[(row-1) as usize],"ink_after_cut":rows[row as usize]}));
+                }
+            }
+            assert_eq!(
+                canvases,
+                assert_scaled_stream(
+                    &pages,
+                    &metrics,
+                    scale,
+                    &geom,
+                    geom.first_body_budget(),
+                    geom.body_budget()
+                ),
+                "{id}: production locators trace the complete scaled source row stream"
+            );
+            for (index, canvas) in canvases.iter().enumerate() {
+                canvas
+                    .save(dir.join(format!("{id}-canvas-{:03}.png", index + 1)))
+                    .unwrap();
+            }
+            let mut canvas_top = 0;
+            let canvas_ranges: Vec<_> = canvases
+                .iter()
+                .enumerate()
+                .map(|(index, canvas)| {
+                    let top = canvas_top;
+                    canvas_top += canvas.height() - geom.pad_y;
+                    (index + 1, top, canvas_top)
+                })
+                .collect();
+            let strips: Vec<_> = scaled_strips.iter().map(|(strip, _, top, bottom)| serde_json::json!({
+                "source_page":sequence[strip.page_img_index],"top":strip.band.top,"bottom":strip.band.bottom,
+                "class":format!("{:?}",strip.class),"scaled_stream_rows":[top,bottom],
+                "canvas_indices":canvas_ranges.iter().filter(|(_,lo,hi)|lo<bottom && hi>top).map(|(index,_,_)|index).collect::<Vec<_>>()
+            })).collect();
+            let bands: Vec<_> = sequence.iter().zip(&pages).map(|(p,(_,bands))|serde_json::json!({"source_page":p,"bands":bands.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>()})).collect();
+            evidence.push(serde_json::json!({"unit_id":id,"source":range.unit.source,"sequence":sequence,"bands":bands,"strips":strips,"canvas_count":canvases.len(),"within_strip_seams":seams}));
+        }
+        let result =
+            serde_json::json!({"scale":scale,"width_sampling_ranges":sampling,"units":evidence});
+        std::fs::write(
+            dir.join("composition.json"),
+            serde_json::to_vec_pretty(&result).unwrap(),
+        )
+        .unwrap();
+        println!(
+            "production scale {scale}; composition evidence {}",
+            dir.display()
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn marius_terminal_furniture_emits_no_body_canvas() {
+        let range = operational_range("caius_marius");
+        let (pages, metrics) =
+            unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+        let ledger = repair_ledger();
+        let repair = ledger["repairs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["finding_ids"][0] == "O5")
+            .unwrap();
+        let page = repair["source_page"].as_u64().unwrap() as u32;
+        let retained = &pages[(page - range.unit.start_page) as usize];
+        let top = (repair["mask_rectangles"][0][1].as_f64().unwrap() * retained.0.height() as f64)
+            .round() as u32;
+        assert!(!retained.1.is_empty(), "complete Marius ending retained");
+        assert!(
+            retained.1.iter().all(|b| b.bottom < top),
+            "ornament contributes no retained band"
+        );
+        let retained_index = (page - range.unit.start_page) as usize;
+        assert!(
+            strips_in_reading_order(&pages, &metrics)
+                .iter()
+                .filter(|strip| strip.page_img_index == retained_index)
+                .all(|strip| strip.band.bottom < top),
+            "production extraction copies no ornament or terminal blank region"
+        );
+        save_retained_crop("marius-repaired-ending", retained);
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn inner_tomi_known_masks_preserve_latin() {
+        let ledger = repair_ledger();
+        let page_masks = reviewed_page_masks(&ledger);
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/masks");
+        std::fs::create_dir_all(dir).unwrap();
+        let mut measurements = Vec::new();
+        for repair in ledger["repairs"].as_array().unwrap() {
+            if repair["disposition"] != "mask" {
+                continue;
+            }
+            let source = repair["source"].as_u64().unwrap() as usize;
+            let page = repair["source_page"].as_u64().unwrap() as u32;
+            let original = real_source_image(source, page);
+            assert_eq!(
+                [original.width() as u64, original.height() as u64],
+                [
+                    repair["raster"][0].as_u64().unwrap(),
+                    repair["raster"][1].as_u64().unwrap()
+                ]
+            );
+            let mut cleaned = original.clone();
+            mask_known_source_furniture(source, page, &mut cleaned);
+            let rectangles: Vec<[u32; 4]> = page_masks[&(source, page)]
+                .iter()
+                .map(|r| {
+                    std::array::from_fn(|i| {
+                        (r[i]
+                            * if i % 2 == 0 {
+                                original.width()
+                            } else {
+                                original.height()
+                            } as f64)
+                            .round() as u32
+                    })
+                })
+                .collect();
+            for (x, y, pixel) in original.enumerate_pixels() {
+                let masked = rectangles
+                    .iter()
+                    .any(|a| (a[0]..a[2]).contains(&x) && (a[1]..a[3]).contains(&y));
+                assert_eq!(
+                    cleaned.get_pixel(x, y),
+                    if masked { &Luma([255]) } else { pixel },
+                    "source {source} page {page} pixel {x},{y}"
+                );
+            }
+            let (_, bands) = render_and_band(source, page, &|_, _| Ok(cleaned.clone())).unwrap();
+            let raw_column = detect_latin_column(&original).unwrap();
+            let raw_crop = crop_column(&original, &raw_column);
+            let before = drop_furniture(&line_bands(&raw_crop, LINE_MIN_INK), original.height());
+            let crop = detect_latin_column(&cleaned).unwrap();
+            let copied_span = |bands: &[Band]| {
+                bands
+                    .last()
+                    .zip(bands.first())
+                    .map_or(0, |(last, first)| last.bottom - first.top)
+            };
+            measurements.push(serde_json::json!({"source":source,"source_page":page,
+                "crop_before":[raw_column.left,raw_column.right],"crop_after":[crop.left,crop.right],
+                "bands_before_zone_filter":line_bands(&raw_crop,LINE_MIN_INK).iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),
+                "bands_before_zone_filter_retained":before.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),
+                "bands_after_zone_filter":bands.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),
+                "copied_span_before_zone_banding":copied_span(&before),"copied_span_after_zone_banding":copied_span(&bands)}));
+            original
+                .save(dir.join(format!("s{source}-p{page:04}-raw.png")))
+                .unwrap();
+            cleaned
+                .save(dir.join(format!("s{source}-p{page:04}-masked.png")))
+                .unwrap();
+            println!(
+                "source {source} page {page}: copied span before/after zone banding {}/{}",
+                copied_span(&before),
+                copied_span(&bands)
+            );
+        }
+        std::fs::write(
+            dir.join("measurements.json"),
+            serde_json::to_vec_pretty(&measurements).unwrap(),
+        )
+        .unwrap();
+    }
+
+    /// The frozen right-margin repair record for a source page: the full-height mask
+    /// that restores the Latin column and trims the connecting scan-edge ink.
+    fn margin_repair_record(
+        ledger: &serde_json::Value,
+        source: usize,
+        page: u32,
+    ) -> serde_json::Value {
+        ledger["repairs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| {
+                r["repair_role"] == "margin"
+                    && r["source"].as_u64() == Some(source as u64)
+                    && r["source_page"].as_u64() == Some(page as u64)
+            })
+            .unwrap_or_else(|| panic!("margin repair record for source {source} page {page}"))
+            .clone()
+    }
+
+    fn ledger_band(value: &serde_json::Value) -> Band {
+        Band {
+            top: value[0].as_u64().unwrap() as u32,
+            bottom: value[1].as_u64().unwrap() as u32,
+        }
+    }
+
+    fn ledger_crop_edges(record: &serde_json::Value) -> [u32; 2] {
+        [
+            record["crop_edges"][0].as_u64().unwrap() as u32,
+            record["crop_edges"][1].as_u64().unwrap() as u32,
+        ]
+    }
+
+    /// The production crop (all masks applied) restores the ledger's Latin column: the
+    /// scan-edge rule is no longer mistaken for the body. On the two pages that also
+    /// carry a header mask (281/298), the header+margin union shifts the detected left
+    /// edge by one pixel from the margin-only preview the ledger crop was measured
+    /// against; the right edge and column width are unchanged.
+    fn assert_restored_column(left: u32, right: u32, edges: [u32; 2], page: u32) {
+        assert_eq!(
+            right, edges[1],
+            "page {page} restored Latin column right edge"
+        );
+        assert!(
+            left.abs_diff(edges[0]) <= 1,
+            "page {page} restored Latin column left edge {left} vs ledger {}",
+            edges[0]
+        );
+    }
+
+    /// A unit with no duplicate exclusions renders one retained page per source page,
+    /// so the retained vector indexes directly by `page - start_page`.
+    fn unit_retained_page(pages: &[PageBands], range: &UnitRange, page: u32) -> usize {
+        assert_eq!(
+            pages.len() as u32,
+            range.end_page - range.unit.start_page + 1,
+            "unit {:?} renders every source page (no exclusions)",
+            range.unit.id
+        );
+        (page - range.unit.start_page) as usize
+    }
+
+    /// Every retained body pixel equals the raw source at its original column/row. The
+    /// retained column is cropped from the masked image left of the right-margin mask,
+    /// so an identity source comparison proves no Latin glyph was altered or erased.
+    fn assert_retained_bands_match_source(retained: &PageBands, source: usize, page: u32) {
+        let raw = real_source_image(source, page);
+        let mut masked = raw.clone();
+        mask_known_source_furniture(source, page, &mut masked);
+        let crop = detect_latin_column(&masked).unwrap();
+        for band in &retained.1 {
+            for y in band.top..band.bottom {
+                for x in 0..retained.0.width() {
+                    assert_eq!(
+                        retained.0.get_pixel(x, y),
+                        raw.get_pixel(crop.left + x, y),
+                        "source {source} page {page} retained pixel {x},{y}"
+                    );
+                }
+            }
+        }
+    }
+
+    /// A strip paired with its `[top, bottom)` rows in the scaled composed stream.
+    type StripRange = (Strip, u32, u32);
+    /// A one-based canvas index paired with its `[top, bottom)` rows in that stream.
+    type CanvasRange = (usize, u32, u32);
+
+    /// Scaled-stream row ranges of each strip and of each composed canvas, in one
+    /// contiguous coordinate system, so a strip can be located within the canvases it
+    /// touches. Mirrors the mapping saved by `inner_tomi_post_mask_composition_evidence`.
+    fn strip_and_canvas_ranges(
+        pages: &[PageBands],
+        metrics: &LineMetrics,
+        scale: f32,
+        geom: &TrimGeom,
+    ) -> (Vec<StripRange>, Vec<CanvasRange>, Vec<GrayImage>) {
+        let mut stream_top = 0;
+        let mut strips = Vec::new();
+        for strip in strips_in_reading_order(pages, metrics) {
+            let scaled = scale_strip(&pages[strip.page_img_index].0, &strip.band, scale).unwrap();
+            let stream_bottom = stream_top + scaled.height();
+            strips.push((strip, stream_top, stream_bottom));
+            stream_top = stream_bottom;
+        }
+        let canvases = compose_pages(
+            pages,
+            scale,
+            geom,
+            geom.first_body_budget(),
+            geom.body_budget(),
+            metrics,
+        );
+        let mut canvas_top = 0;
+        let canvas_ranges = canvases
+            .iter()
+            .enumerate()
+            .map(|(index, canvas)| {
+                let top = canvas_top;
+                canvas_top += canvas.height() - geom.pad_y;
+                (index + 1, top, canvas_top)
+            })
+            .collect();
+        (strips, canvas_ranges, canvases)
+    }
+
+    /// W1/W2: the two confirmed body watermarks. The right-margin masks delete the
+    /// scan-edge ink that previously merged into the footer and dragged the copied
+    /// region far past the last Latin line. Both the pixels and that copied space must
+    /// go, and the following page's first line must survive.
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn inner_tomi_watermark_cleanup_removes_pixels_and_space() {
+        let ledger = repair_ledger();
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/watermark_cleanup");
+        std::fs::create_dir_all(dir).unwrap();
+        // The pre-margin-mask copied endpoints measured in the first rebuild.
+        for (unit_id, source, page, next, old_copied) in [
+            ("marcius_coriolanus", 0usize, 287u32, 288u32, 2940u32),
+            ("timoleon", 0, 299, 300, 2922),
+        ] {
+            let record = margin_repair_record(&ledger, source, page);
+            let end = ledger_band(&record["expected_last_band"]).bottom;
+
+            // Masked zone banding ends at the last Latin line, not the watermark tail.
+            let (_, bands) = render_and_band(source, page, &|s, p| Ok(real_source_image(s, p)))
+                .unwrap_or_else(|e| panic!("render page {page}: {e:#}"));
+            assert_eq!(
+                bands.last().unwrap().bottom,
+                end,
+                "source {page} zone endpoint"
+            );
+            assert_eq!(*cut_points(&bands).last().unwrap(), end);
+            assert!(old_copied > end, "copied region shrinks past the watermark");
+
+            // The full unit keeps the same endpoint and copies nothing below it.
+            let range = operational_range(unit_id);
+            let (pages, metrics) =
+                unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+            let index = unit_retained_page(&pages, &range, page);
+            let current = &pages[index];
+            assert_eq!(current.1.last().unwrap().bottom, end, "full-unit endpoint");
+            let page_strips: Vec<_> = strips_in_reading_order(&pages, &metrics)
+                .into_iter()
+                .filter(|s| s.page_img_index == index)
+                .collect();
+            assert!(
+                page_strips.iter().all(|s| s.band.bottom <= end),
+                "no strip copied below the masked watermark endpoint"
+            );
+            assert_eq!(page_strips.last().unwrap().band.bottom, end);
+            assert_retained_bands_match_source(current, source, page);
+
+            // The following page's first body line is intact and faithful.
+            let following = &pages[index + 1];
+            assert!(!following.1.is_empty(), "page {next} retains its Latin");
+            assert_retained_bands_match_source(following, source, next);
+
+            // The composed seam at production scale follows the stream with no footer
+            // padding: the complete row stream equals the concatenated resized strips.
+            let seam_pages = vec![
+                (
+                    current.0.clone(),
+                    current.1.iter().rev().take(2).rev().copied().collect(),
+                ),
+                (
+                    following.0.clone(),
+                    following.1.iter().take(2).copied().collect(),
+                ),
+            ];
+            let geom = TrimGeom::default();
+            let seam = assert_scaled_stream(
+                &seam_pages,
+                &metrics,
+                production_body_scale(),
+                &geom,
+                4000,
+                4000,
+            );
+            seam[0]
+                .save(dir.join(format!("watermark-{page}-{next}-seam.png")))
+                .unwrap();
+            println!(
+                "source {page}: copied endpoint {old_copied} -> {end}, {} rows removed",
+                old_copied - end
+            );
+        }
+    }
+
+    /// G1/G2/G3/G6: pages where column detection had locked onto a narrow right-margin
+    /// rule and dropped the Latin column (or, for Pyrrhus's shared opening, copied a
+    /// long furniture tail). The masks restore the real Latin crop; every retained line
+    /// must be faithful to the source and the opening/tail endpoints must match review.
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn inner_tomi_severe_gaps_preserve_all_lines() {
+        let ledger = repair_ledger();
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/severe_gaps");
+        std::fs::create_dir_all(dir).unwrap();
+        for (unit_id, source, page, neighbors) in [
+            ("timoleon", 0usize, 296u32, &[295u32, 297][..]),
+            ("timoleon", 0, 304, &[305]),
+            ("pyrrhus", 0, 470, &[471]),
+            ("brutus", 1, 625, &[624, 626]),
+        ] {
+            let record = margin_repair_record(&ledger, source, page);
+            let crop_edges = ledger_crop_edges(&record);
+            let first = ledger_band(&record["expected_first_band"]);
+            let last = ledger_band(&record["expected_last_band"]);
+
+            // Masking restores the Latin column; the narrow scan-edge rule is gone.
+            let mut masked = real_source_image(source, page);
+            mask_known_source_furniture(source, page, &mut masked);
+            let crop = detect_latin_column(&masked).unwrap();
+            assert_restored_column(crop.left, crop.right, crop_edges, page);
+
+            let range = operational_range(unit_id);
+            let (pages, _) = unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+            let index = unit_retained_page(&pages, &range, page);
+            let retained = &pages[index];
+            assert_eq!(
+                *retained.1.first().unwrap(),
+                first,
+                "source {page} first line"
+            );
+            assert_eq!(*retained.1.last().unwrap(), last, "source {page} last line");
+            // The former copied tail on Pyrrhus's opening page is gone.
+            if page == 470 {
+                assert!(
+                    last.bottom < 2782,
+                    "copied tail trimmed below the former row 2782"
+                );
+            }
+            assert_retained_bands_match_source(retained, source, page);
+            save_retained_crop(&format!("severe-gap-{source}-{page}"), retained);
+
+            // Each adjacent page in the join retains its own Latin faithfully.
+            for &neighbor in neighbors {
+                let n_index = unit_retained_page(&pages, &range, neighbor);
+                assert!(
+                    !pages[n_index].1.is_empty(),
+                    "join neighbor page {neighbor} retains its Latin"
+                );
+                assert_retained_bands_match_source(&pages[n_index], source, neighbor);
+            }
+            println!(
+                "source {page}: restored crop {crop_edges:?}, {} retained lines {}..{}",
+                retained.1.len(),
+                first.top,
+                last.bottom
+            );
+            let _ = dir;
+        }
+    }
+
+    /// O8B: a scan-edge rule on source 306 had merged three Timoleon lines into one
+    /// tall strip that the packer cut mid-line across a canvas boundary. The margin
+    /// mask restores separate line bands; each original line must now compose whole,
+    /// on a single canvas, at the production scale.
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn timoleon_reported_page_break_preserves_whole_lines() {
+        let ledger = repair_ledger();
+        let sliced = &ledger["post_rebuild_review"]["sliced_line"];
+        let source = sliced["source"].as_u64().unwrap() as usize;
+        let page = sliced["source_page"].as_u64().unwrap() as u32;
+        let merged = ledger_band(&sliced["strip"]);
+
+        let range = operational_range("timoleon");
+        let (pages, metrics) =
+            unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+        let index = unit_retained_page(&pages, &range, page);
+        let retained = &pages[index];
+
+        // The former merged interval is now covered by at least two separate lines.
+        let within: Vec<_> = retained
+            .1
+            .iter()
+            .filter(|b| b.top < merged.bottom && b.bottom > merged.top)
+            .collect();
+        assert!(
+            within.len() >= 2,
+            "merged strip {merged:?} split into separate line bands"
+        );
+        assert!(
+            !retained
+                .1
+                .iter()
+                .any(|b| b.top <= merged.top && b.bottom >= merged.bottom),
+            "no single retained band spans the former merge"
+        );
+        assert_retained_bands_match_source(retained, source, page);
+
+        // At production scale, no source-306 line is a tall (splittable) strip, and
+        // each composes entirely within one canvas.
+        let scale = production_body_scale();
+        let geom = TrimGeom::default();
+        let (strips, canvas_ranges, canvases) =
+            strip_and_canvas_ranges(&pages, &metrics, scale, &geom);
+        assert_eq!(
+            canvases,
+            assert_scaled_stream(
+                &pages,
+                &metrics,
+                scale,
+                &geom,
+                geom.first_body_budget(),
+                geom.body_budget()
+            ),
+            "composed stream is the concatenated resized strips"
+        );
+        let page_strips: Vec<_> = strips
+            .iter()
+            .filter(|(s, _, _)| s.page_img_index == index)
+            .collect();
+        assert!(!page_strips.is_empty());
+        for (strip, top, bottom) in &page_strips {
+            assert!(
+                !matches!(strip.class, BandClass::Tall),
+                "source {page} line {:?} is an ordinary (whole-wrapping) strip",
+                strip.band
+            );
+            let touched: Vec<_> = canvas_ranges
+                .iter()
+                .filter(|(_, lo, hi)| lo < bottom && hi > top)
+                .collect();
+            assert_eq!(
+                touched.len(),
+                1,
+                "source {page} line {:?} composes whole on one canvas, touched {touched:?}",
+                strip.band
+            );
+        }
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/timoleon_seam");
+        std::fs::create_dir_all(dir).unwrap();
+        let touched: std::collections::BTreeSet<usize> = page_strips
+            .iter()
+            .flat_map(|(_, top, bottom)| {
+                canvas_ranges
+                    .iter()
+                    .filter(move |(_, lo, hi)| lo < bottom && hi > top)
+                    .map(|(i, _, _)| *i)
+            })
+            .collect();
+        for i in touched {
+            canvases[i - 1]
+                .save(dir.join(format!("timoleon-canvas-{i:03}.png")))
+                .unwrap();
+        }
+        println!(
+            "source {page}: {} restored lines over former merge {merged:?}, each whole on one canvas",
+            within.len()
+        );
+    }
+
+    /// Timoleon and Brutus previously produced near-blank canvases whose only content
+    /// was a right-margin rule that column detection had mistaken for the body. With
+    /// the rules masked, the Latin columns are restored, no strip derives from a rule
+    /// region, and every composed canvas carries real body ink. Blank recto separators
+    /// are inserted later by assembly and are not produced here.
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn timoleon_and_brutus_have_no_furniture_only_body_canvases() {
+        let ledger = repair_ledger();
+        let scale = production_body_scale();
+        let geom = TrimGeom::default();
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/furniture_only");
+        std::fs::create_dir_all(dir).unwrap();
+        for (unit_id, source, masked_pages) in [
+            ("timoleon", 0usize, &[296u32, 298, 304, 306, 308][..]),
+            ("brutus", 1, &[625]),
+        ] {
+            // Every masked furniture page now resolves to its Latin column, so the
+            // right-margin rule contributes no band and therefore no strip.
+            for &page in masked_pages {
+                let record = margin_repair_record(&ledger, source, page);
+                let crop_edges = ledger_crop_edges(&record);
+                let mut masked = real_source_image(source, page);
+                mask_known_source_furniture(source, page, &mut masked);
+                let crop = detect_latin_column(&masked).unwrap();
+                assert_restored_column(crop.left, crop.right, crop_edges, page);
+            }
+
+            let range = operational_range(unit_id);
+            let (pages, metrics) =
+                unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
+            // No retained band on a masked page lies in or beyond the masked rule.
+            for &page in masked_pages {
+                let index = unit_retained_page(&pages, &range, page);
+                assert!(!pages[index].1.is_empty(), "page {page} retains Latin");
+                assert_retained_bands_match_source(&pages[index], source, page);
+            }
+
+            let canvases = compose_pages(
+                &pages,
+                scale,
+                &geom,
+                geom.first_body_budget(),
+                geom.body_budget(),
+                &metrics,
+            );
+            assert!(!canvases.is_empty());
+            // Every composed canvas carries at least a full scaled line of body ink:
+            // compose drops anything fainter, so none is a furniture-only strip.
+            let floor = minimum_ink(&metrics)
+                .map(|m| (m as f64 * (scale as f64).powi(2)).ceil().max(1.0) as u64)
+                .unwrap_or(1);
+            for (i, canvas) in canvases.iter().enumerate() {
+                let ink: u64 = ink_profile_rows(canvas, INK_THRESHOLD)
+                    .iter()
+                    .map(|&n| n as u64)
+                    .sum();
+                assert!(
+                    ink >= floor,
+                    "{unit_id} canvas {} carries body ink {ink} >= {floor}",
+                    i + 1
+                );
+            }
+            canvases
+                .last()
+                .unwrap()
+                .save(dir.join(format!("{unit_id}-final-canvas.png")))
+                .unwrap();
+            println!(
+                "{unit_id}: {} body canvases, none furniture-only (ink floor {floor})",
+                canvases.len()
+            );
+        }
+    }
+
+    /// Save original-coordinate traces and column crops for a representative source
+    /// window using production masking and banding. These windows contain no deleted
+    /// rows, so every retained row maps to itself.
+    fn save_representative_repair_trace(
+        group: &str,
+        pages: &[(usize, u32)],
+    ) -> Vec<RetainedSourcePageTrace> {
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs");
+        std::fs::create_dir_all(dir).unwrap();
+        let mut traces = Vec::new();
+        for (retained_index, &(source, page)) in pages.iter().enumerate() {
+            let image = real_source_image(source, page);
+            let column = detect_latin_column(&image).unwrap();
+            let (col, bands) = render_and_band(source, page, &|_, _| Ok(image.clone())).unwrap();
+            col.save(dir.join(format!("{group}-s{source}-p{page:04}-column.png")))
+                .unwrap();
+            let trace = RetainedSourcePageTrace {
+                source,
+                page,
+                retained_index: Some(retained_index),
+                crop: [column.left, column.right],
+                bands: bands.iter().map(|b| [b.top, b.bottom]).collect(),
+                deleted_rows: Vec::new(),
+            };
+            // Without row deletions, retained bands use original source rows.
+            for b in &trace.bands {
+                assert_eq!(trace.map_row(b[0]), Some(b[0]));
+            }
+            traces.push(trace);
+        }
+        let path = dir.join(format!("{group}.json"));
+        std::fs::write(&path, serde_json::to_vec_pretty(&traces).unwrap()).unwrap();
+        println!("representative repair trace: {}", path.display());
+        traces
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler; populates D1/D2 diagnosis"]
+    fn inner_tomi_duplicate_source_trace() {
+        // Trace the Agis opening and the shared Eumenes/comparison seam.
+        let traces = save_representative_repair_trace("duplicate", &[(1, 88), (1, 102), (1, 363)]);
+        assert_eq!(
+            retained_page(&traces, 1, 363).unwrap().retained_index,
+            Some(2)
+        );
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler; populates Timoleon/Coriolanus diagnosis"]
+    fn inner_tomi_timoleon_coriolanus_source_trace() {
+        let traces = save_representative_repair_trace("timoleon_coriolanus", &[(0, 268), (0, 295)]);
+        assert!(retained_page(&traces, 0, 295).is_some());
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and Poppler; populates Brutus/remaining diagnosis"]
+    fn inner_tomi_remaining_source_trace() {
+        let traces = save_representative_repair_trace("remaining", &[(1, 596)]);
+        assert!(retained_page(&traces, 1, 596).is_some());
     }
 
     fn two_line_boundary_fixture() -> (Vec<UnitRange>, GrayImage) {

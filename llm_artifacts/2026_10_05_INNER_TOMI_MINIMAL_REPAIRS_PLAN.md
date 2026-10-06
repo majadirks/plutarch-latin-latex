@@ -6,7 +6,7 @@ The user explicitly prefers hard-coded generator corrections where feasible. Reu
 
 All Latin is source material. Preserve every distinct genuine Latin line, its glyphs, spelling, punctuation, capitalization, and reading order. Do not retype damaged prose, normalize text, edit transcription caches, or use OCR text as replacement content. Erasing source furniture and excluding a proven repeated scan occurrence are image/selection corrections, not permission to alter Latin. A questionable mask must remain disabled until source inspection proves that it preserves the prose.
 
-This document is a draft implementation contract. Exact source mappings and erase coordinates for the new findings have not yet been established. Phase 1 must fill them into the repair ledger and resolve the specified implementation branches before production edits. Do not infer source PDF pages from reader folios or copy coordinates from a different scan.
+The reviewed repair ledger freezes 26 furniture-mask records (27 rectangles) and two identity-scoped whole-page duplicate exclusions. The original mask set and exclusions are implemented. The user approved all twelve additional margin masks, the separate source-347 header mask, and the G7/G8 spacing retentions on 2026-10-06; those masks are installed and source-pixel preservation is verified. The four composition regressions pass and all sixteen PDFs have been rebuilt from current source and verified. No further approval of these rectangles is needed. Do not infer source PDF pages from reader folios or copy coordinates from a different scan.
 
 # Current state of the world
 
@@ -14,7 +14,7 @@ This document is a draft implementation contract. Exact source mappings and eras
 - `src/facsimile/columns.rs` contains column detection and conservative divider exclusion. Do not widen the general divider acceptance gates to force the new examples through.
 - `src/facsimile/lines.rs` defines `Band`, `line_bands`, `drop_furniture`, and `cut_points`. The interior cut between two retained bands is the midpoint of their gap. Therefore removing an interior furniture band can still leave its entire blank interval distributed between adjacent strips.
 - `unit_body_strips` in `reflow.rs` renders source pages in order, retaining a parallel `source_pages` vector. Pass A determines line metrics; Pass B trims unit openings, interior furniture, and shared tails using original source-height coordinates. `PageBands` is `(GrayImage, Vec<Band>)`.
-- `strips_in_reading_order` constructs `Strip` values from retained bands and midpoint cuts. `compose_pages` scales and packs those strips. Ordinary lines wrap whole; tall merged strips can be split at low-ink rows. `split_tall_strip` can select a row with ink when no clear gap exists. A surviving divider can merge prose into a tall strip, so the reported sliced line may be repairable upstream without a packer change. This is a hypothesis to test, not a completed diagnosis.
+- `strips_in_reading_order` constructs `Strip` values from retained bands and midpoint cuts. `compose_pages` scales and packs those strips. Ordinary lines wrap whole; tall merged strips can be split at low-ink rows. The production trace identifies O8B as a scan-edge merge on source 306; the approved margin mask restores real line bands upstream. The packer is unchanged. `timoleon_reported_page_break_preserves_whole_lines` establishes in production that each restored line composes whole on one canvas.
 - `src/facsimile/units.rs` defines `Unit`, `UnitRange`, `load_units`, and `ranges`. `facsimile_units.json` records `start_page`, `title_top_frac`, `body_top_frac`, `skip_top_bands`, and `pinned`. `ranges` derives an interior unit's end from the next opening; `last_page` controls the final unit of a source, not an arbitrary interior endpoint.
 - `src/facsimile/detect.rs::merge_pins` preserves pinned table corrections during regeneration. Reuse pinned rows for confirmed boundary errors rather than inventing a parallel boundary configuration.
 - Existing ignored source tests in `reflow.rs` provide `operational_range`, `real_source_image`, tracing, and retained-crop helpers. `src/facsimile/fixtures/artifact_source_trace.json` records the earlier cleanup. Reuse those helpers; store new evidence separately rather than rewriting the old ledger.
@@ -32,7 +32,7 @@ This document is a draft implementation contract. Exact source mappings and eras
 7. The Google notice page W3 remains. The Praefatio typography transition O8 remains, with a diagnosis recorded for a possible separate layout task. These are the defaults established in the strategy discussion; body cleanup does not silently change them.
 8. All local Rust checks pass, all eight inner and imposed PDFs are rebuilt, and a durable verification note records source mappings and before/after prose landmarks. Plans and findings remain on disk as historical records.
 
-# Phase 1 — Map the finite defects and freeze safe corrections (Suggested implementer: Opus)
+# Phase 1 — Map the finite defects and freeze safe corrections — complete (Suggested implementer: Opus)
 
 ## 1.1 Prepare shared diagnostic support and the repair inventory
 
@@ -105,9 +105,22 @@ Populate `inner_tomi_remaining_source_trace` for `theseus`, `camillus`, `pyrrhus
 
 ### Measured repair decisions
 
-Pending steps 1.1A–1.1C. No new source coordinates, duplicate exclusions, or spacing intervals are authorized by this placeholder.
+The authoritative reviewed coordinates are in `src/facsimile/fixtures/inner_tomi_repair_source_trace.json`: 26 mask records, 27 rectangles, and two duplicate records. The thirteen additional mask records retain the exact approved pixel bounds and independently captured preview bands; regression runs must not regenerate those expectations.
 
-# Phase 2 — Restore unique prose in the correct sequence (Suggested implementer: Opus)
+- D1: comparison source 1 pages 103/104 are excluded; retain 102 → 105 → 106. Eumenes retains its shared ending on 102. No unit-table boundary or pin changes are selected; the conditional boundary/pin tests are omitted.
+- D2: Agis source 1 pages 369/370 are excluded; retain the first occurrences 367/368 and their 368 → 371 continuation.
+- W1/W2/G4, O1/O1B/O1C/O1D/G8B, G5, O2/O3/O4/O6, O5: apply exactly the confirmed mask rectangles, preserving the existing mask entries.
+- W3 and O8: retain the notice page and Praefatio transition.
+- Phase 3.2's row-compaction branch is not selected. Full-unit production evidence still copies source 287 through row 2940 and source 299 through 2922: 372/354 rows beyond the reviewed Latin boundary. These regions contain scan-edge ink. Upper merged bands remain on 281, 298, and 308. Separate margin-mask candidates address that ink upstream without changing the confirmed rectangles.
+- G1/G2/G3: rebuilt II/219–220, II/235–238, and VIII/130–132 omit the Latin columns on source 0 pages 296/304 and source 1 page 625 because column detection selects narrow scan edges. The measured margin-mask candidates restore those columns and their continuations.
+- O8B: the production trace identifies source 306, strip 333–441, canvases 24/25, resized cut row 23, and 520/495 ink pixels on either side. A margin-mask candidate restores separate body bands and the whole line; no general packer fallback is selected.
+- G6: source 470's copied tail causes the rebuilt III/175 sentence gap; its margin-mask candidate restores ordinary spacing. G7/G8 match genuine source chapter gaps on pages 23/28 and are recommended for retention.
+- O7: comparison and Agis repeated-occurrence dividers are resolved by D1/D2. VI/358 maps to the right edge of source 1 page 361; O6 page 337 remains confirmed without a rule.
+- O6's frozen source-337 mask is applied on fresh VI/308–310. The original VI/329 finding is a second occurrence of the same folio-934 passage on source 347; its separate measured header-only mask is recorded as RFI-13B. The source-337 rectangle and no-right-rule decision remain unchanged; no right-edge mask is proposed for 347.
+- The user approved all twelve margin masks, the source-347 header-only mask, and both spacing retentions on 2026-10-06. All thirteen additional masks are installed. Multiple records on a source page are verified as one union of reviewed rectangles; every outside source pixel remains unchanged. No right-edge mask is authorized for source 347 or source 337.
+- All sixteen PDFs have been rebuilt from current source with every approved mask installed (exit 0, real LuaLaTeX compilation). The production scale is 1.2023952007293701; its raw inputs and sampling ranges are unchanged. The page counts match the first-stage build because the repairs removed furniture and copied space without shifting pagination, so the first-build locators remain valid and the repaired pages were spot-rendered to confirm the content.
+
+# Phase 2 — Restore unique prose in the correct sequence — complete (Suggested implementer: Opus)
 
 ## 2.1 Correct the Eumenes/comparison transition
 
@@ -131,9 +144,11 @@ Add ignored `agis_repeated_passage_survives_once`, asserting the selected source
 
 **Human verification:** Compare the retained passage and both seams with both original scan occurrences. Confirm chapters and split words proceed continuously and appear once.
 
-# Phase 3 — Remove known furniture and its unwanted space (Suggested implementer: Opus)
+# Phase 3 — Remove known furniture and its unwanted space — complete (Suggested implementer: Opus)
 
 ## 3.1 Extend verified source masks and reband
+
+The approved masks are installed and the ordinary table/ledger and real-source pixel-preservation checks pass. Remaining verification is full-unit extraction/composition of the severe gaps and watermark seams, covered by the required tests in steps 3.2 and 4.1. Preserve all approved rectangles; do not repeat the approval interview.
 
 In `reflow.rs`, extend `SOURCE_FURNITURE_MASKS` with the exact normalized rectangles established in Phase 1 for W1–W2, confirmed header/folio fragments, and safely separable divider/border/ornament regions. Reuse `apply_source_furniture_mask` and its existing call before detection. Define a rectangle once even when it resolves several findings or serves multiple units. Each entry's comment must describe the source furniture and preservation boundary; do not cite plan phases or narrate changes.
 
@@ -149,6 +164,8 @@ After masking, run the real extraction/composition path for every severe gap and
 
 ## 3.2 Compact confirmed residual interior whitespace, if necessary
 
+The row-compaction implementation branch is **not selected**: the approved margin masks remove connecting scan-edge ink upstream. The conditional types/table/helpers below were not added for this repair set. `inner_tomi_watermark_cleanup_removes_pixels_and_space` and `inner_tomi_severe_gaps_preserve_all_lines` are implemented and pass: they measure the final endpoints (287→2575, 299→2573; restored crops on 296/304/470/625) and check all restored source bands/pixels against the committed ledger.
+
 Implement this step only for records whose post-mask composition still copies a verified unwanted interior interval. Use a small private `SourceWhitespaceExclusion` table in `reflow.rs`, keyed by source/page and containing normalized half-open top/bottom row bounds. Include a unit ID only if the source evidence establishes a unit-specific exclusion. Phase 1 must provide the exact bounds and the number of ordinary gap rows to retain at the seam. Do not infer removable space from a global gap threshold.
 
 Add `compact_known_source_whitespace(unit_id: &str, source: usize, page: u32, col: &mut GrayImage, bands: &mut Vec<Band>) -> Result<()>`. Pass `&range.unit.id` inside the existing source-page/Pass B loop after opening, interior, and shared-tail trims for that page. Give table entries `unit_id: Option<&'static str>`: `None` matches all uses of that source page; `Some(id)` matches that unit alone. Use one matching helper and table for both scopes. Boundary fractions must have finished operating on the full-height image before compaction. This timing preserves the existing `PageBands`, `Strip`, and `compose_pages` interfaces and avoids passing source metadata through the packer.
@@ -163,9 +180,11 @@ Add ordinary `known_whitespace_exclusion_is_identity_scoped` (including unit-spe
 
 **Human verification:** Inspect full prose seams after cleanup, including the split words in G1/G3. Confirm continuous ordinary spacing and unchanged genuine chapter/paragraph gaps. Whitening followed by a large empty interval is a failed repair.
 
-# Phase 4 — Verify whole-line pagination and furniture-only endings (Suggested implementer: Opus)
+# Phase 4 — Verify whole-line pagination and furniture-only endings — complete (Suggested implementer: Opus)
 
 ## 4.1 Resolve the sliced line and unnecessary body images
+
+Marius's terminal extraction is verified. The production regressions `timoleon_reported_page_break_preserves_whole_lines` and `timoleon_and_brutus_have_no_furniture_only_body_canvases` are implemented and pass, together with the seam accounting from step 3.2. The approved source-306 margin mask is the selected upstream correction; no packer change was made. The source-347 header removal was confirmed in the final output at VI/329.
 
 First exercise the Phase 3 cleanup on O8B, G2, G3, and O5. Add ignored `timoleon_reported_page_break_preserves_whole_lines`, `timoleon_and_brutus_have_no_furniture_only_body_canvases`, and `marius_terminal_furniture_emits_no_body_canvas`. Reuse trace/composition helpers and the new fixture. For O8B, identify the actual original line intervals and prove each appears intact on one composed canvas at the production global scale. Check original source bands as well as composed pixels; resampling alone must not hide a split. For the other cases, account for all Latin and show that the verified rule-only source regions contribute no body strips/canvases.
 
@@ -177,9 +196,11 @@ The empty-body-page checks concern composed body assets, not legitimate recto se
 
 **Human verification:** Check the formerly sliced Timoleon line across the new output boundary. Read the complete Timoleon and Brutus repair seams and Marius-to-Lysander transition. Confirm no prose was removed to eliminate a blank page.
 
-# Phase 5 — Rebuild the readers and record the outcome (Suggested implementer: Sonnet)
+# Phase 5 — Rebuild the readers and record the outcome — complete (Suggested implementer: Sonnet)
 
 ## 5.1 Run final checks and verify all eight tomi
+
+This step is **complete for the current generator**. The executable was rebuilt from current source with Cargo, all four composition regressions and the selected source regressions were rerun and pass, all sixteen PDFs were rebuilt from current source (exit 0, real LuaLaTeX compilation), the source-linked repair locators and imposed signatures were inspected, and the verification note records the final copied extents and dispositions.
 
 Use a workspace-local target directory if the configured external target is inaccessible:
 

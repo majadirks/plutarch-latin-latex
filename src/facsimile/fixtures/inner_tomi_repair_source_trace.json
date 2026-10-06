@@ -1,0 +1,3859 @@
+{
+  "description": "Durable numeric ledger for the inner-tomi minimal repairs (2026-10-05 plan). Coordinates are half-open, source index zero based, PDF page one based. Mask/compaction rows are recorded in original (full-source) coordinates; retained-image rows are derived with the shared RetainedSourcePageTrace::map_row contract (subtract the height of every deletion interval ending at or before the row). This ledger records only reviewed decisions: an empty `repairs` list means no repair has yet been measured and frozen. Tests must read reviewed expectations from this committed file and must never regenerate and accept their own expected values during a regression run.",
+  "schema": {
+    "repair_record": [
+      "finding_ids: [string]",
+      "unit_id: string",
+      "source: usize (0 = v1, 1 = v2)",
+      "source_page: u32 (1-based physical source PDF page)",
+      "raster: [width, height] (production BODY_DPI raster dimensions)",
+      "crop_edges: [left, right] (original Latin-column crop, original coordinates)",
+      "bands: [[top, bottom]] (retained body bands, original coordinates)",
+      "adjacent_prose: {above: string, below: string} (exact Latin landmarks framing the repair)",
+      "disposition: 'mask' | 'row_exclusion' | 'duplicate_page' | 'boundary_pin' | 'retain'",
+      "mask_rectangles: [[left, top, right, bottom]] (normalized half-open, when disposition = mask)",
+      "row_exclusions: [[top, bottom]] (normalized half-open original rows, when disposition = row_exclusion)",
+      "preservation_boundary: string (why the erase/exclusion removes no Latin)",
+      "copied_height: {before: u32, after: u32} (measured copied blank rows)",
+      "neighbor_gap: u32 (ordinary neighboring-line gap in original rows)",
+      "final_seam_spacing: u32 (proposed retained seam rows)"
+    ],
+    "duplicate_record_extra": [
+      "occurrences: [[source_page]] (every repeated-scan occurrence)",
+      "retain_sequence: [source_page] (the source-page sequence to keep)"
+    ]
+  },
+  "scale": {
+    "baseline": 1.2023952007293701,
+    "final": 1.2023952007293701,
+    "width_sampling_ranges": [{"end_page":33,"source":0,"start_page":14,"unit_id":"theseus"},{"end_page":56,"source":0,"start_page":33,"unit_id":"romulus"},{"end_page":60,"source":0,"start_page":56,"unit_id":"comparatio_thesei_et_romuli"},{"end_page":84,"source":0,"start_page":60,"unit_id":"lycurgus"},{"end_page":102,"source":0,"start_page":84,"unit_id":"numa"},{"end_page":107,"source":0,"start_page":102,"unit_id":"comparatio_lycurgi_et_numae"},{"end_page":129,"source":0,"start_page":107,"unit_id":"solon"},{"end_page":144,"source":0,"start_page":129,"unit_id":"poplicola"},{"end_page":146,"source":0,"start_page":144,"unit_id":"comparatio_solonis_et_poplicolae"},{"end_page":167,"source":0,"start_page":146,"unit_id":"themistocles"},{"end_page":195,"source":0,"start_page":167,"unit_id":"camillus"},{"end_page":221,"source":0,"start_page":195,"unit_id":"pericles"},{"end_page":240,"source":0,"start_page":221,"unit_id":"fabius_maximus"},{"end_page":242,"source":0,"start_page":240,"unit_id":"comparatio_periclis_et_fabii"},{"end_page":268,"source":0,"start_page":242,"unit_id":"alcibiades"},{"end_page":292,"source":0,"start_page":268,"unit_id":"marcius_coriolanus"},{"end_page":295,"source":0,"start_page":292,"unit_id":"comparatio_alcibiadis_et_coriolani"},{"end_page":318,"source":0,"start_page":295,"unit_id":"timoleon"},{"end_page":343,"source":0,"start_page":318,"unit_id":"aemilius_paulus"},{"end_page":345,"source":0,"start_page":343,"unit_id":"comparatio_timoleontis_et_aemilii"},{"end_page":369,"source":0,"start_page":345,"unit_id":"pelopidas"},{"end_page":391,"source":0,"start_page":369,"unit_id":"marcellus"},{"end_page":393,"source":0,"start_page":391,"unit_id":"comparatio_pelopidae_et_marcelli"},{"end_page":414,"source":0,"start_page":393,"unit_id":"aristides"},{"end_page":434,"source":0,"start_page":414,"unit_id":"cato_major"},{"end_page":439,"source":0,"start_page":434,"unit_id":"comparatio_aristidis_et_catonis"},{"end_page":453,"source":0,"start_page":439,"unit_id":"philopoemen"},{"end_page":468,"source":0,"start_page":453,"unit_id":"flamininus"},{"end_page":470,"source":0,"start_page":468,"unit_id":"comparatio_philopoemenis_et_flaminini"},{"end_page":497,"source":0,"start_page":470,"unit_id":"pyrrhus"},{"end_page":531,"source":0,"start_page":497,"unit_id":"caius_marius"},{"end_page":552,"source":0,"start_page":531,"unit_id":"lysander"},{"end_page":581,"source":0,"start_page":552,"unit_id":"sylla"},{"end_page":585,"source":0,"start_page":581,"unit_id":"comparatio_lysandri_et_syllae"},{"end_page":600,"source":0,"start_page":585,"unit_id":"cimon"},{"end_page":635,"source":0,"start_page":600,"unit_id":"lucullus"},{"end_page":637,"source":0,"start_page":635,"unit_id":"comparatio_cimonis_et_luculli"},{"end_page":41,"source":1,"start_page":18,"unit_id":"nicias"},{"end_page":67,"source":1,"start_page":41,"unit_id":"crassus"},{"end_page":71,"source":1,"start_page":67,"unit_id":"comparatio_niciae_et_crassi"},{"end_page":88,"source":1,"start_page":71,"unit_id":"sertorius"},{"end_page":102,"source":1,"start_page":88,"unit_id":"eumenes"},{"end_page":106,"source":1,"start_page":102,"unit_id":"comparatio_sertorii_et_eumenis"},{"end_page":137,"source":1,"start_page":106,"unit_id":"agesilaus"},{"end_page":188,"source":1,"start_page":137,"unit_id":"pompeius"},{"end_page":192,"source":1,"start_page":188,"unit_id":"comparatio_agesilai_et_pompeii"},{"end_page":245,"source":1,"start_page":192,"unit_id":"alexander"},{"end_page":286,"source":1,"start_page":245,"unit_id":"iulius_caesar"},{"end_page":309,"source":1,"start_page":286,"unit_id":"phocion"},{"end_page":363,"source":1,"start_page":309,"unit_id":"cato_minor"},{"end_page":379,"source":1,"start_page":363,"unit_id":"agis"},{"end_page":402,"source":1,"start_page":379,"unit_id":"cleomenes"},{"end_page":415,"source":1,"start_page":402,"unit_id":"tiberius_gracchus"},{"end_page":425,"source":1,"start_page":415,"unit_id":"caius_gracchus"},{"end_page":429,"source":1,"start_page":425,"unit_id":"comparatio_agidis_cleomenis_et_gracchorum"},{"end_page":446,"source":1,"start_page":429,"unit_id":"demosthenes"},{"end_page":478,"source":1,"start_page":446,"unit_id":"cicero"},{"end_page":482,"source":1,"start_page":478,"unit_id":"comparatio_demosthenis_et_ciceronis"},{"end_page":513,"source":1,"start_page":482,"unit_id":"demetrius"},{"end_page":563,"source":1,"start_page":513,"unit_id":"antonius"},{"end_page":566,"source":1,"start_page":563,"unit_id":"comparatio_demetrii_et_antonii"},{"end_page":596,"source":1,"start_page":566,"unit_id":"dio"},{"end_page":626,"source":1,"start_page":596,"unit_id":"brutus"},{"end_page":629,"source":1,"start_page":626,"unit_id":"comparatio_dionis_et_bruti"},{"end_page":647,"source":1,"start_page":629,"unit_id":"artoxerxes"},{"end_page":680,"source":1,"start_page":647,"unit_id":"aratus"},{"end_page":696,"source":1,"start_page":680,"unit_id":"galba"},{"end_page":708,"source":1,"start_page":696,"unit_id":"otho"}],
+    "note": "Measured 2026-10-06 with the production global_scale_for path. Baseline is reconstructed from the identical raw-render width inputs: the unit table, sampling ranges, source rasters, and scale algorithm are unchanged by masks and duplicate exclusions. The width pass applies neither correction, so baseline and final are equal. Independent production-scale strips, canvas seams, and range measurements are saved under tmp/pdfs/inner_tomi_repairs/post_mask/."
+  },
+  "repairs": [
+    {
+      "finding_ids": ["W1"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 287,
+      "raster": [1900, 2975],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "...ceterisque omnibus sibi ad-",
+        "below": "(continues on source page 288) junctis, ad Volumniae quae mater erat Coriolani aedes venit."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.6, 0.9042017, 0.8578947, 1.0]],
+      "row_exclusions": null,
+      "preservation_boundary": "Gray 'Digitized by Google' watermark in the bottom margin, rows ~2721-2934; last Latin line ends row 2568. Mask top (row 2690) is ~120px below the last Latin line; no Latin or Greek glyph lies in the masked band.",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-03"
+    },
+    {
+      "finding_ids": ["W1"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 288,
+      "raster": [1980, 2984],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "(running head) MARCIUS CORIOLANUS. 275",
+        "below": "junctis, ad Volumniae quae mater erat Coriolani aedes venit."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.0909091, 0.0687, 0.8737374, 0.0931635]],
+      "row_exclusions": null,
+      "preservation_boundary": "Running head 'MARCIUS CORIOLANUS.' + folio '275' ink ends row 262; blank gap rows 263-278; first body line starts row 279. Mask bottom (row 278) is above the first body pixel; no body glyph in the masked band.",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-03"
+    },
+    {
+      "finding_ids": ["O1"],
+      "unit_id": "camillus",
+      "source": 0,
+      "source_page": 182,
+      "raster": [1974, 2985],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "(source page 181) ...non enim neque is jam exsul,",
+        "below": "neque nos cives sumus, patria amissa atque ab hostibus occupata."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.08612, 0.071022, 0.962513, 0.095142]],
+      "row_exclusions": null,
+      "preservation_boundary": "Leaked running head 'CAMILLUS.' + folio '169' ink rows 226-257; blank gap rows 258-286; first body line 'neque nos cives sumus...' starts row 287. Mask bottom (row 284) is above the first body pixel; no Latin or Greek glyph in the masked band.",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-05"
+    },
+    {
+      "finding_ids": ["O1C"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 290,
+      "raster": [1974, 2986],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "(source page 289 tail, leaked as the top prose line)",
+        "below": "ter, ut mecum egisti! erexit eam premensque dextram: Obtinuisti, inquit, patriae salutarem..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.08612, 0.070998, 0.962513, 0.093101]],
+      "row_exclusions": null,
+      "preservation_boundary": "Leaked top running head 'MARCIUS CORIOLANUS.' + folio '277' ink rows 220-252; blank gap rows 254-281; first body line starts row 282. Mask bottom (row 278) above first body pixel. No separable right-margin divider exists (the a/b/c/d/e/f are standard edition reference letters, not a rule).",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-07"
+    },
+    {
+      "finding_ids": ["W2", "G4"],
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page": 299,
+      "raster": [1900, 2963],
+      "adjacent_prose": {
+        "above": "...sed repulsis Corinthiis ipsis inter",
+        "below": "(source page 300) se per otium dividere insulam liceret. (3) Igitur hi triremes..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.6, 0.8775, 0.8632, 1.0]],
+      "preservation_boundary": "Google watermark in the page-tail bottom margin (rows ~2649-2921); last Latin row 2568; mask top (~row 2600) is below all Latin. This is a source-page tail (next line opens page 300), so once masked the tail is simply not copied; no whitespace compaction needed.",
+      "human_confirmed": "2026-10-06 RFI-04"
+    },
+    {
+      "finding_ids": ["O1B"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 281,
+      "raster": [1948, 2974],
+      "adjacent_prose": {
+        "above": "(source page 280) ...inde concepisse. (end of chapter XXI)",
+        "below": "XXII. Erat vir Antias, divitiarum, fortitudinis nobilitatisque causa inter Volscos regiae dignitatis, nomine Tullus Amphidius."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.085729, 0.061533, 0.958932, 0.080699]],
+      "preservation_boundary": "Leaked top Greek running head 'ΓΑΙΟΣ ΜΑΡΚΙΟΣ.' (-> 'ΑΡΚΙΟΣ') + folio '268' ink rows 193-221; body (chapter XXII) starts row 260; mask bottom (row 240) above the first body pixel. Far-right edge rule (x~1935) is outside the Latin measure and not masked.",
+      "human_confirmed": "2026-10-06 RFI-06"
+    },
+    {
+      "finding_ids": ["O1D", "G8B"],
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page": 298,
+      "raster": [1990, 2982],
+      "adjacent_prose": {
+        "above": "(output places this header after the ...cum interruption on II/222)",
+        "below": "deprecatum ivisset, ea neque aspectum ipsius pertulit domumque venienti occlusit..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.08593, 0.064386, 0.962814, 0.084172]],
+      "preservation_boundary": "Leaked top running head 'TIMOLEON.' + folio '285' ink rows 202-235; body starts ~row 267; mask bottom (row 251) above the first body pixel. Whitespace/divider (G8B/O7) is a separate disposition.",
+      "human_confirmed": "2026-10-06 RFI-08"
+    },
+    {
+      "finding_ids": ["G5"],
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page": 308,
+      "raster": [1998, 2982],
+      "adjacent_prose": {
+        "above": "(large top blank in output II/245)",
+        "below": "neque vulnus accepit, Timoleontis fortunae opus est, certare quodammodo cum virtute ejus visae..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.085586, 0.064386, 0.962963, 0.083501]],
+      "preservation_boundary": "Leaked top running head 'TIMOLEON.' + folio '295' ink rows 202-235; body starts ~row 264; mask bottom (row 249) above the first body pixel. Divider fragment (O7) is a separate disposition.",
+      "human_confirmed": "2026-10-06 RFI-09"
+    },
+    {
+      "finding_ids": ["O2"],
+      "unit_id": "lysander",
+      "source": 0,
+      "source_page": 550,
+      "raster": [1980, 3003],
+      "adjacent_prose": {
+        "above": "(source page 549) ...Haliartii perhibent,",
+        "below": "habitasse apud ipsos Rhadamanthum, cujus etiam sepulcrum ostendunt, Alea vocantes."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.085859, 0.068265, 0.962626, 0.089244]],
+      "preservation_boundary": "Leaked top running head 'LYSANDER.' + folio '537' ink rows ~213-267; body ('habitasse apud ipsos...') starts ~row 270; mask bottom (row 268) above the first body pixel. (Page corrected from 549: p549's own head is the Greek ΛΥΣΑΝΔΡΟΣ/536, not the O2 leak.)",
+      "human_confirmed": "2026-10-06 RFI-10"
+    },
+    {
+      "finding_ids": ["O3"],
+      "unit_id": "demosthenes",
+      "source": 1,
+      "source_page": 441,
+      "raster": [1879, 2840],
+      "adjacent_prose": {
+        "above": "(source page 440) ...moerore suo",
+        "below": "conficiat, sed et levandus verbis ejus dolor est, et abducendus ad rerum laetiorum cogitationem animus..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.074508, 0.041549, 0.904737, 0.062676], [0.987759, 0.0, 1.0, 1.0]],
+      "preservation_boundary": "Leaked top Greek running head 'ΔΗΜΟΣΘΕΝΗΣ.' + folio ink rows 130-157; body ('conficiat...') starts ~row 188; header mask bottom (row 178) above the first body pixel. Second rectangle is the far-right vertical rule (x~1860-1879); Latin text ends ~x1760, so the rule is in the right margin.",
+      "human_confirmed": "2026-10-06 RFI-11"
+    },
+    {
+      "finding_ids": ["O4"],
+      "unit_id": "antonius",
+      "source": 1,
+      "source_page": 539,
+      "raster": [1824, 2838],
+      "adjacent_prose": {
+        "above": "(source page 538) ...Eo impe-",
+        "below": "trato, hostes irruentes repulit, non, ut ante, simul ad aciem peditum retro cedens..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.076754, 0.044397, 0.926535, 0.067653]],
+      "preservation_boundary": "Leaked top Greek running head 'ΑΝΤΩΝΙΟΣ.' + folio '1116' ink rows 140-167; body ('trato, hostes...') starts ~row 198; mask bottom (row 192) above the first body pixel. Preserves the 'Eo impe-'/'trato' split word. Right margin has only a short section marker, not a rule.",
+      "human_confirmed": "2026-10-06 RFI-12"
+    },
+    {
+      "finding_ids": ["O6"],
+      "unit_id": "cato_minor",
+      "source": 1,
+      "source_page": 337,
+      "raster": [1846, 2838],
+      "adjacent_prose": {
+        "above": "(prior page tail)",
+        "below": "nonnulli etiam amici Pompeii atque domestici rei agerentur, videns ipsum saepe inflecti ad gratiam..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.084507, 0.047216, 0.96208, 0.069063]],
+      "preservation_boundary": "Leaked top Greek running head 'ΚΑΤΩΝ.' (-> 'ΩΝ.') + folio '934' ink rows ~142-170; clean gap 174-203; body ('nonnulli etiam amici Pompeii...') starts row 204; mask bottom (row 196) above the first body pixel. No separable right rule (user-confirmed absent).",
+      "human_confirmed": "2026-10-06 RFI-13"
+    },
+    {
+      "finding_ids": ["O5"],
+      "unit_id": "caius_marius",
+      "source": 0,
+      "source_page": 530,
+      "raster": [1963, 2984],
+      "adjacent_prose": {
+        "above": "...quae causa multa frustra tentasset et capta urbe effugere non posset, mortem sibi ipse conscivit. (Marius's complete terminal sentence)",
+        "below": "(end of the Life; only the decorative ornament and blank margin follow)"
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.070301, 0.387735, 0.609272, 0.40382]],
+      "preservation_boundary": "Marius's prose ends complete at rows 202-687 ('...mortem sibi ipse conscivit.' / '...αὐτὸς αὑτὸν ἀπέκτεινεν.'); then ~485 blank rows; then a decorative end-of-Life ornament (horizontal flourish) at rows 1172-1190, x 168-1166, with no Latin. Masking the ornament leaves the terminal region inkless, so it emits no furniture-only body canvas. Large blank below carries no ink and produces no strip.",
+      "human_confirmed": "2026-10-06 RFI-21"
+    },
+    {
+      "finding_ids": ["D1"],
+      "unit_id": "comparatio_sertorii_et_eumenis",
+      "source": 1,
+      "source_page": 103,
+      "disposition": "duplicate_page",
+      "skip_pages": [103, 104],
+      "occurrences": [[101, 103], [102, 104]],
+      "retain_sequence": [102, 105, 106],
+      "adjacent_prose": {
+        "join_above": "(source page 102, comparison opening ends) ...Sertorius senatoria dignitate et imperiis gestis magno in",
+        "join_below": "(source page 105, comparison continues) pretio habitus, Eumenes ob scribae munus obitum contemptus, ad principatum progressi sunt."
+      },
+      "preservation_boundary": "Exact whole-page duplicates: source p103 is content-identical to p101 (folio 708, Eumenes ch. XVII-XVIII, 'Antigonus non ea modo se redditurum...Deinde impetu facto...'); source p104 is content-identical to p102 (folio 700, Eumenes ch. XIX ending '...inspicere posset' + comparison title 'SERTORII CUM EUMENE COMPARATIO' + opening 'Haec sunt quae de Eumene...magno in'). p101 (Eumenes unit 88-102) and p102 (shared tail) carry both; p103/p104 appear only in the comparison unit (102-106) and hold NO unique prose. Skipping p103/p104 in the comparison joins p102 ('...magno in') to p105 ('pretio habitus...') = 'magno in pretio habitus', the correct comparison continuation; the comparison concludes on p105. Eumenes conclusion is unaffected (its range ends at the shared p102).",
+      "implementation": "skip_known_duplicate_source_page(\"comparatio_sertorii_et_eumenis\", 1, 103) and (\"comparatio_sertorii_et_eumenis\", 1, 104) in unit_body_strips, identity-scoped to the comparison unit (Phase 2.1).",
+      "human_confirmed": "2026-10-06 RFI-01 (keep 101/102 over 103/104)"
+    },
+    {
+      "finding_ids": ["D2"],
+      "unit_id": "agis",
+      "source": 1,
+      "source_page": 369,
+      "disposition": "duplicate_page",
+      "skip_pages": [369, 370],
+      "occurrences": [[367, 369], [368, 370]],
+      "retain_sequence": [366, 367, 368, 371, 372],
+      "adjacent_prose": {
+        "join_above": "(source page 368, folio 953, ch. XI ends) ...precando et suadendo effecerunt ut unius suffragii numero",
+        "join_below": "(source page 371, folio 954) excellerent qui antiquabant legem. (2) Ceterum Lysander, magistratu nondum abdicato actionem intentavit..."
+      },
+      "preservation_boundary": "Exact whole-page duplicates in the Agis unit (source 1, range 363-379): source p369 is content-identical to p367 (folio 952, Agis ch. VII-IX, '...non modo luxum, in quo felicitatem vitae...'); source p370 is content-identical to p368 (folio 953, Agis ch. X-XI, 'ait, quum Apollinem concumbere... XI. His ita dictis, Agidem multitudo secuta est...'). Keeping the first occurrence yields the contiguous folio sequence 951(p366) -> 952(p367) -> 953(p368) -> 954(p371) -> 955(p372). The join p368 ('...ut unius suffragii numero') + p371 ('excellerent qui antiquabant legem') is exact. p369/p370 carry NO unique prose and (per the findings) the second occurrence has heavier right-side divider marks; skipping them loses nothing.",
+      "implementation": "skip_known_duplicate_source_page(\"agis\", 1, 369) and (\"agis\", 1, 370) in unit_body_strips, identity-scoped to the Agis unit (Phase 2.2, reusing the same mechanism as D1).",
+      "human_confirmed": "2026-10-06 RFI-02 (keep p367/p368 over p369/p370)"
+    },
+  {
+    "finding_ids": [
+      "O1B"
+    ],
+    "unit_id": "marcius_coriolanus",
+    "source": 0,
+    "source_page": 281,
+    "raster": [
+      1948,
+      2974
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9753593429158111,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1900,
+      0,
+      1948,
+      2974
+    ],
+    "crop_edges": [
+      1068,
+      1859
+    ],
+    "bands": [
+      [
+        259,
+        289
+      ],
+      [
+        313,
+        344
+      ],
+      [
+        368,
+        400
+      ],
+      [
+        423,
+        455
+      ],
+      [
+        478,
+        510
+      ],
+      [
+        531,
+        564
+      ],
+      [
+        584,
+        618
+      ],
+      [
+        638,
+        672
+      ],
+      [
+        692,
+        722
+      ],
+      [
+        744,
+        776
+      ],
+      [
+        795,
+        826
+      ],
+      [
+        846,
+        880
+      ],
+      [
+        899,
+        930
+      ],
+      [
+        976,
+        1002
+      ],
+      [
+        1039,
+        1073
+      ],
+      [
+        1092,
+        1126
+      ],
+      [
+        1143,
+        1177
+      ],
+      [
+        1196,
+        1228
+      ],
+      [
+        1249,
+        1278
+      ],
+      [
+        1301,
+        1332
+      ],
+      [
+        1352,
+        1384
+      ],
+      [
+        1403,
+        1436
+      ],
+      [
+        1456,
+        1489
+      ],
+      [
+        1509,
+        1539
+      ],
+      [
+        1561,
+        1594
+      ],
+      [
+        1611,
+        1642
+      ],
+      [
+        1660,
+        1690
+      ],
+      [
+        1710,
+        1742
+      ],
+      [
+        1761,
+        1792
+      ],
+      [
+        1809,
+        1840
+      ],
+      [
+        1858,
+        1890
+      ],
+      [
+        1910,
+        1941
+      ],
+      [
+        1958,
+        1989
+      ],
+      [
+        2005,
+        2035
+      ],
+      [
+        2055,
+        2086
+      ],
+      [
+        2103,
+        2134
+      ],
+      [
+        2154,
+        2186
+      ],
+      [
+        2204,
+        2233
+      ],
+      [
+        2255,
+        2282
+      ],
+      [
+        2306,
+        2338
+      ],
+      [
+        2357,
+        2391
+      ],
+      [
+        2406,
+        2439
+      ],
+      [
+        2458,
+        2490
+      ],
+      [
+        2509,
+        2540
+      ],
+      [
+        2558,
+        2590
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "(source page 280) ...inde concepisse. (end of chapter XXI)",
+      "below": "XXII. Erat vir Antias, divitiarum, fortitudinis nobilitatisque causa inter Volscos regiae dignitatis, nomine Tullus Amphidius."
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1900, beyond the candidate Latin crop's right edge x=1859; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      259,
+      289
+    ],
+    "expected_last_band": [
+      2558,
+      2590
+    ]
+  },
+  {
+    "finding_ids": [
+      "W1"
+    ],
+    "unit_id": "marcius_coriolanus",
+    "source": 0,
+    "source_page": 287,
+    "raster": [
+      1900,
+      2975
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9868421052631579,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1875,
+      0,
+      1900,
+      2975
+    ],
+    "crop_edges": [
+      1073,
+      1829
+    ],
+    "bands": [
+      [
+        260,
+        293
+      ],
+      [
+        306,
+        342
+      ],
+      [
+        355,
+        389
+      ],
+      [
+        405,
+        438
+      ],
+      [
+        457,
+        491
+      ],
+      [
+        508,
+        542
+      ],
+      [
+        555,
+        589
+      ],
+      [
+        604,
+        630
+      ],
+      [
+        656,
+        684
+      ],
+      [
+        699,
+        724
+      ],
+      [
+        751,
+        780
+      ],
+      [
+        785,
+        814
+      ],
+      [
+        828,
+        857
+      ],
+      [
+        874,
+        903
+      ],
+      [
+        920,
+        1011
+      ],
+      [
+        1013,
+        1129
+      ],
+      [
+        1143,
+        1171
+      ],
+      [
+        1188,
+        1215
+      ],
+      [
+        1234,
+        1260
+      ],
+      [
+        1276,
+        1306
+      ],
+      [
+        1321,
+        1344
+      ],
+      [
+        1363,
+        1386
+      ],
+      [
+        1409,
+        1439
+      ],
+      [
+        1455,
+        1487
+      ],
+      [
+        1499,
+        1532
+      ],
+      [
+        1542,
+        1574
+      ],
+      [
+        1583,
+        1618
+      ],
+      [
+        1627,
+        1663
+      ],
+      [
+        1673,
+        1705
+      ],
+      [
+        1713,
+        1748
+      ],
+      [
+        1760,
+        1793
+      ],
+      [
+        1802,
+        1836
+      ],
+      [
+        1847,
+        1879
+      ],
+      [
+        1889,
+        1923
+      ],
+      [
+        1930,
+        1967
+      ],
+      [
+        1974,
+        2010
+      ],
+      [
+        2018,
+        2052
+      ],
+      [
+        2062,
+        2096
+      ],
+      [
+        2111,
+        2148
+      ],
+      [
+        2160,
+        2196
+      ],
+      [
+        2206,
+        2245
+      ],
+      [
+        2257,
+        2294
+      ],
+      [
+        2301,
+        2340
+      ],
+      [
+        2349,
+        2387
+      ],
+      [
+        2396,
+        2397
+      ],
+      [
+        2399,
+        2434
+      ],
+      [
+        2444,
+        2482
+      ],
+      [
+        2489,
+        2528
+      ],
+      [
+        2532,
+        2575
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "...ceterisque omnibus sibi ad-",
+      "below": "(continues on source page 288) junctis, ad Volumniae quae mater erat Coriolani aedes venit."
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1875, beyond the candidate Latin crop's right edge x=1829; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      260,
+      293
+    ],
+    "expected_last_band": [
+      2532,
+      2575
+    ]
+  },
+  {
+    "finding_ids": [
+      "G1",
+      "O7"
+    ],
+    "unit_id": "timoleon",
+    "source": 0,
+    "source_page": 296,
+    "raster": [
+      1990,
+      2984
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9874371859296482,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1965,
+      0,
+      1990,
+      2984
+    ],
+    "crop_edges": [
+      940,
+      1727
+    ],
+    "bands": [
+      [
+        265,
+        299
+      ],
+      [
+        333,
+        367
+      ],
+      [
+        400,
+        432
+      ],
+      [
+        466,
+        496
+      ],
+      [
+        520,
+        521
+      ],
+      [
+        531,
+        562
+      ],
+      [
+        582,
+        614
+      ],
+      [
+        634,
+        667
+      ],
+      [
+        685,
+        717
+      ],
+      [
+        739,
+        770
+      ],
+      [
+        793,
+        824
+      ],
+      [
+        846,
+        880
+      ],
+      [
+        900,
+        933
+      ],
+      [
+        952,
+        985
+      ],
+      [
+        1006,
+        1039
+      ],
+      [
+        1060,
+        1093
+      ],
+      [
+        1114,
+        1145
+      ],
+      [
+        1165,
+        1199
+      ],
+      [
+        1218,
+        1251
+      ],
+      [
+        1272,
+        1305
+      ],
+      [
+        1326,
+        1359
+      ],
+      [
+        1380,
+        1411
+      ],
+      [
+        1435,
+        1460
+      ],
+      [
+        1479,
+        1511
+      ],
+      [
+        1529,
+        1560
+      ],
+      [
+        1576,
+        1607
+      ],
+      [
+        1625,
+        1656
+      ],
+      [
+        1674,
+        1706
+      ],
+      [
+        1722,
+        1754
+      ],
+      [
+        1771,
+        1802
+      ],
+      [
+        1820,
+        1852
+      ],
+      [
+        1867,
+        1900
+      ],
+      [
+        1916,
+        1948
+      ],
+      [
+        1966,
+        1997
+      ],
+      [
+        2014,
+        2044
+      ],
+      [
+        2063,
+        2094
+      ],
+      [
+        2112,
+        2143
+      ],
+      [
+        2160,
+        2192
+      ],
+      [
+        2208,
+        2240
+      ],
+      [
+        2255,
+        2288
+      ],
+      [
+        2305,
+        2337
+      ],
+      [
+        2354,
+        2386
+      ],
+      [
+        2402,
+        2437
+      ],
+      [
+        2450,
+        2485
+      ],
+      [
+        2501,
+        2535
+      ],
+      [
+        2551,
+        2584
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "(source 295) ad Icetam Leontinorum principem confugerunt seque ei",
+      "below": "(source 296) crediderunt et belli ducem cum delegerunt, nihil quidem"
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1965, beyond the candidate Latin crop's right edge x=1727; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      265,
+      299
+    ],
+    "expected_last_band": [
+      2551,
+      2584
+    ]
+  },
+  {
+    "finding_ids": [
+      "O1D",
+      "G8B"
+    ],
+    "unit_id": "timoleon",
+    "source": 0,
+    "source_page": 298,
+    "raster": [
+      1990,
+      2982
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9874371859296482,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1965,
+      0,
+      1990,
+      2982
+    ],
+    "crop_edges": [
+      948,
+      1741
+    ],
+    "bands": [
+      [
+        267,
+        301
+      ],
+      [
+        325,
+        353
+      ],
+      [
+        378,
+        410
+      ],
+      [
+        431,
+        465
+      ],
+      [
+        485,
+        516
+      ],
+      [
+        539,
+        571
+      ],
+      [
+        592,
+        624
+      ],
+      [
+        647,
+        678
+      ],
+      [
+        703,
+        735
+      ],
+      [
+        751,
+        784
+      ],
+      [
+        799,
+        831
+      ],
+      [
+        850,
+        881
+      ],
+      [
+        897,
+        928
+      ],
+      [
+        946,
+        979
+      ],
+      [
+        993,
+        1025
+      ],
+      [
+        1041,
+        1074
+      ],
+      [
+        1089,
+        1122
+      ],
+      [
+        1140,
+        1172
+      ],
+      [
+        1188,
+        1219
+      ],
+      [
+        1238,
+        1271
+      ],
+      [
+        1286,
+        1318
+      ],
+      [
+        1332,
+        1366
+      ],
+      [
+        1381,
+        1411
+      ],
+      [
+        1428,
+        1460
+      ],
+      [
+        1477,
+        1512
+      ],
+      [
+        1527,
+        1561
+      ],
+      [
+        1576,
+        1608
+      ],
+      [
+        1625,
+        1659
+      ],
+      [
+        1675,
+        1707
+      ],
+      [
+        1722,
+        1757
+      ],
+      [
+        1769,
+        1803
+      ],
+      [
+        1818,
+        1853
+      ],
+      [
+        1867,
+        1901
+      ],
+      [
+        1916,
+        1947
+      ],
+      [
+        1964,
+        1994
+      ],
+      [
+        2010,
+        2043
+      ],
+      [
+        2061,
+        2092
+      ],
+      [
+        2112,
+        2144
+      ],
+      [
+        2164,
+        2196
+      ],
+      [
+        2217,
+        2249
+      ],
+      [
+        2269,
+        2301
+      ],
+      [
+        2320,
+        2351
+      ],
+      [
+        2372,
+        2403
+      ],
+      [
+        2423,
+        2455
+      ],
+      [
+        2474,
+        2505
+      ],
+      [
+        2526,
+        2557
+      ],
+      [
+        2578,
+        2610
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "(output places this header after the ...cum interruption on II/222)",
+      "below": "deprecatum ivisset, ea neque aspectum ipsius pertulit domumque venienti occlusit..."
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1965, beyond the candidate Latin crop's right edge x=1741; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      267,
+      301
+    ],
+    "expected_last_band": [
+      2578,
+      2610
+    ]
+  },
+  {
+    "finding_ids": [
+      "W2",
+      "G4"
+    ],
+    "unit_id": "timoleon",
+    "source": 0,
+    "source_page": 299,
+    "raster": [
+      1900,
+      2963
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9868421052631579,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1875,
+      0,
+      1900,
+      2963
+    ],
+    "crop_edges": [
+      1039,
+      1823
+    ],
+    "bands": [
+      [
+        243,
+        278
+      ],
+      [
+        290,
+        322
+      ],
+      [
+        336,
+        369
+      ],
+      [
+        382,
+        416
+      ],
+      [
+        428,
+        458
+      ],
+      [
+        473,
+        505
+      ],
+      [
+        518,
+        554
+      ],
+      [
+        564,
+        598
+      ],
+      [
+        610,
+        646
+      ],
+      [
+        656,
+        690
+      ],
+      [
+        704,
+        736
+      ],
+      [
+        752,
+        786
+      ],
+      [
+        798,
+        833
+      ],
+      [
+        846,
+        879
+      ],
+      [
+        891,
+        926
+      ],
+      [
+        938,
+        969
+      ],
+      [
+        982,
+        1017
+      ],
+      [
+        1034,
+        1068
+      ],
+      [
+        1087,
+        1120
+      ],
+      [
+        1138,
+        1173
+      ],
+      [
+        1191,
+        1223
+      ],
+      [
+        1231,
+        1237
+      ],
+      [
+        1243,
+        1278
+      ],
+      [
+        1297,
+        1330
+      ],
+      [
+        1347,
+        1382
+      ],
+      [
+        1400,
+        1432
+      ],
+      [
+        1452,
+        1485
+      ],
+      [
+        1505,
+        1537
+      ],
+      [
+        1557,
+        1592
+      ],
+      [
+        1609,
+        1641
+      ],
+      [
+        1661,
+        1693
+      ],
+      [
+        1712,
+        1746
+      ],
+      [
+        1764,
+        1797
+      ],
+      [
+        1816,
+        1848
+      ],
+      [
+        1862,
+        1894
+      ],
+      [
+        1915,
+        1949
+      ],
+      [
+        1961,
+        1995
+      ],
+      [
+        2008,
+        2041
+      ],
+      [
+        2056,
+        2087
+      ],
+      [
+        2105,
+        2139
+      ],
+      [
+        2157,
+        2188
+      ],
+      [
+        2209,
+        2246
+      ],
+      [
+        2263,
+        2265
+      ],
+      [
+        2267,
+        2295
+      ],
+      [
+        2315,
+        2352
+      ],
+      [
+        2370,
+        2408
+      ],
+      [
+        2427,
+        2464
+      ],
+      [
+        2480,
+        2518
+      ],
+      [
+        2535,
+        2573
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "...sed repulsis Corinthiis ipsis inter",
+      "below": "(source page 300) se per otium dividere insulam liceret. (3) Igitur hi triremes..."
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1875, beyond the candidate Latin crop's right edge x=1823; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      243,
+      278
+    ],
+    "expected_last_band": [
+      2535,
+      2573
+    ]
+  },
+  {
+    "finding_ids": [
+      "G2",
+      "O7"
+    ],
+    "unit_id": "timoleon",
+    "source": 0,
+    "source_page": 304,
+    "raster": [
+      1988,
+      2985
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9874245472837022,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1963,
+      0,
+      1988,
+      2985
+    ],
+    "crop_edges": [
+      917,
+      1709
+    ],
+    "bands": [
+      [
+        278,
+        318
+      ],
+      [
+        323,
+        359
+      ],
+      [
+        365,
+        408
+      ],
+      [
+        410,
+        447
+      ],
+      [
+        450,
+        531
+      ],
+      [
+        533,
+        656
+      ],
+      [
+        665,
+        744
+      ],
+      [
+        748,
+        788
+      ],
+      [
+        790,
+        830
+      ],
+      [
+        831,
+        954
+      ],
+      [
+        956,
+        993
+      ],
+      [
+        997,
+        1032
+      ],
+      [
+        1037,
+        1073
+      ],
+      [
+        1077,
+        1154
+      ],
+      [
+        1159,
+        1237
+      ],
+      [
+        1241,
+        1276
+      ],
+      [
+        1282,
+        1317
+      ],
+      [
+        1322,
+        1362
+      ],
+      [
+        1363,
+        1394
+      ],
+      [
+        1408,
+        1441
+      ],
+      [
+        1454,
+        1493
+      ],
+      [
+        1499,
+        1536
+      ],
+      [
+        1545,
+        1580
+      ],
+      [
+        1590,
+        1629
+      ],
+      [
+        1638,
+        1674
+      ],
+      [
+        1684,
+        1724
+      ],
+      [
+        1730,
+        1767
+      ],
+      [
+        1775,
+        1812
+      ],
+      [
+        1821,
+        1853
+      ],
+      [
+        1866,
+        1901
+      ],
+      [
+        1913,
+        1952
+      ],
+      [
+        1960,
+        1997
+      ],
+      [
+        2004,
+        2043
+      ],
+      [
+        2050,
+        2082
+      ],
+      [
+        2093,
+        2130
+      ],
+      [
+        2137,
+        2173
+      ],
+      [
+        2180,
+        2215
+      ],
+      [
+        2224,
+        2260
+      ],
+      [
+        2267,
+        2298
+      ],
+      [
+        2311,
+        2347
+      ],
+      [
+        2355,
+        2392
+      ],
+      [
+        2398,
+        2432
+      ],
+      [
+        2441,
+        2478
+      ],
+      [
+        2484,
+        2521
+      ],
+      [
+        2529,
+        2561
+      ],
+      [
+        2570,
+        2608
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "(source 303, preceding retained Timoleon prose)",
+      "below": "(source 304) vestem excutiebat...; ending ad saxum quod- continues on source 305 dam sublime..."
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1963, beyond the candidate Latin crop's right edge x=1709; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      278,
+      318
+    ],
+    "expected_last_band": [
+      2570,
+      2608
+    ]
+  },
+  {
+    "finding_ids": [
+      "O8B"
+    ],
+    "unit_id": "timoleon",
+    "source": 0,
+    "source_page": 306,
+    "raster": [
+      2001,
+      2988
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9875062468765617,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1976,
+      0,
+      2001,
+      2988
+    ],
+    "crop_edges": [
+      941,
+      1726
+    ],
+    "bands": [
+      [
+        274,
+        308
+      ],
+      [
+        334,
+        371
+      ],
+      [
+        393,
+        431
+      ],
+      [
+        452,
+        487
+      ],
+      [
+        506,
+        544
+      ],
+      [
+        565,
+        602
+      ],
+      [
+        624,
+        659
+      ],
+      [
+        683,
+        721
+      ],
+      [
+        739,
+        775
+      ],
+      [
+        797,
+        832
+      ],
+      [
+        855,
+        892
+      ],
+      [
+        910,
+        949
+      ],
+      [
+        966,
+        1000
+      ],
+      [
+        1012,
+        1049
+      ],
+      [
+        1061,
+        1095
+      ],
+      [
+        1110,
+        1143
+      ],
+      [
+        1159,
+        1196
+      ],
+      [
+        1208,
+        1246
+      ],
+      [
+        1257,
+        1294
+      ],
+      [
+        1307,
+        1343
+      ],
+      [
+        1358,
+        1392
+      ],
+      [
+        1406,
+        1438
+      ],
+      [
+        1456,
+        1488
+      ],
+      [
+        1504,
+        1539
+      ],
+      [
+        1553,
+        1587
+      ],
+      [
+        1602,
+        1635
+      ],
+      [
+        1653,
+        1685
+      ],
+      [
+        1702,
+        1734
+      ],
+      [
+        1751,
+        1783
+      ],
+      [
+        1801,
+        1833
+      ],
+      [
+        1849,
+        1880
+      ],
+      [
+        1896,
+        1927
+      ],
+      [
+        1943,
+        1976
+      ],
+      [
+        1990,
+        2023
+      ],
+      [
+        2035,
+        2067
+      ],
+      [
+        2083,
+        2115
+      ],
+      [
+        2131,
+        2164
+      ],
+      [
+        2178,
+        2210
+      ],
+      [
+        2225,
+        2257
+      ],
+      [
+        2268,
+        2299
+      ],
+      [
+        2316,
+        2350
+      ],
+      [
+        2365,
+        2398
+      ],
+      [
+        2413,
+        2448
+      ],
+      [
+        2463,
+        2495
+      ],
+      [
+        2513,
+        2547
+      ],
+      [
+        2562,
+        2595
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "(source 305) At Neo Corinthius, dux eorum qui obside-",
+      "below": "(source 306) bantur, conspicatus ab arce hostes qui relicti erant custodias; segniter negligenterque agere, subito in palantes impetum"
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1976, beyond the candidate Latin crop's right edge x=1726; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      274,
+      308
+    ],
+    "expected_last_band": [
+      2562,
+      2595
+    ]
+  },
+  {
+    "finding_ids": [
+      "G5"
+    ],
+    "unit_id": "timoleon",
+    "source": 0,
+    "source_page": 308,
+    "raster": [
+      1998,
+      2982
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9874874874874875,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1973,
+      0,
+      1998,
+      2982
+    ],
+    "crop_edges": [
+      949,
+      1734
+    ],
+    "bands": [
+      [
+        266,
+        299
+      ],
+      [
+        310,
+        342
+      ],
+      [
+        354,
+        386
+      ],
+      [
+        398,
+        429
+      ],
+      [
+        441,
+        472
+      ],
+      [
+        485,
+        516
+      ],
+      [
+        527,
+        558
+      ],
+      [
+        571,
+        604
+      ],
+      [
+        614,
+        646
+      ],
+      [
+        658,
+        690
+      ],
+      [
+        700,
+        731
+      ],
+      [
+        744,
+        775
+      ],
+      [
+        792,
+        823
+      ],
+      [
+        843,
+        874
+      ],
+      [
+        889,
+        921
+      ],
+      [
+        940,
+        972
+      ],
+      [
+        987,
+        1017
+      ],
+      [
+        1038,
+        1070
+      ],
+      [
+        1084,
+        1116
+      ],
+      [
+        1131,
+        1162
+      ],
+      [
+        1180,
+        1211
+      ],
+      [
+        1227,
+        1259
+      ],
+      [
+        1275,
+        1307
+      ],
+      [
+        1321,
+        1354
+      ],
+      [
+        1368,
+        1399
+      ],
+      [
+        1414,
+        1448
+      ],
+      [
+        1459,
+        1494
+      ],
+      [
+        1509,
+        1541
+      ],
+      [
+        1556,
+        1589
+      ],
+      [
+        1604,
+        1637
+      ],
+      [
+        1650,
+        1682
+      ],
+      [
+        1698,
+        1732
+      ],
+      [
+        1744,
+        1779
+      ],
+      [
+        1790,
+        1823
+      ],
+      [
+        1837,
+        1871
+      ],
+      [
+        1883,
+        1917
+      ],
+      [
+        1929,
+        1962
+      ],
+      [
+        1975,
+        2009
+      ],
+      [
+        2022,
+        2056
+      ],
+      [
+        2068,
+        2103
+      ],
+      [
+        2114,
+        2151
+      ],
+      [
+        2161,
+        2197
+      ],
+      [
+        2210,
+        2240
+      ],
+      [
+        2251,
+        2285
+      ],
+      [
+        2294,
+        2332
+      ],
+      [
+        2337,
+        2375
+      ],
+      [
+        2381,
+        2419
+      ],
+      [
+        2425,
+        2464
+      ],
+      [
+        2469,
+        2508
+      ],
+      [
+        2513,
+        2550
+      ],
+      [
+        2557,
+        2592
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "(large top blank in output II/245)",
+      "below": "neque vulnus accepit, Timoleontis fortunae opus est, certare quodammodo cum virtute ejus visae..."
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1973, beyond the candidate Latin crop's right edge x=1734; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      266,
+      299
+    ],
+    "expected_last_band": [
+      2557,
+      2592
+    ]
+  },
+  {
+    "finding_ids": [
+      "G6"
+    ],
+    "unit_id": "pyrrhus",
+    "source": 0,
+    "source_page": 470,
+    "raster": [
+      2016,
+      3023
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9875992063492064,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1991,
+      0,
+      2016,
+      3023
+    ],
+    "crop_edges": [
+      972,
+      1805
+    ],
+    "bands": [
+      [
+        421,
+        473
+      ],
+      [
+        476,
+        578
+      ],
+      [
+        580,
+        622
+      ],
+      [
+        625,
+        671
+      ],
+      [
+        677,
+        721
+      ],
+      [
+        727,
+        773
+      ],
+      [
+        779,
+        823
+      ],
+      [
+        825,
+        872
+      ],
+      [
+        878,
+        924
+      ],
+      [
+        931,
+        973
+      ],
+      [
+        981,
+        1023
+      ],
+      [
+        1030,
+        1068
+      ],
+      [
+        1077,
+        1124
+      ],
+      [
+        1125,
+        1165
+      ],
+      [
+        1172,
+        1215
+      ],
+      [
+        1222,
+        1258
+      ],
+      [
+        1266,
+        1355
+      ],
+      [
+        1358,
+        1400
+      ],
+      [
+        1408,
+        1451
+      ],
+      [
+        1456,
+        1498
+      ],
+      [
+        1505,
+        1544
+      ],
+      [
+        1556,
+        1598
+      ],
+      [
+        1606,
+        1644
+      ],
+      [
+        1653,
+        1696
+      ],
+      [
+        1704,
+        1744
+      ],
+      [
+        1751,
+        1795
+      ],
+      [
+        1797,
+        1836
+      ],
+      [
+        1843,
+        1885
+      ],
+      [
+        1892,
+        1932
+      ],
+      [
+        1940,
+        1980
+      ],
+      [
+        1987,
+        2026
+      ],
+      [
+        2033,
+        2074
+      ],
+      [
+        2078,
+        2115
+      ],
+      [
+        2125,
+        2164
+      ],
+      [
+        2174,
+        2213
+      ],
+      [
+        2223,
+        2260
+      ],
+      [
+        2270,
+        2309
+      ],
+      [
+        2319,
+        2353
+      ],
+      [
+        2365,
+        2396
+      ],
+      [
+        2411,
+        2442
+      ],
+      [
+        2457,
+        2493
+      ],
+      [
+        2505,
+        2541
+      ],
+      [
+        2551,
+        2587
+      ],
+      [
+        2598,
+        2638
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "(source 470) ...strepitu aquae",
+      "below": "(source 471) verba non percipientibus, tempus traheretur..."
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1991, beyond the candidate Latin crop's right edge x=1805; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      421,
+      473
+    ],
+    "expected_last_band": [
+      2598,
+      2638
+    ]
+  },
+  {
+    "finding_ids": [
+      "O7"
+    ],
+    "unit_id": "cato_minor",
+    "source": 1,
+    "source_page": 361,
+    "raster": [
+      1810,
+      2848
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9861878453038674,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1785,
+      0,
+      1810,
+      2848
+    ],
+    "crop_edges": [
+      1000,
+      1773
+    ],
+    "bands": [
+      [
+        250,
+        282
+      ],
+      [
+        294,
+        326
+      ],
+      [
+        338,
+        370
+      ],
+      [
+        382,
+        414
+      ],
+      [
+        427,
+        458
+      ],
+      [
+        471,
+        503
+      ],
+      [
+        514,
+        547
+      ],
+      [
+        557,
+        591
+      ],
+      [
+        601,
+        635
+      ],
+      [
+        640,
+        642
+      ],
+      [
+        644,
+        679
+      ],
+      [
+        688,
+        722
+      ],
+      [
+        731,
+        767
+      ],
+      [
+        774,
+        810
+      ],
+      [
+        819,
+        856
+      ],
+      [
+        868,
+        899
+      ],
+      [
+        906,
+        943
+      ],
+      [
+        955,
+        990
+      ],
+      [
+        1007,
+        1046
+      ],
+      [
+        1062,
+        1097
+      ],
+      [
+        1110,
+        1146
+      ],
+      [
+        1160,
+        1197
+      ],
+      [
+        1211,
+        1247
+      ],
+      [
+        1262,
+        1299
+      ],
+      [
+        1313,
+        1314
+      ],
+      [
+        1315,
+        1345
+      ],
+      [
+        1364,
+        1399
+      ],
+      [
+        1410,
+        1447
+      ],
+      [
+        1462,
+        1497
+      ],
+      [
+        1517,
+        1550
+      ],
+      [
+        1562,
+        1598
+      ],
+      [
+        1616,
+        1649
+      ],
+      [
+        1663,
+        1703
+      ],
+      [
+        1715,
+        1752
+      ],
+      [
+        1763,
+        1798
+      ],
+      [
+        1809,
+        1812
+      ],
+      [
+        1813,
+        1849
+      ],
+      [
+        1861,
+        1897
+      ],
+      [
+        1909,
+        1946
+      ],
+      [
+        1959,
+        1998
+      ],
+      [
+        2008,
+        2048
+      ],
+      [
+        2060,
+        2144
+      ],
+      [
+        2157,
+        2193
+      ],
+      [
+        2209,
+        2245
+      ],
+      [
+        2257,
+        2297
+      ],
+      [
+        2304,
+        2345
+      ],
+      [
+        2354,
+        2444
+      ],
+      [
+        2452,
+        2494
+      ],
+      [
+        2506,
+        2544
+      ],
+      [
+        2548,
+        2591
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "(earlier Cato source page)",
+      "below": "illam in qua aetatem trivimus philosophiam dedocetis..."
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1785, beyond the candidate Latin crop's right edge x=1773; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      250,
+      282
+    ],
+    "expected_last_band": [
+      2548,
+      2591
+    ]
+  },
+  {
+    "finding_ids": [
+      "O4"
+    ],
+    "unit_id": "antonius",
+    "source": 1,
+    "source_page": 539,
+    "raster": [
+      1824,
+      2838
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9862938596491229,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1799,
+      0,
+      1824,
+      2838
+    ],
+    "crop_edges": [
+      971,
+      1771
+    ],
+    "bands": [
+      [
+        201,
+        233
+      ],
+      [
+        253,
+        284
+      ],
+      [
+        301,
+        334
+      ],
+      [
+        352,
+        384
+      ],
+      [
+        404,
+        435
+      ],
+      [
+        456,
+        488
+      ],
+      [
+        507,
+        538
+      ],
+      [
+        556,
+        587
+      ],
+      [
+        605,
+        636
+      ],
+      [
+        653,
+        685
+      ],
+      [
+        702,
+        733
+      ],
+      [
+        752,
+        784
+      ],
+      [
+        801,
+        832
+      ],
+      [
+        853,
+        883
+      ],
+      [
+        901,
+        932
+      ],
+      [
+        952,
+        984
+      ],
+      [
+        1003,
+        1034
+      ],
+      [
+        1053,
+        1085
+      ],
+      [
+        1102,
+        1134
+      ],
+      [
+        1156,
+        1180
+      ],
+      [
+        1202,
+        1233
+      ],
+      [
+        1253,
+        1284
+      ],
+      [
+        1304,
+        1335
+      ],
+      [
+        1355,
+        1387
+      ],
+      [
+        1403,
+        1434
+      ],
+      [
+        1453,
+        1486
+      ],
+      [
+        1502,
+        1535
+      ],
+      [
+        1554,
+        1584
+      ],
+      [
+        1607,
+        1637
+      ],
+      [
+        1656,
+        1689
+      ],
+      [
+        1705,
+        1736
+      ],
+      [
+        1756,
+        1788
+      ],
+      [
+        1806,
+        1837
+      ],
+      [
+        1853,
+        1886
+      ],
+      [
+        1902,
+        1934
+      ],
+      [
+        1951,
+        1982
+      ],
+      [
+        1998,
+        2034
+      ],
+      [
+        2054,
+        2085
+      ],
+      [
+        2105,
+        2135
+      ],
+      [
+        2155,
+        2186
+      ],
+      [
+        2206,
+        2236
+      ],
+      [
+        2249,
+        2280
+      ],
+      [
+        2293,
+        2323
+      ],
+      [
+        2339,
+        2369
+      ],
+      [
+        2386,
+        2416
+      ],
+      [
+        2425,
+        2456
+      ],
+      [
+        2467,
+        2498
+      ],
+      [
+        2511,
+        2542
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "(source page 538) ...Eo impe-",
+      "below": "trato, hostes irruentes repulit, non, ut ante, simul ad aciem peditum retro cedens..."
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1799, beyond the candidate Latin crop's right edge x=1771; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      201,
+      233
+    ],
+    "expected_last_band": [
+      2511,
+      2542
+    ]
+  },
+  {
+    "finding_ids": [
+      "G3",
+      "O7"
+    ],
+    "unit_id": "brutus",
+    "source": 1,
+    "source_page": 625,
+    "raster": [
+      1816,
+      2842
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.9862334801762115,
+        0,
+        1,
+        1
+      ]
+    ],
+    "mask_rectangle_px": [
+      1791,
+      0,
+      1816,
+      2842
+    ],
+    "crop_edges": [
+      980,
+      1767
+    ],
+    "bands": [
+      [
+        185,
+        218
+      ],
+      [
+        242,
+        275
+      ],
+      [
+        303,
+        333
+      ],
+      [
+        363,
+        394
+      ],
+      [
+        422,
+        453
+      ],
+      [
+        482,
+        514
+      ],
+      [
+        541,
+        572
+      ],
+      [
+        600,
+        631
+      ],
+      [
+        656,
+        687
+      ],
+      [
+        713,
+        743
+      ],
+      [
+        756,
+        788
+      ],
+      [
+        800,
+        832
+      ],
+      [
+        843,
+        873
+      ],
+      [
+        887,
+        919
+      ],
+      [
+        935,
+        965
+      ],
+      [
+        980,
+        1012
+      ],
+      [
+        1027,
+        1057
+      ],
+      [
+        1074,
+        1104
+      ],
+      [
+        1121,
+        1152
+      ],
+      [
+        1168,
+        1198
+      ],
+      [
+        1215,
+        1247
+      ],
+      [
+        1260,
+        1292
+      ],
+      [
+        1307,
+        1337
+      ],
+      [
+        1353,
+        1384
+      ],
+      [
+        1399,
+        1431
+      ],
+      [
+        1447,
+        1477
+      ],
+      [
+        1494,
+        1526
+      ],
+      [
+        1540,
+        1572
+      ],
+      [
+        1587,
+        1617
+      ],
+      [
+        1633,
+        1663
+      ],
+      [
+        1679,
+        1710
+      ],
+      [
+        1725,
+        1755
+      ],
+      [
+        1773,
+        1803
+      ],
+      [
+        1820,
+        1850
+      ],
+      [
+        1870,
+        1901
+      ],
+      [
+        1919,
+        1950
+      ],
+      [
+        1969,
+        1991
+      ],
+      [
+        2014,
+        2045
+      ],
+      [
+        2066,
+        2098
+      ],
+      [
+        2119,
+        2149
+      ],
+      [
+        2171,
+        2201
+      ],
+      [
+        2225,
+        2257
+      ],
+      [
+        2280,
+        2312
+      ],
+      [
+        2334,
+        2365
+      ],
+      [
+        2385,
+        2418
+      ],
+      [
+        2440,
+        2473
+      ],
+      [
+        2492,
+        2527
+      ]
+    ],
+    "adjacent_prose": {
+      "above": "(source 624) ...tum Brutus placide admodum subli-",
+      "below": "(source 625) dens, Eptum est, inquit, vobis tamen alia afferetur aqua.; (source 626) partem secutus."
+    },
+    "preservation_boundary": "Right-margin rectangle begins at x=1791, beyond the candidate Latin crop's right edge x=1767; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "margin",
+    "expected_first_band": [
+      185,
+      218
+    ],
+    "expected_last_band": [
+      2492,
+      2527
+    ]
+  },
+  {
+    "finding_ids": [
+      "O6"
+    ],
+    "unit_id": "cato_minor",
+    "source": 1,
+    "source_page": 347,
+    "raster": [
+      1787,
+      2866
+    ],
+    "disposition": "mask",
+    "mask_rectangles": [
+      [
+        0.07834359261331841,
+        0.05059316120027914,
+        0.9625069949636262,
+        0.07152826238660154
+      ]
+    ],
+    "mask_rectangle_px": [
+      140,
+      145,
+      1720,
+      205
+    ],
+    "crop_edges": null,
+    "bands": null,
+    "adjacent_prose": {
+      "above": "(prior page tail)",
+      "below": "nonnulli etiam amici Pompeii atque domestici rei agerentur, videns ipsum saepe inflecti ad gratiam..."
+    },
+    "preservation_boundary": "Header/folio ink rows 154-193; first body ink begins row 219; mask bottom 205 leaves 14 pixels before Latin. The existing source-337 mask and no-right-rule decision remain unchanged. No right-edge mask is proposed for page 347.",
+    "human_confirmed": "2026-10-06 user approval of all post-rebuild proposals",
+    "repair_role": "header",
+    "expected_first_band": null,
+    "expected_last_band": null
+  }
+  ],
+  "post_rebuild_review": {
+    "first_rebuild_mask_output_locators": [
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      197,
+      198,
+      199
+    ],
+    "canvas_indices": [
+      37,
+      38,
+      39
+    ],
+    "source_page": 287,
+    "unit_id": "marcius_coriolanus"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      199,
+      200,
+      201
+    ],
+    "canvas_indices": [
+      39,
+      40,
+      41
+    ],
+    "source_page": 288,
+    "unit_id": "marcius_coriolanus"
+  },
+  {
+    "source": 0,
+    "tomus": 1,
+    "physical_pages": [
+      371,
+      372,
+      373
+    ],
+    "canvas_indices": [
+      31,
+      32,
+      33
+    ],
+    "source_page": 182,
+    "unit_id": "camillus"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      204,
+      205,
+      206
+    ],
+    "canvas_indices": [
+      44,
+      45,
+      46
+    ],
+    "source_page": 290,
+    "unit_id": "marcius_coriolanus"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      225,
+      226,
+      227
+    ],
+    "canvas_indices": [
+      9,
+      10,
+      11
+    ],
+    "source_page": 299,
+    "unit_id": "timoleon"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      187,
+      188,
+      189
+    ],
+    "canvas_indices": [
+      27,
+      28,
+      29
+    ],
+    "source_page": 281,
+    "unit_id": "marcius_coriolanus"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      222,
+      223,
+      224,
+      225
+    ],
+    "canvas_indices": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "source_page": 298,
+    "unit_id": "timoleon"
+  },
+  {
+    "source": 0,
+    "tomus": 2,
+    "physical_pages": [
+      245,
+      246,
+      247
+    ],
+    "canvas_indices": [
+      29,
+      30,
+      31
+    ],
+    "source_page": 308,
+    "unit_id": "timoleon"
+  },
+  {
+    "source": 0,
+    "tomus": 3,
+    "physical_pages": [
+      337,
+      338,
+      339,
+      340
+    ],
+    "canvas_indices": [
+      39,
+      40,
+      41,
+      42
+    ],
+    "source_page": 550,
+    "unit_id": "lysander"
+  },
+  {
+    "source": 1,
+    "tomus": 7,
+    "physical_pages": [
+      163,
+      164,
+      165
+    ],
+    "canvas_indices": [
+      25,
+      26,
+      27
+    ],
+    "source_page": 441,
+    "unit_id": "demosthenes"
+  },
+  {
+    "source": 1,
+    "tomus": 7,
+    "physical_pages": [
+      365,
+      366,
+      367
+    ],
+    "canvas_indices": [
+      53,
+      54,
+      55
+    ],
+    "source_page": 539,
+    "unit_id": "antonius"
+  },
+  {
+    "source": 1,
+    "tomus": 6,
+    "physical_pages": [
+      308,
+      309,
+      310
+    ],
+    "canvas_indices": [
+      58,
+      59,
+      60
+    ],
+    "source_page": 337,
+    "unit_id": "cato_minor"
+  },
+  {
+    "source": 0,
+    "tomus": 3,
+    "physical_pages": [
+      297
+    ],
+    "canvas_indices": [
+      67
+    ],
+    "source_page": 530,
+    "unit_id": "caius_marius"
+  }
+],
+    "additional_header_occurrence": {
+  "finding_ids": [
+    "O6"
+  ],
+  "source": 1,
+  "source_page": 347,
+  "raster": [
+    1787,
+    2866
+  ],
+  "original_confirmed_occurrence": 337,
+  "output": "VI/329",
+  "status": "approved_2026_10_06",
+  "proposed_mask_rectangles": [
+    [
+      0.07834359261331841,
+      0.05059316120027914,
+      0.9625069949636262,
+      0.07152826238660154
+    ]
+  ],
+  "proposed_mask_rectangle_px": [
+    140,
+    145,
+    1720,
+    205
+  ],
+  "preservation_boundary": "Header/folio ink rows 154-193; first body ink begins row 219; mask bottom 205 leaves 14 pixels before Latin. The existing source-337 mask and no-right-rule decision remain unchanged. No right-edge mask is proposed for page 347.",
+  "evidence": "llm_artifacts/2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md"
+},
+  "date": "2026-10-06",
+  "document": "llm_artifacts/2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md",
+  "production_rebuild": "All sixteen PDFs reflect the first 15 repair records. The additional 13 approved masks are installed in the generator; the final rebuild remains pending.",
+  "candidate_margin_masks": [
+    {
+      "finding_ids": [
+        "O1B"
+      ],
+      "source": 0,
+      "source_page": 281,
+      "raster": [
+        1948,
+        2974
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9753593429158111,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1900,
+        0,
+        1948,
+        2974
+      ],
+      "candidate_crop_edges": [
+        1068,
+        1859
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1900, beyond the candidate Latin crop's right edge x=1859; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "W1"
+      ],
+      "source": 0,
+      "source_page": 287,
+      "raster": [
+        1900,
+        2975
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9868421052631579,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1875,
+        0,
+        1900,
+        2975
+      ],
+      "candidate_crop_edges": [
+        1073,
+        1829
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1875, beyond the candidate Latin crop's right edge x=1829; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "G1",
+        "O7"
+      ],
+      "source": 0,
+      "source_page": 296,
+      "raster": [
+        1990,
+        2984
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9874371859296482,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1965,
+        0,
+        1990,
+        2984
+      ],
+      "candidate_crop_edges": [
+        940,
+        1727
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1965, beyond the candidate Latin crop's right edge x=1727; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "O1D",
+        "G8B"
+      ],
+      "source": 0,
+      "source_page": 298,
+      "raster": [
+        1990,
+        2982
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9874371859296482,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1965,
+        0,
+        1990,
+        2982
+      ],
+      "candidate_crop_edges": [
+        948,
+        1741
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1965, beyond the candidate Latin crop's right edge x=1741; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "W2",
+        "G4"
+      ],
+      "source": 0,
+      "source_page": 299,
+      "raster": [
+        1900,
+        2963
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9868421052631579,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1875,
+        0,
+        1900,
+        2963
+      ],
+      "candidate_crop_edges": [
+        1039,
+        1823
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1875, beyond the candidate Latin crop's right edge x=1823; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "G2",
+        "O7"
+      ],
+      "source": 0,
+      "source_page": 304,
+      "raster": [
+        1988,
+        2985
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9874245472837022,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1963,
+        0,
+        1988,
+        2985
+      ],
+      "candidate_crop_edges": [
+        917,
+        1709
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1963, beyond the candidate Latin crop's right edge x=1709; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "O8B"
+      ],
+      "source": 0,
+      "source_page": 306,
+      "raster": [
+        2001,
+        2988
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9875062468765617,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1976,
+        0,
+        2001,
+        2988
+      ],
+      "candidate_crop_edges": [
+        941,
+        1726
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1976, beyond the candidate Latin crop's right edge x=1726; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "G5"
+      ],
+      "source": 0,
+      "source_page": 308,
+      "raster": [
+        1998,
+        2982
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9874874874874875,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1973,
+        0,
+        1998,
+        2982
+      ],
+      "candidate_crop_edges": [
+        949,
+        1734
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1973, beyond the candidate Latin crop's right edge x=1734; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "G6"
+      ],
+      "source": 0,
+      "source_page": 470,
+      "raster": [
+        2016,
+        3023
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9875992063492064,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1991,
+        0,
+        2016,
+        3023
+      ],
+      "candidate_crop_edges": [
+        972,
+        1805
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1991, beyond the candidate Latin crop's right edge x=1805; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "O7"
+      ],
+      "source": 1,
+      "source_page": 361,
+      "raster": [
+        1810,
+        2848
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9861878453038674,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1785,
+        0,
+        1810,
+        2848
+      ],
+      "candidate_crop_edges": [
+        1000,
+        1773
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1785, beyond the candidate Latin crop's right edge x=1773; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "O4"
+      ],
+      "source": 1,
+      "source_page": 539,
+      "raster": [
+        1824,
+        2838
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9862938596491229,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1799,
+        0,
+        1824,
+        2838
+      ],
+      "candidate_crop_edges": [
+        971,
+        1771
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1799, beyond the candidate Latin crop's right edge x=1771; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    },
+    {
+      "finding_ids": [
+        "G3",
+        "O7"
+      ],
+      "source": 1,
+      "source_page": 625,
+      "raster": [
+        1816,
+        2842
+      ],
+      "proposed_mask_rectangles": [
+        [
+          0.9862334801762115,
+          0,
+          1,
+          1
+        ]
+      ],
+      "proposed_mask_rectangle_px": [
+        1791,
+        0,
+        1816,
+        2842
+      ],
+      "candidate_crop_edges": [
+        980,
+        1767
+      ],
+      "status": "approved_2026_10_06",
+      "preservation_boundary": "Right-margin rectangle begins at x=1791, beyond the candidate Latin crop's right edge x=1767; source/candidate images are in tmp/pdfs/inner_tomi_repairs/candidate_rules/."
+    }
+  ],
+  "spacing_dispositions": [
+    {
+      "finding_ids": [
+        "G7"
+      ],
+      "source": 0,
+      "source_page": 23,
+      "output": "I/36",
+      "recommended_disposition": "retain_genuine_chapter_spacing",
+      "status": "approved_2026_10_06"
+    },
+    {
+      "finding_ids": [
+        "G8"
+      ],
+      "source": 0,
+      "source_page": 28,
+      "output": "I/46",
+      "recommended_disposition": "retain_genuine_chapter_spacing",
+      "status": "approved_2026_10_06"
+    }
+  ],
+  "resolved_dividers": [
+    {
+      "finding_ids": [
+        "O7"
+      ],
+      "output": "V/195-196",
+      "disposition": "resolved_by_D1_duplicate_exclusions"
+    },
+    {
+      "finding_ids": [
+        "O7"
+      ],
+      "output": "VII/21",
+      "disposition": "reported_second_occurrence_excluded_by_D2"
+    }
+  ],
+  "phase_3_2": "No row-compaction table: the measured residual intervals contain scan-edge ink. Candidate margin masks address them upstream.",
+  "sliced_line": {
+    "finding_id": "O8B",
+    "source": 0,
+    "source_page": 306,
+    "strip": [
+      333,
+      441
+    ],
+    "canvas_seam": [
+      24,
+      25
+    ],
+    "scaled_cut_row": 23,
+    "source_row_estimate": 352.12847900390625,
+    "ink_before_cut": 520,
+    "ink_after_cut": 495,
+    "candidate_result": "whole source line on candidate Timoleon canvas 23"
+  }
+}
+}

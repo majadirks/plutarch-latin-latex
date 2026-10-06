@@ -113,7 +113,7 @@ the modifier to the wrong thing.
 
 This codebase captures non-trivial work in markdown plans under `llm_artifacts/`. A plan is a contract between the planning LLM and the implementing LLM (or a junior developer) — the implementer must be able to pick it up cold, work through it across multiple sessions, and verify each step's correctness without re-deriving design decisions.
 
-**File location and naming.** Plans live in `llm_artifacts/` with filenames following `YYYY_MM_DD_PLAN_NAME.md` — underscore-separated date followed by a descriptive name in UPPER_SNAKE_CASE (e.g. `2026_05_28_LOGIN_SCREEN_PLAN.md`). The date is the plan's authoring date.
+**File location and naming.** Plans live in `llm_artifacts/` with filenames following `YYYY_MM_DD_PLAN_NAME.md` — underscore-separated date and time (approximate minute) followed by a descriptive name in UPPER_SNAKE_CASE (e.g. `2026_05_28_11_15_LOGIN_SCREEN_PLAN.md`). The date is the plan's authoring date. The time is the time when the file is created and may be approximate.
 
 **Required opening sections.** Every plan begins with three sections and a fourth optional section, in order:
 
