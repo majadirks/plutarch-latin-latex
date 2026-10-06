@@ -77,6 +77,12 @@ Nothing is erased until its RFI is marked **CONFIRMED** here.
 **This section exists so the interview can resume in a fresh context with no prior memory.**
 Read it, then continue from the first `pending` RFI in the status tracker at the bottom.
 
+> **IMPLEMENTATION HANDOFF:** diagnosis is substantially done and 18 repairs are frozen. The next
+> step is **Option 1 — implement the confirmed repairs (Phases 2–3), rebuild, then re-assess the
+> open gaps.** The explicit implementation prompt is
+> [`2026_10_06_INNER_TOMI_IMPLEMENTATION_HANDOFF.md`](2026_10_06_INNER_TOMI_IMPLEMENTATION_HANDOFF.md).
+> The confirmed numbers live in `src/facsimile/fixtures/inner_tomi_repair_source_trace.json`.
+
 ## Interview progress (as of 2026-10-05)
 
 - **CONFIRMED & frozen in ledger (15):** RFI-22 (W3 retain), RFI-23 (O8 retain + diagnose),
