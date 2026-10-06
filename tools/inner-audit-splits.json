@@ -1,0 +1,3293 @@
+{
+  "schema_version": 1,
+  "baseline_id": "baseline_2026_10_06",
+  "report_sha256": "5ac02a65ce32869c42f0638b5d63980ba85cfd32d9d8feeef3371d1ccc1e0474",
+  "development_units": [
+    "aemilius_paulus",
+    "agesilaus",
+    "agis",
+    "alexander",
+    "artoxerxes",
+    "caius_gracchus",
+    "caius_marius",
+    "cato_major",
+    "cato_minor",
+    "cleomenes",
+    "comparatio_agesilai_et_pompeii",
+    "comparatio_alcibiadis_et_coriolani",
+    "comparatio_aristidis_et_catonis",
+    "comparatio_demetrii_et_antonii",
+    "comparatio_dionis_et_bruti",
+    "comparatio_lycurgi_et_numae",
+    "comparatio_lysandri_et_syllae",
+    "comparatio_sertorii_et_eumenis",
+    "comparatio_thesei_et_romuli",
+    "demosthenes",
+    "dio",
+    "fabius_maximus",
+    "flamininus",
+    "marcius_coriolanus",
+    "nicias",
+    "pericles",
+    "philopoemen",
+    "phocion",
+    "pompeius",
+    "pyrrhus",
+    "romulus",
+    "sertorius",
+    "tiberius_gracchus",
+    "timoleon"
+  ],
+  "validation_units": [
+    "alcibiades",
+    "antonius",
+    "aratus",
+    "aristides",
+    "brutus",
+    "camillus",
+    "cicero",
+    "cimon",
+    "comparatio_agidis_cleomenis_et_gracchorum",
+    "comparatio_cimonis_et_luculli",
+    "comparatio_demosthenis_et_ciceronis",
+    "comparatio_niciae_et_crassi",
+    "comparatio_pelopidae_et_marcelli",
+    "comparatio_periclis_et_fabii",
+    "comparatio_philopoemenis_et_flaminini",
+    "comparatio_solonis_et_poplicolae",
+    "comparatio_timoleontis_et_aemilii",
+    "crassus",
+    "demetrius",
+    "eumenes",
+    "galba",
+    "iulius_caesar",
+    "lucullus",
+    "lycurgus",
+    "lysander",
+    "marcellus",
+    "numa",
+    "otho",
+    "pelopidas",
+    "poplicola",
+    "solon",
+    "sylla",
+    "themistocles",
+    "theseus"
+  ],
+  "selection_rule": "SHA-256 first byte parity with mandatory unit overrides; panel takes first 25 hash-sorted body pages per tomus",
+  "unit_seed": "audit-split-v1",
+  "panel_seed": "audit-panel-v1",
+  "review_panel": [
+    {
+      "tomus": 1,
+      "page": 173,
+      "unit_id": "numa",
+      "ordinal": 9,
+      "asset": "facsimile_numa_9.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.1500111999322823,
+        0.9047093397499559,
+        0.864826473046786
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 213,
+      "unit_id": "comparatio_lycurgi_et_numae",
+      "ordinal": 9,
+      "asset": "facsimile_comparatio_lycurgi_et_numae_9.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15000151059465147,
+        0.9047093397499559,
+        0.27592750679818057
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 307,
+      "unit_id": "themistocles",
+      "ordinal": 9,
+      "asset": "facsimile_themistocles_9.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.1500125456736199,
+        0.9047093397499559,
+        0.8754098539352538
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 327,
+      "unit_id": "themistocles",
+      "ordinal": 29,
+      "asset": "facsimile_themistocles_29.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8875784508323645
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 338,
+      "unit_id": "themistocles",
+      "ordinal": 40,
+      "asset": "facsimile_themistocles_40.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.1500115363676167,
+        0.9047093397499559,
+        0.8849326560755477
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 397,
+      "unit_id": "camillus",
+      "ordinal": 57,
+      "asset": "facsimile_camillus_57.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001274753482055,
+        0.9047093397499559,
+        0.8595370367192926
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 224,
+      "unit_id": "solon",
+      "ordinal": 10,
+      "asset": "facsimile_solon_10.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.1500129493960212,
+        0.9047093397499559,
+        0.8785848614730875
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 257,
+      "unit_id": "solon",
+      "ordinal": 43,
+      "asset": "facsimile_solon_43.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001133450641604,
+        0.9047093397499559,
+        0.8658848313217529
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 350,
+      "unit_id": "camillus",
+      "ordinal": 10,
+      "asset": "facsimile_camillus_10.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8680014805846197
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 320,
+      "unit_id": "themistocles",
+      "ordinal": 22,
+      "asset": "facsimile_themistocles_22.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001241109948615,
+        0.9047093397499559,
+        0.8748806411542369
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 203,
+      "unit_id": "numa",
+      "ordinal": 39,
+      "asset": "facsimile_numa_39.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15000716270826944,
+        0.9047093397499559,
+        0.6029174864754677
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 317,
+      "unit_id": "themistocles",
+      "ordinal": 19,
+      "asset": "facsimile_themistocles_19.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8791140069670375
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 212,
+      "unit_id": "comparatio_lycurgi_et_numae",
+      "ordinal": 8,
+      "asset": "facsimile_comparatio_lycurgi_et_numae_8.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001321854428873,
+        0.9047093397499559,
+        0.8807015107359543
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 66,
+      "unit_id": "romulus",
+      "ordinal": 10,
+      "asset": "facsimile_romulus_10.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001281482188744,
+        0.9047093397499559,
+        0.8775265031981206
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 330,
+      "unit_id": "themistocles",
+      "ordinal": 32,
+      "asset": "facsimile_themistocles_32.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001173822881733,
+        0.9047093397499559,
+        0.8865201598444646
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 97,
+      "unit_id": "romulus",
+      "ordinal": 41,
+      "asset": "facsimile_romulus_41.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8669431223096528
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 348,
+      "unit_id": "camillus",
+      "ordinal": 8,
+      "asset": "facsimile_camillus_8.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001113264521543,
+        0.9047093397499559,
+        0.864297327552836
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 356,
+      "unit_id": "camillus",
+      "ordinal": 16,
+      "asset": "facsimile_camillus_16.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001200737708487,
+        0.9047093397499559,
+        0.8711764881224533
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 107,
+      "unit_id": "comparatio_thesei_et_romuli",
+      "ordinal": 1,
+      "asset": "facsimile_comparatio_thesei_et_romuli_1.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.2011655196576811,
+        0.9047093397499559,
+        0.8043405137381013
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 86,
+      "unit_id": "romulus",
+      "ordinal": 30,
+      "asset": "facsimile_romulus_30.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001281482188744,
+        0.9047093397499559,
+        0.8780556486920706
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 267,
+      "unit_id": "poplicola",
+      "ordinal": 7,
+      "asset": "facsimile_poplicola_7.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001321854428873,
+        0.9047093397499559,
+        0.8807015107359543
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 136,
+      "unit_id": "lycurgus",
+      "ordinal": 22,
+      "asset": "facsimile_lycurgus_22.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001093078401478,
+        0.9047093397499559,
+        0.8627098237839191
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 197,
+      "unit_id": "numa",
+      "ordinal": 33,
+      "asset": "facsimile_numa_33.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001214195121862,
+        0.9047093397499559,
+        0.8542453799185921
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 387,
+      "unit_id": "camillus",
+      "ordinal": 47,
+      "asset": "facsimile_camillus_47.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001093078401478,
+        0.9047093397499559,
+        0.8627098237839191
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 1,
+      "page": 120,
+      "unit_id": "lycurgus",
+      "ordinal": 6,
+      "asset": "facsimile_lycurgus_6.png",
+      "input_sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8680014805846197
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 377,
+      "unit_id": "marcellus",
+      "ordinal": 5,
+      "asset": "facsimile_marcellus_5.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001274753482055,
+        0.9047093397499559,
+        0.8595370367192926
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 112,
+      "unit_id": "alcibiades",
+      "ordinal": 6,
+      "asset": "facsimile_alcibiades_6.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.1500122092382855,
+        0.9047093397499559,
+        0.8727639918913701
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 298,
+      "unit_id": "aemilius_paulus",
+      "ordinal": 32,
+      "asset": "facsimile_aemilius_paulus_32.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001335311842248,
+        0.9047093397499559,
+        0.8817598690109212
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 294,
+      "unit_id": "aemilius_paulus",
+      "ordinal": 28,
+      "asset": "facsimile_aemilius_paulus_28.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001167094175047,
+        0.9047093397499559,
+        0.8685306933656365
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 160,
+      "unit_id": "alcibiades",
+      "ordinal": 54,
+      "asset": "facsimile_alcibiades_54.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.150009114033209,
+        0.9047093397499559,
+        0.6717025653261536
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 205,
+      "unit_id": "marcius_coriolanus",
+      "ordinal": 45,
+      "asset": "facsimile_marcius_coriolanus_45.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001308397015495,
+        0.9047093397499559,
+        0.8801722979549375
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 200,
+      "unit_id": "marcius_coriolanus",
+      "ordinal": 40,
+      "asset": "facsimile_marcius_coriolanus_40.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001321854428873,
+        0.9047093397499559,
+        0.8812306562299043
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 284,
+      "unit_id": "aemilius_paulus",
+      "ordinal": 18,
+      "asset": "facsimile_aemilius_paulus_18.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001234381241926,
+        0.9047093397499559,
+        0.873822350166337
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 206,
+      "unit_id": "marcius_coriolanus",
+      "ordinal": 46,
+      "asset": "facsimile_marcius_coriolanus_46.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001281482188744,
+        0.9047093397499559,
+        0.8775265031981206
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 30,
+      "unit_id": "pericles",
+      "ordinal": 22,
+      "asset": "facsimile_pericles_22.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8870493053384145
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 59,
+      "unit_id": "pericles",
+      "ordinal": 51,
+      "asset": "facsimile_pericles_51.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8796431524609875
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 198,
+      "unit_id": "marcius_coriolanus",
+      "ordinal": 38,
+      "asset": "facsimile_marcius_coriolanus_38.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8695889843535365
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 238,
+      "unit_id": "timoleon",
+      "ordinal": 22,
+      "asset": "facsimile_timoleon_22.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001099807108165,
+        0.9047093397499559,
+        0.8632389692778691
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 217,
+      "unit_id": "timoleon",
+      "ordinal": 1,
+      "asset": "facsimile_timoleon_1.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.20100793334704645,
+        0.9047093397499559,
+        0.8491565263374701
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 73,
+      "unit_id": "fabius_maximus",
+      "ordinal": 11,
+      "asset": "facsimile_fabius_maximus_11.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8616536859821594
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 262,
+      "unit_id": "timoleon",
+      "ordinal": 46,
+      "asset": "facsimile_timoleon_46.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001308397015495,
+        0.9047093397499559,
+        0.8621828314761093
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 178,
+      "unit_id": "marcius_coriolanus",
+      "ordinal": 18,
+      "asset": "facsimile_marcius_coriolanus_18.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001281482188744,
+        0.9047093397499559,
+        0.8775265031981206
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 394,
+      "unit_id": "marcellus",
+      "ordinal": 22,
+      "asset": "facsimile_marcellus_22.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.1500115363676167,
+        0.9047093397499559,
+        0.8849326560755477
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 241,
+      "unit_id": "timoleon",
+      "ordinal": 25,
+      "asset": "facsimile_timoleon_25.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001200737708487,
+        0.9047093397499559,
+        0.8711764881224533
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 163,
+      "unit_id": "marcius_coriolanus",
+      "ordinal": 3,
+      "asset": "facsimile_marcius_coriolanus_3.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8854618015694977
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 405,
+      "unit_id": "marcellus",
+      "ordinal": 33,
+      "asset": "facsimile_marcellus_33.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8859909470634477
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 335,
+      "unit_id": "pelopidas",
+      "ordinal": 13,
+      "asset": "facsimile_pelopidas_13.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.1500129493960212,
+        0.9047093397499559,
+        0.8611245404882094
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 37,
+      "unit_id": "pericles",
+      "ordinal": 29,
+      "asset": "facsimile_pericles_29.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8870493053384145
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 282,
+      "unit_id": "aemilius_paulus",
+      "ordinal": 16,
+      "asset": "facsimile_aemilius_paulus_16.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8870493053384145
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 2,
+      "page": 395,
+      "unit_id": "marcellus",
+      "ordinal": 23,
+      "asset": "facsimile_marcellus_23.png",
+      "input_sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "body_box": [
+        0.09523649743945505,
+        0.1500122092382855,
+        0.9047093397499559,
+        0.8732931373853201
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 384,
+      "unit_id": "sylla",
+      "ordinal": 42,
+      "asset": "facsimile_sylla_42.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.1500115363676167,
+        0.9047093397499559,
+        0.8674723350906697
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 21,
+      "unit_id": "aristides",
+      "ordinal": 13,
+      "asset": "facsimile_aristides_13.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001268024775366,
+        0.9047093397499559,
+        0.8590078239382757
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 108,
+      "unit_id": "philopoemen",
+      "ordinal": 4,
+      "asset": "facsimile_philopoemen_4.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001194009001798,
+        0.9047093397499559,
+        0.8706473426285033
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 17,
+      "unit_id": "aristides",
+      "ordinal": 9,
+      "asset": "facsimile_aristides_9.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8796431524609875
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 181,
+      "unit_id": "pyrrhus",
+      "ordinal": 9,
+      "asset": "facsimile_pyrrhus_9.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8875784508323645
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 204,
+      "unit_id": "pyrrhus",
+      "ordinal": 32,
+      "asset": "facsimile_pyrrhus_32.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001126721934918,
+        0.9047093397499559,
+        0.8653556858278029
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 262,
+      "unit_id": "caius_marius",
+      "ordinal": 32,
+      "asset": "facsimile_caius_marius_32.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8680014805846197
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 411,
+      "unit_id": "comparatio_lysandri_et_syllae",
+      "ordinal": 7,
+      "asset": "facsimile_comparatio_lysandri_et_syllae_7.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15000480766092864,
+        0.9047093397499559,
+        0.5140262245960202
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 180,
+      "unit_id": "pyrrhus",
+      "ordinal": 8,
+      "asset": "facsimile_pyrrhus_8.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001342040548937,
+        0.9047093397499559,
+        0.8822890145048712
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 16,
+      "unit_id": "aristides",
+      "ordinal": 8,
+      "asset": "facsimile_aristides_8.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001321854428873,
+        0.9047093397499559,
+        0.8812306562299043
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 194,
+      "unit_id": "pyrrhus",
+      "ordinal": 22,
+      "asset": "facsimile_pyrrhus_22.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001281482188744,
+        0.9047093397499559,
+        0.8775265031981206
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 183,
+      "unit_id": "pyrrhus",
+      "ordinal": 11,
+      "asset": "facsimile_pyrrhus_11.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001133450641604,
+        0.9047093397499559,
+        0.8658848313217529
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 167,
+      "unit_id": "flamininus",
+      "ordinal": 31,
+      "asset": "facsimile_flamininus_31.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.1500038656419923,
+        0.9047093397499559,
+        0.38280823515645623
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 380,
+      "unit_id": "sylla",
+      "ordinal": 38,
+      "asset": "facsimile_sylla_38.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001214195121862,
+        0.9047093397499559,
+        0.8722348463974201
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 24,
+      "unit_id": "aristides",
+      "ordinal": 16,
+      "asset": "facsimile_aristides_16.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001335311842248,
+        0.9047093397499559,
+        0.8817598690109212
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 122,
+      "unit_id": "philopoemen",
+      "ordinal": 18,
+      "asset": "facsimile_philopoemen_18.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.1500122092382855,
+        0.9047093397499559,
+        0.8727639918913701
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 75,
+      "unit_id": "cato_major",
+      "ordinal": 23,
+      "asset": "facsimile_cato_major_23.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.1500129493960212,
+        0.9047093397499559,
+        0.8611245404882094
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 174,
+      "unit_id": "pyrrhus",
+      "ordinal": 2,
+      "asset": "facsimile_pyrrhus_2.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.1500126129606868,
+        0.9047093397499559,
+        0.8764681449231538
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 176,
+      "unit_id": "pyrrhus",
+      "ordinal": 4,
+      "asset": "facsimile_pyrrhus_4.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001241109948615,
+        0.9047093397499559,
+        0.8748806411542369
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 199,
+      "unit_id": "pyrrhus",
+      "ordinal": 27,
+      "asset": "facsimile_pyrrhus_27.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001200737708487,
+        0.9047093397499559,
+        0.8711764881224533
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 377,
+      "unit_id": "sylla",
+      "ordinal": 35,
+      "asset": "facsimile_sylla_35.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001093078401478,
+        0.9047093397499559,
+        0.8627098237839191
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 241,
+      "unit_id": "caius_marius",
+      "ordinal": 11,
+      "asset": "facsimile_caius_marius_11.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001234381241926,
+        0.9047093397499559,
+        0.873822350166337
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 151,
+      "unit_id": "flamininus",
+      "ordinal": 15,
+      "asset": "facsimile_flamininus_15.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001335311842248,
+        0.9047093397499559,
+        0.8817598690109212
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 79,
+      "unit_id": "cato_major",
+      "ordinal": 27,
+      "asset": "facsimile_cato_major_27.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001200737708487,
+        0.9047093397499559,
+        0.8717056336164033
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 3,
+      "page": 130,
+      "unit_id": "philopoemen",
+      "ordinal": 26,
+      "asset": "facsimile_philopoemen_26.png",
+      "input_sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "body_box": [
+        0.09523649743945505,
+        0.15001126721934918,
+        0.9047093397499559,
+        0.8653556858278029
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 20,
+      "unit_id": "cimon",
+      "ordinal": 12,
+      "asset": "facsimile_cimon_12.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8669431223096528
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 47,
+      "unit_id": "lucullus",
+      "ordinal": 7,
+      "asset": "facsimile_lucullus_7.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001234381241926,
+        0.9047093397499559,
+        0.8563620291814589
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 77,
+      "unit_id": "lucullus",
+      "ordinal": 37,
+      "asset": "facsimile_lucullus_37.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8664139768157028
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 65,
+      "unit_id": "lucullus",
+      "ordinal": 25,
+      "asset": "facsimile_lucullus_25.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001308397015495,
+        0.9047093397499559,
+        0.8801722979549375
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 66,
+      "unit_id": "lucullus",
+      "ordinal": 26,
+      "asset": "facsimile_lucullus_26.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001342040548937,
+        0.9047093397499559,
+        0.8822890145048712
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 104,
+      "unit_id": "lucullus",
+      "ordinal": 64,
+      "asset": "facsimile_lucullus_64.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.1500122092382855,
+        0.9047093397499559,
+        0.8732931373853201
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 10,
+      "unit_id": "cimon",
+      "ordinal": 2,
+      "asset": "facsimile_cimon_2.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001133450641604,
+        0.9047093397499559,
+        0.8833451523066309
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 70,
+      "unit_id": "lucullus",
+      "ordinal": 30,
+      "asset": "facsimile_lucullus_30.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001113264521543,
+        0.9047093397499559,
+        0.864297327552836
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 71,
+      "unit_id": "lucullus",
+      "ordinal": 31,
+      "asset": "facsimile_lucullus_31.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001173822881733,
+        0.9047093397499559,
+        0.8865201598444646
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 72,
+      "unit_id": "lucullus",
+      "ordinal": 32,
+      "asset": "facsimile_lucullus_32.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8664139768157028
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 88,
+      "unit_id": "lucullus",
+      "ordinal": 48,
+      "asset": "facsimile_lucullus_48.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.1500126129606868,
+        0.9047093397499559,
+        0.8759389994292038
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 86,
+      "unit_id": "lucullus",
+      "ordinal": 46,
+      "asset": "facsimile_lucullus_46.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.1500129493960212,
+        0.9047093397499559,
+        0.8785848614730875
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 112,
+      "unit_id": "lucullus",
+      "ordinal": 72,
+      "asset": "facsimile_lucullus_72.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15000527867039679,
+        0.9047093397499559,
+        0.44736001548140836
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 49,
+      "unit_id": "lucullus",
+      "ordinal": 9,
+      "asset": "facsimile_lucullus_9.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8680014805846197
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 45,
+      "unit_id": "lucullus",
+      "ordinal": 5,
+      "asset": "facsimile_lucullus_5.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8791140069670375
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 63,
+      "unit_id": "lucullus",
+      "ordinal": 23,
+      "asset": "facsimile_lucullus_23.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001321854428873,
+        0.9047093397499559,
+        0.8812306562299043
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 32,
+      "unit_id": "cimon",
+      "ordinal": 24,
+      "asset": "facsimile_cimon_24.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.1500122092382855,
+        0.9047093397499559,
+        0.8732931373853201
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 87,
+      "unit_id": "lucullus",
+      "ordinal": 47,
+      "asset": "facsimile_lucullus_47.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001274753482055,
+        0.9047093397499559,
+        0.8769973577041706
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 67,
+      "unit_id": "lucullus",
+      "ordinal": 27,
+      "asset": "facsimile_lucullus_27.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8669431223096528
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 54,
+      "unit_id": "lucullus",
+      "ordinal": 14,
+      "asset": "facsimile_lucullus_14.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.1500126129606868,
+        0.9047093397499559,
+        0.8584786784443257
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 43,
+      "unit_id": "lucullus",
+      "ordinal": 3,
+      "asset": "facsimile_lucullus_3.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001200737708487,
+        0.9047093397499559,
+        0.8717056336164033
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 68,
+      "unit_id": "lucullus",
+      "ordinal": 28,
+      "asset": "facsimile_lucullus_28.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001308397015495,
+        0.9047093397499559,
+        0.8621828314761093
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 76,
+      "unit_id": "lucullus",
+      "ordinal": 36,
+      "asset": "facsimile_lucullus_36.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001274753482055,
+        0.9047093397499559,
+        0.8769973577041706
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 75,
+      "unit_id": "lucullus",
+      "ordinal": 35,
+      "asset": "facsimile_lucullus_35.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8796431524609875
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 4,
+      "page": 84,
+      "unit_id": "lucullus",
+      "ordinal": 44,
+      "asset": "facsimile_lucullus_44.png",
+      "input_sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "body_box": [
+        0.09523649743945505,
+        0.15001126721934918,
+        0.9047093397499559,
+        0.8653556858278029
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 232,
+      "unit_id": "agesilaus",
+      "ordinal": 34,
+      "asset": "facsimile_agesilaus_34.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001281482188744,
+        0.9047093397499559,
+        0.8775265031981206
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 131,
+      "unit_id": "sertorius",
+      "ordinal": 3,
+      "asset": "facsimile_sertorius_3.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001093078401478,
+        0.9047093397499559,
+        0.8627098237839191
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 133,
+      "unit_id": "sertorius",
+      "ordinal": 5,
+      "asset": "facsimile_sertorius_5.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001133450641604,
+        0.9047093397499559,
+        0.8658848313217529
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 24,
+      "unit_id": "nicias",
+      "ordinal": 6,
+      "asset": "facsimile_nicias_6.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.1500125456736199,
+        0.9047093397499559,
+        0.8754098539352538
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 177,
+      "unit_id": "eumenes",
+      "ordinal": 13,
+      "asset": "facsimile_eumenes_13.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001321854428873,
+        0.9047093397499559,
+        0.8812306562299043
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 71,
+      "unit_id": "crassus",
+      "ordinal": 5,
+      "asset": "facsimile_crassus_5.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001194009001798,
+        0.9047093397499559,
+        0.8706473426285033
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 171,
+      "unit_id": "eumenes",
+      "ordinal": 7,
+      "asset": "facsimile_eumenes_7.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8669431223096528
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 288,
+      "unit_id": "pompeius",
+      "ordinal": 26,
+      "asset": "facsimile_pompeius_26.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001281482188744,
+        0.9047093397499559,
+        0.8775265031981206
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 264,
+      "unit_id": "pompeius",
+      "ordinal": 2,
+      "asset": "facsimile_pompeius_2.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001321854428873,
+        0.9047093397499559,
+        0.8812306562299043
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 76,
+      "unit_id": "crassus",
+      "ordinal": 10,
+      "asset": "facsimile_crassus_10.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8854618015694977
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 295,
+      "unit_id": "pompeius",
+      "ordinal": 33,
+      "asset": "facsimile_pompeius_33.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8844034432945309
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 213,
+      "unit_id": "agesilaus",
+      "ordinal": 15,
+      "asset": "facsimile_agesilaus_15.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001241109948615,
+        0.9047093397499559,
+        0.874351495660287
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 153,
+      "unit_id": "sertorius",
+      "ordinal": 25,
+      "asset": "facsimile_sertorius_25.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001241109948615,
+        0.9047093397499559,
+        0.874351495660287
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 105,
+      "unit_id": "crassus",
+      "ordinal": 39,
+      "asset": "facsimile_crassus_39.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001342040548937,
+        0.9047093397499559,
+        0.8828181599988212
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 119,
+      "unit_id": "crassus",
+      "ordinal": 53,
+      "asset": "facsimile_crassus_53.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8859909470634477
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 63,
+      "unit_id": "nicias",
+      "ordinal": 45,
+      "asset": "facsimile_nicias_45.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.1500111999322823,
+        0.9047093397499559,
+        0.864826473046786
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 116,
+      "unit_id": "crassus",
+      "ordinal": 50,
+      "asset": "facsimile_crassus_50.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.1500122092382855,
+        0.9047093397499559,
+        0.8727639918913701
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 192,
+      "unit_id": "eumenes",
+      "ordinal": 28,
+      "asset": "facsimile_eumenes_28.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8791140069670375
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 212,
+      "unit_id": "agesilaus",
+      "ordinal": 14,
+      "asset": "facsimile_agesilaus_14.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001321854428873,
+        0.9047093397499559,
+        0.8807015107359543
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 173,
+      "unit_id": "eumenes",
+      "ordinal": 9,
+      "asset": "facsimile_eumenes_9.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001200737708487,
+        0.9047093397499559,
+        0.8711764881224533
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 178,
+      "unit_id": "eumenes",
+      "ordinal": 14,
+      "asset": "facsimile_eumenes_14.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001173822881733,
+        0.9047093397499559,
+        0.8690598388595865
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 127,
+      "unit_id": "comparatio_niciae_et_crassi",
+      "ordinal": 7,
+      "asset": "facsimile_comparatio_niciae_et_crassi_7.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15000332734545724,
+        0.9047093397499559,
+        0.43148497779224
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 142,
+      "unit_id": "sertorius",
+      "ordinal": 14,
+      "asset": "facsimile_sertorius_14.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001268024775366,
+        0.9047093397499559,
+        0.8590078239382757
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 121,
+      "unit_id": "comparatio_niciae_et_crassi",
+      "ordinal": 1,
+      "asset": "facsimile_comparatio_niciae_et_crassi_1.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.2011651159352798,
+        0.9047093397499559,
+        0.8366152936639739
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 5,
+      "page": 354,
+      "unit_id": "pompeius",
+      "ordinal": 92,
+      "asset": "facsimile_pompeius_92.png",
+      "input_sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "body_box": [
+        0.09523649743945505,
+        0.15001113264521543,
+        0.9047093397499559,
+        0.864297327552836
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 103,
+      "unit_id": "alexander",
+      "ordinal": 95,
+      "asset": "facsimile_alexander_95.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.1500126129606868,
+        0.9047093397499559,
+        0.8759389994292038
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 255,
+      "unit_id": "cato_minor",
+      "ordinal": 5,
+      "asset": "facsimile_cato_minor_5.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001268024775366,
+        0.9047093397499559,
+        0.8590078239382757
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 333,
+      "unit_id": "cato_minor",
+      "ordinal": 83,
+      "asset": "facsimile_cato_minor_83.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8616536859821594
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 13,
+      "unit_id": "alexander",
+      "ordinal": 5,
+      "asset": "facsimile_alexander_5.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001241109948615,
+        0.9047093397499559,
+        0.874351495660287
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 129,
+      "unit_id": "iulius_caesar",
+      "ordinal": 11,
+      "asset": "facsimile_iulius_caesar_11.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001308397015495,
+        0.9047093397499559,
+        0.8621828314761093
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 233,
+      "unit_id": "phocion",
+      "ordinal": 31,
+      "asset": "facsimile_phocion_31.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8844034432945309
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 312,
+      "unit_id": "cato_minor",
+      "ordinal": 62,
+      "asset": "facsimile_cato_minor_62.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.1500115363676167,
+        0.9047093397499559,
+        0.8849326560755477
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 78,
+      "unit_id": "alexander",
+      "ordinal": 70,
+      "asset": "facsimile_alexander_70.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.1500126129606868,
+        0.9047093397499559,
+        0.8759389994292038
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 166,
+      "unit_id": "iulius_caesar",
+      "ordinal": 48,
+      "asset": "facsimile_iulius_caesar_48.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.1500129493960212,
+        0.9047093397499559,
+        0.8785848614730875
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 142,
+      "unit_id": "iulius_caesar",
+      "ordinal": 24,
+      "asset": "facsimile_iulius_caesar_24.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001234381241926,
+        0.9047093397499559,
+        0.873822350166337
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 321,
+      "unit_id": "cato_minor",
+      "ordinal": 71,
+      "asset": "facsimile_cato_minor_71.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8695889843535365
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 59,
+      "unit_id": "alexander",
+      "ordinal": 51,
+      "asset": "facsimile_alexander_51.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.1500125456736199,
+        0.9047093397499559,
+        0.8754098539352538
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 98,
+      "unit_id": "alexander",
+      "ordinal": 90,
+      "asset": "facsimile_alexander_90.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001200737708487,
+        0.9047093397499559,
+        0.8717056336164033
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 310,
+      "unit_id": "cato_minor",
+      "ordinal": 60,
+      "asset": "facsimile_cato_minor_60.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001126721934918,
+        0.9047093397499559,
+        0.8653556858278029
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 92,
+      "unit_id": "alexander",
+      "ordinal": 84,
+      "asset": "facsimile_alexander_84.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.1500126129606868,
+        0.9047093397499559,
+        0.8584786784443257
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 34,
+      "unit_id": "alexander",
+      "ordinal": 26,
+      "asset": "facsimile_alexander_26.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.1500122765253524,
+        0.9047093397499559,
+        0.8558328164004421
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 163,
+      "unit_id": "iulius_caesar",
+      "ordinal": 45,
+      "asset": "facsimile_iulius_caesar_45.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.1500126129606868,
+        0.9047093397499559,
+        0.8759389994292038
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 135,
+      "unit_id": "iulius_caesar",
+      "ordinal": 17,
+      "asset": "facsimile_iulius_caesar_17.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8844034432945309
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 69,
+      "unit_id": "alexander",
+      "ordinal": 61,
+      "asset": "facsimile_alexander_61.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.1500115363676167,
+        0.9047093397499559,
+        0.8674723350906697
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 49,
+      "unit_id": "alexander",
+      "ordinal": 41,
+      "asset": "facsimile_alexander_41.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.1500111999322823,
+        0.9047093397499559,
+        0.864826473046786
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 279,
+      "unit_id": "cato_minor",
+      "ordinal": 29,
+      "asset": "facsimile_cato_minor_29.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001308397015495,
+        0.9047093397499559,
+        0.8621828314761093
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 325,
+      "unit_id": "cato_minor",
+      "ordinal": 75,
+      "asset": "facsimile_cato_minor_75.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8875784508323645
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 153,
+      "unit_id": "iulius_caesar",
+      "ordinal": 35,
+      "asset": "facsimile_iulius_caesar_35.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001321854428873,
+        0.9047093397499559,
+        0.8807015107359543
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 254,
+      "unit_id": "cato_minor",
+      "ordinal": 4,
+      "asset": "facsimile_cato_minor_4.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.15001234381241926,
+        0.9047093397499559,
+        0.873822350166337
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 6,
+      "page": 119,
+      "unit_id": "iulius_caesar",
+      "ordinal": 1,
+      "asset": "facsimile_iulius_caesar_1.png",
+      "input_sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "body_box": [
+        0.09523649743945505,
+        0.2011668653990187,
+        0.9047093397499559,
+        0.8503736148032085
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 66,
+      "unit_id": "cleomenes",
+      "ordinal": 30,
+      "asset": "facsimile_cleomenes_30.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.1500125456736199,
+        0.9047093397499559,
+        0.8574203874564257
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 108,
+      "unit_id": "tiberius_gracchus",
+      "ordinal": 24,
+      "asset": "facsimile_tiberius_gracchus_24.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001241109948615,
+        0.9047093397499559,
+        0.874351495660287
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 35,
+      "unit_id": "agis",
+      "ordinal": 27,
+      "asset": "facsimile_agis_27.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8680014805846197
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 209,
+      "unit_id": "cicero",
+      "ordinal": 35,
+      "asset": "facsimile_cicero_35.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.1500111999322823,
+        0.9047093397499559,
+        0.864826473046786
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 331,
+      "unit_id": "antonius",
+      "ordinal": 19,
+      "asset": "facsimile_antonius_19.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001241109948615,
+        0.9047093397499559,
+        0.874351495660287
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 115,
+      "unit_id": "caius_gracchus",
+      "ordinal": 5,
+      "asset": "facsimile_caius_gracchus_5.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8695889843535365
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 138,
+      "unit_id": "comparatio_agidis_cleomenis_et_gracchorum",
+      "ordinal": 6,
+      "asset": "facsimile_comparatio_agidis_cleomenis_et_gracchorum_6.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15000050128864825,
+        0.9047093397499559,
+        0.2854503089384745
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 418,
+      "unit_id": "comparatio_demetrii_et_antonii",
+      "ordinal": 4,
+      "asset": "facsimile_comparatio_demetrii_et_antonii_4.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001274753482055,
+        0.9047093397499559,
+        0.8595370367192926
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 293,
+      "unit_id": "demetrius",
+      "ordinal": 47,
+      "asset": "facsimile_demetrius_47.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001200737708487,
+        0.9047093397499559,
+        0.8711764881224533
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 96,
+      "unit_id": "tiberius_gracchus",
+      "ordinal": 12,
+      "asset": "facsimile_tiberius_gracchus_12.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8695889843535365
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 157,
+      "unit_id": "demosthenes",
+      "ordinal": 19,
+      "asset": "facsimile_demosthenes_19.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001167094175047,
+        0.9047093397499559,
+        0.8685306933656365
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 48,
+      "unit_id": "cleomenes",
+      "ordinal": 12,
+      "asset": "facsimile_cleomenes_12.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001342040548937,
+        0.9047093397499559,
+        0.8828181599988212
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 29,
+      "unit_id": "agis",
+      "ordinal": 21,
+      "asset": "facsimile_agis_21.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8616536859821594
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 402,
+      "unit_id": "antonius",
+      "ordinal": 90,
+      "asset": "facsimile_antonius_90.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001268024775366,
+        0.9047093397499559,
+        0.8590078239382757
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 300,
+      "unit_id": "demetrius",
+      "ordinal": 54,
+      "asset": "facsimile_demetrius_54.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8701181298474865
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 290,
+      "unit_id": "demetrius",
+      "ordinal": 44,
+      "asset": "facsimile_demetrius_44.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8669431223096528
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 411,
+      "unit_id": "antonius",
+      "ordinal": 99,
+      "asset": "facsimile_antonius_99.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001133450641604,
+        0.9047093397499559,
+        0.8833451523066309
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 316,
+      "unit_id": "antonius",
+      "ordinal": 4,
+      "asset": "facsimile_antonius_4.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8791140069670375
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 226,
+      "unit_id": "cicero",
+      "ordinal": 52,
+      "asset": "facsimile_cicero_52.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.1500128821089543,
+        0.9047093397499559,
+        0.8605953277071925
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 119,
+      "unit_id": "caius_gracchus",
+      "ordinal": 9,
+      "asset": "facsimile_caius_gracchus_9.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001194009001798,
+        0.9047093397499559,
+        0.8706473426285033
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 363,
+      "unit_id": "antonius",
+      "ordinal": 51,
+      "asset": "facsimile_antonius_51.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001301668308809,
+        0.9047093397499559,
+        0.8616536859821594
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 70,
+      "unit_id": "cleomenes",
+      "ordinal": 34,
+      "asset": "facsimile_cleomenes_34.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001342040548937,
+        0.9047093397499559,
+        0.8828181599988212
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 399,
+      "unit_id": "antonius",
+      "ordinal": 87,
+      "asset": "facsimile_antonius_87.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001113264521543,
+        0.9047093397499559,
+        0.8637681820588861
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 33,
+      "unit_id": "agis",
+      "ordinal": 25,
+      "asset": "facsimile_agis_25.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8854618015694977
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 7,
+      "page": 355,
+      "unit_id": "antonius",
+      "ordinal": 43,
+      "asset": "facsimile_antonius_43.png",
+      "input_sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "body_box": [
+        0.09523649743945505,
+        0.15001113264521543,
+        0.9047093397499559,
+        0.864297327552836
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 233,
+      "unit_id": "aratus",
+      "ordinal": 57,
+      "asset": "facsimile_aratus_57.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8695889843535365
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 239,
+      "unit_id": "aratus",
+      "ordinal": 63,
+      "asset": "facsimile_aratus_63.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001167094175047,
+        0.9047093397499559,
+        0.8685306933656365
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 89,
+      "unit_id": "brutus",
+      "ordinal": 19,
+      "asset": "facsimile_brutus_19.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.1500129493960212,
+        0.9047093397499559,
+        0.8785848614730875
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 293,
+      "unit_id": "otho",
+      "ordinal": 17,
+      "asset": "facsimile_otho_17.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.1500122092382855,
+        0.9047093397499559,
+        0.8727639918913701
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 300,
+      "unit_id": "otho",
+      "ordinal": 24,
+      "asset": "facsimile_otho_24.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8701181298474865
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 63,
+      "unit_id": "dio",
+      "ordinal": 55,
+      "asset": "facsimile_dio_55.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8680014805846197
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 166,
+      "unit_id": "artoxerxes",
+      "ordinal": 28,
+      "asset": "facsimile_artoxerxes_28.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001274753482055,
+        0.9047093397499559,
+        0.8769973577041706
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 260,
+      "unit_id": "galba",
+      "ordinal": 18,
+      "asset": "facsimile_galba_18.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001281482188744,
+        0.9047093397499559,
+        0.8780556486920706
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 36,
+      "unit_id": "dio",
+      "ordinal": 28,
+      "asset": "facsimile_dio_28.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001321854428873,
+        0.9047093397499559,
+        0.8807015107359543
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 247,
+      "unit_id": "galba",
+      "ordinal": 5,
+      "asset": "facsimile_galba_5.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8695889843535365
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 110,
+      "unit_id": "brutus",
+      "ordinal": 40,
+      "asset": "facsimile_brutus_40.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8844034432945309
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 228,
+      "unit_id": "aratus",
+      "ordinal": 52,
+      "asset": "facsimile_aratus_52.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001274753482055,
+        0.9047093397499559,
+        0.8595370367192926
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 11,
+      "unit_id": "dio",
+      "ordinal": 3,
+      "asset": "facsimile_dio_3.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.1500111999322823,
+        0.9047093397499559,
+        0.864826473046786
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 200,
+      "unit_id": "aratus",
+      "ordinal": 24,
+      "asset": "facsimile_aratus_24.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001160365468358,
+        0.9047093397499559,
+        0.8680014805846197
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 80,
+      "unit_id": "brutus",
+      "ordinal": 10,
+      "asset": "facsimile_brutus_10.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001274753482055,
+        0.9047093397499559,
+        0.8769973577041706
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 237,
+      "unit_id": "aratus",
+      "ordinal": 61,
+      "asset": "facsimile_aratus_61.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001180551588422,
+        0.9047093397499559,
+        0.8875784508323645
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 220,
+      "unit_id": "aratus",
+      "ordinal": 44,
+      "asset": "facsimile_aratus_44.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001241109948615,
+        0.9047093397499559,
+        0.8748806411542369
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 45,
+      "unit_id": "dio",
+      "ordinal": 37,
+      "asset": "facsimile_dio_37.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.1500115363676167,
+        0.9047093397499559,
+        0.8674723350906697
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 12,
+      "unit_id": "dio",
+      "ordinal": 4,
+      "asset": "facsimile_dio_4.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001133450641604,
+        0.9047093397499559,
+        0.8658848313217529
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 245,
+      "unit_id": "galba",
+      "ordinal": 3,
+      "asset": "facsimile_galba_3.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8838742978005809
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 108,
+      "unit_id": "brutus",
+      "ordinal": 38,
+      "asset": "facsimile_brutus_38.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001194009001798,
+        0.9047093397499559,
+        0.8706473426285033
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 154,
+      "unit_id": "artoxerxes",
+      "ordinal": 16,
+      "asset": "facsimile_artoxerxes_16.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.1500126129606868,
+        0.9047093397499559,
+        0.8759389994292038
+      ],
+      "split": "development",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 92,
+      "unit_id": "brutus",
+      "ordinal": 22,
+      "asset": "facsimile_brutus_22.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.1500128821089543,
+        0.9047093397499559,
+        0.8605953277071925
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 78,
+      "unit_id": "brutus",
+      "ordinal": 8,
+      "asset": "facsimile_brutus_8.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.15001140179348293,
+        0.9047093397499559,
+        0.8664139768157028
+      ],
+      "split": "validation",
+      "review_status": "pending"
+    },
+    {
+      "tomus": 8,
+      "page": 176,
+      "unit_id": "artoxerxes",
+      "ordinal": 38,
+      "asset": "facsimile_artoxerxes_38.png",
+      "input_sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "body_box": [
+        0.09523649743945505,
+        0.1500059515410656,
+        0.9047093397499559,
+        0.5230220680720378
+      ],
+      "split": "development",
+      "review_status": "pending"
+    }
+  ],
+  "head_folds": [
+    {
+      "held_out_unit": "philopoemen",
+      "training_unit": "agis"
+    },
+    {
+      "held_out_unit": "agis",
+      "training_unit": "philopoemen"
+    }
+  ],
+  "head_fold_limitation": "Both units participate in other development work; these are sensitivity runs, not independent validation."
+}
