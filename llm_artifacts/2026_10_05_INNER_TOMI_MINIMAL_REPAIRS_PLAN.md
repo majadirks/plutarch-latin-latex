@@ -6,7 +6,7 @@ The user explicitly prefers hard-coded generator corrections where feasible. Reu
 
 All Latin is source material. Preserve every distinct genuine Latin line, its glyphs, spelling, punctuation, capitalization, and reading order. Do not retype damaged prose, normalize text, edit transcription caches, or use OCR text as replacement content. Erasing source furniture and excluding a proven repeated scan occurrence are image/selection corrections, not permission to alter Latin. A questionable mask must remain disabled until source inspection proves that it preserves the prose.
 
-This document is a draft implementation contract. Exact source mappings and erase coordinates for the new findings have not yet been established. Phase 1 must fill them into the repair ledger and resolve the specified implementation branches before production edits. Do not infer source PDF pages from reader folios or copy coordinates from a different scan.
+The reviewed repair ledger freezes 13 furniture-mask records (14 rectangles) and two identity-scoped whole-page duplicate exclusions. The 2026-10-06 handoff selects these repairs for implementation. Open spacing, divider, and sliced-line findings require reassessment against rebuilt output before any additional erasure. Do not infer source PDF pages from reader folios or copy coordinates from a different scan.
 
 # Current state of the world
 
@@ -105,7 +105,19 @@ Populate `inner_tomi_remaining_source_trace` for `theseus`, `camillus`, `pyrrhus
 
 ### Measured repair decisions
 
-Pending steps 1.1A–1.1C. No new source coordinates, duplicate exclusions, or spacing intervals are authorized by this placeholder.
+The authoritative reviewed coordinates are in `src/facsimile/fixtures/inner_tomi_repair_source_trace.json`: 13 mask records, 14 rectangles, and two duplicate records.
+
+- D1: comparison source 1 pages 103/104 are excluded; retain 102 → 105 → 106. Eumenes retains its shared ending on 102. No unit-table boundary or pin changes are selected; the conditional boundary/pin tests are omitted.
+- D2: Agis source 1 pages 369/370 are excluded; retain the first occurrences 367/368 and their 368 → 371 continuation.
+- W1/W2/G4, O1/O1B/O1C/O1D/G8B, G5, O2/O3/O4/O6, O5: apply exactly the confirmed mask rectangles, preserving the existing mask entries.
+- W3 and O8: retain the notice page and Praefatio transition.
+- Phase 3.2's row-compaction branch is not selected. Full-unit production evidence still copies source 287 through row 2940 and source 299 through 2922: 372/354 rows beyond the reviewed Latin boundary. These regions contain scan-edge ink. Upper merged bands remain on 281, 298, and 308. Separate margin-mask candidates address that ink upstream without changing the confirmed rectangles.
+- G1/G2/G3: rebuilt II/219–220, II/235–238, and VIII/130–132 omit the Latin columns on source 0 pages 296/304 and source 1 page 625 because column detection selects narrow scan edges. The measured margin-mask candidates restore those columns and their continuations.
+- O8B: the production trace identifies source 306, strip 333–441, canvases 24/25, resized cut row 23, and 520/495 ink pixels on either side. A margin-mask candidate restores separate body bands and the whole line; no general packer fallback is selected.
+- G6: source 470's copied tail causes the rebuilt III/175 sentence gap; its margin-mask candidate restores ordinary spacing. G7/G8 match genuine source chapter gaps on pages 23/28 and are recommended for retention.
+- O7: comparison and Agis repeated-occurrence dividers are resolved by D1/D2. VI/358 maps to the right edge of source 1 page 361; O6 page 337 remains confirmed without a rule.
+- O6's frozen source-337 mask is applied on fresh VI/308–310. The original VI/329 finding is a second occurrence of the same folio-934 passage on source 347; its separate measured header-only mask is recorded as RFI-13B. The source-337 rectangle and no-right-rule decision remain unchanged; no right-edge mask is proposed for 347.
+- All sixteen PDFs compiled successfully. The production scale is 1.2023952007293701; raw width inputs and sampling ranges are unchanged. The exact twelve proposed margin masks, separate page-347 header mask, and spacing retentions are recorded in the ledger's `post_rebuild_review` and [the post-rebuild review](2026_10_06_INNER_TOMI_POST_REBUILD_REVIEW.md), **pending human confirmation**. No additional masks or row exclusions are enabled by this recommendation.
 
 # Phase 2 — Restore unique prose in the correct sequence (Suggested implementer: Opus)
 

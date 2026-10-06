@@ -2914,6 +2914,11 @@ mod tests {
             "pyrrhus",
             "comparatio_sertorii_et_eumenis",
             "agis",
+            "camillus",
+            "lysander",
+            "demosthenes",
+            "antonius",
+            "cato_minor",
         ] {
             let range = operational_range(id);
             let sequence = std::cell::RefCell::new(Vec::new());
@@ -2961,27 +2966,37 @@ mod tests {
                         "ink_before_cut":rows[(row-1) as usize],"ink_after_cut":rows[row as usize]}));
                 }
             }
-            if id == "timoleon" {
-                assert_eq!(
-                    canvases,
-                    assert_scaled_stream(
-                        &pages,
-                        &metrics,
-                        scale,
-                        &geom,
-                        geom.first_body_budget(),
-                        geom.body_budget()
-                    ),
-                    "production seams trace the complete scaled source row stream"
-                );
-            }
+            assert_eq!(
+                canvases,
+                assert_scaled_stream(
+                    &pages,
+                    &metrics,
+                    scale,
+                    &geom,
+                    geom.first_body_budget(),
+                    geom.body_budget()
+                ),
+                "{id}: production locators trace the complete scaled source row stream"
+            );
             for (index, canvas) in canvases.iter().enumerate() {
                 canvas
                     .save(dir.join(format!("{id}-canvas-{:03}.png", index + 1)))
                     .unwrap();
             }
-            let strips: Vec<_> = strips_in_reading_order(&pages,&metrics).iter().map(|strip| serde_json::json!({
-                "source_page":sequence[strip.page_img_index],"top":strip.band.top,"bottom":strip.band.bottom,"class":format!("{:?}",strip.class)
+            let mut canvas_top = 0;
+            let canvas_ranges: Vec<_> = canvases
+                .iter()
+                .enumerate()
+                .map(|(index, canvas)| {
+                    let top = canvas_top;
+                    canvas_top += canvas.height() - geom.pad_y;
+                    (index + 1, top, canvas_top)
+                })
+                .collect();
+            let strips: Vec<_> = scaled_strips.iter().map(|(strip, _, top, bottom)| serde_json::json!({
+                "source_page":sequence[strip.page_img_index],"top":strip.band.top,"bottom":strip.band.bottom,
+                "class":format!("{:?}",strip.class),"scaled_stream_rows":[top,bottom],
+                "canvas_indices":canvas_ranges.iter().filter(|(_,lo,hi)|lo<bottom && hi>top).map(|(index,_,_)|index).collect::<Vec<_>>()
             })).collect();
             let bands: Vec<_> = sequence.iter().zip(&pages).map(|(p,(_,bands))|serde_json::json!({"source_page":p,"bands":bands.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>()})).collect();
             evidence.push(serde_json::json!({"unit_id":id,"source":range.unit.source,"sequence":sequence,"bands":bands,"strips":strips,"canvas_count":canvases.len(),"within_strip_seams":seams}));
@@ -3114,12 +3129,9 @@ mod tests {
         .unwrap();
     }
 
-    /// Render a representative source window with the production render/band path and
-    /// write its retained-page traces and column crops under `tmp/`. This establishes
-    /// the shared diagnostic helper on a small window; steps 1.1A–1.1C populate the
-    /// full per-finding decisions into the committed ledger. Deletions are left empty
-    /// here — a before-repair trace proves the mapping/lookup contract on real pixels
-    /// without authorizing any erasure.
+    /// Save original-coordinate traces and column crops for a representative source
+    /// window using production masking and banding. These windows contain no deleted
+    /// rows, so every retained row maps to itself.
     fn save_representative_repair_trace(
         group: &str,
         pages: &[(usize, u32)],
@@ -3141,7 +3153,7 @@ mod tests {
                 bands: bands.iter().map(|b| [b.top, b.bottom]).collect(),
                 deleted_rows: Vec::new(),
             };
-            // The before-repair trace maps every retained band row to itself.
+            // Without row deletions, retained bands use original source rows.
             for b in &trace.bands {
                 assert_eq!(trace.map_row(b[0]), Some(b[0]));
             }
@@ -3156,8 +3168,7 @@ mod tests {
     #[test]
     #[ignore = "requires source PDFs and Poppler; populates D1/D2 diagnosis"]
     fn inner_tomi_duplicate_source_trace() {
-        // Representative window: the Agis opening (v2) whose VII/17-24 occurrences are
-        // compared in step 1.1A, plus the Eumenes/comparison seam (v2).
+        // Trace the Agis opening and the shared Eumenes/comparison seam.
         let traces = save_representative_repair_trace("duplicate", &[(1, 88), (1, 102), (1, 363)]);
         assert_eq!(
             retained_page(&traces, 1, 363).unwrap().retained_index,
