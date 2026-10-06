@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "baseline_id": "baseline_2026_10_06",
+  "report_path": "llm_artifacts/2026_10_06_15_40_INNER_TOMI_REINSPECTION_FINDINGS.md",
+  "report_sha256": "5ac02a65ce32869c42f0638b5d63980ba85cfd32d9d8feeef3371d1ccc1e0474",
+  "render_box_policy": "mediabox",
+  "expected_counts": {
+    "units": 68,
+    "physical_by_tomus": [
+      416,
+      448,
+      416,
+      128,
+      384,
+      352,
+      448,
+      320
+    ],
+    "body_by_tomus": [
+      376,
+      411,
+      395,
+      109,
+      354,
+      331,
+      409,
+      293
+    ],
+    "body_pages": 2678,
+    "physical_pages": 2912
+  },
+  "inputs": [
+    {
+      "role": "source_pdf",
+      "path": "Ploutarchou_Bioi_v1.pdf",
+      "sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+      "source_index": 0
+    },
+    {
+      "role": "source_pdf",
+      "path": "Ploutarchou_Bioi_v2.pdf",
+      "sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+      "source_index": 1
+    },
+    {
+      "role": "units",
+      "path": "facsimile_units.json",
+      "sha256": "7098d39e6c1a83c0de4333e17a09bbebed59c2bf19a33b0339d79cfe74e11949"
+    },
+    {
+      "role": "duplicate_policy",
+      "path": "src/facsimile/fixtures/inner_tomi_repair_source_trace.json",
+      "sha256": "17fd5fbe3cb0f1d5b94d454bd7fa56181f782b98d4ce0fba42fd24d77c1a8b43"
+    },
+    {
+      "role": "report",
+      "path": "llm_artifacts/2026_10_06_15_40_INNER_TOMI_REINSPECTION_FINDINGS.md",
+      "sha256": "5ac02a65ce32869c42f0638b5d63980ba85cfd32d9d8feeef3371d1ccc1e0474"
+    },
+    {
+      "role": "reader_pdf",
+      "path": "build_facsimile/tomus_1_inner.pdf",
+      "sha256": "c30fe260631bf2b32101d95cd18157a2eed6920d8e130355d6329c12cf89f5c2",
+      "tomus": 1
+    },
+    {
+      "role": "reader_pdf",
+      "path": "build_facsimile/tomus_2_inner.pdf",
+      "sha256": "30f7af8dcda3f95095ad4329390a49278de4ada35b7a6c7cb640dc223df96595",
+      "tomus": 2
+    },
+    {
+      "role": "reader_pdf",
+      "path": "build_facsimile/tomus_3_inner.pdf",
+      "sha256": "9b65a94b8ce89d0182b37831123bec6e4a3fe38e9c25becedd37b3853ae0d58c",
+      "tomus": 3
+    },
+    {
+      "role": "reader_pdf",
+      "path": "build_facsimile/tomus_4_inner.pdf",
+      "sha256": "a571fdef1fae482979bc399c01e57255273b681a36ec0fa8dabc662fd08c254a",
+      "tomus": 4
+    },
+    {
+      "role": "reader_pdf",
+      "path": "build_facsimile/tomus_5_inner.pdf",
+      "sha256": "0ad7342398a96cf7a937aff1c5cb7c9d0f22e3c7417dc1b4ffaf4698d6ae5e06",
+      "tomus": 5
+    },
+    {
+      "role": "reader_pdf",
+      "path": "build_facsimile/tomus_6_inner.pdf",
+      "sha256": "7f0b74c72d25bf800c265bcd94b0e3da885dc33b65bba8513fe3bdd0f918ee66",
+      "tomus": 6
+    },
+    {
+      "role": "reader_pdf",
+      "path": "build_facsimile/tomus_7_inner.pdf",
+      "sha256": "4430eff76cc7d7790a2656a3e4948f3914dacc69f94dd629fec1b5d9268ad7eb",
+      "tomus": 7
+    },
+    {
+      "role": "reader_pdf",
+      "path": "build_facsimile/tomus_8_inner.pdf",
+      "sha256": "2f571a1a74af15c9a9b22bfc0e0625c1dc735679a1fb8b4f014c11bac03b7c12",
+      "tomus": 8
+    },
+    {
+      "role": "reader_tex",
+      "path": "build_facsimile/tomus_1_inner.tex",
+      "sha256": "83c5e127b3dbe8e1c56bc5ac8a157ab6e28b13ec3bf68e22c0556cee8e272116",
+      "tomus": 1
+    },
+    {
+      "role": "reader_tex",
+      "path": "build_facsimile/tomus_2_inner.tex",
+      "sha256": "f6ce4f7148d226b123dd6b2bfdd402463ad4cfe027d2df5b9b31d8bcdffc348e",
+      "tomus": 2
+    },
+    {
+      "role": "reader_tex",
+      "path": "build_facsimile/tomus_3_inner.tex",
+      "sha256": "c46d0909b2d462133a53ac0b1c44bcf231abdd8ededa36602e0d5a2fcdf34b30",
+      "tomus": 3
+    },
+    {
+      "role": "reader_tex",
+      "path": "build_facsimile/tomus_4_inner.tex",
+      "sha256": "c83c15bd6583facac5d0e6625ed9f2c1c430c96b412c153aab3c35d4b86e2ea3",
+      "tomus": 4
+    },
+    {
+      "role": "reader_tex",
+      "path": "build_facsimile/tomus_5_inner.tex",
+      "sha256": "8f9b4f3f751f3760aae32a68d62e5846e1746fe40f3d23caab96042640df2ba3",
+      "tomus": 5
+    },
+    {
+      "role": "reader_tex",
+      "path": "build_facsimile/tomus_6_inner.tex",
+      "sha256": "e58e5a2455e179074b05ecb4382e5cdce044416939939e9c54b8b0a2e96548d0",
+      "tomus": 6
+    },
+    {
+      "role": "reader_tex",
+      "path": "build_facsimile/tomus_7_inner.tex",
+      "sha256": "48941e64c5abec004c040c772f8329de7e4a3495d6221a05dd65db88d7774e0e",
+      "tomus": 7
+    },
+    {
+      "role": "reader_tex",
+      "path": "build_facsimile/tomus_8_inner.tex",
+      "sha256": "97f10093242a92c5c7980fad09b3d2d45ae0af38d3d35dcc8d4a3f233e7016bd",
+      "tomus": 8
+    }
+  ]
+}
