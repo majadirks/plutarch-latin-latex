@@ -154,6 +154,14 @@ High confidence requires stable views, at least two observed glyphs and a
 distinct second fragment or matched source-tail context. Tiny fragments and
 failed retries remain visible with their confidence conditions.
 
+`join_body_edges` creates diagnostic bottom/top strips from adjacent images of
+the same unit, with source page coordinates for both halves. `merge_logo_events`
+preserves every component while combining overlapping and corroborated edge
+fragments into a logical event. Virtual stitches add evidence; the original
+reader images remain intact. `image-exemptions.json` identifies frontmatter
+notices and other frontmatter images from mapped roles and assets, without a
+fixed physical-page exemption. Logos touching body prose remain eligible.
+
 `--workers 4` can parallelize pure image searches. PDF inventory, rendering
 metadata and evidence extraction stay in the main process. Matching caches bind
 rendered pixels, source-template identities, comparison settings, OpenCV version

@@ -497,6 +497,13 @@ def request_run(args):
     requested_pages = sorted({f"{r['tomus']}:{r['page']}" for r in selected_body})
     candidates, alignment_debug, errors, boundaries = [], {}, [], {}
     with run_directory(args.run_dir, work, repo) as run:
+        exemptions = [{"tomus": tomus["tomus"], "page": page["page"],
+                       "role": "frontmatter_notice" if asset.startswith("front_qr_") else "frontmatter_image",
+                       "asset": asset, "reason": "mapped frontmatter asset; body image detectors do not search it"}
+                      for tomus in reader_map["tomi"] for page in tomus["pages"] if page["kind"] == "frontmatter"
+                      for asset in page["image_assets"]]
+        write_json(run / "image-exemptions.json", {"schema_version": 1, "baseline_id": args.baseline,
+                   "search_role": "mapped body image occurrences", "exemptions": exemptions}, work, repo)
         for unit_id in selected:
             index_unit = index_by_unit[unit_id]
             source_unit = dict(index_unit, boxes=source_token_boxes(index_unit, region_by_unit[unit_id]))
@@ -586,6 +593,7 @@ def request_run(args):
             "implemented_detectors": sorted(active), "pending_detectors": pending_types,
             "producer": "detectors", "final_development": args.scope == "development" and args.detectors == "all",
             "boundary_only": boundary_only, "boundary_units_completed": sorted(boundaries),
+            "image_exemptions": exemptions, "workers": args.workers,
             "complete": complete, "errors": errors, "versions": versions,
             "source_index_identity": index["identity"],
             "ocr": {"lang": args.lang, "reader": reader_ocr, "source": source_ocr,
@@ -1245,6 +1253,7 @@ WATERMARK = {"dpi": 90, "nomination_min": 0.60, "high_min": 0.80,
              "ink_fraction_min": 0.005,
              "stable_distance_line_heights": 1.0, "glyph_support_min": 2,
              "faint_min_gray": 110, "faint_ink_fraction_min": 0.45,
+             "edge_strip_line_heights": 4, "event_edge_line_heights": 3,
              "partial_bands": [[0.0, 0.25], [0.25, 0.50], [0.50, 0.75], [0.75, 1.0]]}
 IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss", "watermark"}
 
@@ -1775,7 +1784,7 @@ def find_missing_occurrences(reader, source_unit, anchors, path, settings):
 
 
 def image_views(gray):
-    """Keep faint grayscale ink and a local-contrast view as independent observations."""
+    """Keep faint grayscale ink and a local-contrast view as separately scored observations."""
     import cv2
     return {"grayscale": gray, "contrast": cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)}
 
@@ -2116,7 +2125,8 @@ def find_watermarks(rows, reader, source_unit, path, templates, root, manifest, 
                 "primary_score": max((p["score"] for p in refined_peaks), default=coarse["score"]),
                 "component_scores": {"coarse_correlation": coarse["score"], "stable_views": stable,
                                      "distinctive_fragments": distinctive, "source_tail_match": source_tail,
-                                     "two_glyph_support": supported},
+                                     "two_glyph_support": supported,
+                                     "reader_line_height": pitch / meta["raster_dimensions"][1] if pitch else None},
                 "confidence": "high" if high else "low", "status": "candidate" if refined_peaks else "inconclusive",
                 "confidence_reasons": [f"{name}: {'satisfied' if value else 'failed'}" for name, value in
                                        (("stable grayscale/contrast location", stable), ("two-glyph support", supported),
@@ -2128,7 +2138,134 @@ def find_watermarks(rows, reader, source_unit, path, templates, root, manifest, 
                                         "template_pixels_sha256": template_by_id[coarse["template_id"]]["pixels_sha256"]},
                 "linked_events": [], "crops": evidence})
         progress(f"Watermark search {row['unit_id']} page {row['page']}: {len(groups)} grouped nominations")
-    return candidates
+    return merge_logo_events(candidates, rows, root, manifest, run, work, repo, templates, settings, pdftoppm)
+
+
+def join_body_edges(first, second, root, manifest, run, work, repo, settings, pdftoppm, name):
+    """Virtually join actual same-unit bottom/top image strips, preserving both coordinates."""
+    import numpy as np
+    from PIL import Image
+    if (first["unit_id"] != second["unit_id"] or first["tomus"] != second["tomus"]
+            or second["page"] != first["page"] + 1 or second["ordinal"] != first["ordinal"] + 1):
+        raise AuditError("Diagnostic edge joins require adjacent body images of the same unit")
+    strips, mappings, heights = [], [], []
+    for row, edge in ((first, "bottom"), (second, "top")):
+        pdf, record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
+        raster, meta = render_page(pdf, record, row["page"], 300, work, repo, pdftoppm=pdftoppm)
+        bounds = pixel_bounds(row["body_box"], meta["raster_dimensions"])
+        with Image.open(raster) as image:
+            gray = np.asarray(image.convert("L"))
+        body = gray[bounds[1]:bounds[3], bounds[0]:bounds[2]]
+        height = ink_line_height(body) or max(8, 0.01 * gray.shape[0])
+        count = min(body.shape[0], math.ceil(settings["thresholds"]["watermark"]["edge_strip_line_heights"] * height))
+        y0 = bounds[3] - count if edge == "bottom" else bounds[1]
+        strip = gray[y0:y0 + count, bounds[0]:bounds[2]].copy()
+        strips.append(strip)
+        heights.append(height)
+        mappings.append({"tomus": row["tomus"], "page": row["page"], "edge": edge,
+                         "input_sha256": record["sha256"], "raster_dimensions": meta["raster_dimensions"],
+                         "pixel_bounds": [bounds[0], y0, bounds[2], y0 + count],
+                         "virtual_top": 0 if edge == "bottom" else strips[0].shape[0]})
+    canvas = np.full((sum(s.shape[0] for s in strips), max(s.shape[1] for s in strips)), 255, dtype=np.uint8)
+    for strip, mapping in zip(strips, mappings):
+        top = mapping["virtual_top"]
+        canvas[top:top + strip.shape[0], :strip.shape[1]] = strip
+    target = safe_write_path(run / "crops" / name, work, repo)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(canvas).save(target)
+    return canvas, mappings, sum(heights) / len(heights), {
+        "path": target.relative_to(Path(work).resolve()).as_posix(), "sha256": hash_file(target)}
+
+
+def merge_logo_events(candidates, rows, root, manifest, run, work, repo, templates, settings, pdftoppm):
+    """Group overlapping components and corroborated edge fragments into logical logo events.
+
+    All component records and their failed confidence predicates remain in the evidence.
+    A merged event inherits confidence from its strongest supported component; a virtual
+    stitch adds image evidence without repairing either reader page.
+    """
+    if not candidates:
+        return []
+    th = settings["thresholds"]["watermark"]
+    row_by_page = {(r["tomus"], r["page"]): r for r in rows}
+    parents = list(range(len(candidates)))
+
+    def root_index(index):
+        while parents[index] != index:
+            parents[index] = parents[parents[index]]
+            index = parents[index]
+        return index
+
+    for i, first in enumerate(candidates):
+        a = first["output_regions"][0]
+        a_sources = {(r["source_index"], r["page"]) for r in first["source_regions"]}
+        for j in range(i + 1, len(candidates)):
+            second = candidates[j]
+            b = second["output_regions"][0]
+            if first["unit_id"] != second["unit_id"] or a["tomus"] != b["tomus"] or abs(a["page"] - b["page"]) > 1:
+                continue
+            b_sources = {(r["source_index"], r["page"]) for r in second["source_regions"]}
+            if a_sources and b_sources and not a_sources & b_sources:
+                continue
+            same_page = a["page"] == b["page"]
+            overlap = (min(a["box"][2], b["box"][2]) > max(a["box"][0], b["box"][0])
+                       and min(a["box"][3], b["box"][3]) > max(a["box"][1], b["box"][1]))
+            edges = False
+            if not same_page and a_sources & b_sources:
+                low, high = sorted((a, b), key=lambda r: r["page"])
+                low_row = row_by_page[(low["tomus"], low["page"])]
+                high_row = row_by_page[(high["tomus"], high["page"])]
+                line_heights = [c["component_scores"].get("reader_line_height") for c in (first, second)]
+                tolerance = th["event_edge_line_heights"] * max((h for h in line_heights if h), default=0.0)
+                edges = (high_row["ordinal"] == low_row["ordinal"] + 1
+                         and low["box"][3] >= low_row["body_box"][3] - tolerance
+                         and high["box"][1] <= high_row["body_box"][1] + tolerance
+                         and min(low["box"][2], high["box"][2]) > max(low["box"][0], high["box"][0]))
+            if (same_page and overlap) or edges:
+                parents[root_index(j)] = root_index(i)
+    groups = {}
+    for index, candidate in enumerate(candidates):
+        groups.setdefault(root_index(index), []).append(candidate)
+    merged = []
+    ranking = {"unknown": 0, "low": 1, "high": 2}
+    for group in groups.values():
+        if len(group) == 1:
+            merged.append(group[0])
+            continue
+        winner = max(group, key=lambda c: (ranking[c["confidence"]], c["status"] == "candidate", c["primary_score"], c["event_id"]))
+        event = dict(winner)
+        component_ids = sorted(c["event_id"] for c in group)
+        suffix = hashlib.sha256("|".join(component_ids).encode()).hexdigest()[:12]
+        event["event_id"] = f"watermark_{winner['unit_id']}_{suffix}"
+        event["linked_events"] = component_ids
+        event["status"] = "candidate" if any(c["status"] == "candidate" for c in group) else "inconclusive"
+        event["primary_score"] = max(c["primary_score"] for c in group)
+        for field in ("source_regions", "output_regions"):
+            regions = {}
+            for component in group:
+                for region in component[field]:
+                    key = (region["role"], region.get("tomus", region.get("source_index")), region["page"])
+                    regions.setdefault(key, []).append(region)
+            event[field] = [dict(items[0], box=union_box([r["box"] for r in items])) for items in regions.values()]
+        event["crops"] = list({crop["path"]: crop for c in group for crop in c["crops"]}.values())
+        event["component_scores"] = dict(winner["component_scores"], component_event_count=len(group))
+        event["evidence_provenance"] = {"method": "overlapping and source-corresponding same-unit edge logo components",
+                                       "components": group, "virtual_stitches": []}
+        output = sorted(event["output_regions"], key=lambda r: r["page"])
+        for first, second in zip(output, output[1:]):
+            if second["page"] != first["page"] + 1:
+                continue
+            a, b = row_by_page[(first["tomus"], first["page"])], row_by_page[(second["tomus"], second["page"])]
+            canvas, mappings, height, crop = join_body_edges(a, b, root, manifest, run, work, repo,
+                settings, pdftoppm, f"{event['event_id']}_{first['page']}_{second['page']}_virtual.png")
+            stitched = match_templates(canvas, templates, height, settings)
+            peaks = [p for g in stitched for p in g]
+            event["crops"].append(crop)
+            event["evidence_provenance"]["virtual_stitches"].append({"mappings": mappings,
+                "peaks": peaks, "crosses_join": any(p["box"][1] < mappings[1]["virtual_top"] < p["box"][3] for p in peaks),
+                "diagnostic_only": True})
+        merged.append(event)
+    return sorted(merged, key=lambda c: c["event_id"])
 
 
 def boundary_alignment(source, output, side, settings):
