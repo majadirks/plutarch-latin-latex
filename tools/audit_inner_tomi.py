@@ -480,16 +480,23 @@ def request_run(args):
             blocks = find_source_duplicates(source_unit, vectorizer, settings)
             reader = reader_streams.get(unit_id, [])
             coverage = {"runs": [], "duplicates": [], "orders": []}
+            omissions = []
             if reader and active:
                 anchors = find_reader_occurrences(reader, source_unit, vectorizer, settings)
                 path = chain_matches(anchors, blocks, settings)
                 coverage = assign_occurrence_coverage(path, blocks, settings)
+                if "missing_occurrence" in active:
+                    omissions = find_missing_occurrences(reader, source_unit, anchors, path, settings)
             alignment_debug[unit_id] = {
                 "source_duplicate_blocks": blocks,
                 "reader_runs": coverage["runs"],
                 "reader_token_count": len(reader),
                 "repeated_visits": len(coverage["duplicates"]),
-                "reversals": len(coverage["orders"])}
+                "reversals": len(coverage["orders"]),
+                "missing_occurrences": [{k: om[k] for k in
+                                         ("gap", "missing_line_count", "unique_loss", "confidence",
+                                          "ordered", "left_informative", "right_informative",
+                                          "displaced")} for om in omissions]}
             source_pdf, source_record = snapshot_input(root, manifest, role="source_pdf", source_index=index_unit["source_index"])
             if reader:
                 reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=reader_tomus[unit_id])[1]
@@ -506,8 +513,15 @@ def request_run(args):
                         candidates.append(build_order_candidate(
                             unit_id, order, reader, source_tokens, index_unit["source_index"], reader_record,
                             source_record, reader_tomus[unit_id], root, manifest, run, work, repo, settings))
+                if "missing_occurrence" in active:
+                    for omission in omissions:
+                        candidates.append(build_missing_candidate(
+                            unit_id, omission, reader, source_tokens, reader_record, source_record,
+                            index_unit["source_index"], reader_tomus[unit_id], line_height, root,
+                            manifest, run, work, repo, settings))
             progress(f"Detectors on {unit_id}: {len(blocks)} source-duplicate blocks, "
-                     f"{len(coverage['duplicates'])} reader repeats, {len(coverage['orders'])} reversals")
+                     f"{len(coverage['duplicates'])} reader repeats, {len(coverage['orders'])} reversals, "
+                     f"{len(omissions)} omissions")
         completed_pages = requested_pages if not reader_ocr["unreadable"] else [
             page for page in requested_pages if page not in
             {f"{u['tomus']}:{u['page']}" for u in reader_ocr["unreadable"]}]
@@ -1174,7 +1188,12 @@ CHAIN = {"forward_source": 0.04, "forward_output": 0.02, "gap_cap": 400,
 DUPLICATE_HIGH = {"cosine_min": 0.80, "ordered_min": 0.90, "informative_min": 40}
 ORDER_HIGH = {"backward_tokens_min": 64}
 INCOMPLETE_OPENING_TOKENS = 8  # A later copy that starts this many tokens in has lost its opening.
-IMPLEMENTED_DETECTORS = {"duplicate", "order"}
+MATRIX_CAP = 400  # Bounded local alignment is split or marked inconclusive beyond this, never truncated.
+OMISSION = {"min_missing_tokens": 5, "min_missing_lines": 1, "context_min_informative": 8,
+            "ordered_min": 0.80, "context_window": 16, "line_fraction": 0.8,
+            "latin_line_fraction": 0.5, "seam_line_span": 0, "fuzzy_cover_min": 0.75}
+HYPHENS = "-‐‑­‒–—"
+IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence"}
 
 
 def detector_settings():
@@ -1187,17 +1206,22 @@ def detector_settings():
             "views": VIEW_ADAPTER,
             "thresholds": {"source_duplicate": SOURCE_DUPLICATE, "retrieval": RETRIEVAL,
                            "chain": CHAIN, "duplicate_high": DUPLICATE_HIGH, "order_high": ORDER_HIGH,
-                           "repeat_min_tokens": 16}}
+                           "omission": OMISSION, "matrix_cap": MATRIX_CAP, "repeat_min_tokens": 16}}
 
 
-def align_tokens(source, output, mode="exact"):
-    """Shared token aligner; exact mode returns maximal common diagonals.
+def align_tokens(source, output, mode="exact", settings=None):
+    """Shared token aligner.
 
-    Each run is a maximal (source_offset, output_offset, length) stretch of equal strict
-    tokens. Ordered similarity comes from a monotonic non-overlapping chain of those runs.
-    A later bounded edit-distance program extends this same helper for omission alignment."""
+    ``exact`` mode takes two strict-string lists and returns maximal common diagonals; each
+    run is a maximal (source_offset, output_offset, length) stretch of equal strict tokens and
+    ordered similarity comes from a monotonic non-overlapping chain. ``local`` mode takes two
+    view-token lists ({strict, tolerant, optional box}) and runs a bounded token edit-distance
+    program with discretionary join/split transitions, returning preserved operations, covered
+    source tokens and an ordered-similarity score for omission and boundary nomination."""
+    if mode == "local":
+        return bounded_align(source, output, settings)
     if mode != "exact":
-        raise AuditError("Only exact-token alignment is available before local-omission calibration")
+        raise AuditError("align_tokens mode must be 'exact' or 'local'")
     m, n = len(source), len(output)
     runs = []
     for i in range(m):
@@ -1211,6 +1235,108 @@ def align_tokens(source, output, mode="exact"):
     matched = sum(length for _, _, length in chain)
     return {"runs": runs, "chain": chain, "matched": matched,
             "ordered_similarity": matched / max(m, n, 1)}
+
+
+def char_similarity(first, second):
+    """Normalized character Levenshtein similarity in [0, 1]; empty vs empty is identical."""
+    from rapidfuzz.distance import Levenshtein
+    if not first and not second:
+        return 1.0
+    return float(Levenshtein.normalized_similarity(first, second))
+
+
+def strip_trailing_hyphen(text):
+    """Drop a single discretionary line-break hyphen so split halves can rejoin."""
+    return text[:-1] if text and text[-1] in HYPHENS else text
+
+
+def joined_views(first, second):
+    """Concatenate two view tokens, dropping the first's trailing line-hyphen if present."""
+    return {"strict": strip_trailing_hyphen(first["strict"]) + second["strict"],
+            "tolerant": strip_trailing_hyphen(first["tolerant"]) + second["tolerant"]}
+
+
+def token_substitution(source_token, output_token, fuzzy_min):
+    """Return (cost, kind, covered) for aligning one source view token to one output token.
+
+    Strict equality is free, tolerant (ligature/long-s) equality costs 0.10, otherwise the
+    cost is ``min(1.8, 2*(1-sim))`` for the better of strict/tolerant character similarity.
+    A substitution only counts as coverage when it is strict/tolerant equal or sim>=fuzzy_min;
+    a cheaper low-similarity substitution is still permitted but stays unmatched."""
+    if source_token["strict"] == output_token["strict"]:
+        return 0.0, "strict", True
+    if source_token["tolerant"] == output_token["tolerant"]:
+        return 0.10, "tolerant", True
+    sim = max(char_similarity(source_token["strict"], output_token["strict"]),
+              char_similarity(source_token["tolerant"], output_token["tolerant"]))
+    return min(1.8, 2 * (1 - sim)), "fuzzy", sim >= fuzzy_min
+
+
+def bounded_align(source, output, settings):
+    """Bounded token edit-distance alignment with discretionary join/split transitions.
+
+    Deletion/insertion cost 1.0; the diagonal uses :func:`token_substitution`; join (two
+    source tokens to one output) and split (one source token to two output) each add 0.15 and
+    are permitted only when the joined comparison itself reaches coverage, so arbitrary adjacent
+    words cannot be glued. Ties prefer strict, tolerant, join/split, fuzzy diagonals, then source
+    deletion and output insertion. Matrices above the configured cap are marked inconclusive and
+    never silently truncated. Operations and the covered source-token set are preserved."""
+    if settings is None:
+        raise AuditError("Bounded local alignment requires detector settings")
+    fuzzy_min = settings["thresholds"]["omission"]["fuzzy_cover_min"]
+    cap = settings["thresholds"].get("matrix_cap", MATRIX_CAP)
+    m, n = len(source), len(output)
+    if m > cap or n > cap:
+        return {"inconclusive": True, "reason": "matrix_exceeds_cap", "cost": None,
+                "ordered_similarity": 0.0, "matched": 0, "operations": [], "covered_source": []}
+    infinity = float("inf")
+    distance = [[infinity] * (n + 1) for _ in range(m + 1)]
+    back = [[None] * (n + 1) for _ in range(m + 1)]
+    distance[0][0] = 0.0
+    for i in range(1, m + 1):
+        distance[i][0] = float(i)
+        back[i][0] = (i - 1, 0, {"op": "delete", "source": [i - 1], "output": [], "covered": False, "cost": 1.0})
+    for j in range(1, n + 1):
+        distance[0][j] = float(j)
+        back[0][j] = (0, j - 1, {"op": "insert", "source": [], "output": [j - 1], "covered": False, "cost": 1.0})
+    diagonal_priority = {"strict": 1, "tolerant": 2, "fuzzy": 4}
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            moves = []
+            cost, kind, covered = token_substitution(source[i - 1], output[j - 1], fuzzy_min)
+            moves.append((distance[i - 1][j - 1] + cost, diagonal_priority[kind],
+                          (i - 1, j - 1, {"op": kind, "source": [i - 1], "output": [j - 1],
+                                          "covered": covered, "cost": cost})))
+            if i >= 2:
+                jc, _, jcov = token_substitution(joined_views(source[i - 2], source[i - 1]), output[j - 1], fuzzy_min)
+                if jcov:
+                    moves.append((distance[i - 2][j - 1] + 0.15 + jc, 3,
+                                  (i - 2, j - 1, {"op": "join", "source": [i - 2, i - 1], "output": [j - 1],
+                                                  "covered": True, "cost": 0.15 + jc})))
+            if j >= 2:
+                sc, _, scov = token_substitution(source[i - 1], joined_views(output[j - 2], output[j - 1]), fuzzy_min)
+                if scov:
+                    moves.append((distance[i - 1][j - 2] + 0.15 + sc, 3,
+                                  (i - 1, j - 2, {"op": "split", "source": [i - 1], "output": [j - 2, j - 1],
+                                                  "covered": True, "cost": 0.15 + sc})))
+            moves.append((distance[i - 1][j] + 1.0, 5,
+                          (i - 1, j, {"op": "delete", "source": [i - 1], "output": [], "covered": False, "cost": 1.0})))
+            moves.append((distance[i][j - 1] + 1.0, 6,
+                          (i, j - 1, {"op": "insert", "source": [], "output": [j - 1], "covered": False, "cost": 1.0})))
+            value, _, step = min(moves, key=lambda move: (round(move[0], 9), move[1]))
+            distance[i][j] = value
+            back[i][j] = step
+    operations, i, j = [], m, n
+    while i > 0 or j > 0:
+        pi, pj, step = back[i][j]
+        operations.append(step)
+        i, j = pi, pj
+    operations.reverse()
+    covered_source = sorted({index for step in operations if step["covered"] for index in step["source"]})
+    cost = distance[m][n]
+    return {"inconclusive": False, "cost": cost, "operations": operations,
+            "matched": len(covered_source), "covered_source": covered_source,
+            "ordered_similarity": max(0.0, 1 - cost / max(m, n, 1))}
 
 
 def chain_runs(runs):
@@ -1485,6 +1611,114 @@ def assign_occurrence_coverage(path, aliases, settings):
     return {"runs": summaries, "duplicates": duplicates, "orders": orders}
 
 
+def is_latin_token(strict):
+    """A token carries Latin content when its casefolded form holds an ASCII letter.
+
+    Greek marginal scraps, interlinear fragments and bare punctuation fail this, so they are
+    never counted as missing Latin lines even though the Latin-only reader always drops them."""
+    return any("a" <= character <= "z" for character in strict)
+
+
+def deletion_runs(operations):
+    """Group an alignment's operations into contiguous source-only deletion runs.
+
+    Each run is (local_source_start, local_source_end, output_cursor) where the cursor is the
+    output index at which the deleted source material would have been read. Covered diagonals,
+    joins, splits and insertions reset the run and advance the cursor; a true omission appears
+    as one deletion run because its tokens are absent from the output entirely."""
+    runs, current, cursor = [], None, 0
+    for step in operations:
+        if step["op"] == "delete":
+            index = step["source"][0]
+            current = (current[0], index + 1, current[2]) if current and index == current[1] else (index, index + 1, cursor)
+        else:
+            if current:
+                runs.append(current)
+                current = None
+            if step["output"]:
+                cursor = step["output"][-1] + 1
+    if current:
+        runs.append(current)
+    return runs
+
+
+def find_missing_occurrences(reader, source_unit, anchors, path, settings):
+    """Nominate expected source spans absent at their context-correct output seam.
+
+    Consecutive chained anchors bound a gap where the reader drifts from the source through OCR
+    noise. A bounded local alignment of that whole gap reveals a true omission as a contiguous
+    run of deleted source tokens flanked by covered matches, isolating it from scattered noise.
+    A copy of those tokens matched elsewhere by any anchor is a displacement (order evidence),
+    so only a uniquely-lost span counts as a missing occurrence; weak or one-sided context, or a
+    gap too large to align within the matrix cap, yields low/unknown confidence."""
+    om = settings["thresholds"]["omission"]
+    cap = settings["thresholds"].get("matrix_cap", MATRIX_CAP)
+    window = om["context_window"]
+    informative = source_unit["anchors"]["informative"]
+    source_views = [{"strict": s, "tolerant": t}
+                    for s, t in zip(source_unit["strict"], source_unit["tolerant"])]
+    reader_views = [{"strict": token["strict"], "tolerant": token["tolerant"]} for token in reader]
+    tokens = source_unit["tokens"]
+    line_sizes, line_latin = {}, {}
+    for index, token in enumerate(tokens):
+        key = (token["page"], token["line"])
+        line_sizes[key] = line_sizes.get(key, 0) + 1
+        line_latin[key] = line_latin.get(key, 0) + (1 if is_latin_token(source_unit["strict"][index]) else 0)
+    latin_lines = {key for key, size in line_sizes.items()
+                   if line_latin[key] >= om["latin_line_fraction"] * size}
+    omissions = []
+    for left, right in zip(path, path[1:]):
+        s0, s1 = left["source_end"], right["source_start"]
+        o0, o1 = left["output_end"], right["output_start"]
+        if s1 - s0 < om["min_missing_tokens"] or o1 < o0:
+            continue
+        if s1 - s0 > cap or o1 - o0 > cap:
+            continue  # Oversized divergence: alignment is inconclusive rather than truncated.
+        local = align_tokens(source_views[s0:s1], reader_views[o0:o1], mode="local", settings=settings)
+        if local.get("inconclusive"):
+            continue
+        covered = {s0 + index for index in local["covered_source"]}
+        covered |= set(range(left["source_start"], left["source_end"]))
+        covered |= set(range(right["source_start"], right["source_end"]))
+        for local_start, local_end, cursor in deletion_runs(local["operations"]):
+            if local_end - local_start < om["min_missing_tokens"]:
+                continue
+            abs_start, abs_end = s0 + local_start, s0 + local_end
+            deleted_per_line = {}
+            for i in range(abs_start, abs_end):
+                key = (tokens[i]["page"], tokens[i]["line"])
+                deleted_per_line[key] = deleted_per_line.get(key, 0) + 1
+            full_lines = {key for key, count in deleted_per_line.items()
+                          if key in latin_lines and count >= om["line_fraction"] * line_sizes[key]}
+            if len(full_lines) < om["min_missing_lines"]:
+                continue  # Only whole absent Latin lines are omissions; dropped words/Greek are not.
+            missing_tokens = sorted(i for i in range(abs_start, abs_end)
+                                    if (tokens[i]["page"], tokens[i]["line"]) in full_lines
+                                    and is_latin_token(source_unit["strict"][i]))
+            if len(missing_tokens) < om["min_missing_tokens"]:
+                continue
+            left_info = sum(1 for i in range(max(0, abs_start - window), abs_start)
+                            if i in covered and informative[i])
+            right_info = sum(1 for i in range(abs_end, min(len(informative), abs_end + window))
+                             if i in covered and informative[i])
+            left_cover = sum(1 for i in range(max(0, abs_start - window), abs_start) if i in covered)
+            right_cover = sum(1 for i in range(abs_end, min(len(informative), abs_end + window)) if i in covered)
+            context_ratio = (left_cover + right_cover) / (2 * window)
+            seam = min(max(o0 + cursor, o0), o1)
+            displaced = any(intervals_overlap(an["source_start"], an["source_end"], abs_start, abs_end)
+                            for an in anchors)
+            unique_loss = not displaced
+            strong = (left_info >= om["context_min_informative"]
+                      and right_info >= om["context_min_informative"] and unique_loss)
+            confidence = "high" if strong else ("low" if unique_loss else "unknown")
+            omissions.append({"gap": missing_tokens, "seam_output": (seam, seam),
+                              "missing_line_count": len(full_lines), "unique_loss": unique_loss,
+                              "confidence": confidence, "ordered": round(context_ratio, 4),
+                              "left_informative": left_info, "right_informative": right_info,
+                              "displaced": displaced})
+    return omissions
+
+
 def source_token_boxes(index_unit, region_unit):
     """Attach each index token a coarse box drawn from its expected-Latin source line."""
     lookup = {}
@@ -1616,6 +1850,117 @@ def build_order_candidate(unit_id, order, reader, source_tokens, source_index, r
         "confidence_reasons": [f"backward_tokens>=64: {'satisfied' if backward >= settings['thresholds']['order_high']['backward_tokens_min'] else 'failed'}"],
         "linked_events": [],
         "evidence_provenance": {"method": "Chained reader anchors re-enter earlier canonical source material after a penalized restart, indicating a reversed reading order."},
+        "crops": []}
+    for index, region in enumerate(source_regions + output_regions):
+        dpi = SOURCE_OCR_DPI if region["role"] == "source_pdf" else OUTPUT_OCR_DPI
+        candidate["crops"].append(save_region_crop(root, manifest, region, run, work, repo, dpi,
+                                                   f"{candidate['event_id']}_{index}.png"))
+    return candidate
+
+
+def cluster_page_lines(tokens):
+    """Group one page's OCR tokens into text lines by vertical proximity of word centers."""
+    rows = sorted(tokens, key=lambda token: (token["box"][1] + token["box"][3]) / 2)
+    lines, current = [], []
+    for token in rows:
+        center = (token["box"][1] + token["box"][3]) / 2
+        height = token["box"][3] - token["box"][1]
+        if current and center - (current[-1]["box"][1] + current[-1]["box"][3]) / 2 > 0.6 * height:
+            lines.append(current)
+            current = [token]
+        else:
+            current.append(token)
+    if current:
+        lines.append(current)
+    return lines
+
+
+def measure_source_regions(gap_tokens, source_tokens, source_record, source_index):
+    """Tightly bound absent source lines, taking the left edge from Latin-led lines only.
+
+    The expected-Latin line box spans any Greek marginal scrap that opens a line, so the left
+    edge is read from lines whose first token is Latin; the vertical extent and right edge still
+    cover every missing line so the measured box matches hand-drawn Latin-column gold."""
+    line_keys = {(token["page"], token["line"]) for token in gap_tokens}
+    leading_latin = {}
+    for token in source_tokens:
+        key = (token["page"], token["line"])
+        if key in line_keys and key not in leading_latin:
+            leading_latin[key] = is_latin_token(strict_view(token["raw"]))
+    line_box = {}
+    for token in gap_tokens:
+        line_box.setdefault((token["page"], token["line"]), token["box"])
+    by_page = {}
+    for key, box in line_box.items():
+        by_page.setdefault(key[0], []).append((key, box))
+    regions = []
+    for page in sorted(by_page):
+        entries = by_page[page]
+        all_boxes = [box for _, box in entries]
+        latin_boxes = [box for key, box in entries if leading_latin.get(key)] or all_boxes
+        box = union_box([[min(b[0] for b in latin_boxes), min(b[1] for b in all_boxes),
+                          max(b[2] for b in all_boxes), max(b[3] for b in all_boxes)]])
+        regions.append({"role": "source_pdf", "page": page, "input_sha256": source_record["sha256"],
+                        "box": box, "source_index": source_index, "occurrence_id": "expected"})
+    return regions
+
+
+def measure_seam_regions(reader, seam_index, tomus, reader_record, line_height, span):
+    """Bound the output seam as the reader lines flanking the join, spanning the visual gap.
+
+    The absent lines leave a blank band between the last read line and the one that resumes, so
+    the seam box unions the clustered line before the join and the line at the join (plus any
+    empty rows between them); ``span`` adds optional extra context lines on each side."""
+    seam_index = max(0, min(seam_index, len(reader) - 1))
+    page = reader[seam_index]["page"]
+    page_tokens = [token for token in reader if token["page"] == page]
+    lines = cluster_page_lines(page_tokens)
+
+    def line_of(center):
+        return min(range(len(lines)), key=lambda i: abs(
+            center - sum((t["box"][1] + t["box"][3]) / 2 for t in lines[i]) / len(lines[i])))
+
+    seam_line = line_of((reader[seam_index]["box"][1] + reader[seam_index]["box"][3]) / 2)
+    pre = reader[seam_index - 1] if seam_index > 0 and reader[seam_index - 1]["page"] == page else reader[seam_index]
+    pre_line = line_of((pre["box"][1] + pre["box"][3]) / 2)
+    low, high = min(pre_line, seam_line) - span, max(pre_line, seam_line) + span
+    chosen = [token for i in range(max(0, low), min(len(lines), high + 1)) for token in lines[i]]
+    return [{"role": "reader_pdf", "page": page, "input_sha256": reader_record["sha256"],
+             "tomus": tomus, "box": union_box([token["box"] for token in chosen]),
+             "region_kind": "seam", "line_height": line_height}]
+
+
+def build_missing_candidate(unit_id, omission, reader, source_tokens, reader_record, source_record,
+                            source_index, tomus, line_height, root, manifest, run, work, repo, settings):
+    """Assemble a missing-occurrence candidate: absent source lines at a located output seam."""
+    gap_tokens = [source_tokens[i] for i in omission["gap"]]
+    source_regions = measure_source_regions(gap_tokens, source_tokens, source_record, source_index)
+    span = settings["thresholds"]["omission"]["seam_line_span"]
+    output_regions = measure_seam_regions(reader, omission["seam_output"][0], tomus, reader_record,
+                                          line_height, span)
+    confidence = omission["confidence"]
+    om = settings["thresholds"]["omission"]
+    predicates = {"left_context_informative>=8": omission["left_informative"] >= om["context_min_informative"],
+                  "right_context_informative>=8": omission["right_informative"] >= om["context_min_informative"],
+                  "context_covered>=0.80": omission["ordered"] >= om["ordered_min"],
+                  "unique_loss": omission["unique_loss"]}
+    candidate = {
+        "event_id": f"miss_{unit_id}_{source_regions[0]['page']}_{omission['gap'][0]}",
+        "unit_id": unit_id, "type": "missing_occurrence", "relation": "missing_expected_position",
+        "source_regions": source_regions, "output_regions": output_regions,
+        "missing_line_count": omission["missing_line_count"], "unique_loss": omission["unique_loss"],
+        "confidence": confidence, "status": "candidate",
+        "primary_score": round(omission["ordered"], 4),
+        "component_scores": {"context_covered": omission["ordered"],
+                             "left_informative": omission["left_informative"],
+                             "right_informative": omission["right_informative"],
+                             "missing_tokens": len(omission["gap"])},
+        "confidence_reasons": [f"{name}: {'satisfied' if value else 'failed'}" for name, value in predicates.items()]
+                             + (["displaced copy elsewhere: order evidence, not unique loss"] if omission["displaced"] else []),
+        "linked_events": [],
+        "evidence_provenance": {"method": "Expected Latin lines between two context-correct reader anchors are deleted at the contiguous output seam under bounded local alignment; a copy at another output position would be order evidence, not coverage.",
+                                "context_covered": omission["ordered"],
+                                "displaced_copy": omission["displaced"]},
         "crops": []}
     for index, region in enumerate(source_regions + output_regions):
         dpi = SOURCE_OCR_DPI if region["role"] == "source_pdf" else OUTPUT_OCR_DPI
@@ -2272,7 +2617,7 @@ def make_parser():
     evaluate.add_argument("--split", choices=("development", "validation", "all"), required=True)
     evaluate.add_argument("--freeze", action="store_true", help="Freeze a complete final development detector run")
     evaluate.add_argument("--enforce-gates", action="store_true")
-    run = commands.add_parser("run", help="OCR selected readers/sources and nominate duplicate-scan and reader-order candidates; remaining detectors are reported as pending")
+    run = commands.add_parser("run", help="OCR selected readers/sources and nominate duplicate-scan, reader-order and missing-occurrence candidates; remaining detectors are reported as pending")
     run.add_argument("--repo-root", default=".")
     run.add_argument("--work-dir", default="tmp/pdfs/inner_tomi_audit")
     run.add_argument("--baseline", required=True)
