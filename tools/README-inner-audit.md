@@ -3,8 +3,8 @@
 `audit_inner_tomi.py` is an offline diagnostic tool. Its commands check
 prerequisites, capture the inspected baseline, render benchmark annotations,
 extract OCR, compare source/reader occurrences and boundaries, and evaluate
-localized candidate evidence. Running-head, foreign-scrap and supplemental
-layout detectors are reported as pending until implemented.
+localized candidate evidence. Greek scrap and supplemental layout detectors
+are reported as pending until implemented.
 
 Use the existing Python 3.10+ interpreter. If `python` does not resolve in a
 PowerShell session, use its actual executable path; no reinstall is required.
@@ -167,6 +167,15 @@ metadata and evidence extraction stay in the main process. Matching caches bind
 rendered pixels, source-template identities, comparison settings, OpenCV version
 and helper identity. No validation reader contributes a template or fitted
 source-index statistic.
+
+`--detectors head` compares isolated capital fragments and separate source
+folios with original header words, occurrence-assigned source transitions and
+source image suffixes. Roman chapter markers and multiword prose lines are
+excluded. Alternate regional OCR remains available beside the image evidence.
+Source folio agreement, suffix similarity, isolation and image correlation are
+separate cues; at least three cues and a source transition are needed for high
+confidence. A single glyph requires image corroboration. The report preserves
+raw OCR and Greek/Latin uncertainty rather than expanding a clipped heading.
 
 `evaluate --freeze` requires a complete final detector run over all development
 units/types and their actual body pages, reviewed development cases and

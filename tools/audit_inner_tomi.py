@@ -38,6 +38,7 @@ DETECTOR_TYPES = {
     "prose": {"missing_occurrence", "duplicate", "order", "terminal_loss"},
     "boundaries": {"terminal_loss"},
     "watermark": {"watermark"},
+    "head": {"head"},
     "furniture": {"watermark", "head", "foreign_scraps"},
     "layout": {"copied_gap", "rule", "lateral_clipping", "slicing", "blank_body"},
 }
@@ -458,7 +459,7 @@ def request_run(args):
                                "tomus": row["tomus"], "box": word["box"], "conf": word["conf"]})
     source_ocr = {"requested_pages": 0, "completed_pages": 0, "unreadable": []}
     for unit in selected_source:
-        if boundary_only or args.detectors == "watermark":
+        if boundary_only or args.detectors in ("watermark", "head"):
             continue  # Boundary evidence uses regional raster observations below.
         pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=unit["source"])
         for page in unit["pages"]:
@@ -540,6 +541,10 @@ def request_run(args):
                 rows = [row for row in selected_body if row["unit_id"] == unit_id]
                 candidates.extend(find_watermarks(rows, reader, source_unit, path, templates,
                     root, manifest, run, work, repo, settings, args.pdftoppm, args.workers))
+            if "head" in active:
+                rows = [row for row in selected_body if row["unit_id"] == unit_id]
+                candidates.extend(find_head_candidates(rows, reader, source_unit, path, root, manifest,
+                    run, work, repo, settings, args.lang, tesseract, args.pdftoppm))
             if reader:
                 reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=reader_tomus[unit_id])[1]
                 heights = sorted(token["box"][3] - token["box"][1] for token in reader)
@@ -1255,7 +1260,10 @@ WATERMARK = {"dpi": 90, "nomination_min": 0.60, "high_min": 0.80,
              "faint_min_gray": 110, "faint_ink_fraction_min": 0.45,
              "edge_strip_line_heights": 4, "event_edge_line_heights": 3,
              "partial_bands": [[0.0, 0.25], [0.25, 0.50], [0.50, 0.75], [0.75, 1.0]]}
-IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss", "watermark"}
+HEAD = {"nomination_min": 0.80, "high_min": 0.80, "faint_min_gray": 0,
+        "faint_ink_fraction_min": 0.40, "suffix_min": 0.80, "source_head_bottom": 0.12,
+        "padding_line_heights": 2, "minimum_cues": 3, "image_capital_height_min": 0.70}
+IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss", "watermark", "head"}
 
 
 def detector_settings():
@@ -1270,6 +1278,7 @@ def detector_settings():
                            "chain": CHAIN, "duplicate_high": DUPLICATE_HIGH, "order_high": ORDER_HIGH,
                            "omission": OMISSION, "boundary": BOUNDARY,
                            "watermark": WATERMARK,
+                           "head": HEAD,
                            "matrix_cap": MATRIX_CAP, "repeat_min_tokens": 16}}
 
 
@@ -1899,7 +1908,7 @@ def group_peaks(peaks, distance):
     return groups
 
 
-def match_templates(gray, templates, line_height, settings, *, scales=None, rotations=None):
+def match_templates(gray, templates, line_height, settings, *, scales=None, rotations=None, kind="watermark"):
     """Search nonconstant source templates with normalized correlation in two views.
 
     Returned values are similarity scores, never probabilities. Each scale/rotation/view
@@ -1908,6 +1917,10 @@ def match_templates(gray, templates, line_height, settings, *, scales=None, rota
     import cv2
     import numpy as np
     th = settings["thresholds"]["watermark"]
+    if kind == "head":
+        th = dict(th, **settings["thresholds"]["head"])
+    elif kind != "watermark":
+        raise AuditError("Image matching kind must be watermark or head")
     if not gray.size or float(gray.std()) < th["template_std_min"]:
         return []
     views = image_views(gray)
@@ -2266,6 +2279,255 @@ def merge_logo_events(candidates, rows, root, manifest, run, work, repo, templat
                 "diagnostic_only": True})
         merged.append(event)
     return sorted(merged, key=lambda c: c["event_id"])
+
+
+def furniture_pattern(raw):
+    """Classify observed capitals and separate folios without expanding their text."""
+    letters = [(i, c) for i, c in enumerate(raw) if c.isalpha()]
+    capitals = bool(letters) and len(letters) <= 20 and all(c.isupper() for _, c in letters)
+    digits = raw.strip().rstrip(".")
+    return {"capital": capitals, "folio": digits.isdigit() and 2 <= len(digits) <= 4,
+            "roman": bool(re.fullmatch(r"[IVXLCDM]+\.?", raw.strip())),
+            "clean": "".join(c for _, c in letters), "raw_offsets": [i for i, _ in letters]}
+
+
+def source_head_references(source_unit, root, manifest, work, repo, settings):
+    """Inventory full-width original source heads/folios with the shared PDF adapter."""
+    import pymupdf
+    pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=source_unit["source_index"])
+    pages = sorted({t["page"] for t in source_unit["tokens"]})
+    metadata = {"source_sha256": record["sha256"], "pages": pages,
+                "head_bottom": settings["thresholds"]["head"]["source_head_bottom"],
+                "adapter": "full-width-source-furniture-v1", "render_box_policy": "mediabox"}
+    cache = Path(work) / "cache" / "source_furniture" / f"{json_hash(metadata)}.json"
+    reused = reusable_entry(cache, metadata, work, repo)
+    if reused is not None:
+        return reused["references"]
+    references = {}
+    with pymupdf.open(pdf) as document:
+        for number in pages:
+            page = document[number - 1]
+            entries = []
+            for x0, y0, x1, y1, raw, *_ in page.get_text("words"):
+                box = normalized_pdf_box(page, [x0, y0, x1, y1])
+                pattern = furniture_pattern(raw)
+                if 0.005 <= (box[1] + box[3]) / 2 <= metadata["head_bottom"] and (pattern["capital"] or pattern["folio"]):
+                    entries.append({"raw": raw, "pattern": pattern, "confidence": None,
+                                    "provider": "embedded_source_words",
+                                    "region": {"role": "source_pdf", "source_index": source_unit["source_index"],
+                                               "page": number, "box": box, "input_sha256": record["sha256"]}})
+            references[str(number)] = entries
+    write_json(cache, {"schema_version": 1, "complete": True, "metadata": metadata,
+                       "data": {"references": references}}, work, repo)
+    return references
+
+
+def head_templates(references, root, manifest, work, repo, pdftoppm):
+    """Build original head suffix/folio image hypotheses with unchanged source exemplars."""
+    import cv2
+    import numpy as np
+    from PIL import Image
+    templates = []
+    for number, entry in enumerate(references):
+        region = entry["region"]
+        pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=region["source_index"])
+        raster, meta = render_page(pdf, record, region["page"], 300, work, repo, pdftoppm=pdftoppm)
+        with Image.open(raster) as image:
+            full = np.asarray(image.convert("L"))
+        expanded = [max(0, region["box"][0] - 0.003), max(0, region["box"][1] - 0.003),
+                    min(1, region["box"][2] + 0.003), min(1, region["box"][3] + 0.003)]
+        bounds = pixel_bounds(expanded, meta["raster_dimensions"])
+        gray = full[bounds[1]:bounds[3], bounds[0]:bounds[2]].copy()
+        _, _, stats, _ = cv2.connectedComponentsWithStats((gray < 160).astype(np.uint8), 8)
+        tallest = max((int(s[3]) for s in stats[1:]), default=0)
+        glyphs = sorted((s for s in stats[1:] if s[3] >= 0.45 * tallest and s[4] >= 5), key=lambda s: int(s[0]))
+        if not glyphs:
+            continue
+        column = pixel_bounds([0.52, 0.12, 0.97, 0.90], meta["raster_dimensions"])
+        source_height = ink_line_height(full[column[1]:column[3], column[0]:column[2]])
+        counts = [len(glyphs)] if entry["pattern"]["folio"] else range(1, min(len(glyphs), 20) + 1)
+        for count in counts:
+            group = glyphs[-count:]
+            x0 = max(0, min(int(s[0]) for s in group) - 2)
+            y0 = max(0, min(int(s[1]) for s in group) - 2)
+            x1 = min(gray.shape[1], max(int(s[0] + s[2]) for s in group) + 2)
+            y1 = min(gray.shape[0], max(int(s[1] + s[3]) for s in group) + 2)
+            pixels = gray[y0:y1, x0:x1].copy()
+            if min(pixels.shape) < 4 or float(pixels.std()) < 2:
+                continue
+            templates.append({"id": f"head_{region['source_index']}_{region['page']}_{number}_{count}",
+                "family": f"head_{region['source_index']}_{region['page']}_{number}",
+                "fragment_type": "folio" if entry["pattern"]["folio"] else "head_suffix",
+                "pixels": pixels, "views": image_views(pixels), "source_line_height": source_height,
+                "glyph_support": count, "glyph_boxes": [[int(s[0]) - x0, int(s[1]) - y0,
+                                                           int(s[0] + s[2]) - x0, int(s[1] + s[3]) - y0] for s in group],
+                "offset": [x0, y0], "source_region": region, "source_reference": entry,
+                "pixels_sha256": hashlib.sha256(pixels.tobytes()).hexdigest()})
+    return templates
+
+
+def source_head_suffix_score(observed, reference):
+    """Score a comparison-only suffix; Greek/Latin lookalikes retain explicit ambiguity."""
+    first = tolerant_view(furniture_pattern(observed)["clean"])
+    second = tolerant_view(reference["pattern"]["clean"])
+    if not first or not second:
+        return 0.0
+    return char_similarity(first, second[-len(first):])
+
+
+def find_head_candidates(rows, reader, source_unit, path, root, manifest, run, work, repo,
+                         settings, lang, tesseract, pdftoppm):
+    """Combine observed patterns, isolation, source heads/folios and image correspondence."""
+    import cv2
+    import numpy as np
+    from PIL import Image
+    th = settings["thresholds"]["head"]
+    references = source_head_references(source_unit, root, manifest, work, repo, settings)
+    candidates = []
+    template_cache = {}
+    for row in rows:
+        words = [t for t in reader if t["page"] == row["page"]]
+        pdf, record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
+        raster, meta = render_page(pdf, record, row["page"], 180, work, repo, pdftoppm=pdftoppm)
+        bounds = pixel_bounds(row["body_box"], meta["raster_dimensions"])
+        with Image.open(raster) as image:
+            gray = np.asarray(image.convert("L"))[bounds[1]:bounds[3], bounds[0]:bounds[2]].copy()
+        height = ink_line_height(gray) or 12.0
+        norm_height = height / meta["raster_dimensions"][1]
+        lines = group_lines([{"box": w["box"], "text": w["raw"]} for w in words])
+        prose = [line for line in lines if len(line["text"].split()) >= 3
+                 and sum(sum(c.islower() for c in word) >= 2 for word in line["text"].split()) >= 2]
+
+        def isolated(box):
+            return not any(min(box[3], w["box"][3]) - max(box[1], w["box"][1])
+                           >= 0.4 * min(box[3] - box[1], w["box"][3] - w["box"][1]) for w in prose)
+
+        observations = []
+        for word in words:
+            pattern = furniture_pattern(word["raw"])
+            if (pattern["capital"] or pattern["folio"]) and not pattern["roman"] and isolated(word["box"]):
+                observations.append({"box": word["box"], "raw": word["raw"], "pattern": pattern,
+                                     "provider": "reader_raster_ocr", "isolation": True})
+        _, _, components, _ = cv2.connectedComponentsWithStats((gray < 160).astype(np.uint8), 8)
+        for component in components[1:]:
+            x, y, width, char_height, area = (int(v) for v in component)
+            if not 0.6 * height <= char_height <= 1.8 * height or area < 5 or width > 3 * height:
+                continue
+            box = [(bounds[0] + x) / meta["raster_dimensions"][0], (bounds[1] + y) / meta["raster_dimensions"][1],
+                   (bounds[0] + x + width) / meta["raster_dimensions"][0], (bounds[1] + y + char_height) / meta["raster_dimensions"][1]]
+            if isolated(box) and not any(overlap({"box": box}, {"box": o["box"]})["iou"] > 0 for o in observations):
+                observations.append({"box": box, "raw": "", "pattern": furniture_pattern(""),
+                                     "provider": "isolated_image_component", "isolation": True,
+                                     "capital_height": char_height >= th["image_capital_height_min"] * height})
+        page_events = []
+        for observation in observations:
+            context = source_context_at_region(reader, path, source_unit, row["page"], observation["box"])
+            before, after = context["before"], context["after"]
+            seam = bool(before and after and before["source_page"] < after["source_page"])
+            source_pages = {p["source_page"] for p in (before, after) if p}
+            if seam:
+                source_pages = {after["source_page"]}
+            refs = [r for number in source_pages for r in references.get(str(number), [])]
+            if not refs:
+                continue
+            suffix = max((source_head_suffix_score(observation["raw"], ref) for ref in refs), default=0.0)
+            folio = any(observation["pattern"]["folio"] and ref["pattern"]["folio"]
+                        and observation["raw"].rstrip(".") == ref["raw"].rstrip(".") for ref in refs)
+            if not seam and not folio:
+                continue
+            key = tuple(sorted(source_pages))
+            if key not in template_cache:
+                template_cache[key] = head_templates(refs, root, manifest, work, repo, pdftoppm)
+            templates = template_cache[key]
+            pad = th["padding_line_heights"] * norm_height
+            box = observation["box"]
+            retry_box = [max(row["body_box"][0], box[0] - pad), max(row["body_box"][1], box[1] - pad),
+                         min(row["body_box"][2], box[2] + pad), min(row["body_box"][3], box[3] + pad)]
+            full_raster, full_meta = render_page(pdf, record, row["page"], 300, work, repo, pdftoppm=pdftoppm)
+            retry_bounds = pixel_bounds(retry_box, full_meta["raster_dimensions"])
+            with Image.open(full_raster) as image:
+                retry_gray = np.asarray(image.convert("L"))[retry_bounds[1]:retry_bounds[3], retry_bounds[0]:retry_bounds[2]].copy()
+            matched = match_templates(retry_gray, templates, height * 300 / 180, settings, kind="head")
+            peaks = [p for group in matched for p in group]
+            located = []
+            for peak in peaks:
+                actual = [(retry_bounds[0] + peak["box"][0]) / full_meta["raster_dimensions"][0],
+                          (retry_bounds[1] + peak["box"][1]) / full_meta["raster_dimensions"][1],
+                          (retry_bounds[0] + peak["box"][2]) / full_meta["raster_dimensions"][0],
+                          (retry_bounds[1] + peak["box"][3]) / full_meta["raster_dimensions"][1]]
+                scores = overlap({"box": actual}, {"box": box})
+                if scores["gold_coverage"] >= 0.3:
+                    located.append(dict(peak, normalized_box=actual))
+            peaks = located
+            image_score = max((p["score"] for p in peaks), default=0.0)
+            if image_score < th["nomination_min"] and suffix < th["suffix_min"] and not folio:
+                continue
+            best = max(peaks, key=lambda p: p["score"]) if peaks else None
+            best_template = next((t for t in templates if best and t["id"] == best["template_id"]), None)
+            if best:
+                box = union_box([box, best["normalized_box"]])
+            source_regions = [best_template["source_region"]] if best_template else [max(refs, key=lambda r: (
+                observation["pattern"]["folio"] and r["pattern"]["folio"] and observation["raw"].rstrip(".") == r["raw"].rstrip("."),
+                source_head_suffix_score(observation["raw"], r)))["region"]]
+            pattern_cue = observation["pattern"]["capital"] or observation["pattern"]["folio"] or observation.get("capital_height", False)
+            cues = {"capital_number_pattern": pattern_cue, "isolation": observation["isolation"],
+                    "source_suffix_match": suffix >= th["suffix_min"], "source_folio_agreement": folio,
+                    "source_head_image": image_score >= th["high_min"]}
+            strong = seam and sum(cues.values()) >= th["minimum_cues"]
+            single = not observation["pattern"]["folio"] and len(observation["pattern"]["clean"]) <= 1
+            if single and image_score < th["high_min"]:
+                strong = False
+            retry = ocr_region_retry(pdf, record, row["page"], retry_box, work, repo,
+                                     tesseract=tesseract, pdftoppm=pdftoppm, psm=11, lang=lang)
+            output = {"role": "reader_pdf", "tomus": row["tomus"], "page": row["page"],
+                      "box": box, "input_sha256": record["sha256"]}
+            event = f"head_{row['unit_id']}_{row['page']}_{len(page_events)}"
+            crops = [save_region_crop(root, manifest, region, run, work, repo, 300, f"{event}_{i}.png")
+                     for i, region in enumerate(source_regions + [output])]
+            page_events.append({"event_id": event, "unit_id": row["unit_id"], "type": "head", "relation": "source_head",
+                "source_regions": source_regions, "output_regions": [output], "primary_score": max(image_score, suffix, float(folio)),
+                "component_scores": dict(cues, image_correlation=image_score, suffix_similarity=suffix, source_boundary=seam),
+                "confidence": "high" if strong else "low", "status": "candidate",
+                "raw_ocr_excerpts": {"output": observation["raw"], "source": [r["raw"] for r in refs]},
+                "confidence_reasons": [f"{name}: {'satisfied' if value else 'failed'}" for name, value in cues.items()]
+                    + ["Greek/Latin glyph identity remains uncertain without a Greek OCR model"],
+                "evidence_provenance": {"method": "isolated head/folio source correspondence", "context": context,
+                                        "observation": observation, "source_references": refs, "image_peaks": peaks,
+                                        "reader_retry": retry},
+                "linked_events": [], "crops": crops})
+        groups = []
+        for event in page_events:
+            region = event["output_regions"][0]
+            source_pages = {(r["source_index"], r["page"]) for r in event["source_regions"]}
+            group = next((g for g in groups if any(
+                source_pages & {(r["source_index"], r["page"]) for r in c["source_regions"]}
+                and abs((region["box"][1] + region["box"][3]) / 2
+                        - (c["output_regions"][0]["box"][1] + c["output_regions"][0]["box"][3]) / 2) <= 3 * norm_height
+                for c in g)), None)
+            if group is None:
+                groups.append([event])
+            else:
+                group.append(event)
+        for group in groups:
+            if len(group) == 1:
+                candidates.append(group[0])
+                continue
+            winner = max(group, key=lambda c: (c["confidence"] == "high", c["primary_score"], c["event_id"]))
+            combined = dict(winner, event_id=f"head_{row['unit_id']}_{row['page']}_{len(candidates)}")
+            combined["output_regions"] = [dict(group[0]["output_regions"][0], box=union_box(
+                [c["output_regions"][0]["box"] for c in group]))]
+            source = {}
+            for c in group:
+                for r in c["source_regions"]:
+                    source.setdefault((r["source_index"], r["page"]), []).append(r)
+            combined["source_regions"] = [dict(rs[0], box=union_box([r["box"] for r in rs])) for rs in source.values()]
+            combined["linked_events"] = [c["event_id"] for c in group]
+            combined["crops"] = [crop for c in group for crop in c["crops"]]
+            combined["evidence_provenance"] = {"method": "same-source isolated head and folio components",
+                                                "components": group}
+            candidates.append(combined)
+        progress(f"Head search {row['unit_id']} page {row['page']}: {len(page_events)} candidates")
+    return candidates
 
 
 def boundary_alignment(source, output, side, settings):
