@@ -1,6 +1,7 @@
 """Offline inspection of facsimile readers; never repairs source material."""
 
 import argparse
+import csv
 import hashlib
 import html
 import importlib
@@ -16,6 +17,7 @@ import sys
 import tempfile
 import threading
 import time
+from urllib.parse import quote
 from contextlib import contextmanager
 
 
@@ -623,10 +625,176 @@ def request_run(args):
                                  "selected_body_pages": len(selected_body)},
         }
         write_json(run / "run-manifest.json", record, work, repo)
+        write_report(candidates, record, reader_map, reader_streams, root, manifest, run, work, repo)
+        resolve_baseline(work, args.baseline)
     progress(f"Wrote {len(candidates)} candidates into {run}")
     if pending_types:
         progress(f"Detectors not yet implemented for requested scope: {', '.join(pending_types)}")
     return 0 if complete else 3
+
+
+def csv_cell(value):
+    """Keep externally observed text from being interpreted as a spreadsheet formula."""
+    value = str(value)
+    return "'" + value if value.lstrip().startswith(("=", "+", "-", "@")) or value.startswith(("\t", "\r", "\n")) else value
+
+
+def write_report(candidates, record, reader_map, reader_streams, root, manifest, run, work, repo):
+    """Write escaped local evidence, dual locators and explicit requested-scope coverage."""
+    import pymupdf
+    rows = {(r["tomus"], r["page"]): r for r in reader_map["body_pages"]}
+    prior = {}
+    if (run / "report-data.json").exists():
+        prior = {c["event_id"]: c for c in json.loads((run / "report-data.json").read_text(encoding="utf-8"))["candidates"]}
+    documents, pages, reports = {}, {}, []
+    try:
+        def source_words(index, page):
+            key = (index, page)
+            if key not in pages:
+                if index not in documents:
+                    pdf, _ = snapshot_input(root, manifest, role="source_pdf", source_index=index)
+                    documents[index] = pymupdf.open(pdf)
+                pages[key] = pdf_word_observations(documents[index][page - 1])
+            return pages[key]
+
+        for candidate in candidates:
+            locators, observations = [], {"source": [], "output": []}
+            for role in ("source", "output"):
+                for region in candidate[f"{role}_regions"]:
+                    if role == "source":
+                        words = source_words(region["source_index"], region["page"])
+                        folios = [w for w in words if furniture_pattern(w["raw"])["folio"] and w["box"][1] < 0.12
+                                  and (w["box"][0] < 0.20 or w["box"][2] > 0.80)]
+                        folio = folios[0]["raw"] if len(folios) == 1 else None
+                        locators.append({"role": role, "source_index": region["source_index"], "physical_page": region["page"],
+                                         "printed_folio": folio, "folio_provenance": "embedded original header observation" if folio else "unknown"})
+                    else:
+                        row = rows.get((region["tomus"], region["page"]), {})
+                        locators.append({"role": role, "tomus": region["tomus"], "physical_page": region["page"],
+                                         "body_folio": row.get("folio"), "folio_provenance": row.get("folio_provenance", "unknown")})
+                        words = reader_streams.get(candidate["unit_id"], [])
+                        words = [w for w in words if w["page"] == region["page"]]
+                    selected = [w for w in words if overlap({"box": w["box"]}, region)["iou"] > 0]
+                    observations[role].append({"region": region, "words": selected,
+                        "availability": "unavailable for this earlier run" if role == "output" and candidate["unit_id"] not in reader_streams else "recorded",
+                        "meaning": "raw word observations overlapping the region; complete word boxes may extend outside it"})
+            if not reader_streams and candidate["event_id"] in prior:
+                observations["output"] = prior[candidate["event_id"]]["raw_observations"]["output"]
+            reports.append(dict(candidate, locators=locators, raw_observations=observations))
+    finally:
+        for document in documents.values():
+            document.close()
+    write_json(run / "report-data.json", {"schema_version": 1, "baseline_id": record["baseline_id"],
+               "candidates_sha256": record["candidates_sha256"], "candidates": reports}, work, repo)
+    coverage = []
+    for identifier in record["requested_body_pages"]:
+        tomus, page = (int(v) for v in identifier.split(":"))
+        row = rows[(tomus, page)]
+        coverage.append({"tomus": tomus, "physical_page": page, "body_folio": row["folio"],
+                         "folio_provenance": row["folio_provenance"], "unit_id": row["unit_id"],
+                         "completed": identifier in record["completed_body_pages"],
+                         "requested_detectors": sorted(DETECTOR_TYPES[record["detectors"]]),
+                         "implemented_detectors": record["implemented_detectors"]})
+    limitations = []
+    for path in sorted(run.glob("*-debug-*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for page in data.get("pages", []):
+            registrations = page.get("registrations", [page["registration"]] if "registration" in page else [])
+            if page.get("limitation") or registrations and not any(r["matched"] for r in registrations):
+                limitations.append({"debug_file": path.name, "page": page.get("page"),
+                                    "reason": page.get("limitation", "source-image registration inconclusive")})
+    write_json(run / "coverage.json", {"schema_version": 1, "scope": record["scope"],
+               "requested_units": record["units"], "rows": coverage, "complete": record["complete"],
+               "corpus_body_pages": len(reader_map["body_pages"]), "corpus_units": len(reader_map["units"])}, work, repo)
+    write_json(run / "errors.json", {"schema_version": 1, "processing_errors": record["errors"],
+               "ocr": record["ocr"], "observational_limitations": limitations,
+               "pending_detectors": record["pending_detectors"]}, work, repo)
+    with safe_write_path(run / "candidates.csv", work, repo).open("w", newline="", encoding="utf-8-sig") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(["event_id", "unit_id", "type", "relation", "confidence", "status", "score", "locators", "reasons", "related_events", "raw_source_words", "raw_output_words", "crops", "component_scores"])
+        for candidate in reports:
+            raw = [" | ".join(" ".join(w["raw"] for w in region["words"]) for region in candidate["raw_observations"][role])
+                   for role in ("source", "output")]
+            writer.writerow([csv_cell(candidate[key]) for key in ("event_id", "unit_id", "type", "relation", "confidence", "status", "primary_score")]
+                + [csv_cell(json.dumps(candidate["locators"], ensure_ascii=False)),
+                   csv_cell("; ".join(candidate["confidence_reasons"])), csv_cell("; ".join(candidate.get("linked_events", [])))]
+                + [csv_cell(value) for value in raw]
+                + [csv_cell(json.dumps(candidate.get(key, {}), ensure_ascii=False)) for key in ("crops", "component_scores")])
+    escape = lambda value: html.escape(str(value), quote=True)
+    sections = ["<!doctype html><html><head><meta charset='utf-8'><title>Inner-tomi inspection</title>",
+        "<style>body{font:16px system-ui;margin:2rem;max-width:1400px}img{max-width:100%;display:block}pre{white-space:pre-wrap;overflow-wrap:anywhere}article{border-top:2px solid #aaa;margin:2rem 0;padding:1rem 0}table{border-collapse:collapse}td,th{padding:.3rem;border:1px solid #aaa}.high{color:#8b2500}.low{color:#775500}.unknown{color:#555}</style></head><body>",
+        f"<h1>Inner-tomi inspection: {escape(record['scope'])}</h1><p>{len(coverage)} requested body pages; "
+        f"{sum(r['completed'] for r in coverage)} completed; {len(record['units'])} requested units. "
+        f"Corpus inventory: {len(reader_map['body_pages'])} body pages / {len(reader_map['units'])} units.</p>",
+        "<p>Scores measure correspondence, not probabilities. Low-confidence and inconclusive observations remain visible. "
+        "Matched endpoints do not establish interior completeness. These are inspection candidates, not repair instructions.</p>",
+        "<p><a href='candidates.json'>Candidate JSON</a> · <a href='candidates.csv'>CSV</a> · <a href='report-data.json'>Raw observations</a> · "
+        "<a href='coverage.json'>Coverage</a> · <a href='errors.json'>Errors and limitations</a> · <a href='run-manifest.json'>Run/input identities</a></p>"]
+    for path in sorted(run.glob("evaluation-*.json")):
+        evaluation = json.loads(path.read_text(encoding="utf-8"))
+        sections.append(f"<p><a href='{quote(path.name)}'>{escape(path.name)}</a>: {escape(json.dumps(evaluation['counts']))}</p>")
+    sections.append(f"<p>{len(reports)} recorded candidates/endpoint observations; {len(limitations)} explicit image-correspondence limitations.</p>")
+    for candidate in sorted(reports, key=lambda c: ({"high": 0, "low": 1, "unknown": 2}[c["confidence"]], c["event_id"])):
+        sections.append(f"<article id='{escape(candidate['event_id'])}'><h2>{escape(candidate['event_id'])}</h2>"
+            f"<p class='{candidate['confidence']}'>{escape(candidate['type'])} · {escape(candidate['relation'])} · "
+            f"{escape(candidate['confidence'])} · {escape(candidate['status'])} · score {escape(candidate['primary_score'])}</p>")
+        sections.append("<ul>" + "".join(f"<li>{escape(reason)}</li>" for reason in candidate["confidence_reasons"]) + "</ul>")
+        for locator in candidate["locators"]:
+            if locator["role"] == "source":
+                label = f"Source v{locator['source_index'] + 1} physical {locator['physical_page']}; printed folio {locator['printed_folio'] or 'unknown'}"
+            else:
+                folio = locator["body_folio"] if locator["body_folio"] is not None else "unknown"
+                label = f"Reader tomus {locator['tomus']} physical {locator['physical_page']}; body folio {folio}"
+            sections.append(f"<p>{escape(label)} ({escape(locator['folio_provenance'])})</p>")
+        for crop in candidate["crops"]:
+            target = (Path(work).resolve() / relative_path(crop["path"])).resolve()
+            if not contained(target, Path(work).resolve()) or hash_file(target) != crop["sha256"]:
+                raise AuditError("Report crop identity/path mismatch")
+            link = escape(quote(os.path.relpath(target, run).replace('\\', '/'), safe='/'))
+            sections.append(f"<figure><a href='{link}'><img loading='lazy' src='{link}' alt='{escape(target.name)}'></a><figcaption>{escape(target.name)}</figcaption></figure>")
+        details = {key: candidate.get(key) for key in ("component_scores", "raw_observations", "evidence_provenance", "linked_events", "source_regions", "output_regions")}
+        sections.append(f"<details><summary>Raw OCR, scores, conditions and provenance</summary><pre>{escape(json.dumps(details, ensure_ascii=False, indent=2))}</pre></details></article>")
+    sections.append("<h2>Requested page coverage</h2><table><tr><th>Tomus/physical</th><th>Body folio</th><th>Unit</th><th>Completed</th></tr>")
+    for row in coverage:
+        folio = row['body_folio'] if row['body_folio'] is not None else 'unknown'
+        sections.append(f"<tr><td>{row['tomus']}/{row['physical_page']}</td><td>{escape(folio)} ({escape(row['folio_provenance'])})</td>"
+                        f"<td>{escape(row['unit_id'])}</td><td>{row['completed']}</td></tr>")
+    sections.append("</table></body></html>")
+    safe_write_path(run / "index.html", work, repo).write_text("".join(sections), encoding="utf-8")
+
+
+def report_run(args):
+    repo, work = Path(args.repo_root).resolve(), Path(args.work_dir).resolve()
+    run = safe_write_path(args.run_dir, work, repo)
+    record = json.loads((run / "run-manifest.json").read_text(encoding="utf-8"))
+    if hash_file(run / "candidates.json") != record["candidates_sha256"]:
+        raise AuditError("Report candidate file differs from its recorded identity")
+    root, manifest = resolve_baseline(work, record["baseline_id"])
+    payload = json.loads((run / "candidates.json").read_text(encoding="utf-8"))
+    units_path, _ = snapshot_input(root, manifest, role="units")
+    units = json.loads(units_path.read_text(encoding="utf-8"))
+    reader_map = cached_reader_map(root, manifest, work, repo)
+    validate_candidates(payload, manifest, units, DETECTOR_TYPES[record["detectors"]],
+                        record["units"], reader_map["body_pages"], work)
+    reader_streams = {}
+    requested = set(record["requested_body_pages"])
+    for row in reader_map["body_pages"]:
+        if f"{row['tomus']}:{row['page']}" not in requested:
+            continue
+        pdf, input_record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
+        observation = ocr_page_region(pdf, input_record, row["page"], OUTPUT_OCR_DPI, OUTPUT_PSM,
+                                      record["ocr"]["lang"], work, repo, box=row["body_box"])
+        reader_streams.setdefault(row["unit_id"], []).extend(
+            {"raw": word["text"], "box": word["box"], "page": row["page"], "conf": word["conf"],
+             "provider": "tesseract", "dpi": OUTPUT_OCR_DPI, "psm": OUTPUT_PSM,
+             "confidence_semantics": "raw provider confidence, not a probability"} for word in observation["words"])
+    with run_directory(run, work, repo):
+        write_report(payload["candidates"], record, reader_map, reader_streams,
+                     root, manifest, run, work, repo)
+        resolve_baseline(work, record["baseline_id"])
+        if hash_file(run / "candidates.json") != record["candidates_sha256"]:
+            raise AuditError("Candidate file changed during report generation")
+    progress(f"Report: {run / 'index.html'}")
 
 
 def cached_inventory(root, manifest, work, repo):
@@ -3894,10 +4062,11 @@ def annotate_regions(args):
                     crop.thumbnail((520, 700))
                     thumb = Image.new("RGB", (540, 745), "white")
                     thumb.paste(crop.convert("RGB"), (10, 40))
-                    ImageDraw.Draw(thumb).text((10, 10), f"{case['case_id']} {region['role']} p{region['page']} ({'gold' if region.get('box') else 'pending overview'})", fill="black")
+                    label = "reviewed gold" if case["annotation_status"] == "reviewed" else "pending localized draft" if region.get("box") else "pending overview"
+                    ImageDraw.Draw(thumb).text((10, 10), f"{case['case_id']} {region['role']} p{region['page']} ({label})", fill="black")
                     thumbs.append(thumb)
                 evidence.append({"region": region, "crop_path": target.relative_to(run).as_posix(), "render": metadata,
-                                 "localization": "gold" if region.get("box") else "overview_not_gold"})
+                                 "localization": "gold" if case["annotation_status"] == "reviewed" else "localized_draft_not_gold" if region.get("box") else "overview_not_gold"})
             sheet = Image.new("RGB", (540 * min(3, len(thumbs)), 745 * math.ceil(len(thumbs) / 3)), "white")
             for index, thumb in enumerate(thumbs):
                 sheet.paste(thumb, ((index % 3) * 540, (index // 3) * 745))
@@ -4203,7 +4372,11 @@ def make_parser():
     evaluate.add_argument("--split", choices=("development", "validation", "all"), required=True)
     evaluate.add_argument("--freeze", action="store_true", help="Freeze a complete final development detector run")
     evaluate.add_argument("--enforce-gates", action="store_true")
-    run = commands.add_parser("run", help="OCR selected readers/sources and nominate duplicate-scan, reader-order and missing-occurrence candidates; remaining detectors are reported as pending")
+    report = commands.add_parser("report", help="Write static local evidence and coverage for an existing detector run")
+    report.add_argument("--repo-root", default=".")
+    report.add_argument("--work-dir", default="tmp/pdfs/inner_tomi_audit")
+    report.add_argument("--run-dir", required=True)
+    run = commands.add_parser("run", help="Inspect selected source/reader occurrences, furniture, boundaries and layout; save a local evidence report")
     run.add_argument("--repo-root", default=".")
     run.add_argument("--work-dir", default="tmp/pdfs/inner_tomi_audit")
     run.add_argument("--baseline", required=True)
@@ -4233,6 +4406,8 @@ def main():
             annotate_regions(args)
         elif args.command == "evaluate":
             return evaluate_run(args)
+        elif args.command == "report":
+            report_run(args)
         elif args.command == "run":
             return request_run(args)
         return 0

@@ -2,9 +2,9 @@
 
 `audit_inner_tomi.py` is an offline diagnostic tool. Its commands check
 prerequisites, capture the inspected baseline, render benchmark annotations,
-extract OCR, compare source/reader occurrences and boundaries, and evaluate
-localized candidate evidence. Supplemental layout detectors are reported as
-pending until implemented.
+extract OCR, compare source/reader occurrences, boundaries, furniture and
+layout, and evaluate localized candidate evidence. Every detector run saves a
+static local evidence report, JSON/CSV candidates and coverage/error records.
 
 Use the existing Python 3.10+ interpreter. If `python` does not resolve in a
 PowerShell session, use its actual executable path; no reinstall is required.
@@ -206,6 +206,32 @@ images, so the edge of a diagnostic crop cannot establish a slice. The report
 retains affected source words, measured correlations and unmeasured extent.
 Failed registration or absent source assignments remain explicit in
 `clipping-debug-<unit>.json`.
+
+`index.html` shows every recorded candidate and endpoint observation, including
+low/unknown findings, with source/output crops, physical-page and body-folio
+locators, printed source folios when observed, confidence conditions, scores,
+related events and raw OCR/provenance. Folio provenance distinguishes printed,
+inferred and unknown values. Raw word observations can extend beyond a crop;
+their complete boxes remain visible in the evidence details. Scores are
+similarities, not probabilities. CSV cells are escaped against spreadsheet
+formula interpretation.
+
+`coverage.json` accounts for each requested body page. `errors.json` preserves
+processing failures, OCR limitations and inconclusive image registration.
+Corpus inventory and completed requested scope are displayed separately.
+The existing evaluator writes `evaluation-<split>.json`; benchmark annotations
+remain pending until independent image review. Reports do not change detector
+confidence or convert unreviewed candidates into negatives.
+
+An existing run can regenerate its report and read its original body OCR:
+
+```powershell
+python tools/audit_inner_tomi.py report --run-dir tmp/pdfs/inner_tomi_audit/runs/my-development-run
+```
+
+Run this after evaluation to show the saved hit/miss counts in the HTML.
+Candidate/input identities and evidence crop hashes are checked before report
+generation. Re-rendering a report does not rerun detector scoring.
 
 `evaluate --freeze` requires a complete final detector run over all development
 units/types and their actual body pages, reviewed development cases and
