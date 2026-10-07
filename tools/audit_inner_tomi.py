@@ -41,6 +41,7 @@ DETECTOR_TYPES = {
     "head": {"head"},
     "scraps": {"foreign_scraps"},
     "spacing": {"copied_gap", "rule", "blank_body"},
+    "clipping": {"lateral_clipping", "slicing"},
     "furniture": {"watermark", "head", "foreign_scraps"},
     "layout": {"copied_gap", "rule", "lateral_clipping", "slicing", "blank_body"},
 }
@@ -461,7 +462,7 @@ def request_run(args):
                                "tomus": row["tomus"], "box": word["box"], "conf": word["conf"]})
     source_ocr = {"requested_pages": 0, "completed_pages": 0, "unreadable": []}
     for unit in selected_source:
-        if boundary_only or args.detectors in ("watermark", "head", "scraps", "spacing"):
+        if boundary_only or args.detectors in ("watermark", "head", "scraps", "spacing", "clipping"):
             continue  # Boundary evidence uses regional raster observations below.
         pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=unit["source"])
         for page in unit["pages"]:
@@ -514,7 +515,7 @@ def request_run(args):
             blocks = (find_source_duplicates(source_unit, vectorizer, settings)
                       if active & {"duplicate", "order", "missing_occurrence"} else [])
             reader = reader_streams.get(unit_id, [])
-            path = []
+            anchors, path = [], []
             coverage = {"runs": [], "duplicates": [], "orders": []}
             omissions = []
             if reader and active and not boundary_only:
@@ -555,6 +556,10 @@ def request_run(args):
                 rows = [row for row in selected_body if row["unit_id"] == unit_id]
                 candidates.extend(find_rules_and_gaps(rows, reader, source_unit, path, active, root, manifest,
                     run, work, repo, settings, args.lang, tesseract, args.pdftoppm))
+            if active & {"lateral_clipping", "slicing"}:
+                rows = [row for row in selected_body if row["unit_id"] == unit_id]
+                candidates.extend(find_slicing_and_clipping(rows, reader, source_unit, path, active,
+                    root, manifest, run, work, repo, settings, args.pdftoppm, alternatives=anchors))
             if reader:
                 reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=reader_tomus[unit_id])[1]
                 heights = sorted(token["box"][3] - token["box"][1] for token in reader)
@@ -1280,8 +1285,11 @@ SCRAPS = {"minimum_components": 3, "minimum_lines": 2, "correlation_min": 0.80,
 SPACING = {"rule_min_line_heights": 4, "rule_max_width_line_heights": 0.30,
            "gap_min_line_pitches": 3, "source_correspondence_min": 0.85,
            "excess_gap_line_heights": 2, "white_fraction_min": 0.90}
+CLIPPING = {"correlation_min": 0.65, "high_correlation_min": 0.85,
+            "minimum_outside_ink": 4, "minimum_lateral_lines": 3,
+            "minimum_slice_components": 2, "outside_white_fraction": 0.95}
 IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss", "watermark", "head", "foreign_scraps",
-                         "copied_gap", "rule", "blank_body"}
+                         "copied_gap", "rule", "blank_body", "lateral_clipping", "slicing"}
 
 
 def detector_settings():
@@ -1299,6 +1307,7 @@ def detector_settings():
                            "head": HEAD,
                            "registration": REGISTRATION, "scraps": SCRAPS,
                            "spacing": SPACING,
+                           "clipping": CLIPPING,
                            "matrix_cap": MATRIX_CAP, "repeat_min_tokens": 16}}
 
 
@@ -2545,10 +2554,8 @@ def project_source_box(box, registration):
             float(points[:, 0].max() / rw), float(points[:, 1].max() / rh)]
 
 
-def compare_registered_region(row, source_index, source_page, box, registration, root, manifest,
-                              work, repo, pdftoppm):
-    """Compare a full-resolution output region with its independently registered source ink."""
-    import cv2
+def registered_pixels(row, source_index, source_page, registration, root, manifest, work, repo, pdftoppm):
+    """Load full-resolution pixels and scale the measured affine transform to their dimensions."""
     import numpy as np
     from PIL import Image
     rp, rr = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
@@ -2565,7 +2572,17 @@ def compare_registered_region(row, source_index, source_page, box, registration,
     rx = rm["raster_dimensions"][0] / registration["reader_dimensions"][0]
     ry = rm["raster_dimensions"][1] / registration["reader_dimensions"][1]
     full_matrix = np.diag([rx, ry]) @ matrix @ np.diag([1 / sx, 1 / sy, 1])
-    bounds = pixel_bounds(box, rm["raster_dimensions"])
+    return source, target, full_matrix
+
+
+def compare_registered_region(row, source_index, source_page, box, registration, root, manifest,
+                              work, repo, pdftoppm):
+    """Compare a full-resolution output region with its independently registered source ink."""
+    import cv2
+    import numpy as np
+    source, target, full_matrix = registered_pixels(row, source_index, source_page, registration,
+                                                   root, manifest, work, repo, pdftoppm)
+    bounds = pixel_bounds(box, [target.shape[1], target.shape[0]])
     local_matrix = full_matrix.copy()
     local_matrix[:, 2] -= [bounds[0], bounds[1]]
     expected = cv2.warpAffine(source, local_matrix, (bounds[2] - bounds[0], bounds[3] - bounds[1]), borderValue=255)
@@ -2580,6 +2597,163 @@ def compare_registered_region(row, source_index, source_page, box, registration,
     source_box = union_box([source_box])
     return {"correlation": score if math.isfinite(score) else 0.0, "source_box": source_box,
             "source_box_clipped": clipped, "dpi": 300}
+
+
+def find_slicing_and_clipping(rows, reader, source_unit, path, active, root, manifest, run, work, repo,
+                             settings, pdftoppm, *, alternatives=None):
+    """Inspect original glyph ink crossing actual body edges, retaining separate cut directions."""
+    import cv2
+    import numpy as np
+    import pymupdf
+    th = settings["thresholds"]["clipping"]
+    index = source_unit["source_index"]
+    pdf, source_record = snapshot_input(root, manifest, role="source_pdf", source_index=index)
+    with pymupdf.open(pdf) as document:
+        source_words = {p: pdf_word_observations(document[p - 1])
+                        for p in sorted({t["page"] for t in source_unit["tokens"]})}
+    diagnostics, observations = [], []
+    for row in rows:
+        anchors = [a for a in (alternatives if alternatives is not None else path) if any(t["page"] == row["page"]
+                   for t in reader[a["output_start"]:a["output_end"]])]
+        pages = sorted({p for a in anchors for p in token_pages(source_unit, a["source_start"], a["source_end"])})
+        reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])[1]
+        if not pages:
+            diagnostics.append({"page": row["page"], "source_page": None, "cuts": [],
+                                "limitation": "no assigned source passage; clipping inspection is inconclusive"})
+        for page in pages:
+            registration = match_source_image(row, index, page, root, manifest, work, repo, settings, pdftoppm)
+            item = {"page": row["page"], "source_page": page, "registration": registration, "cuts": []}
+            diagnostics.append(item)
+            if not registration["matched"]:
+                continue
+            source, target, matrix = registered_pixels(row, index, page, registration,
+                                                       root, manifest, work, repo, pdftoppm)
+            expected = cv2.warpAffine(source, matrix, (target.shape[1], target.shape[0]), borderValue=255)
+            body = pixel_bounds(row["body_box"], [target.shape[1], target.shape[0]])
+            words = [w for w in source_words[page] if 0.12 < w["box"][1] < 0.94
+                     and (w["box"][0] + w["box"][2]) / 2 >= 0.50
+                     and sum("a" <= c <= "z" for c in w["raw"].casefold()) >= 3]
+            lines = group_lines([{"box": w["box"], "text": w["raw"]} for w in words])
+            line_cuts = {"left": [], "top": [], "bottom": []}
+            for line in lines:
+                members = [w for w in words if overlap({"box": w["box"]}, {"box": line["box"]})["candidate_coverage"] > 0.5]
+                for edge in line_cuts:
+                    eligible = sorted(members, key=lambda w: w["box"][0])[:1] if edge == "left" else members
+                    cut_words = []
+                    for word in eligible:
+                        projected = project_source_box(word["box"], registration)
+                        boundary = row["body_box"][0 if edge == "left" else 1 if edge == "top" else 3]
+                        axis = 0 if edge == "left" else 1
+                        if not projected[axis] < boundary < projected[axis + 2]:
+                            continue
+                        box = [max(0, projected[0]), max(0, projected[1]), min(1, projected[2]), min(1, projected[3])]
+                        if box[2] <= box[0] or box[3] <= box[1]:
+                            continue
+                        bounds = pixel_bounds(box, [target.shape[1], target.shape[0]])
+                        x0, y0, x1, y1 = bounds
+                        if x1 <= x0 or y1 <= y0:
+                            continue
+                        patch = expected[y0:y1, x0:x1]
+                        observed = target[y0:y1, x0:x1]
+                        retained = np.ones(patch.shape, dtype=bool)
+                        cut = body[0] - x0 if edge == "left" else body[1 if edge == "top" else 3] - y0
+                        if edge == "left":
+                            retained[:, :cut] = False
+                        elif edge == "top":
+                            retained[:cut, :] = False
+                        else:
+                            retained[cut:, :] = False
+                        outside = (~retained) & (patch < 160)
+                        count = int(outside.sum())
+                        if count < th["minimum_outside_ink"] or not retained.any():
+                            continue
+                        white = float((observed[outside] >= 245).mean())
+                        a, b = patch[retained].astype(float), observed[retained].astype(float)
+                        score = float(np.corrcoef(a, b)[0, 1]) if min(a.std(), b.std()) > 2 else 0.0
+                        if not math.isfinite(score) or score < th["correlation_min"] or white < th["outside_white_fraction"]:
+                            continue
+                        _, _, components, _ = cv2.connectedComponentsWithStats((patch < 160).astype(np.uint8), 8)
+                        crossing = sum(int(s[axis]) < cut < int(s[axis] + s[axis + 2])
+                                       and s[4] >= 3 and s[3] <= 2 * patch.shape[0] for s in components[1:])
+                        if edge != "left" and not crossing:
+                            continue
+                        retained_box = [max(row["body_box"][0], box[0]), max(row["body_box"][1], box[1]),
+                                        min(row["body_box"][2], box[2]), min(row["body_box"][3], box[3])]
+                        if retained_box[2] <= retained_box[0] or retained_box[3] <= retained_box[1]:
+                            continue
+                        cut_words.append({"raw_source": word["raw"], "source_box": word["box"],
+                                          "output_box": retained_box, "correlation": score,
+                                          "outside_ink_pixels": count, "outside_white_fraction": white,
+                                          "crossing_components": int(crossing)})
+                    if cut_words:
+                        line_cuts[edge].append({"source_line": line["box"], "words": cut_words})
+            for edge, cuts in line_cuts.items():
+                kind = "lateral_clipping" if edge == "left" else "slicing"
+                if kind not in active or not cuts:
+                    continue
+                components = [w for line in cuts for w in line["words"]]
+                if kind == "slicing" and sum(w["crossing_components"] for w in components) < th["minimum_slice_components"]:
+                    continue
+                item["cuts"].append({"edge": edge, "lines": cuts})
+                source_regions = [{"role": "source_pdf", "source_index": index, "page": page,
+                                   "input_sha256": source_record["sha256"], "box": w["source_box"]} for w in components]
+                output_boxes = [w["output_box"] for w in components]
+                if kind == "slicing":
+                    source_regions = [{"role": "source_pdf", "source_index": index, "page": page,
+                                       "input_sha256": source_record["sha256"], "box": line["source_line"]} for line in cuts]
+                    output_boxes = []
+                    for line in cuts:
+                        projected = project_source_box(line["source_line"], registration)
+                        output_boxes.append([max(row["body_box"][0], projected[0]), max(row["body_box"][1], projected[1]),
+                                             min(row["body_box"][2], projected[2]), min(row["body_box"][3], projected[3])])
+                output = {"role": "reader_pdf", "tomus": row["tomus"], "page": row["page"],
+                          "input_sha256": reader_record["sha256"], "box": union_box(output_boxes)}
+                score = min(w["correlation"] for w in components)
+                observations.append({"kind": kind, "edge": edge, "row": row, "source_page": page,
+                                     "source_regions": source_regions, "output_regions": [output],
+                                     "score": score, "cuts": cuts, "registration": registration})
+        progress(f"Clipping inspection {row['unit_id']} page {row['page']}")
+    candidates, consumed = [], set()
+    for number, observation in enumerate(observations):
+        if number in consumed:
+            continue
+        row = observation["row"]
+        paired = []
+        if observation["kind"] == "slicing":
+            for other_number, other in enumerate(observations):
+                if (other_number == number or other_number in consumed or other["kind"] != "slicing"
+                        or other["source_page"] != observation["source_page"] or other["edge"] == observation["edge"]):
+                    continue
+                first, second = (observation, other) if observation["edge"] == "bottom" else (other, observation)
+                if (second["row"]["page"] == first["row"]["page"] + 1
+                        and second["row"]["ordinal"] == first["row"]["ordinal"] + 1
+                        and any(overlap({"box": a["source_line"]}, {"box": b["source_line"]})["iou"] > 0.5
+                                for a in first["cuts"] for b in second["cuts"])):
+                    paired.append(other)
+                    consumed.add(other_number)
+                    break
+        group = [observation] + paired
+        consumed.add(number)
+        score = min(o["score"] for o in group)
+        strong = score >= th["high_correlation_min"] and (
+            len(observation["cuts"]) >= th["minimum_lateral_lines"] if observation["kind"] == "lateral_clipping" else bool(paired))
+        event = f"{observation['kind']}_{row['unit_id']}_{row['page']}_{observation['source_page']}_{observation['edge']}"
+        candidates.append(image_candidate(observation["kind"], event, row["unit_id"],
+            [r for o in group for r in o["source_regions"]], [r for o in group for r in o["output_regions"]],
+            score, "high" if strong else "low", "candidate",
+            {"affected_lines": sum(len(o["cuts"]) for o in group), "complementary_adjacent_page": bool(paired),
+             "source_correlations": [w["correlation"] for o in group for line in o["cuts"] for w in line["words"]]},
+            ["original glyph ink extends beyond the actual body-image boundary",
+             "retained ink corroborated on full 300-DPI images",
+             "complementary adjacent-page fragments" if paired else "complementary fragment not established",
+             "exact missing glyph count and wider extent remain unmeasured"],
+            {"method": "registered original ink at mapped image edges", "edge": observation["edge"],
+             "observations": [{"page": o["row"]["page"], "cuts": o["cuts"], "registration": o["registration"]} for o in group]},
+            root, manifest, run, work, repo))
+    write_json(run / f"clipping-debug-{source_unit['unit_id']}.json",
+               {"schema_version": 1, "unit_id": source_unit["unit_id"], "pages": diagnostics,
+                "source_assignment": "all retrieved occurrence alternatives independently image-corroborated; ambiguous physical scans remain separate"}, work, repo)
+    return candidates
 
 
 def find_foreign_scraps(rows, reader, source_unit, path, root, manifest, run, work, repo, settings, pdftoppm):

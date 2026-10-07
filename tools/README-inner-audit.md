@@ -197,6 +197,16 @@ blank-page assertion. `spacing-debug-<unit>.json` retains inspected interior gap
 including negative source-spacing comparisons. These measurements support
 inspection and do not specify repair masks.
 
+`--detectors clipping` checks original Latin glyph ink at the actual body-image
+edges. Lateral candidates compare line beginnings with retained ink and the
+white region outside the left boundary. Horizontal candidates require glyph
+components crossing a top or bottom boundary; complementary fragments on
+adjacent pages of the same unit are grouped. The comparisons use full 300-DPI
+images, so the edge of a diagnostic crop cannot establish a slice. The report
+retains affected source words, measured correlations and unmeasured extent.
+Failed registration or absent source assignments remain explicit in
+`clipping-debug-<unit>.json`.
+
 `evaluate --freeze` requires a complete final detector run over all development
 units/types and their actual body pages, reviewed development cases and
 negatives, recorded thresholds/index/tool identities, and a strong localized
