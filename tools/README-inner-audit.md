@@ -186,6 +186,17 @@ Greek OCR leaves a qualified image-supported candidate and an explicit reading
 limitation. Registration failures and per-page component counts remain in
 `scrap-debug-<unit>.json` rather than being treated as clean pages.
 
+`--detectors spacing` inspects long or broken vertical rules, possible
+prose-free body images, and gaps of at least three median line pitches.
+Full-resolution original line images resolve source-page assignments around
+large gaps. Genuine spacing within a printed source page remains negative;
+copied-margin candidates retain the two neighboring prose correspondences.
+Adjacent-page gaps are considered within a unit, excluding sparse unit endings.
+Unreadable ink remains inconclusive after regional OCR rather than becoming a
+blank-page assertion. `spacing-debug-<unit>.json` retains inspected interior gaps,
+including negative source-spacing comparisons. These measurements support
+inspection and do not specify repair masks.
+
 `evaluate --freeze` requires a complete final detector run over all development
 units/types and their actual body pages, reviewed development cases and
 negatives, recorded thresholds/index/tool identities, and a strong localized

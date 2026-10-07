@@ -40,6 +40,7 @@ DETECTOR_TYPES = {
     "watermark": {"watermark"},
     "head": {"head"},
     "scraps": {"foreign_scraps"},
+    "spacing": {"copied_gap", "rule", "blank_body"},
     "furniture": {"watermark", "head", "foreign_scraps"},
     "layout": {"copied_gap", "rule", "lateral_clipping", "slicing", "blank_body"},
 }
@@ -460,7 +461,7 @@ def request_run(args):
                                "tomus": row["tomus"], "box": word["box"], "conf": word["conf"]})
     source_ocr = {"requested_pages": 0, "completed_pages": 0, "unreadable": []}
     for unit in selected_source:
-        if boundary_only or args.detectors in ("watermark", "head", "scraps"):
+        if boundary_only or args.detectors in ("watermark", "head", "scraps", "spacing"):
             continue  # Boundary evidence uses regional raster observations below.
         pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=unit["source"])
         for page in unit["pages"]:
@@ -550,6 +551,10 @@ def request_run(args):
                 rows = [row for row in selected_body if row["unit_id"] == unit_id]
                 candidates.extend(find_foreign_scraps(rows, reader, source_unit, path, root, manifest,
                     run, work, repo, settings, args.pdftoppm))
+            if active & {"copied_gap", "rule", "blank_body"}:
+                rows = [row for row in selected_body if row["unit_id"] == unit_id]
+                candidates.extend(find_rules_and_gaps(rows, reader, source_unit, path, active, root, manifest,
+                    run, work, repo, settings, args.lang, tesseract, args.pdftoppm))
             if reader:
                 reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=reader_tomus[unit_id])[1]
                 heights = sorted(token["box"][3] - token["box"][1] for token in reader)
@@ -1272,7 +1277,11 @@ REGISTRATION = {"dpi": 150, "features": 4000, "ratio": 0.70, "minimum_inliers": 
                 "reprojection_px": 2.5, "minimum_inlier_fraction": 0.30}
 SCRAPS = {"minimum_components": 3, "minimum_lines": 2, "correlation_min": 0.80,
           "margin_body_fraction": 0.15, "greek_characters_min": 2}
-IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss", "watermark", "head", "foreign_scraps"}
+SPACING = {"rule_min_line_heights": 4, "rule_max_width_line_heights": 0.30,
+           "gap_min_line_pitches": 3, "source_correspondence_min": 0.85,
+           "excess_gap_line_heights": 2, "white_fraction_min": 0.90}
+IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss", "watermark", "head", "foreign_scraps",
+                         "copied_gap", "rule", "blank_body"}
 
 
 def detector_settings():
@@ -1289,6 +1298,7 @@ def detector_settings():
                            "watermark": WATERMARK,
                            "head": HEAD,
                            "registration": REGISTRATION, "scraps": SCRAPS,
+                           "spacing": SPACING,
                            "matrix_cap": MATRIX_CAP, "repeat_min_tokens": 16}}
 
 
@@ -2289,6 +2299,179 @@ def merge_logo_events(candidates, rows, root, manifest, run, work, repo, templat
                 "diagnostic_only": True})
         merged.append(event)
     return sorted(merged, key=lambda c: c["event_id"])
+
+
+def image_candidate(kind, event, unit, source_regions, output_regions, score, confidence, status,
+                    components, reasons, provenance, root, manifest, run, work, repo):
+    """Save shared localized image evidence and candidate fields for layout diagnostics."""
+    crops = [save_region_crop(root, manifest, region, run, work, repo, 300, f"{event}_{i}.png")
+             for i, region in enumerate(source_regions + output_regions)]
+    return {"event_id": event, "unit_id": unit, "type": kind, "relation": RELATIONS[kind],
+            "source_regions": source_regions, "output_regions": output_regions,
+            "primary_score": score, "confidence": confidence, "status": status,
+            "component_scores": components, "confidence_reasons": reasons,
+            "evidence_provenance": provenance, "linked_events": [], "crops": crops}
+
+
+def find_rules_and_gaps(rows, reader, source_unit, path, active, root, manifest, run, work, repo,
+                        settings, lang, tesseract, pdftoppm):
+    """Inspect body rules, prose-free hypotheses and source-corresponding whitespace."""
+    import cv2
+    import numpy as np
+    from PIL import Image
+    th = settings["thresholds"]["spacing"]
+    candidates, debug, page_layout = [], [], {}
+    source_index = source_unit["source_index"]
+    source_record = snapshot_input(root, manifest, role="source_pdf", source_index=source_index)[1]
+    for row in rows:
+        pdf, record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
+        raster, meta = render_page(pdf, record, row["page"], 150, work, repo, pdftoppm=pdftoppm)
+        with Image.open(raster) as image:
+            gray = np.asarray(image.convert("L"))
+        bounds = pixel_bounds(row["body_box"], meta["raster_dimensions"])
+        body = gray[bounds[1]:bounds[3], bounds[0]:bounds[2]]
+        height = ink_line_height(body) or 12
+        norm_height = height / gray.shape[0]
+        words = [w for w in reader if w["page"] == row["page"]]
+        lines = group_lines([{"box": w["box"], "text": w["raw"]} for w in words])
+        prose_lines = [line for line in lines if sum(c.isalpha() for c in line["text"]) >= 6]
+        ink = (body < 160).astype(np.uint8)
+        joined = cv2.morphologyEx(ink, cv2.MORPH_CLOSE, np.ones((max(2, round(0.5 * height)), 1), np.uint8))
+        vertical = cv2.morphologyEx(joined, cv2.MORPH_OPEN,
+                                   np.ones((max(4, round(th["rule_min_line_heights"] * height)), 1), np.uint8))
+        _, _, rules, _ = cv2.connectedComponentsWithStats(vertical, 8)
+        rule_regions = []
+        for number, component in enumerate(rules[1:]):
+            x, y, width, length, area = (int(v) for v in component)
+            if length < th["rule_min_line_heights"] * height or width > th["rule_max_width_line_heights"] * height:
+                continue
+            box = [(bounds[0] + x) / gray.shape[1], (bounds[1] + y) / gray.shape[0],
+                   (bounds[0] + x + width) / gray.shape[1], (bounds[1] + y + length) / gray.shape[0]]
+            rule_regions.append(box)
+            if "rule" in active:
+                overlapped = sum(overlap({"box": box}, {"box": w["box"]})["candidate_coverage"] > 0 for w in words
+                                 if sum(c.isalpha() for c in w["raw"]) >= 3)
+                output = {"role": "reader_pdf", "tomus": row["tomus"], "page": row["page"],
+                          "box": box, "input_sha256": record["sha256"]}
+                candidates.append(image_candidate("rule", f"rule_{row['unit_id']}_{row['page']}_{number}", row["unit_id"], [], [output],
+                    length / max(height, 1), "high" if overlapped < 3 else "low", "candidate",
+                    {"line_heights": length / height, "width_line_heights": width / height, "prose_overlap_words": overlapped},
+                    ["long narrow collinear vertical ink", "prose overlap may represent aligned letter stems" if overlapped >= 3 else "isolated from prose-word strokes"],
+                    {"method": "body connected components with collinear broken-segment closure"}, root, manifest, run, work, repo))
+        covered = any(any(t["page"] == row["page"] for t in reader[a["output_start"]:a["output_end"]]) for a in path)
+        unexplained = ink & (vertical == 0)
+        _, _, residual, _ = cv2.connectedComponentsWithStats(unexplained, 8)
+        text_ink = sum(1 for s in residual[1:] if 0.3 * height <= s[3] <= 3 * height and s[4] >= 3)
+        if "blank_body" in active and not covered and not prose_lines:
+            retry = ocr_region_retry(pdf, record, row["page"], row["body_box"], work, repo,
+                                     tesseract=tesseract, pdftoppm=pdftoppm, psm=11, lang=lang)
+            retry_text = any(sum(c.isalpha() for c in w["text"]) >= 2 for w in retry["words"])
+            if not retry_text:
+                output = {"role": "reader_pdf", "tomus": row["tomus"], "page": row["page"],
+                          "box": row["body_box"], "input_sha256": record["sha256"]}
+                candidates.append(image_candidate("blank_body", f"blank_{row['unit_id']}_{row['page']}", row["unit_id"], [], [output],
+                    float((body >= 245).mean()), "unknown" if text_ink else "low", "inconclusive" if text_ink else "candidate",
+                    {"unexplained_text_components": text_ink, "matched_prose": covered},
+                    ["body role verified", "no matched prose after regional OCR retry",
+                     "ink remains unreadable; this is not proof of a blank body" if text_ink else "no unexplained text-like ink"],
+                    {"method": "body-role prose/ink inspection", "retry": retry}, root, manifest, run, work, repo))
+        pitches = sorted(b["box"][1] - a["box"][1] for a, b in zip(prose_lines, prose_lines[1:])
+                         if b["box"][1] > a["box"][1])
+        pitch = pitches[len(pitches) // 2] if pitches else 1.5 * norm_height
+        page_layout[row["page"]] = {"lines": prose_lines, "pitch": pitch, "height": norm_height}
+        gaps = []
+        for first, second in zip(prose_lines, prose_lines[1:]):
+            gap = second["box"][1] - first["box"][3]
+            if gap >= th["gap_min_line_pitches"] * pitch:
+                gaps.append((first, second, gap))
+        for number, (first, second, gap) in enumerate(gaps):
+            box = [row["body_box"][0], first["box"][3], row["body_box"][2], second["box"][1]]
+            context = source_context_at_region(reader, path, source_unit, row["page"], box)
+            before, after = context["before"], context["after"]
+            transition = bool(before and after and before["source_page"] < after["source_page"])
+            excess, source_gap, source_regions, correlations = False, None, [], []
+            line_matches = []
+            pages = sorted({side["source_page"] for side in (before, after) if side})
+            for line in (first, second):
+                matches = []
+                for page in pages:
+                    registration = match_source_image(row, source_index, page, root, manifest, work, repo, settings, pdftoppm)
+                    if registration["matched"]:
+                        evidence = compare_registered_region(row, source_index, page, line["box"], registration,
+                                                              root, manifest, work, repo, pdftoppm)
+                        matches.append((evidence["correlation"], page, evidence, registration))
+                if matches:
+                    score, page, evidence, registration = max(matches, key=lambda value: (value[0], -value[1]))
+                    correlations.append(score)
+                    line_matches.append((page, evidence, registration))
+                    source_regions.append({"role": "source_pdf", "source_index": source_index, "page": page,
+                                           "input_sha256": source_record["sha256"], "box": evidence["source_box"]})
+            if len(line_matches) == 2 and min(correlations) >= th["source_correspondence_min"]:
+                transition = line_matches[0][0] < line_matches[1][0]
+                if line_matches[0][0] == line_matches[1][0]:
+                    a = project_source_box(line_matches[0][1]["source_box"], line_matches[0][2])
+                    b = project_source_box(line_matches[1][1]["source_box"], line_matches[1][2])
+                    source_gap = max(0.0, b[1] - a[3])
+                    excess = gap - source_gap >= th["excess_gap_line_heights"] * norm_height
+            pixels = pixel_bounds(box, meta["raster_dimensions"])
+            whiteness = float((gray[pixels[1]:pixels[3], pixels[0]:pixels[2]] >= 245).mean())
+            copied = transition or excess
+            correspondence = min(correlations) if len(correlations) == 2 else 0.0
+            debug.append({"page": row["page"], "box": box, "source_context": context, "source_gap": source_gap,
+                          "reader_gap": gap, "copied_margin_or_excess": copied, "source_correspondence": correspondence})
+            if "copied_gap" in active and copied:
+                strong = correspondence >= th["source_correspondence_min"] and whiteness >= th["white_fraction_min"]
+                output = {"role": "reader_pdf", "tomus": row["tomus"], "page": row["page"],
+                          "box": box, "input_sha256": record["sha256"]}
+                candidates.append(image_candidate("copied_gap", f"gap_{row['unit_id']}_{row['page']}_{number}", row["unit_id"], source_regions, [output],
+                    correspondence, "high" if strong else "low", "candidate",
+                    {"gap_line_pitches": gap / pitch, "source_gap": source_gap, "transition": transition,
+                     "excess_spacing": excess, "white_fraction": whiteness},
+                    ["source page transition or excess source-corresponding spacing", f"context correspondence: {correspondence:.3f}",
+                     "matched terminals do not establish interior completeness"],
+                    {"method": "source-corresponding body whitespace", "context": context}, root, manifest, run, work, repo))
+        progress(f"Layout spacing {row['unit_id']} page {row['page']}: {len(rule_regions)} rules, {len(gaps)} large gaps")
+    if "copied_gap" in active:
+        for first_row, second_row in zip(rows, rows[1:]):
+            first_layout, second_layout = page_layout[first_row["page"]], page_layout[second_row["page"]]
+            if (second_row["page"] != first_row["page"] + 1 or second_row["ordinal"] != first_row["ordinal"] + 1
+                    or not first_layout["lines"] or not second_layout["lines"]):
+                continue
+            first, second = first_layout["lines"][-1], second_layout["lines"][0]
+            gap = first_row["body_box"][3] - first["box"][3] + second["box"][1] - second_row["body_box"][1]
+            pitch = max(first_layout["pitch"], second_layout["pitch"])
+            if gap < th["gap_min_line_pitches"] * pitch:
+                continue
+            box = [first_row["body_box"][0], first["box"][3], first_row["body_box"][2], first_row["body_box"][3]]
+            context = source_context_at_region(reader, path, source_unit, first_row["page"], box)
+            before, after = context["before"], context["after"]
+            if not before or not after or before["source_page"] >= after["source_page"]:
+                continue
+            source_regions, scores = [], []
+            for row, line, side in ((first_row, first, before), (second_row, second, after)):
+                registration = match_source_image(row, source_index, side["source_page"], root, manifest, work, repo, settings, pdftoppm)
+                if registration["matched"]:
+                    evidence = compare_registered_region(row, source_index, side["source_page"], line["box"], registration,
+                                                          root, manifest, work, repo, pdftoppm)
+                    scores.append(evidence["correlation"])
+                    source_regions.append({"role": "source_pdf", "source_index": source_index, "page": side["source_page"],
+                                           "input_sha256": source_record["sha256"], "box": evidence["source_box"]})
+            correspondence = min(scores) if len(scores) == 2 else 0.0
+            outputs = []
+            for row, region in ((first_row, box), (second_row, [second_row["body_box"][0], second_row["body_box"][1],
+                                                                second_row["body_box"][2], max(second_row["body_box"][1] + 0.001, second["box"][1])])):
+                record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])[1]
+                outputs.append({"role": "reader_pdf", "tomus": row["tomus"], "page": row["page"],
+                                "input_sha256": record["sha256"], "box": region})
+            candidates.append(image_candidate("copied_gap", f"gap_{first_row['unit_id']}_{first_row['page']}_{second_row['page']}",
+                first_row["unit_id"], source_regions, outputs, correspondence,
+                "high" if correspondence >= th["source_correspondence_min"] else "low", "candidate",
+                {"gap_line_pitches": gap / pitch, "transition": True, "cross_page": True},
+                ["copied source-page margin between matched prose contexts", f"context correspondence: {correspondence:.3f}"],
+                {"method": "same-unit adjacent-image margin inspection", "context": context}, root, manifest, run, work, repo))
+    write_json(run / f"spacing-debug-{source_unit['unit_id']}.json", {"schema_version": 1,
+               "unit_id": source_unit["unit_id"], "gaps": debug}, work, repo)
+    return candidates
 
 
 def pdf_word_observations(page):
