@@ -406,9 +406,38 @@ def request_run(args):
         selected = [u for u in selected if u in tomus_units]
         if not selected:
             raise AuditError("Tomus subset contains no units in the requested scope")
-    safe_write_path(args.run_dir, work, repo)
     progress(f"Authorized {args.scope} scope: {len(selected)} units, {args.detectors} detectors")
-    raise AuditError("Detector stages are not implemented yet; no reader OCR, alignment or detector scores were produced. Annotation and metadata preparation are available.")
+    reader_map = cached_reader_map(root, manifest, work, repo)
+    source_regions = cached_source_regions(root, manifest, work, repo)
+    selected_set = set(selected)
+    selected_body = [r for r in reader_map["body_pages"] if r["unit_id"] in selected_set]
+    selected_source = [u for u in source_regions["units"] if u["unit_id"] in selected_set]
+    summary = {
+        "schema_version": 1, "baseline_id": args.baseline, "scope": args.scope,
+        "detectors": args.detectors, "units": selected, "tomus": args.tomus,
+        "settings_sha256": json_hash(settings), "spec_hashes": hashes,
+        "input_hashes": {r["path"]: r["sha256"] for r in manifest["inputs"]},
+        "reader_inventory": {
+            "corpus_body_pages": len(reader_map["body_pages"]),
+            "corpus_units": len(reader_map["units"]),
+            "folio_offsets": {t["tomus"]: t["folio_offset"] for t in reader_map["tomi"]},
+            "folio_anomalies": {t["tomus"]: t["folio_anomalies"] for t in reader_map["tomi"] if t["folio_anomalies"]},
+            "selected_body_pages": len(selected_body),
+        },
+        "source_extraction": {
+            "corpus_units": len(source_regions["units"]),
+            "selected_units": len(selected_source),
+            "selected_source_lines": sum(u["line_count"] for u in selected_source),
+            "selected_skipped_pages": sum(len(u["skip_pages"]) for u in selected_source),
+            "limitations": [line for u in selected_source for line in u["limitations"]],
+        },
+        "detectors_pending": "OCR, tolerant comparison, alignment, image matching and reporting (Phases 3+) are not implemented yet.",
+    }
+    with run_directory(args.run_dir, work, repo) as run:
+        write_json(run / "phase2-reader-source.json", summary, work, repo)
+    progress(f"Reader inventory and source-reference extraction complete into {run}")
+    progress(summary["detectors_pending"])
+    return 3
 
 
 def cached_inventory(root, manifest, work, repo):
@@ -423,6 +452,43 @@ def cached_inventory(root, manifest, work, repo):
         write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata,
                           "data": {"body_pages": rows, "geometry": geometry}}, work, repo)
     return rows, geometry
+
+
+def cached_reader_map(root, manifest, work, repo):
+    """Build or reuse the full reader page/folio/unit map across all eight tomi."""
+    metadata = {"inputs": {r["path"]: r["sha256"] for r in manifest["inputs"]
+                           if r["role"] in ("reader_pdf", "reader_tex")},
+                "adapter": "reader-map-folios-v1"}
+    path = Path(work) / "cache" / "reader_map" / f"{json_hash(metadata)}.json"
+    cached = reusable_entry(path, metadata, work, repo)
+    if cached:
+        return cached
+    with run_directory(path.parent, work, repo):
+        data = map_reader_pages(root, manifest)
+        write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata,
+                          "data": data}, work, repo)
+    return data
+
+
+def cached_source_regions(root, manifest, work, repo):
+    """Build or reuse expected-Latin source regions for every unit across the corpus."""
+    metadata = {"inputs": {r["path"]: r["sha256"] for r in manifest["inputs"]
+                           if r["role"] in ("source_pdf", "units", "duplicate_policy")},
+                "adapter": "source-latin-regions-v1",
+                "latin_column": [SOURCE_LATIN_X0, SOURCE_LATIN_X1]}
+    path = Path(work) / "cache" / "source_regions" / f"{json_hash(metadata)}.json"
+    cached = reusable_entry(path, metadata, work, repo)
+    if cached:
+        return cached
+    units_path, _ = snapshot_input(root, manifest, role="units")
+    units = json.loads(units_path.read_text(encoding="utf-8"))
+    exclusions = read_approved_exclusions(root, manifest)
+    partitions = partition_source_units(units, exclusions)
+    with run_directory(path.parent, work, repo):
+        data = extract_source_regions(root, manifest, partitions)
+        write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata,
+                          "data": data}, work, repo)
+    return data
 
 
 def validate_box(box):
@@ -520,6 +586,291 @@ def benchmark_inventory(root, manifest):
             rows.extend(body)
             progress(f"Metadata inventory: tomus {tomus}, {len(document)} physical / {len(body)} body pages")
     return rows, geometry
+
+
+BODY_ASSET = re.compile(r"facsimile_(.+)_(\d+)\.png")
+
+
+def read_footer_folio(page):
+    """Return every generated Arabic folio printed in the bottom margin of a page.
+
+    The reader's `folio` page style prints `\\thepage` (body folio = physical page -
+    body-first page + 1) in the bottom margin; unit openings suppress it with an empty
+    page style, so a body opening carries no footer word and its folio is inferred."""
+    found = []
+    for x0, y0, x1, y1, text, *_ in page.get_text("words"):
+        label = text.strip()
+        if label.isdigit():
+            box = normalized_pdf_box(page, [x0, y0, x1, y1])
+            if box[1] >= 0.9:
+                found.append({"folio": int(label), "box": box})
+    return found
+
+
+def map_reader_pages(root, manifest):
+    """Map ordered TeX image references to displayed reader pages, folios and units.
+
+    Only actual ordered `\\includegraphics` occurrences are mapped, not unique image
+    objects; front-matter scans, blank recto separators and signature padding are kept
+    distinct from numbered body images. Printed folios come from the generated footer;
+    suppressed unit openings are inferred from the tomus's single page/folio offset."""
+    import pymupdf
+    expected = manifest["expected_counts"]
+    tomi, body_rows, unit_summaries = [], [], []
+    for tomus in range(1, 9):
+        tex, _ = snapshot_input(root, manifest, role="reader_tex", tomus=tomus)
+        pdf, record = snapshot_input(root, manifest, role="reader_pdf", tomus=tomus)
+        refs = parse_tex_refs(tex)
+        with pymupdf.open(pdf) as document:
+            scanned, occurrences = [], []
+            for number, page in enumerate(document, 1):
+                occ = enumerate_image_occurrences(page)
+                scanned.append({"page": number, "occurrences": occ,
+                                "folios": read_footer_folio(page),
+                                "word_count": len(page.get_text("words"))})
+                occurrences.extend((number, o) for o in occ)
+            if len(refs) != len(occurrences):
+                raise AuditError(f"Ambiguous tomus {tomus} image inventory: {len(refs)} TeX refs / {len(occurrences)} occurrences")
+            placements = {number: [] for number in range(1, len(document) + 1)}
+            for asset, (number, occ) in zip(refs, occurrences):
+                match = BODY_ASSET.fullmatch(Path(asset).name)
+                placements[number].append({"asset": asset, "box": occ["box"],
+                                           "unit_id": match[1] if match else None,
+                                           "ordinal": int(match[2]) if match else None})
+            body_numbers = [n for n, items in placements.items() if any(i["unit_id"] for i in items)]
+            if any(sum(1 for i in placements[n] if i["unit_id"]) > 1 for n in body_numbers):
+                raise AuditError(f"Multiple body occurrences on one tomus {tomus} page need manual mapping")
+            first_body, last_body = (min(body_numbers), max(body_numbers)) if body_numbers else (None, None)
+            offsets = {scan["page"] - scan["folios"][0]["folio"]
+                       for scan, number in zip(scanned, placements)
+                       if len(scan["folios"]) == 1 and any(i["unit_id"] for i in placements[scan["page"]])}
+            offset = next(iter(offsets)) if len(offsets) == 1 else None
+            pages, anomalies = [], []
+            for scan in scanned:
+                number = scan["page"]
+                items = placements[number]
+                body = next((i for i in items if i["unit_id"]), None)
+                front_assets = [Path(i["asset"]).name for i in items if not i["unit_id"]]
+                if body:
+                    kind = "body"
+                elif number < (first_body or 0):
+                    kind = "frontmatter"
+                elif last_body is not None and number > last_body:
+                    kind = "padding"
+                else:
+                    kind = "separator"
+                entry = {"page": number, "kind": kind, "has_image": bool(items),
+                         "image_assets": front_assets, "word_count": scan["word_count"]}
+                if body:
+                    validate_box(body["box"])
+                    is_opening = body["ordinal"] == 1
+                    printed = scan["folios"]
+                    if len(printed) == 1:
+                        folio, provenance = printed[0]["folio"], "printed"
+                        if offset is not None and number - offset != folio:
+                            anomalies.append({"page": number, "printed": folio, "offset": offset})
+                    elif offset is not None:
+                        folio, provenance = number - offset, "inferred"
+                    else:
+                        folio, provenance = None, "unknown"
+                    entry.update({"unit_id": body["unit_id"], "ordinal": body["ordinal"],
+                                  "asset": body["asset"], "body_box": body["box"],
+                                  "is_opening": is_opening, "folio": folio,
+                                  "folio_provenance": provenance})
+                    body_rows.append({"tomus": tomus, "page": number, "unit_id": body["unit_id"],
+                                      "ordinal": body["ordinal"], "asset": body["asset"],
+                                      "input_sha256": record["sha256"], "body_box": body["box"],
+                                      "folio": folio, "folio_provenance": provenance,
+                                      "is_opening": is_opening})
+                pages.append(entry)
+            tomus_body = [p for p in pages if p["kind"] == "body"]
+            if len(document) != expected["physical_by_tomus"][tomus - 1] or len(tomus_body) != expected["body_by_tomus"][tomus - 1]:
+                raise AuditError(f"Pinned page count mismatch in tomus {tomus}")
+            order, grouped = [], {}
+            for row in tomus_body:
+                grouped.setdefault(row["unit_id"], []).append(row)
+                if row["unit_id"] not in order:
+                    order.append(row["unit_id"])
+            units = []
+            for unit_id in order:
+                rows = grouped[unit_id]
+                ordinals = [r["ordinal"] for r in rows]
+                if sorted(ordinals) != list(range(1, len(rows) + 1)):
+                    raise AuditError(f"Non-contiguous body ordinals for {unit_id} in tomus {tomus}")
+                opening, closing = rows[0], rows[-1]
+                units.append({"unit_id": unit_id, "tomus": tomus, "page_count": len(rows),
+                              "opening_page": opening["page"], "opening_folio": opening["folio"],
+                              "opening_folio_provenance": opening["folio_provenance"],
+                              "closing_page": closing["page"], "closing_folio": closing["folio"]})
+            unit_summaries.extend(units)
+            tomi.append({"tomus": tomus, "input_sha256": record["sha256"],
+                         "physical_pages": len(document), "body_pages": len(tomus_body),
+                         "first_body_page": first_body, "last_body_page": last_body,
+                         "folio_offset": offset, "offset_candidates": sorted(offsets),
+                         "folio_anomalies": anomalies, "units": units, "pages": pages})
+            progress(f"Reader map: tomus {tomus}, {len(document)} physical / {len(tomus_body)} body / "
+                     f"{len(units)} units, folio offset {offset}")
+    if len(body_rows) != expected["body_pages"] or len(unit_summaries) != expected["units"]:
+        raise AuditError(f"Reader map totals {len(body_rows)} body / {len(unit_summaries)} units differ from pinned corpus counts")
+    return {"schema_version": 1, "adapter": "reader-map-folios-v1", "tomi": tomi,
+            "body_pages": body_rows, "units": unit_summaries}
+
+
+SOURCE_LATIN_X0 = 0.44  # Broad right-column/gutter start before source-word consensus.
+SOURCE_LATIN_X1 = 1.0
+SOURCE_FINAL_PAGE = {0: 637, 1: 708}
+
+
+def read_approved_exclusions(root, manifest):
+    """Read the complete unit-scoped duplicate skip_pages from approved ledger records.
+
+    Only `duplicate_page` dispositions authorize dropping expected Latin, and the whole
+    `skip_pages` list is honored, not just the representative `source_page`. Masks and
+    row exclusions never remove expected prose, so they are ignored here."""
+    policy_path, _ = snapshot_input(root, manifest, role="duplicate_policy")
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    exclusions = {}
+    for record in policy.get("repairs", []):
+        if record.get("disposition") != "duplicate_page":
+            continue
+        pages = record.get("skip_pages")
+        if (not isinstance(pages, list) or not pages
+                or any(isinstance(p, bool) or not isinstance(p, int) for p in pages)):
+            raise AuditError(f"Duplicate-page record needs an explicit skip_pages list: {record.get('finding_ids')}")
+        exclusions.setdefault((record["unit_id"], record["source"]), set()).update(pages)
+    return {key: sorted(value) for key, value in exclusions.items()}
+
+
+def partition_source_units(units, exclusions=None):
+    """Derive each unit's inclusive source range, mirroring `units.rs::ranges`.
+
+    The next unit in the same source shares its opening page as an inclusive tail cut
+    above its printed title; a source's final unit runs to its recorded `last_page`
+    (or the pinned 637/708 endpoint). Approved duplicate skips are attached per unit."""
+    exclusions = exclusions or {}
+    partitions = []
+    for index, unit in enumerate(units):
+        following = units[index + 1] if index + 1 < len(units) else None
+        if following and following["source"] == unit["source"]:
+            end_page, shared_tail = following["start_page"], True
+            tail_cut = following.get("title_top_frac")
+        else:
+            end_page = unit.get("last_page", SOURCE_FINAL_PAGE[unit["source"]])
+            shared_tail, tail_cut = False, None
+        skip_pages = exclusions.get((unit["id"], unit["source"]), [])
+        if any(not unit["start_page"] <= page <= end_page for page in skip_pages):
+            raise AuditError(f"Approved skip page outside {unit['id']} partition")
+        partitions.append({"unit_id": unit["id"], "source": unit["source"],
+                           "start_page": unit["start_page"], "end_page": end_page,
+                           "shared_tail": shared_tail, "title_top_frac": unit.get("title_top_frac"),
+                           "open_body_frac": unit.get("body_top_frac"), "tail_cut_frac": tail_cut,
+                           "skip_pages": skip_pages})
+    return partitions
+
+
+def group_lines(words):
+    """Group word observations into reading lines by vertical overlap."""
+    lines = []
+    for word in sorted(words, key=lambda w: (w["box"][1], w["box"][0])):
+        top, bottom = word["box"][1], word["box"][3]
+        height = bottom - top
+        placed = False
+        for line in lines:
+            overlap = min(bottom, line["box"][3]) - max(top, line["box"][1])
+            if overlap > 0.5 * min(height, line["box"][3] - line["box"][1]):
+                line["words"].append(word)
+                line["box"] = [min(line["box"][0], word["box"][0]), min(line["box"][1], top),
+                               max(line["box"][2], word["box"][2]), max(line["box"][3], bottom)]
+                placed = True
+                break
+        if not placed:
+            lines.append({"box": list(word["box"]), "words": [word]})
+    result = []
+    for line in sorted(lines, key=lambda l: l["box"][1]):
+        ordered = sorted(line["words"], key=lambda w: w["box"][0])
+        result.append({"box": line["box"], "text": " ".join(w["text"] for w in ordered)})
+    return result
+
+
+def extract_source_regions(root, manifest, partitions):
+    """Extract generous expected-Latin regions per unit from embedded source words.
+
+    A broad right-column region is refined to actual word extent plus a character-width
+    margin, never trimmed to the production bands. The opening title block and the shared
+    tail (next unit's territory) are cut by their fractions; head/footer furniture is
+    recorded separately so running heads and folios do not masquerade as body prose."""
+    import pymupdf
+    documents = {}
+    try:
+        results = []
+        for partition in partitions:
+            source = partition["source"]
+            if source not in documents:
+                pdf, _ = snapshot_input(root, manifest, role="source_pdf", source_index=source)
+                documents[source] = pymupdf.open(pdf)
+            document = documents[source]
+            pages, limitations = [], []
+            line_total = word_total = head_total = 0
+            for number in range(partition["start_page"], partition["end_page"] + 1):
+                if number in partition["skip_pages"]:
+                    pages.append({"page": number, "skipped": True,
+                                  "reason": "approved duplicate scan contributes no expected Latin"})
+                    continue
+                if not 1 <= number <= len(document):
+                    raise AuditError(f"Source page {number} outside {partition['unit_id']} document")
+                page = document[number - 1]
+                words = []
+                for x0, y0, x1, y1, text, *_ in page.get_text("words"):
+                    if text.strip():
+                        words.append({"box": normalized_pdf_box(page, [x0, y0, x1, y1]), "text": text})
+                is_opening = number == partition["start_page"]
+                top_cut = partition["open_body_frac"] if is_opening and partition["open_body_frac"] else 0.0
+                bottom_cut = (partition["tail_cut_frac"] if number == partition["end_page"]
+                              and partition["shared_tail"] and partition["tail_cut_frac"] else 1.0)
+                latin, head, footer = [], [], []
+                for word in words:
+                    center_x = (word["box"][0] + word["box"][2]) / 2
+                    center_y = (word["box"][1] + word["box"][3]) / 2
+                    if center_x < SOURCE_LATIN_X0:
+                        continue
+                    if center_y < top_cut or center_y >= bottom_cut:
+                        head.append(word) if center_y < top_cut else footer.append(word)
+                        continue
+                    if center_y < 0.06:
+                        head.append(word)
+                    elif center_y > 0.94:
+                        footer.append(word)
+                    latin.append(word)
+                lines = group_lines(latin)
+                if latin:
+                    widths = [(w["box"][2] - w["box"][0]) / max(len(w["text"]), 1) for w in latin]
+                    margin = sorted(widths)[len(widths) // 2]
+                    left = max(0.0, min(SOURCE_LATIN_X0, min(w["box"][0] for w in latin) - margin))
+                    region = [left, top_cut, SOURCE_LATIN_X1, bottom_cut]
+                else:
+                    region = [SOURCE_LATIN_X0, top_cut, SOURCE_LATIN_X1, bottom_cut]
+                    limitations.append(f"page {number}: no embedded Latin-column words; raster OCR consensus deferred to Phase 3")
+                validate_box(region)
+                line_total += len(lines)
+                word_total += len(latin)
+                head_total += len(head)
+                pages.append({"page": number, "skipped": False, "region": region,
+                              "lines": lines, "head_observations": head, "footer_observations": footer,
+                              "provenance": {"embedded_words": True, "open_body_cut": is_opening and top_cut > 0,
+                                             "shared_tail_cut": bottom_cut < 1.0}})
+            results.append({"unit_id": partition["unit_id"], "source": source,
+                            "start_page": partition["start_page"], "end_page": partition["end_page"],
+                            "shared_tail": partition["shared_tail"], "skip_pages": partition["skip_pages"],
+                            "line_count": line_total, "word_count": word_total, "head_count": head_total,
+                            "pages": pages, "limitations": limitations})
+            progress(f"Source extraction: {partition['unit_id']} (v{source + 1} "
+                     f"{partition['start_page']}-{partition['end_page']}), {line_total} lines, "
+                     f"{len(partition['skip_pages'])} skipped")
+    finally:
+        for document in documents.values():
+            document.close()
+    return {"schema_version": 1, "adapter": "source-latin-regions-v1",
+            "latin_column": [SOURCE_LATIN_X0, SOURCE_LATIN_X1], "units": results}
 
 
 def make_splits(units, body_pages, manifest):
@@ -1038,7 +1389,7 @@ def make_parser():
     evaluate.add_argument("--split", choices=("development", "validation", "all"), required=True)
     evaluate.add_argument("--freeze", action="store_true", help="Freeze a complete final development detector run")
     evaluate.add_argument("--enforce-gates", action="store_true")
-    run = commands.add_parser("run", help="Check protected detector scope; extraction/detection stages are not implemented yet")
+    run = commands.add_parser("run", help="Map reader pages/folios and extract expected source Latin; detector stages are not implemented yet")
     run.add_argument("--repo-root", default=".")
     run.add_argument("--work-dir", default="tmp/pdfs/inner_tomi_audit")
     run.add_argument("--baseline", required=True)
@@ -1066,7 +1417,7 @@ def main():
         elif args.command == "evaluate":
             return evaluate_run(args)
         elif args.command == "run":
-            request_run(args)
+            return request_run(args)
         return 0
     except CalibrationError as exc:
         print(f"Calibration gate failed: {exc}", file=sys.stderr, flush=True)
