@@ -409,9 +409,53 @@ def request_run(args):
     progress(f"Authorized {args.scope} scope: {len(selected)} units, {args.detectors} detectors")
     reader_map = cached_reader_map(root, manifest, work, repo)
     source_regions = cached_source_regions(root, manifest, work, repo)
+    index = cached_source_index(root, manifest, work, repo)
     selected_set = set(selected)
     selected_body = [r for r in reader_map["body_pages"] if r["unit_id"] in selected_set]
     selected_source = [u for u in source_regions["units"] if u["unit_id"] in selected_set]
+
+    tesseract = args.tesseract or shutil.which("tesseract")
+    if not tesseract:
+        raise AuditError("Tesseract must be available for OCR; supply --tesseract PATH.")
+    reader_ocr = {"requested_pages": len(selected_body), "completed_pages": 0, "unreadable": []}
+    reader_tokens = {}
+    for row in sorted(selected_body, key=lambda r: (r["tomus"], r["page"])):
+        pdf, record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
+        observation = ocr_page_region(pdf, record, row["page"], OUTPUT_OCR_DPI, OUTPUT_PSM, args.lang,
+                                      work, repo, box=row["body_box"], tesseract=tesseract, pdftoppm=args.pdftoppm)
+        reader_ocr["completed_pages"] += 1
+        if not observation["readable"]:
+            reader_ocr["unreadable"].append({"tomus": row["tomus"], "page": row["page"], "unit_id": row["unit_id"]})
+        reader_tokens.setdefault(row["unit_id"], []).extend(
+            word for line in observation["lines"] for word in line["text"].split())
+    source_ocr = {"requested_pages": 0, "completed_pages": 0, "unreadable": []}
+    for unit in selected_source:
+        pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=unit["source"])
+        for page in unit["pages"]:
+            if page.get("skipped"):
+                continue
+            source_ocr["requested_pages"] += 1
+            observation = ocr_page_region(pdf, record, page["page"], SOURCE_OCR_DPI, SOURCE_PSM, args.lang,
+                                          work, repo, box=page["region"], tesseract=tesseract, pdftoppm=args.pdftoppm)
+            source_ocr["completed_pages"] += 1
+            if not observation["readable"]:
+                source_ocr["unreadable"].append({"source_index": unit["source"], "page": page["page"], "unit_id": unit["unit_id"]})
+
+    loaded = load_source_index(index)
+    before = {view: view_identity(*vectorizer_vocab_idf(loaded[view])) for view in ("strict", "tolerant")}
+    reader_docs = []
+    for unit_id, words in reader_tokens.items():
+        views = comparison_views(words)
+        for start, end in passage_windows(len(words), LOCAL_WINDOW, LOCAL_STRIDE):
+            reader_docs.append(" ".join(view["strict"] for view in views[start:end]))
+    if reader_docs:
+        loaded["strict"].transform(reader_docs)  # Transform-only; must never refit the index.
+    after = {view: view_identity(*vectorizer_vocab_idf(loaded[view])) for view in ("strict", "tolerant")}
+    stable = before == after and all(before[view] == index["identity"][view] for view in ("strict", "tolerant"))
+    if not stable:
+        raise AuditError("Source index changed during reader-window transformation; the index must not refit.")
+    progress(f"Source index stable across {len(reader_docs)} reader windows (transform-only)")
+
     summary = {
         "schema_version": 1, "baseline_id": args.baseline, "scope": args.scope,
         "detectors": args.detectors, "units": selected, "tomus": args.tomus,
@@ -431,11 +475,19 @@ def request_run(args):
             "selected_skipped_pages": sum(len(u["skip_pages"]) for u in selected_source),
             "limitations": [line for u in selected_source for line in u["limitations"]],
         },
-        "detectors_pending": "OCR, tolerant comparison, alignment, image matching and reporting (Phases 3+) are not implemented yet.",
+        "ocr": {
+            "lang": args.lang, "provider": "tesseract_raster",
+            "tesseract_version": tesseract_version(tesseract),
+            "dpi": {"source": SOURCE_OCR_DPI, "output": OUTPUT_OCR_DPI, "retry": RETRY_OCR_DPI},
+            "psm": {"source": SOURCE_PSM, "output": OUTPUT_PSM, "retry": RETRY_PSM},
+            "reader": reader_ocr, "source": source_ocr,
+        },
+        "source_index_identity": index["identity"],
+        "detectors_pending": "Duplicate, missing-occurrence, furniture and layout detectors and reporting (Phases 4+) are not implemented yet.",
     }
     with run_directory(args.run_dir, work, repo) as run:
-        write_json(run / "phase2-reader-source.json", summary, work, repo)
-    progress(f"Reader inventory and source-reference extraction complete into {run}")
+        write_json(run / "phase3-ocr-index.json", summary, work, repo)
+    progress(f"Reader/source OCR and source index complete into {run}")
     progress(summary["detectors_pending"])
     return 3
 
@@ -486,6 +538,58 @@ def cached_source_regions(root, manifest, work, repo):
     partitions = partition_source_units(units, exclusions)
     with run_directory(path.parent, work, repo):
         data = extract_source_regions(root, manifest, partitions)
+        write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata,
+                          "data": data}, work, repo)
+    return data
+
+
+def cached_source_index(root, manifest, work, repo):
+    """Build or reuse the source-only TF-IDF index and per-unit anchor information.
+
+    The index is fit over every unit's expected-Latin windows across the whole corpus,
+    which is permitted early; reader output never contributes to the vocabulary or IDF.
+    Persisted vocabulary/IDF/settings and source hashes let later stages transform reader
+    windows without refitting."""
+    source = cached_source_regions(root, manifest, work, repo)
+    metadata = {"adapter": "source-tfidf-index-v1", "source_regions_adapter": source["adapter"],
+                "inputs": {r["path"]: r["sha256"] for r in manifest["inputs"]
+                           if r["role"] in ("source_pdf", "units", "duplicate_policy")},
+                "windows": {"long_size": LONG_WINDOW, "long_stride": LONG_STRIDE},
+                "views": VIEW_ADAPTER, "vectorizer": VECTORIZER_SETTINGS}
+    path = Path(work) / "cache" / "source_index" / f"{json_hash(metadata)}.json"
+    cached = reusable_entry(path, metadata, work, repo)
+    if cached:
+        return cached
+    units_payload, strict_docs, tolerant_docs, windows = [], [], [], []
+    for unit in source["units"]:
+        tokens = unit_source_tokens(unit)
+        views = comparison_views([token["raw"] for token in tokens])
+        strict = [view["strict"] for view in views]
+        tolerant = [view["tolerant"] for view in views]
+        for start, end in passage_windows(len(tokens), LONG_WINDOW, LONG_STRIDE):
+            windows.append({"unit_id": unit["unit_id"], "source_index": unit["source"],
+                            "start": start, "end": end})
+            strict_docs.append(" ".join(strict[start:end]))
+            tolerant_docs.append(" ".join(tolerant[start:end]))
+        units_payload.append({"unit_id": unit["unit_id"], "source_index": unit["source"],
+                              "token_count": len(tokens), "tokens": tokens,
+                              "strict": strict, "tolerant": tolerant,
+                              "anchors": anchor_information(strict)})
+    with run_directory(path.parent, work, repo):
+        fit = fit_source_index(strict_docs, tolerant_docs)
+        strict_terms, strict_idf = vectorizer_vocab_idf(fit["strict"][0])
+        tolerant_terms, tolerant_idf = vectorizer_vocab_idf(fit["tolerant"][0])
+        identity = {"adapter": metadata["adapter"], "settings": VECTORIZER_SETTINGS,
+                    "views": VIEW_ADAPTER, "windows": metadata["windows"],
+                    "unit_count": len(units_payload), "window_count": len(windows),
+                    "strict": view_identity(strict_terms, strict_idf),
+                    "tolerant": view_identity(tolerant_terms, tolerant_idf),
+                    "source_tokens_sha256": json_hash([unit["tokens"] for unit in units_payload])}
+        data = {"adapter": metadata["adapter"], "settings": VECTORIZER_SETTINGS, "views": VIEW_ADAPTER,
+                "windows_spec": metadata["windows"], "identity": identity,
+                "strict_vocabulary": strict_terms, "strict_idf": strict_idf,
+                "tolerant_vocabulary": tolerant_terms, "tolerant_idf": tolerant_idf,
+                "windows": windows, "units": units_payload}
         write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata,
                           "data": data}, work, repo)
     return data
@@ -873,6 +977,139 @@ def extract_source_regions(root, manifest, partitions):
             "latin_column": [SOURCE_LATIN_X0, SOURCE_LATIN_X1], "units": results}
 
 
+LONG_WINDOW, LONG_STRIDE = 64, 16
+LOCAL_WINDOW, LOCAL_STRIDE = 16, 4
+VIEW_ADAPTER = "strict-casefold-tolerant-ligature-longs-v1"
+VECTORIZER_SETTINGS = {"analyzer": "char", "ngram_range": [3, 5], "lowercase": False,
+                       "min_df": 1, "max_df": 1.0, "sublinear_tf": True,
+                       "smooth_idf": True, "norm": "l2"}
+LIGATURES = {"æ": "ae", "Æ": "ae", "œ": "oe", "Œ": "oe",
+             "ﬀ": "ff", "ﬁ": "fi", "ﬂ": "fl", "ﬃ": "ffi",
+             "ﬄ": "ffl", "ſ": "s"}
+
+
+def strict_view(word):
+    """Fold case and surrounding whitespace only; keep u/v/i/j and short words intact."""
+    return word.strip().casefold()
+
+
+def tolerant_view(word):
+    """Additionally expand ligatures and long-s; output Latin is never normalized by this."""
+    text = word.strip()
+    for glyph, expansion in LIGATURES.items():
+        text = text.replace(glyph, expansion)
+    return text.casefold()
+
+
+def comparison_views(words):
+    """Return raw/strict/tolerant parallel token views keyed to original word indices."""
+    return [{"index": index, "raw": raw, "strict": strict_view(raw), "tolerant": tolerant_view(raw)}
+            for index, raw in enumerate(words)]
+
+
+def passage_windows(count, size, stride):
+    """Yield (start, end) token intervals, always including the trailing tokens."""
+    if count <= 0:
+        return []
+    starts = list(range(0, max(count - size, 0) + 1, stride))
+    if starts[-1] + size < count:
+        starts.append(count - size)
+    return [(start, min(start + size, count)) for start in sorted(set(starts))]
+
+
+def anchor_information(strict_tokens):
+    """Mark tokens informative when they belong to a rare 2-4 token shingle within a unit.
+
+    A shingle is rare when it occurs at no more than max(2, 10% of the unit's tokens)
+    distinct positions. Established duplicate aliases are collapsed by callers before this;
+    natural repeated wording stays separate and simply lowers informativeness there."""
+    count = len(strict_tokens)
+    threshold = max(2, math.floor(0.10 * count))
+    informative = [False] * count
+    for size in (2, 3, 4):
+        if count < size:
+            continue
+        positions = {}
+        for start in range(count - size + 1):
+            positions.setdefault(tuple(strict_tokens[start:start + size]), []).append(start)
+        for locations in positions.values():
+            if len(locations) <= threshold:
+                for start in locations:
+                    for index in range(start, start + size):
+                        informative[index] = True
+    return {"token_count": count, "threshold": threshold,
+            "informative": informative, "informative_count": sum(informative)}
+
+
+def anchor_uniqueness(position_scores, cutoff=0.80):
+    """1 / distinct context-correct positions scoring >= cutoff; None when none qualify.
+
+    Callers collapse overlapping windows of one interval to a single position first."""
+    qualifying = sum(1 for score in position_scores if score >= cutoff)
+    return 1.0 / qualifying if qualifying else None
+
+
+def placement_margin(position_scores):
+    """Best minus second-best distinct-position score; 1.0 when no competitor exists."""
+    ordered = sorted(position_scores, reverse=True)
+    return 1.0 if len(ordered) <= 1 else ordered[0] - ordered[1]
+
+
+def fit_source_index(strict_docs, tolerant_docs):
+    """Fit strict/tolerant char TF-IDF vectorizers on source-reference windows only."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    def build(docs):
+        vectorizer = TfidfVectorizer(analyzer="char", ngram_range=(3, 5), lowercase=False,
+                                     min_df=1, max_df=1.0, sublinear_tf=True,
+                                     smooth_idf=True, norm="l2")
+        matrix = vectorizer.fit_transform(docs)
+        return vectorizer, matrix
+
+    return {"settings": VECTORIZER_SETTINGS,
+            "strict": build(strict_docs), "tolerant": build(tolerant_docs)}
+
+
+def vectorizer_vocab_idf(vectorizer):
+    terms = [term for term, _ in sorted(vectorizer.vocabulary_.items(), key=lambda kv: kv[1])]
+    return terms, [float(value) for value in vectorizer.idf_]
+
+
+def view_identity(terms, idf):
+    return {"n_features": len(terms), "vocab_sha256": json_hash(terms),
+            "idf_sha256": json_hash([round(value, 10) for value in idf])}
+
+
+def rebuild_vectorizer(vocabulary, idf):
+    """Rebuild a transform-only vectorizer from persisted vocabulary/IDF; never refit."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    import numpy
+    vectorizer = TfidfVectorizer(analyzer="char", ngram_range=(3, 5), lowercase=False,
+                                 sublinear_tf=True, smooth_idf=True, norm="l2",
+                                 vocabulary={term: index for index, term in enumerate(vocabulary)})
+    vectorizer._validate_vocabulary()
+    vectorizer.idf_ = numpy.asarray(idf, dtype=numpy.float64)
+    return vectorizer
+
+
+def load_source_index(index):
+    """Reconstruct transform-only vectorizers; reader windows never alter vocabulary/IDF."""
+    return {"strict": rebuild_vectorizer(index["strict_vocabulary"], index["strict_idf"]),
+            "tolerant": rebuild_vectorizer(index["tolerant_vocabulary"], index["tolerant_idf"])}
+
+
+def unit_source_tokens(unit):
+    """Flatten a unit's expected-Latin line tokens with page/line provenance."""
+    tokens = []
+    for page in unit["pages"]:
+        if page.get("skipped"):
+            continue
+        for line_index, line in enumerate(page["lines"]):
+            for word in line["text"].split():
+                tokens.append({"raw": word, "page": page["page"], "line": line_index})
+    return tokens
+
+
 def make_splits(units, body_pages, manifest):
     ids = {u["id"] for u in units}
     if len(ids) != 68 or not (DEVELOPMENT_UNITS | VALIDATION_UNITS) <= ids:
@@ -1025,6 +1262,138 @@ def render_page(pdf, record, page_number, dpi, work, repo, *, pdftoppm=None):
         return raster, data
     finally:
         lock.unlink()
+
+
+SOURCE_OCR_DPI = 300   # Source columns read at full resolution.
+OUTPUT_OCR_DPI = 180   # Reader body pages read coarsely first.
+RETRY_OCR_DPI = 300    # Implicated regions retried at full resolution.
+SOURCE_PSM = 6         # Assume a single uniform block for a source column.
+OUTPUT_PSM = 3         # Full automatic segmentation for a whole reader page.
+RETRY_PSM = 11         # Sparse-text alternate for regional retries.
+OCR_ADAPTER = "tesseract-tsv-v1"
+
+
+def tesseract_version(executable):
+    return run_external([executable, "--version"]).splitlines()[0]
+
+
+def parse_tesseract_tsv(tsv):
+    """Parse Tesseract TSV output into word rows with pixel boxes and raw confidence."""
+    records = tsv.splitlines()
+    if not records:
+        return []
+    column = {name: index for index, name in enumerate(records[0].split("\t"))}
+    rows = []
+    for line in records[1:]:
+        fields = line.split("\t")
+        if len(fields) <= column["text"] or int(fields[column["level"]]) != 5:
+            continue
+        text = fields[column["text"]]
+        if not text.strip():
+            continue
+        left, top = int(fields[column["left"]]), int(fields[column["top"]])
+        width, height = int(fields[column["width"]]), int(fields[column["height"]])
+        rows.append({"line_id": [int(fields[column["block_num"]]), int(fields[column["par_num"]]),
+                                 int(fields[column["line_num"]])],
+                     "pixel_box": [left, top, left + width, top + height],
+                     "conf": float(fields[column["conf"]]), "text": text})
+    return rows
+
+
+def run_tesseract_tsv(image_path, *, psm, lang, tesseract, timeout=240):
+    """Run Tesseract once in TSV mode, preserving per-word boxes and confidence."""
+    with tempfile.TemporaryDirectory() as temporary:
+        base = Path(temporary) / "ocr"
+        with progress_heartbeat(f"OCR {Path(image_path).name} psm {psm}"):
+            run_external([tesseract, str(image_path), str(base), "--psm", str(psm),
+                          "-l", lang, "tsv"], timeout=timeout)
+        return parse_tesseract_tsv(base.with_suffix(".tsv").read_text(encoding="utf-8"))
+
+
+def normalize_tsv_box(pixel_box, offset, dimensions):
+    """Convert a cropped-raster TSV box back to the displayed full-raster [0,1] frame."""
+    width, height = dimensions
+    ox, oy = offset
+    box = [(pixel_box[0] + ox) / width, (pixel_box[1] + oy) / height,
+           (pixel_box[2] + ox) / width, (pixel_box[3] + oy) / height]
+    return [min(max(value, 0.0), 1.0) for value in box]
+
+
+def group_ocr_lines(words):
+    """Group OCR words by Tesseract's own line identity, ordered left to right."""
+    grouped = {}
+    for word in words:
+        grouped.setdefault(tuple(word["line_id"]), []).append(word)
+    lines = []
+    for line_id, items in grouped.items():
+        ordered = sorted(items, key=lambda w: w["box"][0])
+        lines.append({"line_id": list(line_id),
+                      "box": [min(w["box"][0] for w in ordered), min(w["box"][1] for w in ordered),
+                              max(w["box"][2] for w in ordered), max(w["box"][3] for w in ordered)],
+                      "text": " ".join(w["text"] for w in ordered),
+                      "mean_conf": sum(w["conf"] for w in ordered) / len(ordered)})
+    return sorted(lines, key=lambda l: (l["box"][1], l["box"][0]))
+
+
+def ocr_page_region(pdf, record, page_number, dpi, psm, lang, work, repo, *,
+                    box=None, tesseract=None, pdftoppm=None, timeout=240):
+    """Raster-OCR a full MediaBox page or a cropped region; boxes map to the full raster.
+
+    Reuse is keyed on the rendered pixels plus OCR settings, never a bare filename. Blank
+    output on inked body is recorded as unreadable/inconclusive, never as clean prose. The
+    embedded source words gathered in the source-region cache remain a separate observation."""
+    from PIL import Image
+    executable = tesseract or shutil.which("tesseract")
+    if not executable:
+        raise AuditError("Tesseract must be available; supply --tesseract PATH.")
+    raster, render_meta = render_page(pdf, record, page_number, dpi, work, repo, pdftoppm=pdftoppm)
+    dimensions = render_meta["raster_dimensions"]
+    version = tesseract_version(executable)
+    metadata = {"adapter": OCR_ADAPTER, "raster_sha256": render_meta["raster_sha256"],
+                "dpi": dpi, "psm": psm, "lang": lang, "tesseract_version": version,
+                "crop": [round(value, 6) for value in box] if box else None}
+    path = Path(work) / "cache" / "ocr" / f"{json_hash(metadata)}.json"
+    cached = reusable_entry(path, metadata, work, repo)
+    if cached:
+        return cached
+    clipped = False
+    if box:
+        crop_box = pixel_bounds(box, dimensions)
+        offset = (crop_box[0], crop_box[1])
+        clipped = crop_box[0] <= 0 or crop_box[1] <= 0 or crop_box[2] >= dimensions[0] or crop_box[3] >= dimensions[1]
+        with Image.open(raster) as image:
+            crop = image.crop(crop_box)
+            with tempfile.TemporaryDirectory() as temporary:
+                region_path = Path(temporary) / "region.png"
+                crop.save(region_path)
+                rows = run_tesseract_tsv(region_path, psm=psm, lang=lang, tesseract=executable, timeout=timeout)
+    else:
+        offset = (0, 0)
+        rows = run_tesseract_tsv(raster, psm=psm, lang=lang, tesseract=executable, timeout=timeout)
+    words = []
+    for row in rows:
+        normalized = normalize_tsv_box(row["pixel_box"], offset, dimensions)
+        if normalized[0] >= normalized[2] or normalized[1] >= normalized[3]:
+            continue
+        words.append({"box": normalized, "text": row["text"], "conf": row["conf"], "line_id": row["line_id"]})
+    data = {"adapter": OCR_ADAPTER, "input_sha256": record["sha256"], "path": record["path"],
+            "role": record["role"], "page": page_number, "tomus": record.get("tomus"),
+            "source_index": record.get("source_index"), "dpi": dpi, "psm": psm, "lang": lang,
+            "provider": "tesseract_raster", "tesseract_version": version,
+            "raster_dimensions": dimensions, "box": box, "clipped": clipped,
+            "word_count": len(words), "readable": bool(words),
+            "words": words, "lines": group_ocr_lines(words)}
+    write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata, "data": data}, work, repo)
+    progress(f"OCR {record['path']} page {page_number} ({'region' if box else 'full'}) "
+             f"dpi {dpi} psm {psm}: {len(words)} words{' [unreadable]' if not words else ''}")
+    return data
+
+
+def ocr_region_retry(pdf, record, page_number, box, work, repo, *,
+                     tesseract=None, pdftoppm=None, psm=RETRY_PSM, lang="eng"):
+    """Retry an implicated region at full resolution with an alternate segmentation mode."""
+    return ocr_page_region(pdf, record, page_number, RETRY_OCR_DPI, psm, lang, work, repo,
+                           box=box, tesseract=tesseract, pdftoppm=pdftoppm)
 
 
 @contextmanager
@@ -1402,6 +1771,9 @@ def make_parser():
     run.add_argument("--config", help="Semantic settings JSON; must match the freeze")
     run.add_argument("--resume", action="store_true")
     run.add_argument("--workers", type=int, choices=range(1, 5), default=1)
+    run.add_argument("--lang", default="eng", help="Tesseract OCR model language(s)")
+    run.add_argument("--pdftoppm", help="Explicit Poppler executable path")
+    run.add_argument("--tesseract", help="Explicit Tesseract executable path")
     return parser
 
 
