@@ -3,8 +3,8 @@
 `audit_inner_tomi.py` is an offline diagnostic tool. Its commands check
 prerequisites, capture the inspected baseline, render benchmark annotations,
 extract OCR, compare source/reader occurrences and boundaries, and evaluate
-localized candidate evidence. Furniture and supplemental layout detectors are
-reported as pending until implemented.
+localized candidate evidence. Running-head, foreign-scrap and supplemental
+layout detectors are reported as pending until implemented.
 
 Use the existing Python 3.10+ interpreter. If `python` does not resolve in a
 PowerShell session, use its actual executable path; no reinstall is required.
@@ -143,6 +143,22 @@ development freeze with matching settings, specs, inputs, tool/model versions,
 and source-index identity. Metadata inventory and annotation-only gold curation
 may cover the corpus before this freeze. Detector dispatch receives unit IDs
 and settings; it does not load label content.
+
+`--detectors watermark` searches mapped body images using the reviewed
+development source logos. Full logos, Google text, letter groups and shallow
+horizontal fragments retain source coordinates and pixel identities in
+`watermark-templates.json`. Matching uses grayscale and local contrast,
+consistent source/reader glyph-height measurements, and faint-ink support;
+scores are normalized correlations. Implicated regions are refined at 300 DPI.
+High confidence requires stable views, at least two observed glyphs and a
+distinct second fragment or matched source-tail context. Tiny fragments and
+failed retries remain visible with their confidence conditions.
+
+`--workers 4` can parallelize pure image searches. PDF inventory, rendering
+metadata and evidence extraction stay in the main process. Matching caches bind
+rendered pixels, source-template identities, comparison settings, OpenCV version
+and helper identity. No validation reader contributes a template or fitted
+source-index statistic.
 
 `evaluate --freeze` requires a complete final detector run over all development
 units/types and their actual body pages, reviewed development cases and

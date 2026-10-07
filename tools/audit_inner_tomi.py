@@ -37,6 +37,7 @@ DETECTOR_TYPES = {
     "core": {"missing_occurrence", "duplicate", "order", "watermark", "head"},
     "prose": {"missing_occurrence", "duplicate", "order", "terminal_loss"},
     "boundaries": {"terminal_loss"},
+    "watermark": {"watermark"},
     "furniture": {"watermark", "head", "foreign_scraps"},
     "layout": {"copied_gap", "rule", "lateral_clipping", "slicing", "blank_body"},
 }
@@ -457,7 +458,7 @@ def request_run(args):
                                "tomus": row["tomus"], "box": word["box"], "conf": word["conf"]})
     source_ocr = {"requested_pages": 0, "completed_pages": 0, "unreadable": []}
     for unit in selected_source:
-        if boundary_only:
+        if boundary_only or args.detectors == "watermark":
             continue  # Boundary evidence uses regional raster observations below.
         pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=unit["source"])
         for page in unit["pages"]:
@@ -488,6 +489,8 @@ def request_run(args):
     requested_types = DETECTOR_TYPES[args.detectors]
     pending_types = sorted(requested_types - IMPLEMENTED_DETECTORS)
     active = requested_types & IMPLEMENTED_DETECTORS
+    templates = make_templates(benchmark["templates"], source_regions, root, manifest, work, repo,
+                               settings, args.pdftoppm) if "watermark" in active else []
     vectorizer = loaded["strict"]
     index_by_unit = {unit["unit_id"]: unit for unit in index["units"]}
     region_by_unit = {unit["unit_id"]: unit for unit in source_regions["units"]}
@@ -498,8 +501,10 @@ def request_run(args):
             index_unit = index_by_unit[unit_id]
             source_unit = dict(index_unit, boxes=source_token_boxes(index_unit, region_by_unit[unit_id]))
             source_tokens = [dict(token, box=box) for token, box in zip(source_unit["tokens"], source_unit["boxes"])]
-            blocks = [] if boundary_only else find_source_duplicates(source_unit, vectorizer, settings)
+            blocks = (find_source_duplicates(source_unit, vectorizer, settings)
+                      if active & {"duplicate", "order", "missing_occurrence"} else [])
             reader = reader_streams.get(unit_id, [])
+            path = []
             coverage = {"runs": [], "duplicates": [], "orders": []}
             omissions = []
             if reader and active and not boundary_only:
@@ -524,6 +529,10 @@ def request_run(args):
                     reader, source_unit, region_by_unit[unit_id], root, manifest, run, work, repo,
                     settings, args.lang, tesseract, args.pdftoppm, reader_tomus.get(unit_id))
                 candidates.extend(boundaries[unit_id].pop("candidates"))
+            if "watermark" in active:
+                rows = [row for row in selected_body if row["unit_id"] == unit_id]
+                candidates.extend(find_watermarks(rows, reader, source_unit, path, templates,
+                    root, manifest, run, work, repo, settings, args.pdftoppm, args.workers))
             if reader:
                 reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=reader_tomus[unit_id])[1]
                 heights = sorted(token["box"][3] - token["box"][1] for token in reader)
@@ -1229,7 +1238,15 @@ OMISSION = {"min_missing_tokens": 5, "min_missing_lines": 1, "context_min_inform
 HYPHENS = "-‐‑­‒–—"
 BOUNDARY = {"source_window": 48, "output_window": 96, "coverage_min": 0.80,
             "ordered_min": 0.75, "minimum_tokens": 8, "edge_tokens": 6}
-IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss"}
+WATERMARK = {"dpi": 90, "nomination_min": 0.60, "high_min": 0.80,
+             "scale_min": 0.75, "scale_max": 1.30, "scale_step": 0.05,
+             "fallback_min": 0.30, "fallback_max": 1.50,
+             "rotation_min": -3, "rotation_max": 3, "template_std_min": 2.0,
+             "ink_fraction_min": 0.005,
+             "stable_distance_line_heights": 1.0, "glyph_support_min": 2,
+             "faint_min_gray": 110, "faint_ink_fraction_min": 0.45,
+             "partial_bands": [[0.0, 0.25], [0.25, 0.50], [0.50, 0.75], [0.75, 1.0]]}
+IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss", "watermark"}
 
 
 def detector_settings():
@@ -1243,6 +1260,7 @@ def detector_settings():
             "thresholds": {"source_duplicate": SOURCE_DUPLICATE, "retrieval": RETRIEVAL,
                            "chain": CHAIN, "duplicate_high": DUPLICATE_HIGH, "order_high": ORDER_HIGH,
                            "omission": OMISSION, "boundary": BOUNDARY,
+                           "watermark": WATERMARK,
                            "matrix_cap": MATRIX_CAP, "repeat_min_tokens": 16}}
 
 
@@ -1754,6 +1772,363 @@ def find_missing_occurrences(reader, source_unit, anchors, path, settings):
                               "left_informative": left_info, "right_informative": right_info,
                               "displaced": displaced})
     return omissions
+
+
+def image_views(gray):
+    """Keep faint grayscale ink and a local-contrast view as independent observations."""
+    import cv2
+    return {"grayscale": gray, "contrast": cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)}
+
+
+def ink_line_height(gray):
+    """Estimate character height from the same dark-ink components in source and reader.
+
+    The upper quartile excludes small punctuation and interlinear scraps; long rules
+    and page-spanning components do not supply the typography scale.
+    """
+    import cv2
+    import numpy as np
+    _, _, stats, _ = cv2.connectedComponentsWithStats((gray < 120).astype(np.uint8), 8)
+    heights = sorted(int(s[3]) for s in stats[1:] if
+                     max(4, 0.002 * gray.shape[0]) <= s[3] <= 0.06 * gray.shape[0]
+                     and 2 <= s[2] <= 3 * s[3] and s[4] >= 5)
+    return float(heights[3 * len(heights) // 4]) if len(heights) >= 8 else None
+
+
+def make_templates(spec, source_regions, root, manifest, work, repo, settings, pdftoppm):
+    """Derive full, word-group and partial-height templates from reviewed source logos.
+
+    Every fragment retains its original source crop and pixel offset. No reader image,
+    label, candidate score or expected output location contributes to template pixels.
+    """
+    import cv2
+    import numpy as np
+    from PIL import Image
+    th = settings["thresholds"]["watermark"]
+    templates = []
+    for entry in spec["templates"]:
+        if entry["annotation_status"] != "reviewed":
+            raise AuditError("Watermark templates require reviewed original-source regions")
+        for region in entry["source_regions"]:
+            pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=region["source_index"])
+            if region["input_sha256"] != record["sha256"]:
+                raise AuditError("Watermark template source hash differs from captured PDF")
+            raster, meta = render_page(pdf, record, region["page"], 300, work, repo, pdftoppm=pdftoppm)
+            with Image.open(raster) as image:
+                full = np.asarray(image.convert("L"))
+            bounds = pixel_bounds(region["box"], meta["raster_dimensions"])
+            gray = full[bounds[1]:bounds[3], bounds[0]:bounds[2]].copy()
+            ink = gray < 248
+            if float(gray.std()) < th["template_std_min"] or float(ink.mean()) < th["ink_fraction_min"]:
+                raise AuditError(f"Constant or near-empty watermark template: {entry['template_id']}")
+            ys, xs = np.where(ink)
+            tight = [max(0, int(xs.min()) - 2), max(0, int(ys.min()) - 2),
+                     min(gray.shape[1], int(xs.max()) + 3), min(gray.shape[0], int(ys.max()) + 3)]
+            mask = (ink * 255).astype(np.uint8)
+            _, _, components, _ = cv2.connectedComponentsWithStats(mask, 8)
+            maximum_height = max((int(c[3]) for c in components[1:]), default=0)
+            letters = [c for c in components[1:] if c[3] >= 0.45 * maximum_height and c[4] >= 8]
+            letters = sorted(letters, key=lambda c: int(c[0]))
+            fragments = [("full_logo", tight, max(len(letters), 2))]
+            if len(letters) >= 3:
+                word = [min(int(c[0]) for c in letters), min(int(c[1]) for c in letters),
+                        max(int(c[0] + c[2]) for c in letters), max(int(c[1] + c[3]) for c in letters)]
+                fragments.append(("logo_word", word, len(letters)))
+                for name, group in (("left_glyph_group", letters[:2]), ("right_glyph_group", letters[-3:])):
+                    box = [min(int(c[0]) for c in group), min(int(c[1]) for c in group),
+                           max(int(c[0] + c[2]) for c in group), max(int(c[1] + c[3]) for c in group)]
+                    fragments.append((name, box, len(group)))
+                midpoint = (word[1] + word[3]) // 2
+                fragments.extend([("upper_logo", [word[0], word[1], word[2], midpoint], len(letters)),
+                                  ("lower_logo", [word[0], midpoint, word[2], word[3]], len(letters))])
+                for index, (top, bottom) in enumerate(th["partial_bands"]):
+                    y0 = word[1] + round(top * (word[3] - word[1]))
+                    y1 = word[1] + round(bottom * (word[3] - word[1]))
+                    support = sum(int(c[1]) < y1 and y0 < int(c[1] + c[3]) for c in letters)
+                    fragments.append((f"logo_band_{index}", [word[0], y0, word[2], y1], support))
+            source_heights = [line["box"][3] - line["box"][1]
+                              for unit in source_regions["units"] if unit["source"] == region["source_index"]
+                              for page in unit["pages"] if page["page"] == region["page"]
+                              for line in page.get("lines", []) if len(line["text"].split()) >= 4]
+            source_height = (sorted(source_heights)[len(source_heights) // 2] * meta["raster_dimensions"][1]
+                             if source_heights else None)
+            column = pixel_bounds([0.52, 0.10, 0.97, 0.90], meta["raster_dimensions"])
+            source_height = ink_line_height(full[column[1]:column[3], column[0]:column[2]]) or source_height
+            for name, box, support in fragments:
+                pixels = gray[box[1]:box[3], box[0]:box[2]].copy()
+                if min(pixels.shape) < 4 or float(pixels.std()) < th["template_std_min"]:
+                    continue
+                source_box = [(bounds[0] + box[0]) / full.shape[1], (bounds[1] + box[1]) / full.shape[0],
+                              (bounds[0] + box[2]) / full.shape[1], (bounds[1] + box[3]) / full.shape[0]]
+                templates.append({"id": f"{entry['template_id']}_{name}", "family": entry["template_id"],
+                                  "fragment_type": name, "pixels": pixels, "views": image_views(pixels),
+                                  "glyph_support": support, "source_line_height": source_height,
+                                  "offset": box[:2], "full_dimensions": [gray.shape[1], gray.shape[0]],
+                                  "glyph_boxes": [[max(int(c[0]), box[0]) - box[0],
+                                                   max(int(c[1]), box[1]) - box[1],
+                                                   min(int(c[0] + c[2]), box[2]) - box[0],
+                                                   min(int(c[1] + c[3]), box[3]) - box[1]]
+                                                  for c in letters if int(c[0]) < box[2] and box[0] < int(c[0] + c[2])
+                                                  and int(c[1]) < box[3] and box[1] < int(c[1] + c[3])],
+                                  "source_region": dict(region, box=source_box),
+                                  "pixels_sha256": hashlib.sha256(pixels.tobytes()).hexdigest()})
+    progress(f"Prepared {len(templates)} original-source watermark fragments")
+    return templates
+
+
+def group_peaks(peaks, distance):
+    """Group overlapping image peaks without dropping lower-confidence nominations."""
+    groups = []
+    for peak in sorted(peaks, key=lambda p: (-p["score"], p["template_id"], p["box"])):
+        x, y = peak["origin"]
+        group = next((g for g in groups if any(
+            math.hypot(x - p["origin"][0], y - p["origin"][1]) <= distance for p in g)), None)
+        if group is None:
+            groups.append([peak])
+        else:
+            group.append(peak)
+    return groups
+
+
+def match_templates(gray, templates, line_height, settings, *, scales=None, rotations=None):
+    """Search nonconstant source templates with normalized correlation in two views.
+
+    Returned values are similarity scores, never probabilities. Each scale/rotation/view
+    search contributes nonoverlapping local maxima; peak grouping preserves components.
+    """
+    import cv2
+    import numpy as np
+    th = settings["thresholds"]["watermark"]
+    if not gray.size or float(gray.std()) < th["template_std_min"]:
+        return []
+    views = image_views(gray)
+    faint_mask = ((gray >= th["faint_min_gray"]) & (gray < 250)).astype(np.float32)
+    peaks = []
+    results = {}
+    for template in templates:
+        ratio = line_height / template["source_line_height"] if line_height and template["source_line_height"] else None
+        bank = scales if scales is not None else (
+            [ratio * float(s) for s in np.arange(th["scale_min"], th["scale_max"] + 0.001, th["scale_step"])]
+            if ratio else [float(s) for s in np.arange(th["fallback_min"], th["fallback_max"] + 0.001, th["scale_step"])])
+        angles = rotations if rotations is not None else range(th["rotation_min"], th["rotation_max"] + 1)
+        scheduled = set()
+        for scale in bank:
+            width = round(template["pixels"].shape[1] * scale)
+            height = round(template["pixels"].shape[0] * scale)
+            if min(width, height) < 4 or width > gray.shape[1] or height > gray.shape[0]:
+                continue
+            for angle in angles:
+                if (width, height, angle) in scheduled:
+                    continue
+                scheduled.add((width, height, angle))
+                key = (template["pixels_sha256"], width, height, angle)
+                if key not in results:
+                    found = []
+                    transform = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1.0)
+                    raw_needle = cv2.resize(template["pixels"], (width, height), interpolation=cv2.INTER_AREA)
+                    raw_needle = cv2.warpAffine(raw_needle, transform, (width, height), borderValue=255)
+                    expected_ink = raw_needle < 245
+                    support = cv2.matchTemplate(faint_mask, expected_ink.astype(np.float32), cv2.TM_CCORR)
+                    support /= max(int(expected_ink.sum()), 1)
+                    for view, search in views.items():
+                        needle = cv2.resize(template["views"][view], (width, height), interpolation=cv2.INTER_AREA)
+                        needle = cv2.warpAffine(needle, transform, (width, height), borderValue=255)
+                        if float(needle.std()) < th["template_std_min"]:
+                            continue
+                        scores = cv2.matchTemplate(search, needle, cv2.TM_CCOEFF_NORMED)
+                        scores[~np.isfinite(scores)] = -1
+                        scores[support < th["faint_ink_fraction_min"]] = -1
+                        while True:
+                            _, score, _, location = cv2.minMaxLoc(scores)
+                            if score < th["nomination_min"]:
+                                break
+                            x, y = location
+                            glyph_support = 0
+                            for glyph in template["glyph_boxes"]:
+                                gx0, gx1 = round(glyph[0] * width / template["pixels"].shape[1]), round(glyph[2] * width / template["pixels"].shape[1])
+                                gy0, gy1 = round(glyph[1] * height / template["pixels"].shape[0]), round(glyph[3] * height / template["pixels"].shape[0])
+                                ink = expected_ink[gy0:gy1, gx0:gx1]
+                                values = gray[y + gy0:y + gy1, x + gx0:x + gx1][ink]
+                                if values.size >= 3 and float(np.mean((values >= th["faint_min_gray"]) & (values < 250))) >= th["faint_ink_fraction_min"]:
+                                    glyph_support += 1
+                            found.append({"view": view, "score": float(score), "rotation": angle,
+                                          "box": [x, y, x + width, y + height],
+                                          "observed_glyph_support": glyph_support,
+                                          "faint_ink_fraction": float(support[y, x])})
+                            x0, x1 = max(0, x - width // 2), min(scores.shape[1], x + width // 2 + 1)
+                            y0, y1 = max(0, y - height // 2), min(scores.shape[0], y + height // 2 + 1)
+                            scores[y0:y1, x0:x1] = -1
+                    results[key] = found
+                for peak in results[key]:
+                    peaks.append(dict(peak, template_id=template["id"], family=template["family"],
+                                      fragment_type=template["fragment_type"], scale=float(scale),
+                                      glyph_support=template["glyph_support"],
+                                      origin=[peak["box"][0] - scale * template["offset"][0],
+                                              peak["box"][1] - scale * template["offset"][1]]))
+    return group_peaks(peaks, max(line_height or 8, 4))
+
+
+def watermark_pages(rows, reader, templates, root, manifest, work, repo, settings, pdftoppm, workers):
+    """Prepare PDFs on the main thread and schedule each pure image search once.
+
+    Worker threads receive NumPy arrays and comparison data, never PDF objects.
+    Saved matches bind pixels, template identities, settings and helper code.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    import cv2
+    import inspect
+    import numpy as np
+    from PIL import Image
+    th = settings["thresholds"]["watermark"]
+    code_hash = hashlib.sha256("".join(inspect.getsource(f) for f in
+        (match_templates, group_peaks, image_views, ink_line_height)).encode()).hexdigest()
+    template_identity = [{k: v for k, v in t.items() if k not in ("pixels", "views")} for t in templates]
+    cv2.setNumThreads(1)
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        scheduled = []
+        for row in rows:
+            pdf, record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
+            raster, meta = render_page(pdf, record, row["page"], th["dpi"], work, repo, pdftoppm=pdftoppm)
+            bounds = pixel_bounds(row["body_box"], meta["raster_dimensions"])
+            with Image.open(raster) as image:
+                gray = np.asarray(image.convert("L"))[bounds[1]:bounds[3], bounds[0]:bounds[2]].copy()
+            heights = sorted(t["box"][3] - t["box"][1] for t in reader if t["page"] == row["page"])
+            pitch = ink_line_height(gray) or (heights[len(heights) // 2] * meta["raster_dimensions"][1] if heights else None)
+            metadata = {"raster_sha256": meta["raster_sha256"], "body_box": row["body_box"],
+                        "settings": th, "templates": template_identity, "line_height": pitch,
+                        "opencv_version": cv2.__version__, "helper_sha256": code_hash}
+            cache = Path(work) / "cache" / "watermark_matches" / f"{json_hash(metadata)}.json"
+            reused = reusable_entry(cache, metadata, work, repo)
+            future = None if reused is not None else executor.submit(match_templates, gray, templates, pitch, settings)
+            scheduled.append((row, meta, bounds, pitch, cache, metadata, reused, future))
+        for row, meta, bounds, pitch, cache, metadata, reused, future in scheduled:
+            groups = reused["groups"] if reused is not None else future.result()
+            if reused is None:
+                write_json(cache, {"schema_version": 1, "complete": True, "metadata": metadata,
+                                   "data": {"groups": groups}}, work, repo)
+            yield row, meta, bounds, pitch, groups
+
+
+def source_context_at_region(reader, path, source_unit, page, box):
+    """Locate the nearest occurrence-assigned prose on either side of an image region."""
+    before = max((i for i, token in enumerate(reader) if token["page"] < page or
+                  (token["page"] == page and token["box"][3] <= box[1])), default=-1)
+    after = min((i for i, token in enumerate(reader) if token["page"] > page or
+                 (token["page"] == page and token["box"][1] >= box[3])), default=len(reader))
+    left, right = None, None
+    for anchor in path:
+        preceding = min(before, anchor["output_end"] - 1)
+        following = max(after, anchor["output_start"])
+        if preceding >= anchor["output_start"]:
+            index = preceding
+            if left is None or index > left[0]:
+                left = (index, anchor["source_start"] + index - anchor["output_start"])
+        if following < anchor["output_end"]:
+            index = following
+            if right is None or index < right[0]:
+                right = (index, anchor["source_start"] + index - anchor["output_start"])
+    return {side: {"output_token": pair[0], "source_token": pair[1],
+                   "source_page": source_unit["tokens"][pair[1]]["page"]} if pair else None
+            for side, pair in (("before", left), ("after", right))}
+
+
+def source_tail_correspondence(context, source_unit, templates, root, manifest, work, repo, settings, pdftoppm):
+    """Corroborate a source footer at an occurrence-aligned transition between prose pages."""
+    import numpy as np
+    from PIL import Image
+    before, after = context["before"], context["after"]
+    if not before or not after or before["source_page"] >= after["source_page"]:
+        return None
+    pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=source_unit["source_index"])
+    raster, meta = render_page(pdf, record, before["source_page"], 300, work, repo, pdftoppm=pdftoppm)
+    bounds = pixel_bounds([SOURCE_LATIN_X0, 0.93, 1.0, 1.0], meta["raster_dimensions"])
+    with Image.open(raster) as image:
+        gray = np.asarray(image.convert("L"))[bounds[1]:bounds[3], bounds[0]:bounds[2]].copy()
+    matches = match_templates(gray, templates, None, settings, scales=[1.0], rotations=[0])
+    peaks = [p for group in matches for p in group if p["fragment_type"] in ("full_logo", "logo_word")
+             and p["score"] >= settings["thresholds"]["watermark"]["high_min"]]
+    if not peaks:
+        return None
+    peak = max(peaks, key=lambda p: (p["score"], p["fragment_type"] == "full_logo"))
+    region = {"role": "source_pdf", "source_index": source_unit["source_index"],
+              "page": before["source_page"], "input_sha256": record["sha256"],
+              "box": [(bounds[0] + peak["box"][0]) / meta["raster_dimensions"][0],
+                      (bounds[1] + peak["box"][1]) / meta["raster_dimensions"][1],
+                      (bounds[0] + peak["box"][2]) / meta["raster_dimensions"][0],
+                      (bounds[1] + peak["box"][3]) / meta["raster_dimensions"][1]]}
+    return {"region": region, "correlation": peak["score"], "context": context}
+
+
+def find_watermarks(rows, reader, source_unit, path, templates, root, manifest, run, work, repo,
+                    settings, pdftoppm, workers=1):
+    """Search actual body image occurrences, refining nominated regions at 300 DPI."""
+    import numpy as np
+    from PIL import Image
+    th = settings["thresholds"]["watermark"]
+    template_by_id = {t["id"]: t for t in templates}
+    candidates = []
+    write_json(run / "watermark-templates.json", {"schema_version": 1,
+        "templates": [{k: v for k, v in t.items() if k not in ("pixels", "views")} for t in templates]}, work, repo)
+    for row, meta, bounds, pitch, groups in watermark_pages(
+            rows, reader, templates, root, manifest, work, repo, settings, pdftoppm, workers):
+        pdf, record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
+        for number, group in enumerate(groups):
+            coarse = max(group, key=lambda p: p["score"])
+            box = union_box([[(bounds[0] + p["box"][0]) / meta["raster_dimensions"][0],
+                              (bounds[1] + p["box"][1]) / meta["raster_dimensions"][1],
+                              (bounds[0] + p["box"][2]) / meta["raster_dimensions"][0],
+                              (bounds[1] + p["box"][3]) / meta["raster_dimensions"][1]] for p in group])
+            padding = max((pitch or 8) / meta["raster_dimensions"][1], 0.01)
+            retry_box = [max(row["body_box"][0], box[0] - padding), max(row["body_box"][1], box[1] - padding),
+                         min(row["body_box"][2], box[2] + padding), min(row["body_box"][3], box[3] + padding)]
+            full_raster, full_meta = render_page(pdf, record, row["page"], 300, work, repo, pdftoppm=pdftoppm)
+            retry_bounds = pixel_bounds(retry_box, full_meta["raster_dimensions"])
+            with Image.open(full_raster) as image:
+                retry_gray = np.asarray(image.convert("L"))[retry_bounds[1]:retry_bounds[3], retry_bounds[0]:retry_bounds[2]].copy()
+            involved = [t for t in templates if t["family"] in {p["family"] for p in group}]
+            scale = coarse["scale"] * 300 / th["dpi"]
+            refined = match_templates(retry_gray, involved, (pitch * 300 / th["dpi"]) if pitch else None,
+                                      settings, scales=[scale * s for s in (0.95, 1.0, 1.05)],
+                                      rotations=range(max(-3, coarse["rotation"] - 1), min(3, coarse["rotation"] + 1) + 1))
+            refined_peaks = [p for g in refined for p in g]
+            strong = [p for p in refined_peaks if p["score"] >= th["high_min"]]
+            stable = any(p["template_id"] == q["template_id"] and p["view"] != q["view"]
+                         and math.hypot(p["box"][0] - q["box"][0], p["box"][1] - q["box"][1])
+                         <= (pitch or 8) * 300 / th["dpi"] for p in strong for q in strong)
+            distinct = {p["fragment_type"] for p in strong}
+            distinctive = {"left_glyph_group", "right_glyph_group"} <= distinct
+            supported = any(p["observed_glyph_support"] >= th["glyph_support_min"] for p in strong)
+            context = source_context_at_region(reader, path, source_unit, row["page"], box)
+            tail = source_tail_correspondence(context, source_unit, templates, root, manifest,
+                                              work, repo, settings, pdftoppm)
+            source_tail = tail is not None
+            high = stable and supported and (distinctive or source_tail)
+            event = f"watermark_{row['unit_id']}_{row['page']}_{number}"
+            output_region = {"role": "reader_pdf", "tomus": row["tomus"], "page": row["page"],
+                             "box": box, "input_sha256": record["sha256"]}
+            template_region = template_by_id[coarse["template_id"]]["source_region"]
+            source_regions = [tail["region"]] if tail else []
+            evidence = []
+            for i, region in enumerate(source_regions + [template_region, output_region]):
+                evidence.append(save_region_crop(root, manifest, region, run, work, repo, 300, f"{event}_{i}.png"))
+            candidates.append({"event_id": event, "unit_id": row["unit_id"], "type": "watermark",
+                "relation": "source_watermark", "source_regions": source_regions, "output_regions": [output_region],
+                "primary_score": max((p["score"] for p in refined_peaks), default=coarse["score"]),
+                "component_scores": {"coarse_correlation": coarse["score"], "stable_views": stable,
+                                     "distinctive_fragments": distinctive, "source_tail_match": source_tail,
+                                     "two_glyph_support": supported},
+                "confidence": "high" if high else "low", "status": "candidate" if refined_peaks else "inconclusive",
+                "confidence_reasons": [f"{name}: {'satisfied' if value else 'failed'}" for name, value in
+                                       (("stable grayscale/contrast location", stable), ("two-glyph support", supported),
+                                        ("second distinct fragment or matched source tail", distinctive or source_tail))],
+                "evidence_provenance": {"method": "original-source normalized-correlation template matching",
+                                        "coarse_peaks": group, "refined_peaks": refined_peaks,
+                                        "source_context": context, "source_tail": tail,
+                                        "template_exemplar_region": template_region,
+                                        "template_pixels_sha256": template_by_id[coarse["template_id"]]["pixels_sha256"]},
+                "linked_events": [], "crops": evidence})
+        progress(f"Watermark search {row['unit_id']} page {row['page']}: {len(groups)} grouped nominations")
+    return candidates
 
 
 def boundary_alignment(source, output, side, settings):
