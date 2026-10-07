@@ -2,8 +2,9 @@
 
 `audit_inner_tomi.py` is an offline diagnostic tool. Its commands check
 prerequisites, capture the inspected baseline, render benchmark annotations,
-and evaluate supplied localized candidate evidence.
-OCR extraction and defect detectors belong to later implementation phases.
+extract OCR, compare source/reader occurrences and boundaries, and evaluate
+localized candidate evidence. Furniture and supplemental layout detectors are
+reported as pending until implemented.
 
 Use the existing Python 3.10+ interpreter. If `python` does not resolve in a
 PowerShell session, use its actual executable path; no reinstall is required.
@@ -120,8 +121,23 @@ not-requested cases, and reviewed negative regressions. Unmatched events remain
 unreviewed. Candidate burden includes every grouped core event; precision and
 panel false-positive rate remain unset until their review samples exist.
 
-`run` currently checks scope and then reports that detector stages are not yet
-implemented. Development requests cannot expand into validation units through
+`run` extracts OCR and nominates duplicate scans, reader order changes, and
+missing occurrences. It also compares starts and terminal prose with the same
+bounded occurrence aligner. `--detectors boundaries` processes the first and
+last two body pages of each selected unit; its coverage lists those pages
+explicitly and makes no claim about interior completeness. Use `--detectors
+prose` to include interior prose checks. Boundary evidence is saved in
+`boundaries.json` and `boundaries.html`, with raw OCR, source/reader crops,
+occurrence IDs, alignment operations, retry evidence, and separate start/terminal
+results. Complete endpoint observations use `relation: complete_endpoint`;
+source-supported terminal-loss nominations require reader retries and remain
+low confidence until visual adjudication. OCR disagreement remains inconclusive.
+
+```powershell
+python tools/audit_inner_tomi.py run --baseline baseline_2026_10_06 --scope development --detectors boundaries --run-dir tmp/pdfs/inner_tomi_audit/runs/my-development-boundaries
+```
+
+Development requests cannot expand into validation units through
 `--units` or `--tomus`. Validation/all requests require an explicit complete
 development freeze with matching settings, specs, inputs, tool/model versions,
 and source-index identity. Metadata inventory and annotation-only gold curation

@@ -36,6 +36,7 @@ VALIDATION_UNITS = {
 DETECTOR_TYPES = {
     "core": {"missing_occurrence", "duplicate", "order", "watermark", "head"},
     "prose": {"missing_occurrence", "duplicate", "order", "terminal_loss"},
+    "boundaries": {"terminal_loss"},
     "furniture": {"watermark", "head", "foreign_scraps"},
     "layout": {"copied_gap", "rule", "lateral_clipping", "slicing", "blank_body"},
 }
@@ -393,6 +394,7 @@ def request_run(args):
     root, manifest = resolve_baseline(work, args.baseline)
     _, benchmark, hashes = load_benchmark(root, manifest, work, include_labels=False)
     settings = json.loads(Path(args.config).read_text(encoding="utf-8")) if args.config else detector_settings()
+    script_hash = hash_file(Path(__file__))
     freeze = check_freeze(args.freeze, settings, manifest, hashes, work) if args.freeze else None
     selected = check_scope(args.scope, args.units, benchmark["splits"], freeze=freeze)
     if args.tomus:
@@ -406,6 +408,16 @@ def request_run(args):
         selected = [u for u in selected if u in tomus_units]
         if not selected:
             raise AuditError("Tomus subset contains no units in the requested scope")
+    previous_path = safe_write_path(Path(args.run_dir) / "run-manifest.json", work, repo)
+    if previous_path.exists():
+        previous = json.loads(previous_path.read_text(encoding="utf-8"))
+        if not args.resume:
+            raise AuditError("Run already exists; choose a new --run-dir or explicitly --resume")
+        identity = {"baseline_id": args.baseline, "scope": args.scope, "detectors": args.detectors,
+                    "units": selected, "settings_sha256": json_hash(settings), "spec_hashes": hashes,
+                    "script_sha256": script_hash}
+        if any(previous.get(key) != value for key, value in identity.items()):
+            raise AuditError("Resume differs from the saved run identity; choose a new --run-dir")
     progress(f"Authorized {args.scope} scope: {len(selected)} units, {args.detectors} detectors")
     reader_map = cached_reader_map(root, manifest, work, repo)
     source_regions = cached_source_regions(root, manifest, work, repo)
@@ -413,6 +425,13 @@ def request_run(args):
     selected_set = set(selected)
     selected_body = [r for r in reader_map["body_pages"] if r["unit_id"] in selected_set]
     selected_source = [u for u in source_regions["units"] if u["unit_id"] in selected_set]
+    boundary_only = args.detectors == "boundaries"
+    if boundary_only:
+        edge_rows = []
+        for unit_id in selected:
+            rows = sorted((r for r in selected_body if r["unit_id"] == unit_id), key=lambda r: r["page"])
+            edge_rows.extend(r for i, r in enumerate(rows) if i < 2 or i >= len(rows) - 2)
+        selected_body = edge_rows
 
     tesseract = args.tesseract or shutil.which("tesseract")
     if not tesseract:
@@ -438,6 +457,8 @@ def request_run(args):
                                "tomus": row["tomus"], "box": word["box"], "conf": word["conf"]})
     source_ocr = {"requested_pages": 0, "completed_pages": 0, "unreadable": []}
     for unit in selected_source:
+        if boundary_only:
+            continue  # Boundary evidence uses regional raster observations below.
         pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=unit["source"])
         for page in unit["pages"]:
             if page.get("skipped"):
@@ -471,17 +492,17 @@ def request_run(args):
     index_by_unit = {unit["unit_id"]: unit for unit in index["units"]}
     region_by_unit = {unit["unit_id"]: unit for unit in source_regions["units"]}
     requested_pages = sorted({f"{r['tomus']}:{r['page']}" for r in selected_body})
-    candidates, alignment_debug, errors = [], {}, []
+    candidates, alignment_debug, errors, boundaries = [], {}, [], {}
     with run_directory(args.run_dir, work, repo) as run:
         for unit_id in selected:
             index_unit = index_by_unit[unit_id]
             source_unit = dict(index_unit, boxes=source_token_boxes(index_unit, region_by_unit[unit_id]))
             source_tokens = [dict(token, box=box) for token, box in zip(source_unit["tokens"], source_unit["boxes"])]
-            blocks = find_source_duplicates(source_unit, vectorizer, settings)
+            blocks = [] if boundary_only else find_source_duplicates(source_unit, vectorizer, settings)
             reader = reader_streams.get(unit_id, [])
             coverage = {"runs": [], "duplicates": [], "orders": []}
             omissions = []
-            if reader and active:
+            if reader and active and not boundary_only:
                 anchors = find_reader_occurrences(reader, source_unit, vectorizer, settings)
                 path = chain_matches(anchors, blocks, settings)
                 coverage = assign_occurrence_coverage(path, blocks, settings)
@@ -498,6 +519,11 @@ def request_run(args):
                                           "ordered", "left_informative", "right_informative",
                                           "displaced")} for om in omissions]}
             source_pdf, source_record = snapshot_input(root, manifest, role="source_pdf", source_index=index_unit["source_index"])
+            if "terminal_loss" in active:
+                boundaries[unit_id] = compare_boundaries(
+                    reader, source_unit, region_by_unit[unit_id], root, manifest, run, work, repo,
+                    settings, args.lang, tesseract, args.pdftoppm, reader_tomus.get(unit_id))
+                candidates.extend(boundaries[unit_id].pop("candidates"))
             if reader:
                 reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=reader_tomus[unit_id])[1]
                 heights = sorted(token["box"][3] - token["box"][1] for token in reader)
@@ -529,20 +555,28 @@ def request_run(args):
         versions = {name: importlib.metadata.version(name) for name in PACKAGES}
         versions.update({"python": sys.version.split()[0], "tesseract": tesseract_version(tesseract),
                          "pdftoppm": run_external([args.pdftoppm or shutil.which("pdftoppm"), "-v"]).splitlines()[0]})
+        resolve_baseline(work, args.baseline)
         candidates_payload = {"schema_version": 1, "candidates": candidates}
         write_json(run / "candidates.json", candidates_payload, work, repo)
         write_json(run / "alignment_debug.json", {"schema_version": 1, "baseline_id": args.baseline,
                    "units": alignment_debug}, work, repo)
+        write_json(run / "boundaries.json", {"schema_version": 1, "baseline_id": args.baseline,
+                   "scope": args.scope, "units": boundaries,
+                   "interior_completeness": "not established by boundary correspondence"}, work, repo)
+        if boundaries:
+            write_boundary_review(boundaries, run, work, repo)
         record = {
             "schema_version": 1, "baseline_id": args.baseline, "scope": args.scope,
             "detectors": args.detectors, "units": selected, "tomus": args.tomus,
             "settings": settings, "settings_sha256": json_hash(settings), "spec_hashes": hashes,
+            "script_sha256": script_hash,
             "input_hashes": {r["path"]: r["sha256"] for r in manifest["inputs"]},
             "candidates_sha256": hash_file(run / "candidates.json"),
             "freeze_path": str(Path(args.freeze).resolve()) if args.freeze else None,
             "requested_body_pages": requested_pages, "completed_body_pages": completed_pages,
             "implemented_detectors": sorted(active), "pending_detectors": pending_types,
             "producer": "detectors", "final_development": args.scope == "development" and args.detectors == "all",
+            "boundary_only": boundary_only, "boundary_units_completed": sorted(boundaries),
             "complete": complete, "errors": errors, "versions": versions,
             "source_index_identity": index["identity"],
             "ocr": {"lang": args.lang, "reader": reader_ocr, "source": source_ocr,
@@ -1193,7 +1227,9 @@ OMISSION = {"min_missing_tokens": 5, "min_missing_lines": 1, "context_min_inform
             "ordered_min": 0.80, "context_window": 16, "line_fraction": 0.8,
             "latin_line_fraction": 0.5, "seam_line_span": 0, "fuzzy_cover_min": 0.75}
 HYPHENS = "-‐‑­‒–—"
-IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence"}
+BOUNDARY = {"source_window": 48, "output_window": 96, "coverage_min": 0.80,
+            "ordered_min": 0.75, "minimum_tokens": 8, "edge_tokens": 6}
+IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss"}
 
 
 def detector_settings():
@@ -1206,7 +1242,8 @@ def detector_settings():
             "views": VIEW_ADAPTER,
             "thresholds": {"source_duplicate": SOURCE_DUPLICATE, "retrieval": RETRIEVAL,
                            "chain": CHAIN, "duplicate_high": DUPLICATE_HIGH, "order_high": ORDER_HIGH,
-                           "omission": OMISSION, "matrix_cap": MATRIX_CAP, "repeat_min_tokens": 16}}
+                           "omission": OMISSION, "boundary": BOUNDARY,
+                           "matrix_cap": MATRIX_CAP, "repeat_min_tokens": 16}}
 
 
 def align_tokens(source, output, mode="exact", settings=None):
@@ -1717,6 +1754,223 @@ def find_missing_occurrences(reader, source_unit, anchors, path, settings):
                               "left_informative": left_info, "right_informative": right_info,
                               "displaced": displaced})
     return omissions
+
+
+def boundary_alignment(source, output, side, settings):
+    """Align an expected edge to its reader edge, retaining token operations and IDs.
+
+    Exact anchors locate the local comparison inside the edge window; lexical matches
+    elsewhere in the unit cannot supply boundary coverage. The bounded occurrence aligner
+    handles OCR substitutions and split words, including continuations on another page.
+    """
+    th = settings["thresholds"]["boundary"]
+    if not source or not output:
+        return {"status": "inconclusive", "reason": "no readable edge tokens",
+                "coverage": 0.0, "edge_coverage": 0.0, "operations": []}
+    expected = source[:th["source_window"]] if side == "start" else source[-th["source_window"]:]
+    observed = output[:th["output_window"]] if side == "start" else output[-th["output_window"]:]
+    exact = align_tokens([t["strict"] for t in expected], [t["strict"] for t in observed])
+    anchors = [a for a in exact["runs"] if a[2] >= 3]
+    if not anchors:
+        return {"status": "inconclusive", "reason": "no context anchor at reader edge",
+                "coverage": 0.0, "edge_coverage": 0.0, "operations": [],
+                "source_tokens": expected, "output_tokens": observed}
+    anchor = max(anchors, key=lambda a: (a[2], -abs(a[0] - a[1]), -a[1]))
+    # A small allowance retains OCR insertions beside the anchored source interval.
+    offset = anchor[1] - anchor[0]
+    if side == "terminal":
+        observed = observed[max(0, offset - 8):]
+    else:
+        observed = observed[:min(len(observed), max(0, offset) + len(expected) + 8)]
+    alignment = align_tokens(expected, observed, mode="local", settings=settings)
+    if alignment.get("inconclusive"):
+        return dict(alignment, status="inconclusive", source_tokens=expected, output_tokens=observed)
+    operations = alignment["operations"]
+    first = next((i for i, op in enumerate(operations) if op["source"]), len(operations))
+    last = next((i for i in range(len(operations) - 1, -1, -1) if operations[i]["source"]), -1)
+    edge_operations = operations[first:last + 1]
+    edge_cost = sum(op["cost"] for op in edge_operations)
+    output_count = len({i for op in edge_operations for i in op["output"]})
+    alignment["full_window_ordered_similarity"] = alignment["ordered_similarity"]
+    alignment["ordered_similarity"] = max(0.0, 1 - edge_cost / max(len(expected), output_count, 1))
+    covered = set(alignment["covered_source"])
+    edge = list(range(min(th["edge_tokens"], len(expected)))) if side == "start" else list(
+        range(max(0, len(expected) - th["edge_tokens"]), len(expected)))
+    coverage = len(covered) / len(expected)
+    edge_coverage = sum(i in covered for i in edge) / len(edge)
+    matched = (len(expected) >= th["minimum_tokens"] and coverage >= th["coverage_min"]
+               and edge_coverage >= th["coverage_min"]
+               and (edge[0] if side == "start" else edge[-1]) in covered
+               and alignment["ordered_similarity"] >= th["ordered_min"])
+    return dict(alignment, status="matched" if matched else "inconclusive",
+                reason="edge correspondence" if matched else "edge OCR or correspondence unresolved",
+                coverage=coverage, edge_coverage=edge_coverage,
+                source_tokens=expected, output_tokens=observed,
+                source_occurrence_ids=[t["occurrence_id"] for t in expected])
+
+
+def write_boundary_review(boundaries, run, work, repo):
+    """Write a local comparison page with raw observations, scores and linked crops."""
+    sections = []
+    for unit, record in boundaries.items():
+        sections.append(f"<h2>{html.escape(unit)}</h2><p>Partition end: {record['partition_end_page']}; "
+                        f"observed terminal prose page: {record['terminal_source_page']}</p>")
+        for side in ("start", "terminal"):
+            edge = record[side]
+            sections.append(f"<h3>{side}: {html.escape(edge['status'])}</h3>"
+                            f"<p>{html.escape(edge['reason'])}</p>")
+            scores = {k: edge.get(k) for k in ("coverage", "edge_coverage", "ordered_similarity",
+                                              "source_raster_agreement")}
+            sections.append(f"<pre>{html.escape(json.dumps(scores, indent=2))}</pre>")
+            for role in ("source", "output"):
+                excerpt = " ".join(t["raw"] for t in edge.get(f"{role}_tokens", []))
+                sections.append(f"<p>{role} raw OCR: {html.escape(excerpt)}</p>")
+            for crop in edge["crops"]:
+                target = Path(work).resolve() / relative_path(crop["path"])
+                path = html.escape(target.relative_to(run).as_posix(), quote=True)
+                sections.append(f"<a href='{path}'><img src='{path}' alt='{path}'></a>")
+    safe_write_path(run / "boundaries.html", work, repo).write_text(
+        "<!doctype html><meta charset='utf-8'><title>Boundary correspondence</title>"
+        "<style>body{font:16px system-ui;margin:2rem;max-width:1200px}img{max-width:100%;display:block;margin:1rem 0}</style>"
+        "<h1>Starts and terminal prose</h1><p>Matched endpoints do not establish interior completeness. "
+        "Inconclusive OCR is not a terminal-loss finding.</p>" + "".join(sections), encoding="utf-8")
+
+
+def ocr_view_tokens(observation):
+    """Preserve raw raster words, page coordinates and observed reading order."""
+    tokens = []
+    for line in observation["lines"]:
+        words = [w for w in observation["words"] if w["line_id"] == line["line_id"]]
+        for word in sorted(words, key=lambda w: w["box"][0]):
+            tokens.append({"raw": word["text"], "strict": strict_view(word["text"]),
+                           "tolerant": tolerant_view(word["text"]), "box": word["box"],
+                           "page": observation["page"], "conf": word["conf"]})
+    return tokens
+
+
+def compare_boundaries(reader, source_unit, region_unit, root, manifest, run, work, repo,
+                       settings, lang, tesseract, pdftoppm, tomus):
+    """Compare actual first/last source prose independently of interior completeness.
+
+    Latin-majority lines inside the partition supply expected occurrences; following
+    title pages and punctuation do not define an endpoint. Raster observations corroborate
+    those lines. Failed correspondence remains inconclusive unless a whole terminal line
+    has source support and independent reader retries preserve its absence.
+    """
+    th = settings["thresholds"]["boundary"]
+    pdf, source_record = snapshot_input(root, manifest, role="source_pdf",
+                                         source_index=source_unit["source_index"])
+    reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=tomus)[1] if tomus else None
+    reader_pdf = snapshot_input(root, manifest, role="reader_pdf", tomus=tomus)[0] if tomus else None
+    eligible = set()
+    for page in region_unit["pages"]:
+        if page.get("skipped"):
+            continue
+        for index, line in enumerate(page["lines"]):
+            words = line["text"].split()
+            latin = sum(is_latin_token(strict_view(w)) for w in words)
+            letters = [c for c in line["text"] if c.isalpha()]
+            heading = len(words) <= 4 and letters and all(c.isupper() for c in letters)
+            if (words and latin >= settings["thresholds"]["omission"]["latin_line_fraction"] * len(words)
+                    and not heading
+                    and 0.06 <= (line["box"][1] + line["box"][3]) / 2 <= 0.94):
+                eligible.add((page["page"], index))
+    source = [dict(token, strict=source_unit["strict"][i], tolerant=source_unit["tolerant"][i],
+                   box=source_unit["boxes"][i], occurrence_id=f"{region_unit['unit_id']}:{i}")
+              for i, token in enumerate(source_unit["tokens"])
+              if (token["page"], token["line"]) in eligible and is_latin_token(source_unit["strict"][i])]
+    result = {"partition_end_page": region_unit["end_page"],
+              "terminal_source_page": source[-1]["page"] if source else None,
+              "interior_completeness": "not assessed", "candidates": []}
+    for side in ("start", "terminal"):
+        comparison = boundary_alignment(source, reader, side, settings)
+        expected = comparison.get("source_tokens", [])
+        observed = comparison.get("output_tokens", [])
+        source_regions = page_union_regions(expected, "source_pdf", source_record,
+                                             source_index=source_unit["source_index"])
+        output_regions = page_union_regions(observed, "reader_pdf", reader_record, tomus=tomus) if reader_record else []
+        source_retry = []
+        for region in source_regions:
+            observation = ocr_page_region(pdf, source_record, region["page"], 300, 6, lang, work, repo,
+                                          box=region["box"], tesseract=tesseract, pdftoppm=pdftoppm)
+            source_retry.extend(ocr_view_tokens(observation))
+        agreement = align_tokens(expected, source_retry, mode="local", settings=settings) if expected else None
+        agreement_score = (len(agreement["covered_source"]) / len(expected)
+                           if agreement and not agreement.get("inconclusive") else 0.0)
+        comparison["source_raster_agreement"] = agreement_score
+        retry_results = []
+        if comparison["status"] != "matched" and output_regions:
+            for psm in (6, 11):
+                retry = []
+                for region in output_regions:
+                    observation = ocr_page_region(reader_pdf, reader_record, region["page"], 300, psm,
+                                                  lang, work, repo, box=region["box"],
+                                                  tesseract=tesseract, pdftoppm=pdftoppm)
+                    retry.extend(ocr_view_tokens(observation))
+                retry_results.append(boundary_alignment(source, retry, side, settings))
+            if any(r["status"] == "matched" for r in retry_results):
+                comparison["status"] = "inconclusive"
+                comparison["reason"] = "reader observations conflict; retry finds correspondence"
+        if agreement_score < th["coverage_min"]:
+            comparison["status"] = "inconclusive"
+            comparison["reason"] = "source embedded/raster observations disagree"
+        covered = set(comparison.get("covered_source", []))
+        last_line = ((expected[-1]["page"], expected[-1]["line"]) if expected else None)
+        terminal_line = [i for i, t in enumerate(expected) if (t["page"], t["line"]) == last_line]
+        line_absent = bool(terminal_line) and all(i not in covered for i in terminal_line)
+        supported = set(agreement.get("covered_source", [])) if agreement else set()
+        terminal_support = (sum(i in supported for i in terminal_line) / len(terminal_line)
+                            if terminal_line else 0.0)
+        if side == "terminal" and terminal_support < th["coverage_min"]:
+            comparison["status"] = "inconclusive"
+            comparison["reason"] = "terminal source line lacks raster corroboration"
+        retries_absent = len(retry_results) == 2 and all(
+            r.get("operations") and all(i not in r.get("covered_source", []) for i in terminal_line)
+            for r in retry_results)
+        if (side == "terminal" and line_absent and retries_absent
+                and comparison.get("coverage", 0) >= 0.5 and agreement_score >= th["coverage_min"]
+                and terminal_support >= th["coverage_min"]):
+            event = f"terminal_{region_unit['unit_id']}_{expected[-1]['page']}"
+            result["candidates"].append({
+                "event_id": event, "unit_id": region_unit["unit_id"], "type": "terminal_loss",
+                "relation": "terminal_loss", "source_regions": page_union_regions(
+                    [expected[i] for i in terminal_line], "source_pdf", source_record,
+                    source_index=source_unit["source_index"]),
+                "output_regions": output_regions, "confidence": "low", "status": "candidate",
+                "primary_score": agreement_score,
+                "component_scores": {"source_raster_agreement": agreement_score,
+                                     "edge_coverage": comparison["edge_coverage"]},
+                "confidence_reasons": ["source-supported terminal line unmatched after two reader retries",
+                                       "one-sided evidence requires visual adjudication"],
+                "evidence_provenance": {"method": "source partition edge occurrence alignment with raster corroboration and two reader retries"},
+                "linked_events": [], "crops": []})
+        comparison["source_regions"], comparison["output_regions"] = source_regions, output_regions
+        comparison["reader_retries"] = retry_results
+        comparison["crops"] = []
+        for i, region in enumerate(source_regions + output_regions):
+            comparison["crops"].append(save_region_crop(root, manifest, region, run, work, repo, 300,
+                f"boundary_{region_unit['unit_id']}_{side}_{i}.png"))
+        if result["candidates"] and side == "terminal":
+            result["candidates"][-1]["crops"] = comparison["crops"]
+        if side == "terminal" and comparison["status"] == "matched":
+            result["candidates"].append({
+                "event_id": f"endpoint_{region_unit['unit_id']}_{expected[-1]['page']}",
+                "unit_id": region_unit["unit_id"], "type": "terminal_loss",
+                "relation": "complete_endpoint", "source_regions": source_regions,
+                "output_regions": output_regions, "confidence": "high", "status": "candidate",
+                "primary_score": comparison["ordered_similarity"],
+                "component_scores": {"source_raster_agreement": agreement_score,
+                                     "edge_coverage": comparison["edge_coverage"]},
+                "confidence_reasons": ["terminal occurrence matches at the reader edge",
+                                       "source raster corroborates expected prose",
+                                       "interior completeness is not established"],
+                "evidence_provenance": {"method": "source partition edge occurrence alignment",
+                                        "source_occurrence_ids": comparison["source_occurrence_ids"]},
+                "raw_ocr_excerpts": {"source": " ".join(t["raw"] for t in expected),
+                                     "output": " ".join(t["raw"] for t in observed)},
+                "linked_events": [], "crops": comparison["crops"]})
+        result[side] = comparison
+    return result
 
 
 def source_token_boxes(index_unit, region_unit):
