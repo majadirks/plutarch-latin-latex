@@ -3,8 +3,8 @@
 `audit_inner_tomi.py` is an offline diagnostic tool. Its commands check
 prerequisites, capture the inspected baseline, render benchmark annotations,
 extract OCR, compare source/reader occurrences and boundaries, and evaluate
-localized candidate evidence. Greek scrap and supplemental layout detectors
-are reported as pending until implemented.
+localized candidate evidence. Supplemental layout detectors are reported as
+pending until implemented.
 
 Use the existing Python 3.10+ interpreter. If `python` does not resolve in a
 PowerShell session, use its actual executable path; no reinstall is required.
@@ -176,6 +176,15 @@ Source folio agreement, suffix similarity, isolation and image correlation are
 separate cues; at least three cues and a source transition are needed for high
 confidence. A single glyph requires image corroboration. The report preserves
 raw OCR and Greek/Latin uncertainty rather than expanding a clipped heading.
+
+`--detectors scraps` checks marginal components against original Greek-column
+words. A shared source-image registration maps retained prose to the source
+without reading production crop policy; implicated scraps are compared at
+300 DPI. At least three corroborated components on two lines are required.
+Single reference letters cannot supply Greek-word correspondence. Missing
+Greek OCR leaves a qualified image-supported candidate and an explicit reading
+limitation. Registration failures and per-page component counts remain in
+`scrap-debug-<unit>.json` rather than being treated as clean pages.
 
 `evaluate --freeze` requires a complete final detector run over all development
 units/types and their actual body pages, reviewed development cases and

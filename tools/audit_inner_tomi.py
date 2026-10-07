@@ -39,6 +39,7 @@ DETECTOR_TYPES = {
     "boundaries": {"terminal_loss"},
     "watermark": {"watermark"},
     "head": {"head"},
+    "scraps": {"foreign_scraps"},
     "furniture": {"watermark", "head", "foreign_scraps"},
     "layout": {"copied_gap", "rule", "lateral_clipping", "slicing", "blank_body"},
 }
@@ -459,7 +460,7 @@ def request_run(args):
                                "tomus": row["tomus"], "box": word["box"], "conf": word["conf"]})
     source_ocr = {"requested_pages": 0, "completed_pages": 0, "unreadable": []}
     for unit in selected_source:
-        if boundary_only or args.detectors in ("watermark", "head"):
+        if boundary_only or args.detectors in ("watermark", "head", "scraps"):
             continue  # Boundary evidence uses regional raster observations below.
         pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=unit["source"])
         for page in unit["pages"]:
@@ -545,6 +546,10 @@ def request_run(args):
                 rows = [row for row in selected_body if row["unit_id"] == unit_id]
                 candidates.extend(find_head_candidates(rows, reader, source_unit, path, root, manifest,
                     run, work, repo, settings, args.lang, tesseract, args.pdftoppm))
+            if "foreign_scraps" in active:
+                rows = [row for row in selected_body if row["unit_id"] == unit_id]
+                candidates.extend(find_foreign_scraps(rows, reader, source_unit, path, root, manifest,
+                    run, work, repo, settings, args.pdftoppm))
             if reader:
                 reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=reader_tomus[unit_id])[1]
                 heights = sorted(token["box"][3] - token["box"][1] for token in reader)
@@ -1263,7 +1268,11 @@ WATERMARK = {"dpi": 90, "nomination_min": 0.60, "high_min": 0.80,
 HEAD = {"nomination_min": 0.80, "high_min": 0.80, "faint_min_gray": 0,
         "faint_ink_fraction_min": 0.40, "suffix_min": 0.80, "source_head_bottom": 0.12,
         "padding_line_heights": 2, "minimum_cues": 3, "image_capital_height_min": 0.70}
-IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss", "watermark", "head"}
+REGISTRATION = {"dpi": 150, "features": 4000, "ratio": 0.70, "minimum_inliers": 24,
+                "reprojection_px": 2.5, "minimum_inlier_fraction": 0.30}
+SCRAPS = {"minimum_components": 3, "minimum_lines": 2, "correlation_min": 0.80,
+          "margin_body_fraction": 0.15, "greek_characters_min": 2}
+IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss", "watermark", "head", "foreign_scraps"}
 
 
 def detector_settings():
@@ -1279,6 +1288,7 @@ def detector_settings():
                            "omission": OMISSION, "boundary": BOUNDARY,
                            "watermark": WATERMARK,
                            "head": HEAD,
+                           "registration": REGISTRATION, "scraps": SCRAPS,
                            "matrix_cap": MATRIX_CAP, "repeat_min_tokens": 16}}
 
 
@@ -2281,6 +2291,197 @@ def merge_logo_events(candidates, rows, root, manifest, run, work, repo, templat
     return sorted(merged, key=lambda c: c["event_id"])
 
 
+def pdf_word_observations(page):
+    """Preserve original embedded words in the common displayed MediaBox coordinate frame."""
+    return [{"raw": raw, "box": normalized_pdf_box(page, [x0, y0, x1, y1]),
+             "provider": "embedded_source_words", "confidence": None}
+            for x0, y0, x1, y1, raw, *_ in page.get_text("words") if raw.strip()]
+
+
+def match_source_image(row, source_index, source_page, root, manifest, work, repo, settings, pdftoppm):
+    """Register retained prose pixels to an original source page without using crop policy."""
+    import cv2
+    import numpy as np
+    from PIL import Image
+    th = settings["thresholds"]["registration"]
+    reader_pdf, reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
+    source_pdf, source_record = snapshot_input(root, manifest, role="source_pdf", source_index=source_index)
+    reader_raster, reader_meta = render_page(reader_pdf, reader_record, row["page"], th["dpi"], work, repo, pdftoppm=pdftoppm)
+    source_raster, source_meta = render_page(source_pdf, source_record, source_page, th["dpi"], work, repo, pdftoppm=pdftoppm)
+    metadata = {"reader_render": reader_meta, "source_render": source_meta,
+                "body_box": row["body_box"], "settings": th, "adapter": "source-image-affine-v1", "opencv": cv2.__version__}
+    cache = Path(work) / "cache" / "image_registration" / f"{json_hash(metadata)}.json"
+    reused = reusable_entry(cache, metadata, work, repo)
+    if reused is not None:
+        return reused
+    with Image.open(reader_raster) as image:
+        target = np.asarray(image.convert("L"))
+    with Image.open(source_raster) as image:
+        source = np.asarray(image.convert("L"))
+    rb = pixel_bounds(row["body_box"], reader_meta["raster_dimensions"])
+    sb = pixel_bounds([SOURCE_LATIN_X0, 0.10, 1.0, 0.94], source_meta["raster_dimensions"])
+    sift = cv2.SIFT_create(nfeatures=th["features"])
+    sk, sd = sift.detectAndCompute(source[sb[1]:sb[3], sb[0]:sb[2]], None)
+    rk, rd = sift.detectAndCompute(target[rb[1]:rb[3], rb[0]:rb[2]], None)
+    result = {"matched": False, "reason": "insufficient source/output image correspondences", "matrix": None,
+              "source_dimensions": source_meta["raster_dimensions"], "reader_dimensions": reader_meta["raster_dimensions"],
+              "source_page": source_page, "source_index": source_index, "reader_page": row["page"], "tomus": row["tomus"]}
+    if sd is not None and rd is not None and len(sk) >= 8 and len(rk) >= 8:
+        pairs = cv2.BFMatcher(cv2.NORM_L2).knnMatch(sd, rd, k=2)
+        good = [p[0] for p in pairs if len(p) == 2 and p[0].distance < th["ratio"] * p[1].distance]
+        if len(good) >= th["minimum_inliers"]:
+            first = np.float32([[sk[p.queryIdx].pt[0] + sb[0], sk[p.queryIdx].pt[1] + sb[1]] for p in good])
+            second = np.float32([[rk[p.trainIdx].pt[0] + rb[0], rk[p.trainIdx].pt[1] + rb[1]] for p in good])
+            cv2.setRNGSeed(0)
+            matrix, mask = cv2.estimateAffinePartial2D(first, second, method=cv2.RANSAC,
+                ransacReprojThreshold=th["reprojection_px"], maxIters=2000)
+            if matrix is not None and mask is not None and np.isfinite(matrix).all():
+                selected = mask.ravel().astype(bool)
+                count = int(selected.sum())
+                fraction = count / len(good)
+                scale = math.hypot(float(matrix[0, 0]), float(matrix[1, 0]))
+                valid = count >= th["minimum_inliers"] and fraction >= th["minimum_inlier_fraction"] and 0.2 <= scale <= 5
+                result.update({"matched": valid, "reason": "registered prose pixels" if valid else "weak image registration",
+                    "matrix": matrix.tolist(), "inliers": count, "inlier_fraction": fraction,
+                    "source_inlier_box": [float(first[selected, 0].min()), float(first[selected, 1].min()),
+                                          float(first[selected, 0].max()), float(first[selected, 1].max())] if count else None})
+    write_json(cache, {"schema_version": 1, "complete": True, "metadata": metadata, "data": result}, work, repo)
+    return result
+
+
+def project_source_box(box, registration):
+    """Project all source-box corners through the measured image transform."""
+    import numpy as np
+    sw, sh = registration["source_dimensions"]
+    rw, rh = registration["reader_dimensions"]
+    matrix = np.asarray(registration["matrix"])
+    corners = np.asarray([[box[0] * sw, box[1] * sh, 1], [box[2] * sw, box[1] * sh, 1],
+                          [box[0] * sw, box[3] * sh, 1], [box[2] * sw, box[3] * sh, 1]])
+    points = corners @ matrix.T
+    return [float(points[:, 0].min() / rw), float(points[:, 1].min() / rh),
+            float(points[:, 0].max() / rw), float(points[:, 1].max() / rh)]
+
+
+def compare_registered_region(row, source_index, source_page, box, registration, root, manifest,
+                              work, repo, pdftoppm):
+    """Compare a full-resolution output region with its independently registered source ink."""
+    import cv2
+    import numpy as np
+    from PIL import Image
+    rp, rr = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
+    sp, sr = snapshot_input(root, manifest, role="source_pdf", source_index=source_index)
+    ri, rm = render_page(rp, rr, row["page"], 300, work, repo, pdftoppm=pdftoppm)
+    si, sm = render_page(sp, sr, source_page, 300, work, repo, pdftoppm=pdftoppm)
+    with Image.open(ri) as image:
+        target = np.asarray(image.convert("L"))
+    with Image.open(si) as image:
+        source = np.asarray(image.convert("L"))
+    matrix = np.asarray(registration["matrix"], dtype=np.float64)
+    sx = sm["raster_dimensions"][0] / registration["source_dimensions"][0]
+    sy = sm["raster_dimensions"][1] / registration["source_dimensions"][1]
+    rx = rm["raster_dimensions"][0] / registration["reader_dimensions"][0]
+    ry = rm["raster_dimensions"][1] / registration["reader_dimensions"][1]
+    full_matrix = np.diag([rx, ry]) @ matrix @ np.diag([1 / sx, 1 / sy, 1])
+    bounds = pixel_bounds(box, rm["raster_dimensions"])
+    local_matrix = full_matrix.copy()
+    local_matrix[:, 2] -= [bounds[0], bounds[1]]
+    expected = cv2.warpAffine(source, local_matrix, (bounds[2] - bounds[0], bounds[3] - bounds[1]), borderValue=255)
+    observed = target[bounds[1]:bounds[3], bounds[0]:bounds[2]]
+    score = float(cv2.matchTemplate(observed, expected, cv2.TM_CCOEFF_NORMED)[0, 0]) if min(observed.std(), expected.std()) > 2 else 0.0
+    inverse = cv2.invertAffineTransform(full_matrix)
+    points = np.asarray([[bounds[0], bounds[1], 1], [bounds[2], bounds[1], 1],
+                         [bounds[0], bounds[3], 1], [bounds[2], bounds[3], 1]]) @ inverse.T
+    source_box = [float(points[:, 0].min() / source.shape[1]), float(points[:, 1].min() / source.shape[0]),
+                  float(points[:, 0].max() / source.shape[1]), float(points[:, 1].max() / source.shape[0])]
+    clipped = any(v < 0 or v > 1 for v in source_box)
+    source_box = union_box([source_box])
+    return {"correlation": score if math.isfinite(score) else 0.0, "source_box": source_box,
+            "source_box_clipped": clipped, "dpi": 300}
+
+
+def find_foreign_scraps(rows, reader, source_unit, path, root, manifest, run, work, repo, settings, pdftoppm):
+    """Nominate marginal ink corroborated against actual neighboring Greek-column words."""
+    import cv2
+    import numpy as np
+    import pymupdf
+    import unicodedata
+    from PIL import Image
+    th = settings["thresholds"]["scraps"]
+    source_pdf, source_record = snapshot_input(root, manifest, role="source_pdf", source_index=source_unit["source_index"])
+    candidates, diagnostics = [], []
+    with pymupdf.open(source_pdf) as document:
+        source_words = {p: pdf_word_observations(document[p - 1]) for p in sorted({t["page"] for t in source_unit["tokens"]})}
+    for row in rows:
+        page_anchors = [a for a in path if any(t["page"] == row["page"] for t in reader[a["output_start"]:a["output_end"]])]
+        pages = sorted({p for a in page_anchors for p in token_pages(source_unit, a["source_start"], a["source_end"])})
+        pdf, record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
+        raster, meta = render_page(pdf, record, row["page"], 150, work, repo, pdftoppm=pdftoppm)
+        with Image.open(raster) as image:
+            gray = np.asarray(image.convert("L"))
+        bounds = pixel_bounds(row["body_box"], meta["raster_dimensions"])
+        height = ink_line_height(gray[bounds[1]:bounds[3], bounds[0]:bounds[2]]) or 12
+        observed_regions, source_regions, component_boxes, scores, registrations = [], [], [], [], []
+        for page in pages:
+            registration = match_source_image(row, source_unit["source_index"], page, root, manifest, work, repo, settings, pdftoppm)
+            registrations.append(registration)
+            if not registration["matched"]:
+                continue
+            words = source_words[page]
+            latin = [w["box"][0] for w in words if 0.12 < w["box"][1] < 0.94
+                     and (w["box"][0] + w["box"][2]) / 2 >= 0.50 and len(w["raw"]) >= 3
+                     and sum("a" <= c <= "z" for c in w["raw"].casefold()) >= 3]
+            latin_left = sorted(latin)[max(0, len(latin) // 10)] if latin else 0.52
+            greek = [w for w in words if sum("GREEK" in unicodedata.name(c, "") for c in w["raw"]) >= th["greek_characters_min"]
+                     and (w["box"][0] + w["box"][2]) / 2 < latin_left and 0.12 < w["box"][1] < 0.94]
+            for word in greek:
+                projected = project_source_box(word["box"], registration)
+                margin_end = row["body_box"][0] + th["margin_body_fraction"] * (row["body_box"][2] - row["body_box"][0])
+                box = [max(row["body_box"][0], projected[0]), max(row["body_box"][1], projected[1]),
+                       min(margin_end, projected[2]), min(row["body_box"][3], projected[3])]
+                if box[2] <= box[0] or box[3] <= box[1]:
+                    continue
+                pixels = pixel_bounds(box, meta["raster_dimensions"])
+                patch = gray[pixels[1]:pixels[3], pixels[0]:pixels[2]]
+                _, _, components, _ = cv2.connectedComponentsWithStats((patch < 150).astype(np.uint8), 8)
+                eligible = [s for s in components[1:] if 0.3 * height <= s[3] <= 2.0 * height and s[4] >= 3 and s[2] <= 3 * height]
+                if not eligible:
+                    continue
+                correspondence = compare_registered_region(row, source_unit["source_index"], page, box, registration,
+                    root, manifest, work, repo, pdftoppm)
+                if correspondence["correlation"] < th["correlation_min"]:
+                    continue
+                scores.append(correspondence["correlation"])
+                observed_regions.append({"role": "reader_pdf", "tomus": row["tomus"], "page": row["page"],
+                                         "input_sha256": record["sha256"], "box": box})
+                source_regions.append({"role": "source_pdf", "source_index": source_unit["source_index"], "page": page,
+                                       "input_sha256": source_record["sha256"], "box": correspondence["source_box"]})
+                component_boxes.extend([[(pixels[0] + int(s[0])) / gray.shape[1], (pixels[1] + int(s[1])) / gray.shape[0],
+                                         (pixels[0] + int(s[0] + s[2])) / gray.shape[1], (pixels[1] + int(s[1] + s[3])) / gray.shape[0]] for s in eligible])
+        unique = {tuple(round(v, 5) for v in b): b for b in component_boxes}
+        line_groups = group_lines([{"box": b, "text": "ink"} for b in unique.values()])
+        diagnostics.append({"tomus": row["tomus"], "page": row["page"], "registrations": registrations,
+                            "corroborated_components": len(unique), "lines": len(line_groups)})
+        if len(unique) >= th["minimum_components"] and len(line_groups) >= th["minimum_lines"]:
+            output = dict(observed_regions[0], box=union_box([r["box"] for r in observed_regions]))
+            event = f"scraps_{row['unit_id']}_{row['page']}"
+            crops = [save_region_crop(root, manifest, r, run, work, repo, 300, f"{event}_{i}.png")
+                     for i, r in enumerate(source_regions + [output])]
+            candidates.append({"event_id": event, "unit_id": row["unit_id"], "type": "foreign_scraps",
+                "relation": "foreign_column", "source_regions": source_regions, "output_regions": [output],
+                "primary_score": min(scores), "component_scores": {"components": len(unique), "lines": len(line_groups),
+                                                                       "source_correlations": scores},
+                "confidence": "low", "status": "candidate", "confidence_reasons": [
+                    "multiple marginal components on multiple lines match original Greek-column words",
+                    "Greek raster OCR model unavailable; glyph readings remain uncertain"],
+                "evidence_provenance": {"method": "registered neighboring-column ink", "registrations": registrations,
+                                        "components": list(unique.values())}, "linked_events": [], "crops": crops})
+        progress(f"Scrap search {row['unit_id']} page {row['page']}: {len(unique)} components on {len(line_groups)} lines")
+    write_json(run / f"scrap-debug-{source_unit['unit_id']}.json", {"schema_version": 1,
+               "unit_id": source_unit["unit_id"], "pages": diagnostics,
+               "limitation": "Greek raster OCR is unavailable; image evidence does not establish exact glyph text."}, work, repo)
+    return candidates
+
+
 def furniture_pattern(raw):
     """Classify observed capitals and separate folios without expanding their text."""
     letters = [(i, c) for i, c in enumerate(raw) if c.isalpha()]
@@ -2308,8 +2509,8 @@ def source_head_references(source_unit, root, manifest, work, repo, settings):
         for number in pages:
             page = document[number - 1]
             entries = []
-            for x0, y0, x1, y1, raw, *_ in page.get_text("words"):
-                box = normalized_pdf_box(page, [x0, y0, x1, y1])
+            for observation in pdf_word_observations(page):
+                raw, box = observation["raw"], observation["box"]
                 pattern = furniture_pattern(raw)
                 if 0.005 <= (box[1] + box[3]) / 2 <= metadata["head_bottom"] and (pattern["capital"] or pattern["folio"]):
                     entries.append({"raw": raw, "pattern": pattern, "confidence": None,
