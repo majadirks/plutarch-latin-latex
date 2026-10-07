@@ -392,7 +392,7 @@ def request_run(args):
     repo, work = Path(args.repo_root).resolve(), Path(args.work_dir).resolve()
     root, manifest = resolve_baseline(work, args.baseline)
     _, benchmark, hashes = load_benchmark(root, manifest, work, include_labels=False)
-    settings = json.loads(Path(args.config).read_text(encoding="utf-8")) if args.config else {}
+    settings = json.loads(Path(args.config).read_text(encoding="utf-8")) if args.config else detector_settings()
     freeze = check_freeze(args.freeze, settings, manifest, hashes, work) if args.freeze else None
     selected = check_scope(args.scope, args.units, benchmark["splits"], freeze=freeze)
     if args.tomus:
@@ -418,7 +418,7 @@ def request_run(args):
     if not tesseract:
         raise AuditError("Tesseract must be available for OCR; supply --tesseract PATH.")
     reader_ocr = {"requested_pages": len(selected_body), "completed_pages": 0, "unreadable": []}
-    reader_tokens = {}
+    reader_streams, reader_tomus = {}, {}
     for row in sorted(selected_body, key=lambda r: (r["tomus"], r["page"])):
         pdf, record = snapshot_input(root, manifest, role="reader_pdf", tomus=row["tomus"])
         observation = ocr_page_region(pdf, record, row["page"], OUTPUT_OCR_DPI, OUTPUT_PSM, args.lang,
@@ -426,8 +426,16 @@ def request_run(args):
         reader_ocr["completed_pages"] += 1
         if not observation["readable"]:
             reader_ocr["unreadable"].append({"tomus": row["tomus"], "page": row["page"], "unit_id": row["unit_id"]})
-        reader_tokens.setdefault(row["unit_id"], []).extend(
-            word for line in observation["lines"] for word in line["text"].split())
+        reader_tomus[row["unit_id"]] = row["tomus"]
+        stream = reader_streams.setdefault(row["unit_id"], [])
+        by_line = {}
+        for word in observation["words"]:
+            by_line.setdefault(tuple(word["line_id"]), []).append(word)
+        for line_words in sorted(by_line.values(), key=lambda ws: min(w["box"][1] for w in ws)):
+            for word in sorted(line_words, key=lambda w: w["box"][0]):
+                stream.append({"raw": word["text"], "strict": strict_view(word["text"]),
+                               "tolerant": tolerant_view(word["text"]), "page": row["page"],
+                               "tomus": row["tomus"], "box": word["box"], "conf": word["conf"]})
     source_ocr = {"requested_pages": 0, "completed_pages": 0, "unreadable": []}
     for unit in selected_source:
         pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=unit["source"])
@@ -444,10 +452,10 @@ def request_run(args):
     loaded = load_source_index(index)
     before = {view: view_identity(*vectorizer_vocab_idf(loaded[view])) for view in ("strict", "tolerant")}
     reader_docs = []
-    for unit_id, words in reader_tokens.items():
-        views = comparison_views(words)
-        for start, end in passage_windows(len(words), LOCAL_WINDOW, LOCAL_STRIDE):
-            reader_docs.append(" ".join(view["strict"] for view in views[start:end]))
+    for unit_id, stream in reader_streams.items():
+        strict = [token["strict"] for token in stream]
+        for start, end in passage_windows(len(strict), LOCAL_WINDOW, LOCAL_STRIDE):
+            reader_docs.append(" ".join(strict[start:end]))
     if reader_docs:
         loaded["strict"].transform(reader_docs)  # Transform-only; must never refit the index.
     after = {view: view_identity(*vectorizer_vocab_idf(loaded[view])) for view in ("strict", "tolerant")}
@@ -456,40 +464,84 @@ def request_run(args):
         raise AuditError("Source index changed during reader-window transformation; the index must not refit.")
     progress(f"Source index stable across {len(reader_docs)} reader windows (transform-only)")
 
-    summary = {
-        "schema_version": 1, "baseline_id": args.baseline, "scope": args.scope,
-        "detectors": args.detectors, "units": selected, "tomus": args.tomus,
-        "settings_sha256": json_hash(settings), "spec_hashes": hashes,
-        "input_hashes": {r["path"]: r["sha256"] for r in manifest["inputs"]},
-        "reader_inventory": {
-            "corpus_body_pages": len(reader_map["body_pages"]),
-            "corpus_units": len(reader_map["units"]),
-            "folio_offsets": {t["tomus"]: t["folio_offset"] for t in reader_map["tomi"]},
-            "folio_anomalies": {t["tomus"]: t["folio_anomalies"] for t in reader_map["tomi"] if t["folio_anomalies"]},
-            "selected_body_pages": len(selected_body),
-        },
-        "source_extraction": {
-            "corpus_units": len(source_regions["units"]),
-            "selected_units": len(selected_source),
-            "selected_source_lines": sum(u["line_count"] for u in selected_source),
-            "selected_skipped_pages": sum(len(u["skip_pages"]) for u in selected_source),
-            "limitations": [line for u in selected_source for line in u["limitations"]],
-        },
-        "ocr": {
-            "lang": args.lang, "provider": "tesseract_raster",
-            "tesseract_version": tesseract_version(tesseract),
-            "dpi": {"source": SOURCE_OCR_DPI, "output": OUTPUT_OCR_DPI, "retry": RETRY_OCR_DPI},
-            "psm": {"source": SOURCE_PSM, "output": OUTPUT_PSM, "retry": RETRY_PSM},
-            "reader": reader_ocr, "source": source_ocr,
-        },
-        "source_index_identity": index["identity"],
-        "detectors_pending": "Duplicate, missing-occurrence, furniture and layout detectors and reporting (Phases 4+) are not implemented yet.",
-    }
+    requested_types = DETECTOR_TYPES[args.detectors]
+    pending_types = sorted(requested_types - IMPLEMENTED_DETECTORS)
+    active = requested_types & IMPLEMENTED_DETECTORS
+    vectorizer = loaded["strict"]
+    index_by_unit = {unit["unit_id"]: unit for unit in index["units"]}
+    region_by_unit = {unit["unit_id"]: unit for unit in source_regions["units"]}
+    requested_pages = sorted({f"{r['tomus']}:{r['page']}" for r in selected_body})
+    candidates, alignment_debug, errors = [], {}, []
     with run_directory(args.run_dir, work, repo) as run:
-        write_json(run / "phase3-ocr-index.json", summary, work, repo)
-    progress(f"Reader/source OCR and source index complete into {run}")
-    progress(summary["detectors_pending"])
-    return 3
+        for unit_id in selected:
+            index_unit = index_by_unit[unit_id]
+            source_unit = dict(index_unit, boxes=source_token_boxes(index_unit, region_by_unit[unit_id]))
+            source_tokens = [dict(token, box=box) for token, box in zip(source_unit["tokens"], source_unit["boxes"])]
+            blocks = find_source_duplicates(source_unit, vectorizer, settings)
+            reader = reader_streams.get(unit_id, [])
+            coverage = {"runs": [], "duplicates": [], "orders": []}
+            if reader and active:
+                anchors = find_reader_occurrences(reader, source_unit, vectorizer, settings)
+                path = chain_matches(anchors, blocks, settings)
+                coverage = assign_occurrence_coverage(path, blocks, settings)
+            alignment_debug[unit_id] = {
+                "source_duplicate_blocks": blocks,
+                "reader_runs": coverage["runs"],
+                "reader_token_count": len(reader),
+                "repeated_visits": len(coverage["duplicates"]),
+                "reversals": len(coverage["orders"])}
+            source_pdf, source_record = snapshot_input(root, manifest, role="source_pdf", source_index=index_unit["source_index"])
+            if reader:
+                reader_record = snapshot_input(root, manifest, role="reader_pdf", tomus=reader_tomus[unit_id])[1]
+                heights = sorted(token["box"][3] - token["box"][1] for token in reader)
+                line_height = heights[len(heights) // 2]
+                if "duplicate" in active:
+                    for pair in coverage["duplicates"]:
+                        candidates.append(build_duplicate_candidate(
+                            unit_id, pair, reader, source_tokens, blocks, reader_record, source_record,
+                            index_unit["source_index"], reader_tomus[unit_id], line_height, root,
+                            manifest, run, work, repo, settings))
+                if "order" in active:
+                    for order in coverage["orders"]:
+                        candidates.append(build_order_candidate(
+                            unit_id, order, reader, source_tokens, index_unit["source_index"], reader_record,
+                            source_record, reader_tomus[unit_id], root, manifest, run, work, repo, settings))
+            progress(f"Detectors on {unit_id}: {len(blocks)} source-duplicate blocks, "
+                     f"{len(coverage['duplicates'])} reader repeats, {len(coverage['orders'])} reversals")
+        completed_pages = requested_pages if not reader_ocr["unreadable"] else [
+            page for page in requested_pages if page not in
+            {f"{u['tomus']}:{u['page']}" for u in reader_ocr["unreadable"]}]
+        complete = not pending_types and not errors and set(completed_pages) == set(requested_pages)
+        versions = {name: importlib.metadata.version(name) for name in PACKAGES}
+        versions.update({"python": sys.version.split()[0], "tesseract": tesseract_version(tesseract),
+                         "pdftoppm": run_external([args.pdftoppm or shutil.which("pdftoppm"), "-v"]).splitlines()[0]})
+        candidates_payload = {"schema_version": 1, "candidates": candidates}
+        write_json(run / "candidates.json", candidates_payload, work, repo)
+        write_json(run / "alignment_debug.json", {"schema_version": 1, "baseline_id": args.baseline,
+                   "units": alignment_debug}, work, repo)
+        record = {
+            "schema_version": 1, "baseline_id": args.baseline, "scope": args.scope,
+            "detectors": args.detectors, "units": selected, "tomus": args.tomus,
+            "settings": settings, "settings_sha256": json_hash(settings), "spec_hashes": hashes,
+            "input_hashes": {r["path"]: r["sha256"] for r in manifest["inputs"]},
+            "candidates_sha256": hash_file(run / "candidates.json"),
+            "freeze_path": str(Path(args.freeze).resolve()) if args.freeze else None,
+            "requested_body_pages": requested_pages, "completed_body_pages": completed_pages,
+            "implemented_detectors": sorted(active), "pending_detectors": pending_types,
+            "producer": "detectors", "final_development": args.scope == "development" and args.detectors == "all",
+            "complete": complete, "errors": errors, "versions": versions,
+            "source_index_identity": index["identity"],
+            "ocr": {"lang": args.lang, "reader": reader_ocr, "source": source_ocr,
+                    "tesseract_version": versions["tesseract"]},
+            "reader_inventory": {"corpus_body_pages": len(reader_map["body_pages"]),
+                                 "corpus_units": len(reader_map["units"]),
+                                 "selected_body_pages": len(selected_body)},
+        }
+        write_json(run / "run-manifest.json", record, work, repo)
+    progress(f"Wrote {len(candidates)} candidates into {run}")
+    if pending_types:
+        progress(f"Detectors not yet implemented for requested scope: {', '.join(pending_types)}")
+    return 0 if complete else 3
 
 
 def cached_inventory(root, manifest, work, repo):
@@ -1108,6 +1160,468 @@ def unit_source_tokens(unit):
             for word in line["text"].split():
                 tokens.append({"raw": word, "page": page["page"], "line": line_index})
     return tokens
+
+
+DEFAULT_LOCALIZATION_RULE = {
+    "tiny_event": "iou", "minimum_iou": 0.1, "omission_source_coverage": 0.8,
+    "maximum_extra_source_lines": 1, "duplicate_endpoint_tolerance_line_heights": 1,
+}
+SOURCE_DUPLICATE = {"cosine_min": 0.55, "ordered_min": 0.75, "informative_min": 40,
+                    "short_unit_fraction": 0.60, "top_k": 8}
+RETRIEVAL = {"cosine_min": 0.55, "top_k": 8, "anchor_min_tokens": 8}
+CHAIN = {"forward_source": 0.04, "forward_output": 0.02, "gap_cap": 400,
+         "restart_base": 2.0, "restart_backward": 0.5, "backward_cap": 64, "beam": 8}
+DUPLICATE_HIGH = {"cosine_min": 0.80, "ordered_min": 0.90, "informative_min": 40}
+ORDER_HIGH = {"backward_tokens_min": 64}
+INCOMPLETE_OPENING_TOKENS = 8  # A later copy that starts this many tokens in has lost its opening.
+IMPLEMENTED_DETECTORS = {"duplicate", "order"}
+
+
+def detector_settings():
+    """Return the calibratable detector configuration embedded in every run manifest.
+
+    Thresholds and the pre-declared localization rule are frozen with the configuration
+    before validation; a changed value requires a new run folder and fresh calibration."""
+    return {"localization_rule": DEFAULT_LOCALIZATION_RULE,
+            "windows": {"long": [LONG_WINDOW, LONG_STRIDE], "local": [LOCAL_WINDOW, LOCAL_STRIDE]},
+            "views": VIEW_ADAPTER,
+            "thresholds": {"source_duplicate": SOURCE_DUPLICATE, "retrieval": RETRIEVAL,
+                           "chain": CHAIN, "duplicate_high": DUPLICATE_HIGH, "order_high": ORDER_HIGH,
+                           "repeat_min_tokens": 16}}
+
+
+def align_tokens(source, output, mode="exact"):
+    """Shared token aligner; exact mode returns maximal common diagonals.
+
+    Each run is a maximal (source_offset, output_offset, length) stretch of equal strict
+    tokens. Ordered similarity comes from a monotonic non-overlapping chain of those runs.
+    A later bounded edit-distance program extends this same helper for omission alignment."""
+    if mode != "exact":
+        raise AuditError("Only exact-token alignment is available before local-omission calibration")
+    m, n = len(source), len(output)
+    runs = []
+    for i in range(m):
+        for j in range(n):
+            if source[i] == output[j] and (i == 0 or j == 0 or source[i - 1] != output[j - 1]):
+                length = 0
+                while i + length < m and j + length < n and source[i + length] == output[j + length]:
+                    length += 1
+                runs.append((i, j, length))
+    chain = chain_runs(runs)
+    matched = sum(length for _, _, length in chain)
+    return {"runs": runs, "chain": chain, "matched": matched,
+            "ordered_similarity": matched / max(m, n, 1)}
+
+
+def chain_runs(runs):
+    """Pick a strictly increasing, non-overlapping run subset maximizing matched tokens."""
+    ordered = sorted(runs, key=lambda run: (run[0], run[1]))
+    if not ordered:
+        return []
+    best = [length for _, _, length in ordered]
+    previous = [-1] * len(ordered)
+    for index, (si, oi, length) in enumerate(ordered):
+        for earlier in range(index):
+            sk, ok, lk = ordered[earlier]
+            if sk + lk <= si and ok + lk <= oi and best[earlier] + length > best[index]:
+                best[index] = best[earlier] + length
+                previous[index] = earlier
+    end = max(range(len(ordered)), key=lambda index: best[index])
+    chain = []
+    while end != -1:
+        chain.append(ordered[end])
+        end = previous[end]
+    return list(reversed(chain))
+
+
+def token_pages(unit, start, end):
+    """The distinct source pages spanned by an inclusive-exclusive token interval."""
+    return sorted({unit["tokens"][i]["page"] for i in range(start, min(end, len(unit["tokens"])))})
+
+
+def find_source_duplicates(unit, vectorizer, settings):
+    """Nominate scan-duplicate passages inside one source unit's expected Latin.
+
+    Distinct, non-overlapping long windows are ranked by char TF-IDF cosine; the top
+    partners are refined by exact-token alignment counting informative matched tokens.
+    Consecutive matching windows merge into one block carrying both source occurrences."""
+    th = settings["thresholds"]["source_duplicate"]
+    long_size, long_stride = settings["windows"]["long"]
+    strict, informative = unit["strict"], unit["anchors"]["informative"]
+    windows = passage_windows(len(strict), long_size, long_stride)
+    if len(windows) < 2:
+        return []
+    matrix = vectorizer.transform([" ".join(strict[s:e]) for s, e in windows])
+    similarity = (matrix @ matrix.T).toarray()
+    minimum = min(th["informative_min"], math.ceil(th["short_unit_fraction"] * long_size))
+    pairs = []
+    for wi, (s1, e1) in enumerate(windows):
+        partners = sorted((wj for wj in range(len(windows)) if windows[wj][0] >= e1),
+                          key=lambda wj: similarity[wi][wj], reverse=True)
+        for wj in partners[:th["top_k"]]:
+            cosine = float(similarity[wi][wj])
+            if cosine < th["cosine_min"]:
+                break
+            s2, e2 = windows[wj]
+            alignment = align_tokens(strict[s1:e1], strict[s2:e2])
+            if alignment["ordered_similarity"] < th["ordered_min"] or not alignment["chain"]:
+                continue
+            matched_informative = sum(1 for so, _, length in alignment["chain"]
+                                      for k in range(length) if informative[s1 + so + k])
+            if matched_informative < minimum:
+                continue
+            chain = alignment["chain"]
+            first = (s1 + chain[0][0], s1 + chain[-1][0] + chain[-1][2])
+            second = (s2 + chain[0][1], s2 + chain[-1][1] + chain[-1][2])
+            pairs.append({"first": first, "second": second, "cosine": cosine,
+                          "ordered_similarity": alignment["ordered_similarity"],
+                          "matched_informative": matched_informative,
+                          "offset": second[0] - first[0]})
+    return merge_duplicate_blocks(pairs, unit, long_size)
+
+
+def merge_duplicate_blocks(pairs, unit, long_size):
+    """Group window pairs sharing a diagonal and overlapping ranges into single blocks."""
+    if not pairs:
+        return []
+    pairs = sorted(pairs, key=lambda p: (p["first"][0], p["second"][0]))
+    parent = list(range(len(pairs)))
+
+    def find(node):
+        while parent[node] != node:
+            parent[node] = parent[parent[node]]
+            node = parent[node]
+        return node
+
+    def near(first, second):  # Overlapping, or separated by at most one window.
+        return max(first[0], second[0]) - min(first[1], second[1]) <= long_size
+
+    for a in range(len(pairs)):
+        for b in range(a + 1, len(pairs)):
+            if (abs(pairs[a]["offset"] - pairs[b]["offset"]) <= long_size
+                    and near(pairs[a]["first"], pairs[b]["first"])
+                    and near(pairs[a]["second"], pairs[b]["second"])):
+                parent[find(a)] = find(b)
+    groups = {}
+    for index in range(len(pairs)):
+        groups.setdefault(find(index), []).append(pairs[index])
+    blocks = []
+    for members in groups.values():
+        first = (min(p["first"][0] for p in members), max(p["first"][1] for p in members))
+        second = (min(p["second"][0] for p in members), max(p["second"][1] for p in members))
+        overlap = min(first[1], second[1]) - max(first[0], second[0])
+        shorter = min(first[1] - first[0], second[1] - second[0])
+        if shorter <= 0 or overlap > 0.5 * shorter:  # Occurrences must be distinct scans.
+            continue
+        blocks.append({"first_tokens": first, "second_tokens": second,
+                       "offset": round(sum(p["offset"] for p in members) / len(members)),
+                       "cosine": max(p["cosine"] for p in members),
+                       "ordered_similarity": max(p["ordered_similarity"] for p in members),
+                       "matched_informative": max(p["matched_informative"] for p in members),
+                       "first_pages": token_pages(unit, *first),
+                       "second_pages": token_pages(unit, *second)})
+    return sorted(blocks, key=lambda block: block["first_tokens"])
+
+
+def intervals_overlap(a0, a1, b0, b1):
+    return a0 < b1 and b0 < a1
+
+
+def anchor_reward(anchor):
+    return anchor["length"] * (0.5 * anchor["cosine"] + 0.5 * anchor["ordered_similarity"])
+
+
+def find_reader_occurrences(reader, source_unit, vectorizer, settings):
+    """Retrieve and refine reader token windows against the unit's source windows.
+
+    Each surviving anchor is a maximal exact-match run of at least the configured length
+    with source/output token intervals and the retrieval cosine/ordered scores. Overlapping
+    hits for one position collapse to the best-rewarded anchor; distinct occurrences survive."""
+    th = settings["thresholds"]["retrieval"]
+    local_size, local_stride = settings["windows"]["local"]
+    reader_strict = [token["strict"] for token in reader]
+    source_strict = source_unit["strict"]
+    reader_windows = passage_windows(len(reader_strict), local_size, local_stride)
+    source_windows = passage_windows(len(source_strict), local_size, local_stride)
+    if not reader_windows or not source_windows:
+        return []
+    reader_matrix = vectorizer.transform([" ".join(reader_strict[s:e]) for s, e in reader_windows])
+    source_matrix = vectorizer.transform([" ".join(source_strict[s:e]) for s, e in source_windows])
+    similarity = reader_matrix @ source_matrix.T
+    anchors = []
+    for ri, (rs, re_) in enumerate(reader_windows):
+        row = similarity.getrow(ri).toarray().ravel()
+        for si in sorted(range(len(source_windows)), key=lambda si: row[si], reverse=True)[:th["top_k"]]:
+            cosine = float(row[si])
+            if cosine < th["cosine_min"]:
+                break
+            ss, se = source_windows[si]
+            alignment = align_tokens(source_strict[ss:se], reader_strict[rs:re_])
+            for s_off, r_off, length in alignment["chain"]:
+                if length < th["anchor_min_tokens"]:
+                    continue
+                anchors.append({"source_start": ss + s_off, "source_end": ss + s_off + length,
+                                "output_start": rs + r_off, "output_end": rs + r_off + length,
+                                "length": length, "cosine": cosine,
+                                "ordered_similarity": alignment["ordered_similarity"]})
+    kept = []
+    for anchor in sorted(anchors, key=lambda a: (-anchor_reward(a), -a["length"], a["output_start"], a["source_start"])):
+        if not any(intervals_overlap(anchor["output_start"], anchor["output_end"], other["output_start"], other["output_end"])
+                   and intervals_overlap(anchor["source_start"], anchor["source_end"], other["source_start"], other["source_end"])
+                   for other in kept):
+            kept.append(anchor)
+    return sorted(kept, key=lambda a: (a["output_start"], a["source_start"]))
+
+
+def canonical_position(position, aliases):
+    """Fold a later scan-duplicate position onto its canonical first-occurrence position."""
+    for alias in aliases:
+        first0, _ = alias["first_tokens"]
+        second0, second1 = alias["second_tokens"]
+        if second0 <= position < second1:
+            return first0 + (position - second0)
+    return position
+
+
+def canonical_interval(anchor, aliases):
+    start = canonical_position(anchor["source_start"], aliases)
+    end = canonical_position(anchor["source_end"], aliases)
+    return (min(start, end), max(start, end))
+
+
+def chain_matches(anchors, aliases, settings):
+    """Chain reader anchors by increasing output position, allowing penalized restarts.
+
+    Forward logical-source steps are cheap; a backward or repeated logical visit pays a
+    restart cost. The maximum reward-minus-cost path is returned with its ordered anchors."""
+    ch = settings["thresholds"]["chain"]
+    nodes = sorted(anchors, key=lambda a: (a["output_start"], a["source_start"]))
+    if not nodes:
+        return []
+    canon = [canonical_interval(node, aliases) for node in nodes]
+    best = [anchor_reward(node) for node in nodes]
+    previous = [-1] * len(nodes)
+    for i in range(len(nodes)):
+        for j in range(i):
+            if nodes[j]["output_end"] > nodes[i]["output_start"]:
+                continue
+            output_gap = nodes[i]["output_start"] - nodes[j]["output_end"]
+            source_gap = canon[i][0] - canon[j][1]
+            if source_gap >= 0:
+                cost = ch["forward_source"] * min(source_gap, ch["gap_cap"]) + ch["forward_output"] * min(output_gap, ch["gap_cap"])
+            else:
+                backward = canon[j][1] - canon[i][0]
+                cost = (ch["restart_base"] + ch["restart_backward"] * min(backward / ch["backward_cap"], 4)
+                        + ch["forward_output"] * min(output_gap, ch["gap_cap"]))
+            value = best[j] + anchor_reward(nodes[i]) - cost
+            if value > best[i]:
+                best[i] = value
+                previous[i] = j
+    end = max(range(len(nodes)), key=lambda index: best[index])
+    path = []
+    while end != -1:
+        path.append(nodes[end])
+        end = previous[end]
+    return list(reversed(path))
+
+
+def summarize_anchors(anchors):
+    """Collapse a set of anchors into one output/source/canonical contribution summary."""
+    return {"output_start": min(a["output_start"] for a in anchors),
+            "output_end": max(a["output_end"] for a in anchors),
+            "source_start": min(a["source_start"] for a in anchors),
+            "source_end": max(a["source_end"] for a in anchors),
+            "canon_start": min(a["canon_start"] for a in anchors),
+            "canon_end": max(a["canon_end"] for a in anchors),
+            "cosine": max(a["cosine"] for a in anchors),
+            "ordered_similarity": max(a["ordered_similarity"] for a in anchors),
+            "matched": sum(a["length"] for a in anchors)}
+
+
+def assign_occurrence_coverage(path, aliases, settings):
+    """Segment a chained path into forward reading runs and flag repeated/reversed visits.
+
+    A run breaks where the canonical source position jumps backward. Two runs overlapping the
+    same logical source occurrence are a repeated visit; each contribution is restricted to the
+    shared canonical span so it localizes the actual copy rather than the whole run. A later run
+    starting earlier in the source is a reversal. Normal forward reading yields one run."""
+    if not path:
+        return {"runs": [], "duplicates": [], "orders": []}
+    enriched = []
+    for anchor in path:
+        start, end = canonical_interval(anchor, aliases)
+        enriched.append(dict(anchor, canon_start=start, canon_end=end))
+    groups, current = [], [0]
+    for k in range(1, len(enriched)):
+        if enriched[k]["canon_start"] < enriched[k - 1]["canon_start"]:
+            groups.append(current)
+            current = [k]
+        else:
+            current.append(k)
+    groups.append(current)
+    runs = [{"anchors": [enriched[k] for k in group], **summarize_anchors([enriched[k] for k in group])}
+            for group in groups]
+    floor = settings["thresholds"]["repeat_min_tokens"]
+    duplicates = []
+    for i in range(len(runs)):
+        for j in range(i + 1, len(runs)):
+            low = max(runs[i]["canon_start"], runs[j]["canon_start"])
+            high = min(runs[i]["canon_end"], runs[j]["canon_end"])
+            shorter = min(runs[i]["canon_end"] - runs[i]["canon_start"],
+                          runs[j]["canon_end"] - runs[j]["canon_start"])
+            if shorter <= 0 or high - low < 0.5 * shorter:
+                continue
+            first = [a for a in runs[i]["anchors"] if a["canon_start"] < high and low < a["canon_end"]]
+            second = [a for a in runs[j]["anchors"] if a["canon_start"] < high and low < a["canon_end"]]
+            if not first or not second:
+                continue
+            ca, cb = summarize_anchors(first), summarize_anchors(second)
+            if min(ca["matched"], cb["matched"]) >= floor:
+                duplicates.append((ca, cb))
+    summaries = [{key: run[key] for key in run if key != "anchors"} for run in runs]
+    orders = [{"from": summaries[r - 1], "to": summaries[r]} for r in range(1, len(summaries))
+              if summaries[r]["canon_start"] < summaries[r - 1]["canon_start"]
+              and summaries[r]["matched"] >= floor]
+    return {"runs": summaries, "duplicates": duplicates, "orders": orders}
+
+
+def source_token_boxes(index_unit, region_unit):
+    """Attach each index token a coarse box drawn from its expected-Latin source line."""
+    lookup = {}
+    for page in region_unit["pages"]:
+        if page.get("skipped"):
+            continue
+        for line_index, line in enumerate(page["lines"]):
+            lookup[(page["page"], line_index)] = line["box"]
+    default = [SOURCE_LATIN_X0, 0.0, SOURCE_LATIN_X1, 1.0]
+    return [lookup.get((token["page"], token["line"]), default) for token in index_unit["tokens"]]
+
+
+def union_box(boxes):
+    """A clamped bounding box with guaranteed positive area over normalized boxes."""
+    x0 = max(0.0, min(min(b[0] for b in boxes), 0.999))
+    y0 = max(0.0, min(min(b[1] for b in boxes), 0.999))
+    x1 = min(1.0, max(max(b[2] for b in boxes), x0 + 1e-3))
+    y1 = min(1.0, max(max(b[3] for b in boxes), y0 + 1e-3))
+    return [x0, y0, x1, y1]
+
+
+def page_union_regions(tokens, role, record, *, tomus=None, source_index=None, occurrence_id=None):
+    """Group tokens by physical page into one clamped diagnostic region per page."""
+    by_page = {}
+    for token in tokens:
+        by_page.setdefault(token["page"], []).append(token["box"])
+    regions = []
+    for page in sorted(by_page):
+        region = {"role": role, "page": page, "input_sha256": record["sha256"],
+                  "box": union_box(by_page[page])}
+        if role == "reader_pdf":
+            region["tomus"] = tomus
+        else:
+            region["source_index"] = source_index
+        if occurrence_id:
+            region["occurrence_id"] = occurrence_id
+        regions.append(region)
+    return regions
+
+
+def save_region_crop(root, manifest, region, run, work, repo, dpi, name):
+    """Render (cache-hit) the region's page and save a cropped evidence PNG under the run."""
+    from PIL import Image
+    pdf, record = snapshot_input(root, manifest, role=region["role"],
+                                 tomus=region.get("tomus"), source_index=region.get("source_index"))
+    raster, _ = render_page(pdf, record, region["page"], dpi, work, repo)
+    destination = safe_write_path(run / "crops" / name, work, repo)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with Image.open(raster) as image:
+        image.crop(pixel_bounds(region["box"], image.size)).save(destination)
+    return {"path": destination.relative_to(Path(work).resolve()).as_posix(), "sha256": hash_file(destination)}
+
+
+def build_duplicate_candidate(unit_id, pair, reader, source_tokens, blocks, reader_record,
+                              source_record, source_index, tomus, line_height, root, manifest,
+                              run, work, repo, settings):
+    """Assemble a reader-duplicate candidate with two output contributions and source pair."""
+    first_run, second_run = sorted(pair, key=lambda r: r["output_start"])
+    block = next((b for b in blocks
+                  if intervals_overlap(b["first_tokens"][0], b["first_tokens"][1], first_run["canon_start"], first_run["canon_end"])), None)
+    if block:
+        first_source = [source_tokens[i] for i in range(*block["first_tokens"])]
+        second_source = [source_tokens[i] for i in range(*block["second_tokens"])]
+    else:
+        first_source = [source_tokens[i] for i in range(first_run["source_start"], first_run["source_end"])]
+        second_source = [source_tokens[i] for i in range(second_run["source_start"], second_run["source_end"])]
+    source_regions = (page_union_regions(first_source, "source_pdf", source_record, source_index=source_index, occurrence_id="occurrence_1")
+                      + page_union_regions(second_source, "source_pdf", source_record, source_index=source_index, occurrence_id="occurrence_2"))
+    contributions, output_regions = [], []
+    for ordinal, run_span in enumerate((first_run, second_run), 1):
+        tokens = reader[run_span["output_start"]:run_span["output_end"]]
+        contributions.append({"start_page": tokens[0]["page"], "end_page": tokens[-1]["page"],
+                              "start_box": validate_box(list(tokens[0]["box"])),
+                              "end_box": validate_box(list(tokens[-1]["box"])),
+                              "line_height": line_height})
+        output_regions.extend(page_union_regions(tokens, "reader_pdf", reader_record, tomus=tomus,
+                                                 occurrence_id=f"output_{ordinal}"))
+    cosine = max(first_run["cosine"], second_run["cosine"])
+    ordered = max(first_run["ordered_similarity"], second_run["ordered_similarity"])
+    matched = min(first_run["matched"], second_run["matched"])
+    high = settings["thresholds"]["duplicate_high"]
+    corroborated = block is not None
+    incomplete = (second_run["canon_start"] - first_run["canon_start"]) > INCOMPLETE_OPENING_TOKENS
+    predicates = {"cosine>=0.80": cosine >= high["cosine_min"],
+                  "ordered>=0.90": ordered >= high["ordered_min"],
+                  "informative_tokens>=40": matched >= high["informative_min"],
+                  "two_nonoverlapping_contributions": True,
+                  "source_scan_or_folio_corroboration": corroborated}
+    confidence = "high" if all(predicates.values()) else "low"
+    candidate = {
+        "event_id": f"dup_{unit_id}_{source_regions[0]['page']}_{source_regions[-1]['page']}",
+        "unit_id": unit_id, "type": "duplicate", "relation": "repeated_occurrence",
+        "source_regions": source_regions, "output_regions": output_regions,
+        "contributions": contributions, "incomplete_second_opening": incomplete,
+        "confidence": confidence, "status": "candidate",
+        "primary_score": round((cosine + ordered) / 2, 4),
+        "component_scores": {"reader_source_cosine": round(cosine, 4),
+                             "ordered_similarity": round(ordered, 4), "matched_tokens": matched,
+                             "source_duplicate_cosine": round(block["cosine"], 4) if block else None},
+        "confidence_reasons": [f"{name}: {'satisfied' if value else 'failed'}" for name, value in predicates.items()],
+        "linked_events": [],
+        "evidence_provenance": {"method": "Reader token windows retrieved against source-only TF-IDF windows, refined by exact-token alignment, chained across restarts; a repeated logical source occurrence yields two output contributions.",
+                                "source_duplicate_block": block and {"first_pages": block["first_pages"], "second_pages": block["second_pages"]}},
+        "crops": []}
+    for index, region in enumerate(source_regions + output_regions):
+        dpi = SOURCE_OCR_DPI if region["role"] == "source_pdf" else OUTPUT_OCR_DPI
+        candidate["crops"].append(save_region_crop(root, manifest, region, run, work, repo, dpi,
+                                                   f"{candidate['event_id']}_{index}.png"))
+    return candidate
+
+
+def build_order_candidate(unit_id, order, reader, source_tokens, source_index, reader_record,
+                          source_record, tomus, root, manifest, run, work, repo, settings):
+    """Assemble a reversal candidate for a later run that re-enters earlier source material."""
+    target = order["to"]
+    tokens = reader[target["output_start"]:target["output_end"]]
+    source_slice = [source_tokens[i] for i in range(target["source_start"], target["source_end"])]
+    output_regions = page_union_regions(tokens, "reader_pdf", reader_record, tomus=tomus)
+    source_regions = page_union_regions(source_slice, "source_pdf", source_record, source_index=source_index)
+    backward = order["from"]["canon_start"] - target["canon_start"]
+    confidence = "low" if backward >= settings["thresholds"]["order_high"]["backward_tokens_min"] else "unknown"
+    candidate = {
+        "event_id": f"order_{unit_id}_{tokens[0]['page']}_{target['output_start']}",
+        "unit_id": unit_id, "type": "order", "relation": "reversal",
+        "source_regions": source_regions, "output_regions": output_regions,
+        "confidence": confidence, "status": "candidate",
+        "primary_score": round(target["ordered_similarity"], 4),
+        "component_scores": {"backward_tokens": backward, "ordered_similarity": round(target["ordered_similarity"], 4)},
+        "confidence_reasons": [f"backward_tokens>=64: {'satisfied' if backward >= settings['thresholds']['order_high']['backward_tokens_min'] else 'failed'}"],
+        "linked_events": [],
+        "evidence_provenance": {"method": "Chained reader anchors re-enter earlier canonical source material after a penalized restart, indicating a reversed reading order."},
+        "crops": []}
+    for index, region in enumerate(source_regions + output_regions):
+        dpi = SOURCE_OCR_DPI if region["role"] == "source_pdf" else OUTPUT_OCR_DPI
+        candidate["crops"].append(save_region_crop(root, manifest, region, run, work, repo, dpi,
+                                                   f"{candidate['event_id']}_{index}.png"))
+    return candidate
 
 
 def make_splits(units, body_pages, manifest):
@@ -1758,7 +2272,7 @@ def make_parser():
     evaluate.add_argument("--split", choices=("development", "validation", "all"), required=True)
     evaluate.add_argument("--freeze", action="store_true", help="Freeze a complete final development detector run")
     evaluate.add_argument("--enforce-gates", action="store_true")
-    run = commands.add_parser("run", help="Map reader pages/folios and extract expected source Latin; detector stages are not implemented yet")
+    run = commands.add_parser("run", help="OCR selected readers/sources and nominate duplicate-scan and reader-order candidates; remaining detectors are reported as pending")
     run.add_argument("--repo-root", default=".")
     run.add_argument("--work-dir", default="tmp/pdfs/inner_tomi_audit")
     run.add_argument("--baseline", required=True)
