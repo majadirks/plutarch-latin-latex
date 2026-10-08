@@ -1624,6 +1624,7 @@ BOUNDARY = {"source_window": 48, "output_window": 96, "coverage_min": 0.80,
 WATERMARK = {"dpi": 90, "nomination_min": 0.60, "high_min": 0.80,
              "nomination_glyph_support_min": 2, "source_seam_context_tokens": 128,
              "group_reader_glyph_support_min": 1,
+             "source_footer_scale_step": 0.025,
              "scale_min": 0.75, "scale_max": 1.30, "scale_step": 0.05,
              "fallback_min": 0.30, "fallback_max": 1.50,
              "rotation_min": -3, "rotation_max": 3, "template_std_min": 2.0,
@@ -1644,7 +1645,8 @@ SPACING = {"rule_min_line_heights": 4, "rule_max_width_line_heights": 0.30,
            "excess_gap_line_heights": 2, "white_fraction_min": 0.90}
 CLIPPING = {"correlation_min": 0.65, "high_correlation_min": 0.85,
             "minimum_outside_ink": 4, "minimum_lateral_lines": 3,
-            "minimum_slice_components": 2, "outside_white_fraction": 0.95}
+            "minimum_slice_components": 2, "outside_white_fraction": 0.95,
+            "source_word_padding_glyph_heights": 0.25}
 IMPLEMENTED_DETECTORS = {"duplicate", "order", "missing_occurrence", "terminal_loss", "watermark", "head", "foreign_scraps",
                          "copied_gap", "rule", "blank_body", "lateral_clipping", "slicing"}
 
@@ -2595,7 +2597,7 @@ def watermark_pages(rows, reader, templates, root, manifest, work, repo, setting
             metadata = {"raster_sha256": meta["raster_sha256"], "body_box": row["body_box"],
                         "settings": {k: v for k, v in th.items() if k not in
                                      ('nomination_glyph_support_min', 'source_seam_context_tokens',
-                                      'group_reader_glyph_support_min')},
+                                      'group_reader_glyph_support_min', 'source_footer_scale_step')},
                         "templates": template_identity, "line_height": pitch,
                         "opencv_version": cv2.__version__, "helper_sha256": code_hash}
             cache = Path(work) / "cache" / "watermark_matches" / f"{json_hash(metadata)}.json"
@@ -2633,10 +2635,52 @@ def source_context_at_region(reader, path, source_unit, page, box):
             for side, pair in (("before", left), ("after", right))}
 
 
-def source_tail_correspondence(context, source_unit, templates, root, manifest, work, repo, settings, pdftoppm):
-    """Corroborate a source footer at an occurrence-aligned transition between prose pages."""
+def source_footer_match(source_unit, page, templates, root, manifest, work, repo, settings, pdftoppm):
+    """Match original footer logos across scan scales with identity-checked reuse."""
+    import cv2
+    import inspect
     import numpy as np
     from PIL import Image
+    th = settings["thresholds"]["watermark"]
+    pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=source_unit["source_index"])
+    raster, meta = render_page(pdf, record, page, 300, work, repo, pdftoppm=pdftoppm)
+    box = [SOURCE_LATIN_X0, 0.93, 1.0, 1.0]
+    bounds = pixel_bounds(box, meta["raster_dimensions"])
+    footer_templates = [t for t in templates if t["fragment_type"] in ("full_logo", "logo_word")]
+    metadata = {"raster_sha256": meta["raster_sha256"], "box": box,
+        "templates": [{k: v for k, v in t.items() if k not in ("pixels", "views")} for t in footer_templates],
+        "settings": th, "opencv_version": cv2.__version__,
+        "helper_sha256": hashlib.sha256("".join(inspect.getsource(f) for f in
+            (source_footer_match, match_templates, group_peaks, image_views)).encode()).hexdigest()}
+    cache = Path(work) / "cache" / "source_footer_matches" / f"{json_hash(metadata)}.json"
+    reused = reusable_entry(cache, metadata, work, repo)
+    if reused is not None:
+        return reused["match"]
+    with Image.open(raster) as image:
+        gray = np.asarray(image.convert("L"))[bounds[1]:bounds[3], bounds[0]:bounds[2]].copy()
+    scales = [float(s) for s in np.arange(th["scale_min"], th["scale_max"] + 0.001,
+                                        th["source_footer_scale_step"])]
+    matches = match_templates(gray, footer_templates, None, settings, scales=scales)
+    peaks = [p for group in matches for p in group if p["score"] >= th["high_min"]]
+    result = None
+    if peaks:
+        peak = max(peaks, key=lambda p: (p["score"], p["fragment_type"] == "full_logo"))
+        region = {"role": "source_pdf", "source_index": source_unit["source_index"],
+                  "page": page, "input_sha256": record["sha256"],
+                  "box": [(bounds[0] + peak["box"][0]) / meta["raster_dimensions"][0],
+                          (bounds[1] + peak["box"][1]) / meta["raster_dimensions"][1],
+                          (bounds[0] + peak["box"][2]) / meta["raster_dimensions"][0],
+                          (bounds[1] + peak["box"][3]) / meta["raster_dimensions"][1]]}
+        result = {"region": region, "correlation": peak["score"], "scale": peak["scale"],
+                  "rotation": peak["rotation"], "template_id": peak["template_id"],
+                  "observed_glyph_support": peak["observed_glyph_support"]}
+    write_json(cache, {"schema_version": 1, "complete": True, "metadata": metadata,
+                      "data": {"match": result}}, work, repo)
+    return result
+
+
+def source_tail_correspondence(context, source_unit, templates, root, manifest, work, repo, settings, pdftoppm):
+    """Corroborate a source footer at an occurrence-aligned transition between prose pages."""
     before, after = context["before"], context["after"]
     if not before or not after or before["source_page"] >= after["source_page"]:
         return None
@@ -2648,24 +2692,9 @@ def source_tail_correspondence(context, source_unit, templates, root, manifest, 
             or before['source_token'] < eligible[before['source_page']][-1] - distance
             or after['source_token'] > eligible[after['source_page']][0] + distance):
         return None
-    pdf, record = snapshot_input(root, manifest, role="source_pdf", source_index=source_unit["source_index"])
-    raster, meta = render_page(pdf, record, before["source_page"], 300, work, repo, pdftoppm=pdftoppm)
-    bounds = pixel_bounds([SOURCE_LATIN_X0, 0.93, 1.0, 1.0], meta["raster_dimensions"])
-    with Image.open(raster) as image:
-        gray = np.asarray(image.convert("L"))[bounds[1]:bounds[3], bounds[0]:bounds[2]].copy()
-    matches = match_templates(gray, templates, None, settings, scales=[1.0], rotations=[0])
-    peaks = [p for group in matches for p in group if p["fragment_type"] in ("full_logo", "logo_word")
-             and p["score"] >= settings["thresholds"]["watermark"]["high_min"]]
-    if not peaks:
-        return None
-    peak = max(peaks, key=lambda p: (p["score"], p["fragment_type"] == "full_logo"))
-    region = {"role": "source_pdf", "source_index": source_unit["source_index"],
-              "page": before["source_page"], "input_sha256": record["sha256"],
-              "box": [(bounds[0] + peak["box"][0]) / meta["raster_dimensions"][0],
-                      (bounds[1] + peak["box"][1]) / meta["raster_dimensions"][1],
-                      (bounds[0] + peak["box"][2]) / meta["raster_dimensions"][0],
-                      (bounds[1] + peak["box"][3]) / meta["raster_dimensions"][1]]}
-    return {"region": region, "correlation": peak["score"], "context": context}
+    match = source_footer_match(source_unit, before['source_page'], templates, root, manifest,
+                                work, repo, settings, pdftoppm)
+    return dict(match, context=context) if match else None
 
 
 def find_watermarks(rows, reader, source_unit, path, templates, root, manifest, run, work, repo,
@@ -3207,6 +3236,14 @@ def source_column_edge(observation):
     return float((point @ inverse.T)[0] / sw)
 
 
+def glyph_context_box(box, dimensions, padding):
+    """Include raster glyph ink near an embedded OCR box, preserving the raw box separately."""
+    dy = (box[3] - box[1]) * padding
+    dx = dy * dimensions[1] / dimensions[0]
+    return [max(0., box[0] - dx), max(0., box[1] - dy),
+            min(1., box[2] + dx), min(1., box[3] + dy)]
+
+
 def find_slicing_and_clipping(rows, reader, source_unit, path, active, root, manifest, run, work, repo,
                              settings, pdftoppm, *, alternatives=None):
     """Inspect original glyph ink crossing actual body edges, retaining separate cut directions."""
@@ -3240,16 +3277,20 @@ def find_slicing_and_clipping(rows, reader, source_unit, path, active, root, man
             body = pixel_bounds(row["body_box"], [target.shape[1], target.shape[0]])
             words = [w for w in source_words[page] if 0.06 < w["box"][1] < 0.94
                      and (w["box"][0] + w["box"][2]) / 2 >= 0.50
-                     and sum("a" <= c <= "z" for c in w["raw"].casefold()) >= 3]
+                     and sum("a" <= c <= "z" for c in w["raw"].casefold()) >= 2]
             lines = group_lines([{"box": w["box"], "text": w["raw"]} for w in words])
             line_cuts = {"left": [], "top": [], "bottom": []}
             for line in lines:
                 members = [w for w in words if overlap({"box": w["box"]}, {"box": line["box"]})["candidate_coverage"] > 0.5]
+                contexts = {id(w): glyph_context_box(w['box'], [source.shape[1], source.shape[0]],
+                            th['source_word_padding_glyph_heights']) for w in members}
+                line = dict(line, box=union_box(list(contexts.values())))
                 for edge in line_cuts:
                     eligible = sorted(members, key=lambda w: w["box"][0])[:1] if edge == "left" else members
                     cut_words = []
                     for word in eligible:
-                        projected = project_source_box(word["box"], registration)
+                        source_box = contexts[id(word)]
+                        projected = project_source_box(source_box, registration)
                         boundary = row["body_box"][0 if edge == "left" else 1 if edge == "top" else 3]
                         axis = 0 if edge == "left" else 1
                         if not projected[axis] < boundary < projected[axis + 2]:
@@ -3289,7 +3330,8 @@ def find_slicing_and_clipping(rows, reader, source_unit, path, active, root, man
                                         min(row["body_box"][2], box[2]), min(row["body_box"][3], box[3])]
                         if retained_box[2] <= retained_box[0] or retained_box[3] <= retained_box[1]:
                             continue
-                        cut_words.append({"raw_source": word["raw"], "source_box": word["box"],
+                        cut_words.append({"raw_source": word["raw"], "source_box": source_box,
+                                          "source_ocr_box": word['box'],
                                           "output_box": retained_box, "correlation": score,
                                           "outside_ink_pixels": count, "outside_white_fraction": white,
                                           "crossing_components": int(crossing)})
@@ -4052,27 +4094,33 @@ def refine_duplicate_boundaries(span, reader, source_tokens, source_range, setti
         good = bool(covered) and ratio >= .60
         evidence[side] = {'matched': good, 'source_edge_coverage': ratio,
                           'ordered_similarity': local['ordered_similarity'], 'operations': local['operations']}
+        if side == 'start':
+            first_key = (expected[0]['page'], expected[0]['line'])
+            first_line = [i for i, token in enumerate(expected) if (token['page'], token['line']) == first_key]
+            line_coverage = sum(i in local['covered_source'] for i in first_line) / len(first_line)
+            evidence[side]['opening_line_coverage'] = line_coverage
+            evidence[side]['incomplete_opening'] = line_coverage < .5
         if good:
             bounds[side] = low + start + (covered[0]['output'][0] if side == 'start' else covered[-1]['output'][-1] + 1)
-            if side == 'start':
-                first_key = (expected[0]['page'], expected[0]['line'])
-                first_line = [i for i, token in enumerate(expected) if (token['page'], token['line']) == first_key]
-                line_coverage = sum(i in local['covered_source'] for i in first_line) / len(first_line)
-                evidence[side]['opening_line_coverage'] = line_coverage
-                evidence[side]['incomplete_opening'] = line_coverage < .5
-                selected = reader[bounds[side]]
-                page_indices = [i for i, token in enumerate(reader) if token['page'] == selected['page']]
-                lines = cluster_page_lines([reader[i] for i in page_indices])
-                line = next(line for line in lines if any(token is selected for token in line))
-                line_tokens = {id(token) for token in line}
-                heights = sorted(reader[i]['box'][3] - reader[i]['box'][1] for i in page_indices
-                                 if sum(c.isalpha() for c in reader[i]['raw']) >= 2)
-                minimum_height = .5 * heights[len(heights) // 2] if heights else 0.
-                prose_indices = [i for i in page_indices if id(reader[i]) in line_tokens
-                                 and sum(c.isalpha() for c in reader[i]['raw']) >= 2
-                                 and reader[i]['box'][3] - reader[i]['box'][1] >= minimum_height]
-                if prose_indices:
-                    bounds[side] = min(prose_indices, key=lambda i: (reader[i]['box'][0], i))
+            selected_index = bounds[side] if side == 'start' else bounds[side] - 1
+            selected = reader[selected_index]
+            page_indices = [i for i, token in enumerate(reader) if token['page'] == selected['page']]
+            lines = cluster_page_lines([reader[i] for i in page_indices])
+            line = next(line for line in lines if any(token is selected for token in line))
+            line_tokens = {id(token) for token in line}
+            heights = sorted(reader[i]['box'][3] - reader[i]['box'][1] for i in page_indices
+                             if sum(c.isalpha() for c in reader[i]['raw']) >= 2)
+            minimum_height = .5 * heights[len(heights) // 2] if heights else 0.
+            prose_indices = [i for i in page_indices if id(reader[i]) in line_tokens
+                             and (sum(c.isalpha() for c in reader[i]['raw']) >= 2
+                                  or reader[i]['strict'] in ('a', 'e', 'o'))
+                             and reader[i]['box'][3] - reader[i]['box'][1] >= minimum_height]
+            if side == 'end' and len(expected) - 1 in local['covered_source']:
+                prose_indices = []
+            if prose_indices:
+                edge = min(prose_indices, key=lambda i: (reader[i]['box'][0], i)) if side == 'start' else max(
+                    prose_indices, key=lambda i: (reader[i]['box'][2], i))
+                bounds[side] = edge if side == 'start' else edge + 1
     result = dict(span)
     first, last = bounds.get('start', span['output_start']), bounds.get('end', span['output_end'])
     if first < last:
@@ -4125,7 +4173,7 @@ def build_duplicate_candidate(unit_id, pair, reader, source_tokens, blocks, read
     high = settings["thresholds"]["duplicate_high"]
     corroborated = bool(block and block.get('scan_equivalence_established'))
     incomplete = (second_run["canon_start"] - first_run["canon_start"]) > INCOMPLETE_OPENING_TOKENS
-    if len(boundary_evidence) == 2 and all(e.get('start', {}).get('matched') for e in boundary_evidence):
+    if len(boundary_evidence) == 2 and all('opening_line_coverage' in e.get('start', {}) for e in boundary_evidence):
         incomplete = (boundary_evidence[1]['start'].get('incomplete_opening', False)
                       and not boundary_evidence[0]['start'].get('incomplete_opening', False))
     predicates = {"cosine>=0.80": cosine >= high["cosine_min"],

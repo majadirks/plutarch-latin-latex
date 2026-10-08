@@ -71,10 +71,14 @@ logos; reader-output images are forbidden as templates.
 The case inventory includes all required report groups and 68 endpoint labels.
 All 187 development annotations have independently measured, inspected regions,
 including duplicate contribution endpoints, layout, endpoints and negatives.
-The validation inventory has 138 cases, of which 134 remain pending independent
-image review. The 25 prior-mask neighborhoods have separate defect-type
-negatives rather than whole-page clean claims. Pending annotations must be measured and reviewed
-before final calibration. Fixed panel image review and candidate adjudication
+All 138 validation cases also have independently inspected source/reader
+regions. The 25 prior-mask neighborhoods have separate defect-type negatives
+rather than whole-page clean claims. The Lucullus divider annotation records
+the independently verified absence of that rule in the current reader; its
+copied-gap case remains positive. Aratus duplicate opening boxes bound the
+printed first word `a`, while the raw OCR observation `ase` remains preserved.
+The first frozen validation evidence and subsequent annotation corrections
+are retained separately. Fixed panel image review and candidate adjudication
 are recorded separately from these benchmark labels.
 
 Renders use the full MediaBox and identity/settings-checked caches. Word-box
@@ -116,6 +120,13 @@ inconclusive evidence with `unique_loss: false`. Duplicates use
 start/end page boxes, and the incomplete-second-opening assessment. Other
 relations are defined in the script's shared `RELATIONS` table. Complete endpoint
 observations use `type: terminal_loss` and `relation: complete_endpoint`.
+
+Duplicate boundary refinement retains single-letter Latin prepositions and
+short terminal words. When OCR fails to match the terminal word, the locally
+corroborated prose line supplies its measured end; an already matched terminal
+word keeps its box. Opening-line coverage remains recorded when a later copy
+has too little opening prose for a complete edge match. Missing redundant
+prefixes therefore remain distinguishable from unique source loss.
 
 The evaluator matches types and actual expected source/output positions; it
 never matches Latin anchors. Missing spans require at least 80% source coverage
@@ -202,6 +213,13 @@ High confidence requires stable views, at least two observed glyphs and a
 distinct second fragment or matched source-tail context. Tiny fragments and
 failed retries remain visible with their confidence conditions.
 
+Source-tail corroboration compares original footer logos across nearby raster
+scales and rotations, retaining the same high correlation threshold. Completed
+matches and negative comparisons are cached against source pixels, template
+identities, comparison settings, helper code and OpenCV version. An original
+footer match establishes source context; reader glyph support is still required
+for a grouped output logo finding.
+
 Grouped logo nominations require at least one glyph supported by refined
 reader pixels or a virtual stitch. A logo in the original footer alone cannot
 establish its retention in the reader. This check happens after component
@@ -272,6 +290,12 @@ the same physical source page and column boundary, on consecutive physical reade
 pages and consecutive body ordinals. Distinct source scans remain separate.
 Failed registration or absent source assignments remain explicit in
 `clipping-debug-<unit>.json`.
+
+Embedded word boxes serve as locators for clipping comparisons. A small glyph
+context includes raster ink just outside those boxes, while the original boxes
+remain in evidence. Two-letter body words and Roman chapter markers remain
+eligible for pixel-supported slicing checks; their ordinary intact appearance
+does not establish a running-head or slicing finding.
 
 `index.html` shows every recorded candidate and endpoint observation, including
 low/unknown findings, with source/output crops, physical-page and body-folio
