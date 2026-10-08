@@ -86,13 +86,14 @@ The durable omission inventory at the end of this plan preserves all 59 confirme
 event IDs, exact normalized source regions, line counts, confidence, verdict,
 initial tier, and candidate/review crop paths and hashes. Step 1.1 imports that
 inventory into the diagnostic fixture and validates it against the two frozen
-files when available. It does not import OCR as replacement Latin.
+files, failing if neither the `tmp/` originals nor the step 1.0 archive copies
+are readable. It does not import OCR as replacement Latin.
 
-**Historical evidence recovery.** Before repairs, preserve the run, the earlier
+**Historical evidence recovery.** Step 1.0 preserves the run, the earlier
 run folders referenced by `reviews.json`, `snapshots/baseline_2026_10_06/`,
 `runs/step101-development-revised-1/freeze.json`, and the working `spec/` files
-in an archival location. Record that location and archive hashes in the diagnostic
-fixture. The completion note
+in an archival location before any diagnosis or repair. Step 1.1 records that
+location and the archive manifest hashes in the diagnostic fixture. The completion note
 [`2026_10_08_14_44_INNER_TOMI_AUDIT_STEP_102_COMPLETION.md`](2026_10_08_14_44_INNER_TOMI_AUDIT_STEP_102_COMPLETION.md)
 records the exact producer, baseline, freeze, specification, input, and tool
 identities. Reproduction requires all of those identities, including the frozen
@@ -272,8 +273,9 @@ keep (v2/375), so it is a genuine mask, not resolved by de-duplication.
   in Phase 1, add no separate mask.
 - **C6 (Romulus v1/39, with v1/38)** is left-glyph clipping from column
   detection, co-located with omission **C1** and left rule **R3**; see below.
-- **S2 (Demosthenes/Cicero comparison VII/244–245, v2/480)** is a line sliced
-  across a page boundary — a merged/`Tall` band fill-split by the packer. Fix by
+- **S2 (the `comparatio_demosthenis_et_ciceronis` unit, v2/480, output
+  VII/244–245)** is a line sliced across a page boundary — a merged/`Tall`
+  band fill-split by the packer. Fix by
   restoring separate line bands upstream (the O8B precedent: a margin mask on the
   connecting noise), not by changing the packer.
 - The broad `lateral_clipping` screen (1,110 nominations) is a **review queue,
@@ -376,13 +378,49 @@ second authoritative copy of the installed rectangles. Preserve original
 diagnostic evidence as historical measurements. Locate prose by physical PDF
 pages and exact source context; OCR locates, it never proves.
 
+## 1.0 Archive the historical audit evidence
+
+Perform the historical-evidence preservation described in the Context section
+before any diagnosis or repair. Copy
+`tmp/pdfs/inner_tomi_audit/runs/step102-final-all-5/`, every run folder that
+`reviews.json` evidence paths reference (at minimum
+`runs/step92-development-final-2/`, `runs/step101-validation-first/`, and
+`runs/step101-validation-expanded-review/`), `snapshots/baseline_2026_10_06/`,
+`runs/step101-development-revised-1/freeze.json`, and the working `spec/`
+files into `archive/inner_tomi_audit_2026_10_08/` at the repository root. An
+acceptable archival location is any durable directory outside `tmp/` and
+outside build outputs; this default keeps the evidence beside the repository
+without committing large binary crops — do not stage the archive in git.
+Write a manifest inside the archive listing every file's relative path and
+SHA-256; step 1.1 imports the archive location and manifest hashes into the
+diagnostic fixture. If a referenced evidence file is already missing, list the
+gap in the manifest explicitly and follow the fresh-confirming-read path from
+the Context section; do not synthesize a replacement.
+
+**LLM verification:** `Get-FileHash` over the archived `candidates.json` and
+`reviews.json` matches the two SHA-256 values bound in the Context section; a
+fresh hash pass over the archive matches the manifest; `git status --short`
+shows no archive content staged.
+
+**Human verification:** Confirm the archival location is durable enough (backed
+up, or at least outside anything a build or `tmp/` cleanup touches) and that
+any recorded evidence gaps match reality.
+
 ## 1.1 Shared support and the repair inventory
 
 In the `reflow.rs` test module, add three ignored entry points:
 `audit_duplicate_blocks_source_trace`, `audit_watermark_and_head_source_trace`,
 and `audit_omission_source_trace`. Add ordinary
 `audit_omission_inventory_matches_frozen_review` to validate the committed
-inventory; reuse `repair_trace_maps_skipped_pages_and_deleted_rows` for the
+inventory. That test checks internal consistency (event counts, the disjoint
+tier partition, unique IDs, the excluded false positive) and verifies the
+frozen `candidates.json` and `reviews.json` SHA-256 hashes against the
+fixture, reading either the original `tmp/` run path or the step 1.0 archive;
+if neither copy is readable it fails with an explicit missing-evidence error
+rather than passing silently. (Both files are present on the development
+machine and their hashes match the bound values, so the test passes there.)
+Reuse
+`repair_trace_maps_skipped_pages_and_deleted_rows` for the
 existing row-mapping contract. Prefer `RetainedSourcePageTrace`/`map_row` for
 units that will skip pages. Never derive their retained index from
 `page - start_page`.
@@ -390,7 +428,8 @@ units that will skip pages. Never derive their retained index from
 Import the durable omission inventory below into the diagnostic fixture, carrying
 both audit file hashes, unique event IDs, source regions and source input hashes,
 `missing_line_count`, detector confidence, review verdict, initial eligibility,
-and candidate/review crop identities. Validate a disjoint initial partition of
+and candidate/review crop identities. Import the step 1.0 archive location and
+its manifest hashes alongside the inventory. Validate a disjoint initial partition of
 39 Tier-A events / 69 lines and 20 Tier-B events / 44 lines. Require the complete
 59-event / 113-line set; reject duplicate IDs, a missing confirmed event, an
 unreviewed nomination, and `miss_tiberius_gracchus_403_690`. Add ordinary
@@ -507,8 +546,9 @@ openings of D5/D6/D12 add no unique line.
 
 Drive `audit_watermark_and_head_source_trace` over `aemilius_paulus` (v1/321),
 `brutus` (v2/603, v2/623), `philopoemen` (v1/448), `agis` (v2/375),
-`caius_marius` (v1/528), `cato_major` (v1/432), and the Demosthenes/Cicero
-comparison (v2/480). For each watermark, confirm it is a source-page tail below
+`caius_marius` (v1/528), `cato_major` (v1/432), and
+`comparatio_demosthenis_et_ciceronis` (v2/480). For each watermark, confirm it
+is a source-page tail below
 the last body band; record the watermark rectangle, the connecting right-rule /
 scan-noise rectangle, the final true body band, the removable tail interval, the
 median ordinary body gap, and the number of furniture-only rows currently copied.
@@ -664,7 +704,12 @@ Then assert each block's skips are absent and its own `retain_sequence` occurs
 contiguously in that retained sequence. Never compare the full sequence against
 only one block's skip list. Reuse the single render, metrics, traces, strips and
 composition for every block; do not merge non-contiguous blocks into one record
-or let a first-match `.find` ignore another record.
+or let a first-match `.find` ignore another record. A record's `retain_sequence`
+must not include any page in a sibling record's `skip_pages`:
+`known_duplicate_page_exclusions_are_identity_scoped` asserts the predicate
+returns false for every retained page, so such a record fails it — for agis, the
+D8 record's `retain_sequence` uses neighbors like 375–376 and 379, never
+377–378.
 
 **Migrate the skip-unaware otho regression.** `otho_final_source_pages_survive_reflow_once`
 will break under D12: `traced_real_unit` asserts the request sequence equals the
@@ -855,8 +900,10 @@ watermark unexpectedly proves to be an interior gap (a surviving band overlaps t
 proposed removal interval), **stop**: do not clip a body band and do not invent
 spacing metadata — resolve it with a safe pixel mask and rebanding, and amend this
 step with the source identity, safe interval, adjacent bands, and measured copied
-excess. The prior pass's `SourceWhitespaceExclusion` compaction branch remains
-**unselected** unless such a case is established and reviewed.
+excess. The `SourceWhitespaceExclusion` row compaction is a design alternative
+from the 2026_10_05 minimal-repairs plan that was never implemented — the name
+appears in no source file; do not build it unless such a case is established
+and reviewed.
 
 **LLM verification:** `cargo fmt --all`; `cargo fmt --all --check`; `cargo clippy
 --all-targets -- -D warnings`; `cargo test inner_tomi_watermark_cleanup_removes_pixels_and_space
@@ -916,8 +963,10 @@ function and affected identities, body-pixel preservation assertions, and ordina
 regression names; the event remains unresolved until that correction is installed
 and its source-line regression passes.
 
-Add ignored `romulus_c1_c6_lines_restored` and use the shared
-`audit_tier_a_source_lines_restored` for every other assigned event. Both read
+Add ignored `romulus_c1_c6_lines_restored` and the single table-driven ignored
+`audit_tier_a_source_lines_restored`, whose case table covers every other event
+assigned here (step 4.2 extends the same table rather than adding a second
+test). Both read
 independently reviewed source line/glyph regions from committed evidence and call
 `assert_reviewed_source_lines_survive` on actual full-unit extraction and
 composition. Check Romulus chapter IX and its neighbors, all missing lines, and
@@ -976,9 +1025,10 @@ For each Tier-A event attributed to another stage, apply its finalized correctio
   specified fix, or keep unresolved and amend this step before a new correction.
   A preservation reason is not restoration and cannot satisfy completion.
 
-Add ignored `phocion_c3_line_restored`, `coriolanus_c2_lines_restored`,
-`brutus_c5_line_restored`, and one table-driven ignored
-`audit_tier_a_source_lines_restored`. Use the same
+Add ignored `phocion_c3_line_restored`, `coriolanus_c2_lines_restored`, and
+`brutus_c5_line_restored`, and extend the table of the ignored
+`audit_tier_a_source_lines_restored` added in 4.1 with this step's events.
+Use the same
 `assert_reviewed_source_lines_survive` for these wrappers and every other
 single- or multi-line event; render/compose once per unit in the table-driven
 test. Store an exact `regression_name` on each diagnosis record: the relevant
@@ -1021,8 +1071,8 @@ Brutus 623→624 seams and distinguish Brutus's separate 623 top loss.
 
 ## 4.3 Resolve the S2 line slice
 
-Apply the step 1.1B decision for S2 (Demosthenes/Cicero comparison, v2/480),
-rechecking its mechanism after the preceding repairs. If source connecting noise
+Apply the step 1.1B decision for S2 (`comparatio_demosthenis_et_ciceronis`,
+v2/480), rechecking its mechanism after the preceding repairs. If source connecting noise
 merges lines, add the verified upstream mask that restores separate whole bands
 (the O8B precedent), so each composes whole at production scale. If the trace
 demonstrates another mechanism, record it and use the amendment gate below;
@@ -1109,7 +1159,8 @@ confirmed **unchanged**, since `global_scale_for` samples unmasked rasters over
 ranges that still include the excluded pages), each duplicate decision, each
 restored omission with its event ID, exact source-line count and prose landmark,
 every retained artifact (ambiguous rules, F1/F2 deferrals, unpromoted Tier-B
-events, M-series spacing retentions, W3/Praefatio non-findings), archival evidence
+events, each M1–M11 copied-margin vs genuine-spacing classification, the B1–B4
+absence re-check, W3/Praefatio non-findings), archival evidence
 location/hashes, and any environment-dependent check that could not run.
 Report initial Tier-A 39/69 and Tier-B 20/44 counts, promotions, repaired counts,
 and unresolved counts separately. Require zero unresolved Tier-A events and a
