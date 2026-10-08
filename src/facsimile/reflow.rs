@@ -1116,6 +1116,20 @@ pub fn compose_pages(
     budget: u32,
     metrics: &LineMetrics,
 ) -> Vec<GrayImage> {
+    let mut canvases = compose_body_canvases(pages, scale, geom, first_budget, budget, metrics);
+    retain_body_canvases(&mut canvases, scale, metrics);
+    canvases
+}
+
+/// Pack the source strips before applying the final canvas ink floor.
+fn compose_body_canvases(
+    pages: &[(GrayImage, Vec<Band>)],
+    scale: f32,
+    geom: &TrimGeom,
+    first_budget: u32,
+    budget: u32,
+    metrics: &LineMetrics,
+) -> Vec<GrayImage> {
     let strips = strips_in_reading_order(pages, metrics);
     let min_piece = min_piece_px(metrics, scale);
 
@@ -1197,6 +1211,11 @@ pub fn compose_pages(
     if !current.is_empty() {
         canvases.push(pack_canvas(&current, geom));
     }
+    canvases
+}
+
+/// Remove canvases below the source-derived, scaled ink-area floor.
+fn retain_body_canvases(canvases: &mut Vec<GrayImage>, scale: f32, metrics: &LineMetrics) {
     if let Some(min_ink) = minimum_ink(metrics) {
         // Pixel area scales by the square of the global linear scale.
         let scaled_min = (min_ink as f64 * (scale as f64).powi(2)).ceil().max(1.0) as u64;
@@ -1208,7 +1227,6 @@ pub fn compose_pages(
             ink >= scaled_min
         });
     }
-    canvases
 }
 
 /// Scale a strip (a cut-point interval of a page column) by the global `scale`,

@@ -624,6 +624,17 @@ lines and include the event in the Tier-A restoration gate.
 evidence or an explicit unresolved reason, all Tier-B dispositions exist, and no
 rejected event entered the inventory.
 
+The baseline diagnosis also runs `audit_candidate_source_trace` with
+`-- --ignored --nocapture` and ordinary
+`audit_omission_diagnosis_covers_all_source_lines`. The latter validates the
+39/69 source-region count, per-line stage evidence, deferred Tier-B dispositions,
+and hashes of the diagnostic archive manifest, baseline traces and native
+source-line views. The source-dependent commands may use `cargo test --release
+--lib` to avoid repeatedly scanning all production rasters in debug mode; each
+named ignored command must select and execute at least one test. The packer and
+final canvas floor share one production implementation, exposing their boundary
+to test tracing without copying the packing algorithm.
+
 **Human verification:** Read every Tier-A source loss and its baseline reader
 seam, including complete multi-line blocks. Review proposed masks and boundaries;
 confirm the source text and neighbors that a repair must preserve. Review
@@ -669,8 +680,14 @@ retained occurrences remain governed by their event-specific eligibility:
 `miss_cato_minor_331_9707` is Tier A; `miss_cato_minor_329_8786` is Tier B and
 cannot receive a correction without the required confirming human read.
 
-Watermark candidates measured actual copied endpoints W4: 2881→2572 (309 rows),
-W5: 2735→2556 (179 rows), and W6: 2735→2561 (174 rows). Each is a tail, with
+Watermark candidates measured copied endpoints W4: 2881→2572,
+W5: 2735→2556, and W6: 2735→2561. Summing actual extracted strip intervals
+gives page copied heights W4 2630→2314, W5 2512→2351, and W6 2321→2298.
+Actual copied furniture-tail rows beyond the reviewed last Latin are respectively
+309→0, 161→0 and 128→0. Endpoint subtraction would overstate W5/W6 tail
+removal because the strip floor already discards some intervening intervals.
+W6 also restores top-body rows, so its total copied height cannot stand in for
+tail removal. Each watermark is a tail, with
 no source-page Latin beneath its logo. The next source page supplies the W4/W5
 continuation; W6 still has the separate missing first line on 624. The candidate
 623 right-rule cleanup also separates the three top lines formerly swallowed by
@@ -678,8 +695,26 @@ a merged head band; Phase 4 must verify their restoration independently.
 
 F1 and F2 are deferred: no complete safe boundary has been proven beside Latin
 and legitimate reference letters. S2 uses the specifically amended packing
-branch in 4.3. Omission dispositions are populated during 1.1C and finalized
-against installed exclusions in 2.1A.
+branch in 4.3. The baseline diagnosis covers every initial Tier-A event:
+39 events, 69 individually located source-line regions, raw/cropped band
+measurements, extraction membership and the final canvas filter. All remain
+unresolved until installed repairs pass their source-to-canvas assertions.
+The 20 Tier-B events retain their confirmed historical verdict and explicit
+pending-human-read disposition; none is promoted or targeted.
+The finite body-band correction specification contains 47 observed signatures;
+multi-line blocks share one retained interval without duplicating any source row.
+Post-exclusion measurements and final repair disposition belong to 2.1A.
+
+The separate diagnostic archive is
+`archive/inner_tomi_audit_repairs_2026_10_08/baseline`: 4,404 files,
+1,657,727,176 bytes. Its manifest SHA-256 is
+`8ffd341b1a5c8b821f22698a0089e85f576aede01c86e7b57ecc2e6f457eab50`.
+It preserves source/candidate columns, duplicate comparisons, native source-line
+views, baseline packed canvases before and after the ink filter, and trace JSON.
+Diagnostic fixture references point into this archive, so future pipeline traces
+cannot overwrite the baseline. `diagnosis_stage` distinguishes later local
+omission/candidate trace output directories. No OneDrive ownership or network
+copying was established; these are ordinary local paths.
 
 # Phase 2 — De-duplicate the nine repeated blocks D4–D12 (Suggested implementer: Opus)
 
@@ -886,6 +921,26 @@ envelope of a component that includes Latin. Preserve crop height and original
 band coordinates through Pass B. Do not touch raw caches, source PDFs,
 transcription caches, general thresholds, body scale, or the notice page.
 
+The candidate masks expose three genuine small Latin fragments that the strip
+ink floor would otherwise discard. Add `coalesce_known_body_fragments(source,
+page, column_dimensions, bands)` immediately after `line_bands` in
+`render_and_band`. It merges only the exact consecutive pairs below; all other
+bands, identities and dimensions are unchanged. Merging copies original rows,
+including the small intervening white gap, without painting any glyph.
+
+| Source/page | Column dimensions | Observed consecutive bands | Retained band |
+|---|---|---|---|
+| 0/321 | 764 × 2960 | [2529,2533], [2534,2572] | [2528,2572] |
+| 1/375 | 752 × 2836 | [2209,2245], [2247,2251] | [2209,2251] |
+| 1/375 | 752 × 2836 | [2315,2319], [2321,2357] | [2315,2357] |
+
+Add ordinary `known_body_fragments_preserve_faint_latin_pixels` using the real
+band-extraction/composition functions on a synthetic column with faint fragments;
+prove original pixels survive, the merged band crosses the unchanged ink floor,
+and changed page/source/dimensions or nonmatching band pairs remain unchanged.
+Freeze the installed mask's expected Pass-A intervals after these finite joins.
+Run this test alongside the Cato crop-edge preservation test in this step.
+
 Append each installed mask record to the existing repair ledger in this same
 step; leave future Phase 4 proposals in the diagnostic fixture. Extend existing
 ignored `inner_tomi_known_masks_preserve_latin`; it already reads every installed
@@ -938,8 +993,11 @@ scale. Assert:
   Phase 1 ledger), not at the former watermark/edge row.
 - No extracted strip reaches the furniture-only tail interval.
 - The composed seam copies **zero** source-margin padding rows beyond the ordinary
-  median body gap (allow only resampling rounding), measured as a reduction in
-  **actual copied height**, not band count or erased-ink totals.
+  median body gap (allow only resampling rounding). Sum actual copied strip
+  intervals and their intersections with the furniture-only tail; compare the
+  independently frozen baseline totals, not endpoint subtraction. Record both
+  total copied page height and removed copied tail height. W6's restored top
+  lines can increase copied body height independently of the removed tail.
 - For **W4 and W5**, the following source page's first true Latin line survives
   intact. For **W6**, do not assert 624's first line here (see the note) — assert
   only the 623 tail/space removal and the integrity of reviewed currently
@@ -1002,31 +1060,59 @@ the diagnostic fixture.
 ## 4.1 Restore clipped-and-dropped seams (C1/C6 and same-mechanism losses)
 
 Route each Tier-A event by its refreshed 2.1A diagnosis. This step handles cases
-where measured clipping and furniture-driven geometry cause the loss; C1/C6 on
-v1/38–39 is a hypothesis to verify, not a prescribed mechanism. Route all
+where measured clipping and furniture-driven geometry cause the loss. The
+baseline has established separate crop and gap-filter causes for C1/C6 on
+v1/38–39 and Caesar v2/252; verify their refreshed signatures before installation. Route all
 multi-line events, including Julius Caesar (12), Theseus (7), Brutus 623 (3),
 Demosthenes 437 (4) and 443 (2), Eumenes 91 (2), Solon 115 (2), and Tiberius
 Gracchus 414 (2), by their actual diagnosis to 4.1 or 4.2. Confirm every source
 line; a large loss does not establish a trailing-cluster cause.
 
-For each case assigned here, add the verified **left-edge furniture mask** to
-`SOURCE_FURNITURE_MASKS` (reusing the Phase 3 table and helper). This is the
-mask mechanism used by the prior pass: G1/G2/G3 restored Latin columns when
-detection latched onto narrow **right-margin** scan edges. That precedent does
-not prove the proposed left-margin mechanism. Measure the actual left rule,
-projection, crop and dropping stage for each case. Prove the restored crop
-reaches the true left margin, the affected bands are now full-measure, and the
-dropped lines reappear once and in order with their left glyphs intact (C6).
+The source trace refutes the proposed left-mask mechanism for C1. Romulus
+0/38's chapter IX is a full Latin block in raw band [2451,2651];
+`drop_furniture` discards it as a detached trailing gap outlier. Its detected
+right edge also cuts the ends of the last lines. A left-rule mask spanning this
+page would cut upper-page Latin and is therefore prohibited. C6 on 0/39 has
+a separate left crop at x1101 that cuts the beginning of the printed word
+`educati`. Caesar 1/252 loses the twelve-line raw band [240,744] as a detached
+leading gap outlier, and the detected right edge also cuts line endings.
 
-**Fallback if a white mask does not move the crop.** Painting the rule white is not
-guaranteed to pull `latin_left` leftward, since `detect_latin_column`'s
-back-off-left loop keys off the Latin's own projection. If the refreshed trace
-shows the mask alone does not restore the crop, **do not widen** `exclude_isolated_left_divider`'s
-gates; record the exact detection mechanism and specify the narrowest
-detection-side correction in this plan before coding. Specify the responsible
-function and affected identities, body-pixel preservation assertions, and ordinary
-regression names; the event remains unresolved until that correction is installed
-and its source-line regression passes.
+Extend `preserve_known_body_crop_edge` with these exact cases, requiring the
+source/page identity, production raster dimensions and observed column:
+
+| Source/page | Raster | Observed column | Corrected column |
+|---|---|---|---|
+| 0/38 | 1988 × 3000 | [929,1763] | [932,1774] |
+| 0/39 | 2004 × 2989 | [1101,1892] | [1085,1892] |
+| 1/252 | 1874 × 2831 | [891,1706] | [891,1722] |
+
+The 0/38 left adjustment removes white padding; independently reviewed upper
+body glyphs begin at x932, and the lower body ends before x1769. Its genuine
+Latin width therefore fits the unchanged 1004-pixel text measure at the unchanged
+global scale. The 0/39 correction includes the complete source glyphs. The
+1/252 correction includes original line endings and marginal reference ink.
+Every unrelated detector result remains unchanged. Add ordinary
+`known_body_crop_corrections_preserve_clipped_glyphs`, covering all three exact
+cases, original edge pixels and negative identity/dimension/column cases.
+
+Add a closed, edition-specific `retain_known_source_body_bands` helper in
+`reflow.rs`. Its finite source/page, column-dimension and observed-band signatures
+come from the committed diagnostic fixture's `planned_body_band_repairs`.
+It reinserts or extends only reviewed genuine body bands, never an unresolved
+mixed head/body band. Call it after Pass-A furniture/early-body filtering and
+after Pass-B trims. Pass A has no unit owner restriction; Pass B requires the
+record's exact owning unit ID, so shared-tail Latin cannot be resurrected in
+the following comparison. Source row coordinates, pixel values, line order,
+metrics thresholds and scale stay unchanged. The helper receives raw/Pass-A
+band evidence and merges overlapping retained intervals without duplicating rows.
+It is a literal finite predicate/table, not a runtime override file or new CLI.
+Install only the Romulus 0/38 and Caesar 1/252 entries here; step 4.2 extends
+the same definition for the remaining reviewed identities. The protected interval
+covers the independently reviewed glyph boundaries even where a few faint edge
+rows fell below `line_bands`' unchanged per-row ink threshold.
+Add ordinary `known_source_body_bands_survive_furniture_filters` to demonstrate
+both gap-outlier failures, complete source-row preservation through extraction
+and composition, unchanged unrelated cases, and correct shared-tail ownership.
 
 Add ignored `romulus_c1_c6_lines_restored` and the single table-driven ignored
 `audit_tier_a_source_lines_restored`, whose case table covers every other event
@@ -1038,12 +1124,9 @@ composition. Check Romulus chapter IX and its neighbors, all missing lines, and
 C6's left glyph boundaries. Do not use the current retained crop as the expected
 left boundary.
 
-If diagnosis confirms the left-rule narrowing/cluster-drop mechanism, add
-ordinary `left_rule_mask_restores_full_width_bands_and_tail_lines` using shared
-synthetic image helpers and the production pipeline, preserving every body
-pixel. If that mechanism is refuted, omit this test with the measured reason
-and specify an ordinary regression for the actual new behavior in the amendment;
-do not manufacture the hypothesized failure to satisfy a test name.
+Omit `left_rule_mask_restores_full_width_bands_and_tail_lines`: the native source
+trace refutes its hypothesized cause. Run the two exact ordinary regressions
+above for the measured crop and gap-filter corrections.
 
 **LLM verification:** `cargo fmt --all`; `cargo fmt --all --check`; `cargo clippy
 --all-targets -- -D warnings`; run `cargo test
@@ -1098,6 +1181,60 @@ Use the same
 single- or multi-line event; render/compose once per unit in the table-driven
 test. Store an exact `regression_name` on each diagnosis record: the relevant
 named C1/C2/C3/C5 wrapper or `audit_tier_a_source_lines_restored`.
+
+The measured baseline requires no opening or title-fraction changes. Extend
+`preserve_known_body_crop_edge` for Brutus source 1/page 623: raster dimensions
+1810 × 2843, detected column [982,1771] after W6 cleanup, corrected column
+[976,1771]. Native full-width review shows the beginnings of the three restored
+top lines extend left of x982. Extend the same ordinary crop-preservation test
+with this identity; it leaves the original source glyphs and every unrelated
+column unchanged. The protected-band signatures use this corrected 795-pixel
+column width. The three lines remain unresolved until this crop and their full
+source-to-canvas preservation assertion pass.
+
+Extend
+the same `retain_known_source_body_bands` definition from 4.1 with the remaining
+finite identities and observed/protected intervals recorded in
+`planned_body_band_repairs`. Most losses occur in the top-zone or leading/trailing
+gap filters; Coriolanus 0/292 and Solon 0/115 also lose genuine body text in
+Pass B. Restrict each Pass-B protection to its exact owning unit. Theseus
+0/15's seven chapter-VI lines remain in one genuine body block with an ambiguous
+left divider; preserve that block without masking the overlapping rule.
+Extend `known_source_body_bands_survive_furniture_filters` with top-zone,
+interior-head, shared-tail ownership and multi-line preservation examples.
+
+Install the six independently reviewed external-divider masks from the diagnostic
+fixture for source 1/pages 391, 393, 437, 443, 407 and 411. Their pixel left
+boundaries are respectively 1790, 1850, 1800, 1800, 1840 and 1830; each rectangle
+extends to the right and bottom raster edges. The source raster dimensions and
+preserved Latin boundaries are frozen in `candidate_mask_cases`. They separate
+mixed running-head/body bands without erasing Latin. Reuse the existing mask
+table, installed ledger and source-pixel preservation regression. These masks
+restore the nominated lines on most of these pages; protect remaining faint
+glyph rows or the 411 top-zone loss with the finite body-band helper.
+
+Extend `coalesce_known_body_fragments` for three further reviewed pairs exposed
+by these masks: source 1/page 391, column 782 × 2825, [1192,1195] followed by
+[1196,1231] becomes [1192,1231]; page 393, column 789 × 2832,
+[928,959] followed by [961,962] becomes [928,962]; page 443, column
+807 × 2838, [2153,2179] followed by [2180,2185] becomes [2153,2185].
+These contain a printed question-mark fragment and descenders. Extend the same
+ordinary faint-fragment test, leaving the global ink floor unchanged.
+
+Restore the additional Cato Minor 1/360 verse label independently of the frozen
+39-event/69-line inventory. Its source region [888,2026,932,2048] contains 374
+ink pixels, below the unit's 498-pixel strip floor. Add
+`is_known_source_verse_label(column, band)`, recognizing only column dimensions
+788 × 2838, cut-point strip [2010,2064], and the original 44 × 22 glyph sample at column-relative
+[3,2026,47,2048], with grayscale SHA-256
+`472ea07f0f6e6d85db2dfffcc4faf9d393da12c60ea1f516ba1c28946ca56f62`.
+In `strips_in_reading_order`, retain this exact source fingerprint despite its
+ink floor. Never substitute fixture pixels for source pixels. Add ordinary
+`known_source_verse_label_survives_ink_floor`, proving complete pixel preservation
+through scaling/composition and unchanged filtering for changed sample pixels,
+dimensions and coordinates. Include this original-source label in the D7
+full-line preservation assertion and final evidence as one additional restored
+source item, without changing the initial omission count.
 
 During intermediate steps, the table-driven test asserts every installed event
 and reports every still pending event by ID/count without treating it as repaired.

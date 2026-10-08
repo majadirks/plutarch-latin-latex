@@ -129,6 +129,62 @@ fn audit_omission_inventory_matches_frozen_review() {
 }
 
 #[test]
+fn audit_omission_diagnosis_covers_all_source_lines() {
+    use sha2::Digest;
+    let fixture = audit_repair_ledger();
+    let archive = &fixture["diagnostic_archive"];
+    let manifest = std::fs::read(
+        std::path::Path::new(archive["path"].as_str().unwrap()).join("manifest.json"),
+    )
+    .unwrap();
+    assert_eq!(
+        format!("{:x}", sha2::Sha256::digest(&manifest)),
+        archive["manifest_sha256"]
+    );
+    let mut counts = [0, 0];
+    for event in fixture["events"].as_array().unwrap() {
+        if event["initial_tier"] == "B" {
+            assert_eq!(event["status"], "deferred");
+            assert!(!event["repair_read_status"].as_str().unwrap().is_empty());
+            continue;
+        }
+        let diagnosis = &event["diagnosis"];
+        for key in ["baseline_trace", "reviewed_source_overlay"] {
+            let evidence = &diagnosis[key];
+            let bytes = std::fs::read(evidence["path"].as_str().unwrap()).unwrap();
+            assert_eq!(
+                format!("{:x}", sha2::Sha256::digest(&bytes)),
+                evidence["sha256"],
+                "frozen {key} for {}",
+                event["event_id"]
+            );
+        }
+        let lines = diagnosis["reviewed_lines"].as_array().unwrap();
+        assert_eq!(
+            lines.len() as u64,
+            event["missing_line_count"].as_u64().unwrap()
+        );
+        let mut previous = None;
+        for line in lines {
+            let r = &line["region"];
+            assert!(r[0].as_u64().unwrap() < r[2].as_u64().unwrap());
+            assert!(r[1].as_u64().unwrap() < r[3].as_u64().unwrap());
+            assert!(previous.is_none_or(|top| top < r[1].as_u64().unwrap()));
+            previous = r[1].as_u64();
+            assert!(!line["baseline"]["first_loss_stage"]
+                .as_str()
+                .unwrap()
+                .is_empty());
+            assert!(!line["landmark"].as_str().unwrap().is_empty());
+        }
+        assert!(!diagnosis["regression_name"].as_str().unwrap().is_empty());
+        counts[0] += 1;
+        counts[1] += lines.len();
+    }
+    assert_eq!(counts, [39, 69]);
+}
+
+#[test]
 fn audit_omission_inventory_rejects_false_positive_and_duplicate_events() {
     let fixture = audit_repair_ledger();
     validate_audit_omission_inventory(&fixture).unwrap();
@@ -451,7 +507,36 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
     std::fs::create_dir_all(&dir).unwrap();
     let geom = TrimGeom::default();
     let scale = production_body_scale();
-    let (strips, canvas_ranges, canvases) = strip_and_canvas_ranges(&pages, &metrics, scale, &geom);
+    let packed = compose_body_canvases(
+        &pages,
+        scale,
+        &geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
+        &metrics,
+    );
+    let packed_details: Vec<_> = packed
+        .iter()
+        .enumerate()
+        .map(|(i, c)| {
+            let ink: u64 = ink_profile_rows(c, INK_THRESHOLD)
+                .into_iter()
+                .map(u64::from)
+                .sum();
+            c.save(dir.join(format!("canvas-before-filter-{}.png", i + 1)))
+                .unwrap();
+            serde_json::json!({"canvas":i+1,"height":c.height(),"ink":ink})
+        })
+        .collect();
+    let mut canvases = packed;
+    retain_body_canvases(&mut canvases, scale, &metrics);
+    let (strips, canvas_ranges, canvases) =
+        ranges_for_composed_canvases(&pages, &metrics, scale, &geom, canvases);
+    for (i, canvas) in canvases.iter().enumerate() {
+        canvas
+            .save(dir.join(format!("canvas-{}.png", i + 1)))
+            .unwrap();
+    }
     let mut records = Vec::new();
     let fixture = audit_repair_ledger();
     let cases: Vec<_> = fixture["candidate_mask_cases"]
@@ -513,6 +598,31 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
         let band_details: Vec<_> = bands.iter().map(|b| serde_json::json!({"rows":[b.top,b.bottom],
             "ink_bounds":band_ink_bounds(&column,b), "span":band_ink_span(&column,b),
             "coverage":band_ink_coverage(&column,b), "class":format!("{:?}",classify_band(&column,b,&metrics))})).collect();
+        let candidate_crops: Vec<_> = fixture["candidate_crop_cases"].as_array().into_iter().flatten()
+            .filter(|c| c["source"].as_u64() == Some(trace.source as u64)
+                && c["source_page"].as_u64() == Some(trace.page as u64))
+            .map(|c| {
+                let edges = crate::facsimile::columns::Column {
+                    left: c["proposed_crop"][0].as_u64().unwrap() as u32,
+                    right: c["proposed_crop"][1].as_u64().unwrap() as u32,
+                };
+                let mut candidate = masked.clone();
+                for case in cases.iter().filter(|c| c["source_page"].as_u64() == Some(trace.page as u64)) {
+                    for r in case["mask_rectangles"].as_array().unwrap() {
+                        apply_source_furniture_mask(&SourceFurnitureMask {
+                            source: trace.source, page: trace.page, left: r[0].as_f64().unwrap(),
+                            top: r[1].as_f64().unwrap(), right: r[2].as_f64().unwrap(), bottom: r[3].as_f64().unwrap(),
+                        }, &mut candidate);
+                    }
+                }
+                let col = crop_column(&candidate, &edges);
+                col.save(dir.join(format!("s{}-p{}-candidate-crop.png",trace.source,trace.page))).unwrap();
+                let raw_bands = line_bands(&col, LINE_MIN_INK);
+                let details: Vec<_> = raw_bands.iter().map(|b| serde_json::json!({"rows":[b.top,b.bottom],
+                    "ink_bounds":band_ink_bounds(&col,b),"class":format!("{:?}",classify_band(&col,b,&metrics))})).collect();
+                serde_json::json!({"crop_edges":[edges.left,edges.right],"raw_bands":as_rows(&raw_bands),
+                    "zone_and_gap_filtered_bands":as_rows(&drop_furniture(&raw_bands,col.height())),"band_details":details})
+            }).collect();
         let mut candidate_results = Vec::new();
         for case in fixture["candidate_mask_cases"]
             .as_array()
@@ -568,7 +678,8 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
                 )))
                 .unwrap();
             candidate_results.push(serde_json::json!({"finding_ids":case["finding_ids"],
-                "crop_edges":[edges.left,edges.right],"pass_a_bands":as_rows(&candidate_bands),"band_details":candidate_details,
+                "crop_edges":[edges.left,edges.right],"raw_bands":as_rows(&line_bands(&candidate_col,LINE_MIN_INK)),
+                "pass_a_bands":as_rows(&candidate_bands),"band_details":candidate_details,
                 "full_unit_pass_b_bands":candidate_unit.as_ref().map(|(ids,cp,_)|as_rows(&cp[ids.iter().position(|p|*p==trace.page).unwrap()].1)),
                 "full_unit_strip_intervals":candidate_unit.as_ref().map(|(ids,cp,cm)|strips_in_reading_order(cp,cm).iter()
                     .filter(|s|s.page_img_index==ids.iter().position(|p|*p==trace.page).unwrap()).map(|s|[s.band.top,s.band.bottom]).collect::<Vec<_>>())}));
@@ -582,7 +693,8 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
             "raster":[raw.width(),raw.height()],"raw_crop_edges":[raw_crop.left,raw_crop.right],
             "crop_edges":[crop.left,crop.right],"raw_bands":as_rows(&bands),"band_details":band_details,
             "zone_and_gap_filtered_bands":as_rows(&zone),"pass_a_bands":as_rows(&pass_a),
-            "retained_trace":trace,"strips":retained_strips,"candidate_results":candidate_results}));
+            "retained_trace":trace,"strips":retained_strips,"candidate_results":candidate_results,
+            "candidate_crops":candidate_crops}));
     }
     assert_eq!(
         records.len(),
@@ -603,7 +715,8 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
     let result = serde_json::json!({"unit_id":id,"scale":scale,"metrics":{"height_med":metrics.height_med,
         "height_mad":metrics.height_mad,"width_med":metrics.width_med},"strip_minimum_ink":minimum_ink(&metrics),
         "canvas_minimum_ink":minimum_ink(&metrics).map(|v| (v as f64 * (scale as f64).powi(2)).ceil() as u64),
-        "source_pages":traces,"pages":records,"canvas_ranges":canvas_ranges,"canvases":canvas_details});
+        "source_pages":traces,"pages":records,"canvas_ranges":canvas_ranges,
+        "canvases_before_filter":packed_details,"canvases":canvas_details});
     std::fs::write(
         dir.join("trace.json"),
         serde_json::to_vec_pretty(&result).unwrap(),
@@ -756,6 +869,37 @@ fn audit_omission_source_trace() {
     }
     assert_eq!(events, 39, "all initial Tier-A events scheduled");
     for (id, pages) in units {
-        audit_save_unit_trace(id, &pages, "omissions-baseline");
+        audit_save_unit_trace(
+            id,
+            &pages,
+            &format!("omissions-{}", fixture["diagnosis_stage"].as_str().unwrap()),
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires original PDFs and production-DPI raster evidence"]
+fn audit_candidate_source_trace() {
+    let fixture = audit_repair_ledger();
+    let mut units: std::collections::BTreeMap<&str, std::collections::BTreeSet<u32>> =
+        std::collections::BTreeMap::new();
+    for key in ["candidate_mask_cases", "candidate_crop_cases"] {
+        for case in fixture[key].as_array().unwrap() {
+            units
+                .entry(case["unit_id"].as_str().unwrap())
+                .or_default()
+                .insert(case["source_page"].as_u64().unwrap() as u32);
+        }
+    }
+    assert!(!units.is_empty());
+    for (id, pages) in units {
+        audit_save_unit_trace(
+            id,
+            &pages,
+            &format!(
+                "candidates-{}",
+                fixture["diagnosis_stage"].as_str().unwrap()
+            ),
+        );
     }
 }
