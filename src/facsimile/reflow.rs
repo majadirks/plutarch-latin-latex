@@ -1321,6 +1321,8 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 
 #[cfg(test)]
 mod tests {
+    include!("audit_repair_tests.rs");
+
     #[test]
     fn shared_line_primitives_preserve_body_pixels() {
         use super::*;

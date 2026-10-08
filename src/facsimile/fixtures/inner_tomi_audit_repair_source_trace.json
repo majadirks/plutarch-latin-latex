@@ -1,0 +1,3867 @@
+{
+  "schema_version": 1,
+  "baseline_id": "baseline_2026_10_06",
+  "candidates_sha256": "03f31fc68aa8829b90cdf3462578d9978b05d01a5a9c895416333dd4f2c78144",
+  "reviews_sha256": "339ac5a1663bf5ea577a293d1d22aaa412b567a082e66806943c110b126b57ec",
+  "excluded_high_confidence_false_positive": "miss_tiberius_gracchus_403_690",
+  "events": [
+    {
+      "event_id": "miss_aemilius_paulus_326_3162",
+      "unit_id": "aemilius_paulus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 326,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.4679552491638291,
+            0.08719088521871741,
+            0.8659716647803383,
+            0.10445386164972141
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_aemilius_paulus_326_3162_0.png",
+          "sha256": "4130e902ba17a8728e26f437292e60738ae5158562d6f867797d5b8841418335"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_aemilius_paulus_326_3162_1.png",
+          "sha256": "c6deb3f60828eb03446d37946db012201241c8d4a3a9759f453d1b350e2c428e"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/miss_aemilius_paulus_326_3162_0.png",
+          "sha256": "4130e902ba17a8728e26f437292e60738ae5158562d6f867797d5b8841418335"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/miss_aemilius_paulus_326_3162_1.png",
+          "sha256": "c6deb3f60828eb03446d37946db012201241c8d4a3a9759f453d1b350e2c428e"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_agesilaus_110_1649",
+      "unit_id": "agesilaus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 110,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.498844745963067,
+            0.07207059635667035,
+            0.9121360304172613,
+            0.08914570805067591
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_agesilaus_110_1649_0.png",
+          "sha256": "a7c70fb207b044bd09982e4b34486076157928589d659cf594eabc98b45b1091"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_agesilaus_110_1649_1.png",
+          "sha256": "eec83faa84279ffb830bce543ba318d1dad9a54309edecb2e0ce189bd1a6c346"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_agesilaus_110_1649_0.png",
+          "sha256": "f4a1476ed4a6edc49344dd4dc5ab6d1bd4dcefe44209b77826f7b088d30d0c9a"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_agesilaus_110_1649_1.png",
+          "sha256": "346cdba35ad3f78e866f89ef67713ab0002c9aee4069f0d553e970be109cfb00"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_agesilaus_110_2063",
+      "unit_id": "agesilaus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 110,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.4899558849395718,
+            0.8859686341149446,
+            0.8950486546719703,
+            0.9057015110670648
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_agesilaus_110_2063_0.png",
+          "sha256": "27ba4c56cd91d70cd6d6d9419a14cc8a1c35ea3787879390218abc8777988c78"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_agesilaus_110_2063_1.png",
+          "sha256": "9cec742ba63ae70ef418449fe6c00c942e4c94696f209feeb4ca4708b5ed9d7b"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_agesilaus_110_2063_0.png",
+          "sha256": "7a45c069422bc5563eb3c30796f071c099bc48204412895f099e655445be018e"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_agesilaus_110_2063_1.png",
+          "sha256": "1686056931565ca63452329649ca1c25192bb8b567a977600a9b4ea86b428f29"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_alcibiades_242_229",
+      "unit_id": "alcibiades",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 242,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5099376489463482,
+            0.8651861900792783,
+            0.7616640612099215,
+            0.8828634713044736
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_alcibiades_242_229_0.png",
+          "sha256": "4d82e4b352e2658f49969361e415bd29ee5603dbb19a1c845d9f53715efd98dc"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_alcibiades_242_229_1.png",
+          "sha256": "e4f00893d744cab2db15d26172e1888165b6f85bba57de7b6756ebc2c7ed82c3"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_242_229-native-0.png",
+          "sha256": "9f1d54aac7f7a50d5dc41527de92a69e1d31a358638ac7d49a51e5d26883bfac"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_242_229-native-1.png",
+          "sha256": "89424854a7f9367d608be762767f1fbaddc183f3577e8c9b3f54a40b3f396b5d"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_242_229-native-2.png",
+          "sha256": "556c636d4f348ce002d3c03e54f05f22c0fe55bd7d99ba762a78698137eae106"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_242_229-native-3.png",
+          "sha256": "55b73e95c05f5aa6e993e1e50a23d4e3c132fd7759598f98dd11a9041eb7a38e"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_alcibiades_242_229_0.png",
+          "sha256": "4d82e4b352e2658f49969361e415bd29ee5603dbb19a1c845d9f53715efd98dc"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_alcibiades_242_229_1.png",
+          "sha256": "e4f00893d744cab2db15d26172e1888165b6f85bba57de7b6756ebc2c7ed82c3"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_alcibiades_251_4338",
+      "unit_id": "alcibiades",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 251,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5341224492776611,
+            0.8555064909264487,
+            0.9226540862163817,
+            0.8733243968974308
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_alcibiades_251_4338_0.png",
+          "sha256": "ba8188df722c393a88a96b6c0b97494b479f2ee8ffccab46b6b85527caf2c7fb"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_alcibiades_251_4338_1.png",
+          "sha256": "dbe762f2b49a79b1313ec7f3fa36f7b11406ae42e981c1e3a3cc95fac531eb96"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_251_4338-native-0.png",
+          "sha256": "bcbb38914fea9f45da486973605c235ae05fffe079b8ef6983de48cc1909af70"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_251_4338-native-1.png",
+          "sha256": "5076a66527b08c33aec2d5ab23ccb7349f4e8b6471ecb595e704dd6fab6c78cc"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_251_4338-native-2.png",
+          "sha256": "f2d96c12a984305ac2a515fa51b63549500319668f3f236ba5f96067bfd5d0c3"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_251_4338-native-3.png",
+          "sha256": "ebcc4be75124d82d1e005056005bb0a88d2c16c91753add6416312836482ac09"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_alcibiades_251_4338_0.png",
+          "sha256": "ba8188df722c393a88a96b6c0b97494b479f2ee8ffccab46b6b85527caf2c7fb"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_alcibiades_251_4338_1.png",
+          "sha256": "dbe762f2b49a79b1313ec7f3fa36f7b11406ae42e981c1e3a3cc95fac531eb96"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_alcibiades_263_9839",
+      "unit_id": "alcibiades",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 263,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.571759306978655,
+            0.8585977160653594,
+            0.8786616680002053,
+            0.8749106840964345
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_alcibiades_263_9839_0.png",
+          "sha256": "2d6e8417ca0d9d31fc031e7439d42794515b4bc7093dbd93381c7327d9625820"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_alcibiades_263_9839_1.png",
+          "sha256": "98ece3e003b39edb3385e68b0835b0235bcc61a9244e798ebfc224f15ab89d2d"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_263_9839-native-0.png",
+          "sha256": "382ca834315c9447958a03fb4086df4af15b36940da3fcf00e3db4624a456eda"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_263_9839-native-1.png",
+          "sha256": "ec6779bb70190ea19d0394108f6cec1f233943aef28aa211eb966a092e32c691"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_263_9839-native-2.png",
+          "sha256": "392b8e21759dd0c85991a328b1f09c57297b9ccd37364a45f52bca5363949f48"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_alcibiades_263_9839-native-3.png",
+          "sha256": "f127f118acb6397794695b8c09d9728147d7fa8a1a77d0285b5aa6da4c27a97f"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_alcibiades_263_9839_0.png",
+          "sha256": "2d6e8417ca0d9d31fc031e7439d42794515b4bc7093dbd93381c7327d9625820"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_alcibiades_263_9839_1.png",
+          "sha256": "98ece3e003b39edb3385e68b0835b0235bcc61a9244e798ebfc224f15ab89d2d"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_alexander_231_16439",
+      "unit_id": "alexander",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 231,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5284416576985236,
+            0.06587408707919173,
+            0.941948303855864,
+            0.08593853812131239
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_alexander_231_16439_0.png",
+          "sha256": "25d4c6292e331f5b40bfe95bede387dc5318aab19bb631246849b41f7300d709"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_alexander_231_16439_1.png",
+          "sha256": "1c234756f03c2a5d9b3341ec42565ab50fd1a829741ffe776433a0eb5729fb7b"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_alexander_231_16439_0.png",
+          "sha256": "4b0c3ac2dff3deb5c9d6fcab3de08f94aca088d82bb25a2baea507ad9f6617b4"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_alexander_231_16439_1.png",
+          "sha256": "f8fc0dbd6c5b2dc0739469fce2dd36efd2837d29b9acc05d7b7dd96d655cee5f"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_antonius_562_20869",
+      "unit_id": "antonius",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 562,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.4830615272762883,
+            0.08341532353882286,
+            0.9330775439154376,
+            0.4789919609231451
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 23,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_antonius_562_20869_0.png",
+          "sha256": "e87a6c284f2ab53499bf2cc0d590776815df6bdb0ac40cba4484aa56cd28e8f7"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_antonius_562_20869_1.png",
+          "sha256": "a1529c7a62ecb81b88ea2877bc5635d45c58e24e86a39fcb8cf8801224ed15ca"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_antonius_562_20869-native-0.png",
+          "sha256": "dfee7197a4517d7d68dfe3e5e4d40a6e18c7f4065d577a02912f1f8cbb3fc861"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_antonius_562_20869-native-1.png",
+          "sha256": "7785427086a57291400658e77b21a883c79f0a20adfd762f05f8f07955c13bbe"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_antonius_562_20869-native-2.png",
+          "sha256": "dbbd065674e0c1f3545d1839edb2a555d41fde9f13cd96132b3c6edf020a399b"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_antonius_562_20869-native-3.png",
+          "sha256": "b5c69d40a9fef88fedf56c363539f03ca44a2b21ac6a637d585f67954c7883a7"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_antonius_562_20869_0.png",
+          "sha256": "e87a6c284f2ab53499bf2cc0d590776815df6bdb0ac40cba4484aa56cd28e8f7"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_antonius_562_20869_1.png",
+          "sha256": "a1529c7a62ecb81b88ea2877bc5635d45c58e24e86a39fcb8cf8801224ed15ca"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_artoxerxes_633_2282",
+      "unit_id": "artoxerxes",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 633,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.530053769266641,
+            0.8871780994798188,
+            0.9509384985074305,
+            0.9064751224860704
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_artoxerxes_633_2282_0.png",
+          "sha256": "ec6f164de1ebafda275af5792ba56c57dd75b69f4bb6cfedd98b1e966a9a53c5"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_artoxerxes_633_2282_1.png",
+          "sha256": "0354bc428cad7238203893ed7a18a1a7379bcfaf3395eda5d4cf1e9326aef11d"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_artoxerxes_633_2282_0.png",
+          "sha256": "c463877c2ba43779730bbc05b4705f1ce5a4683ff20280feaf23a4b04b35bebb"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_artoxerxes_633_2282_1.png",
+          "sha256": "a89f3f13d3efffb6e6f513fb9cd398763057ccf4a30691c9f90efd2c78d0cfd2"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_brutus_619_10158",
+      "unit_id": "brutus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 619,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5559367151073668,
+            0.06324651024065285,
+            0.9864616630949534,
+            0.08256490051393053
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_brutus_619_10158_0.png",
+          "sha256": "6fccb5506c39a7c84fb0de160a3670f1357a324c8205a77da26afee52fdd3e45"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_brutus_619_10158_1.png",
+          "sha256": "8d60afc73b93f70163c5113d9af030c28867606cf3fd5f50a260c4ad66ae2d12"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_619_10158-native-0.png",
+          "sha256": "f324365c47293c91f02228cd598a77622d69a9302b88e5b3d84b5b9637e0c556"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_619_10158-native-1.png",
+          "sha256": "f4c3e1a1846b8c7c021ef0b162ab47bdf29a2df2f2015b91cc7117585395c9e9"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_619_10158-native-2.png",
+          "sha256": "8e8f6afe983d264669f9de474688d4dbeb21cf3dbd4959603f1382911e4aa7d8"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_619_10158-native-3.png",
+          "sha256": "813f57f9ea27cb323da7d6f46ffe077c234ccc53bbdfdbe087fb7167759339ea"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_brutus_619_10158_0.png",
+          "sha256": "6fccb5506c39a7c84fb0de160a3670f1357a324c8205a77da26afee52fdd3e45"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_brutus_619_10158_1.png",
+          "sha256": "8d60afc73b93f70163c5113d9af030c28867606cf3fd5f50a260c4ad66ae2d12"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_brutus_623_11958",
+      "unit_id": "brutus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 623,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5276243097803992,
+            0.06963735052950734,
+            0.9741368439414352,
+            0.12439078266078304
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 3,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_brutus_623_11958_0.png",
+          "sha256": "e16b2836cac32e3fd060284553f51e33af69f00e4308ec329755615f986b90e9"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_brutus_623_11958_1.png",
+          "sha256": "4a56d101ea412977faf4d138807cf2792447297b421b390d3d7f721ca222d4e7"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_623_11958-native-0.png",
+          "sha256": "788b0a05815894c81948a959792320156caa7a24063b3009b10c83ba2f497266"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_623_11958-native-1.png",
+          "sha256": "5fd7d4817a09f84761b50689bb39e87767635f3ea05456fe69cd7d4463500c59"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_623_11958-native-2.png",
+          "sha256": "6d892944815334b7a9db3560728b6ccc0efb2e05750efc4dbb02211d6a4d7b2b"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_623_11958-native-3.png",
+          "sha256": "6e6e7007ccd2c62cb53e461f35bc7928ec8ceac23e1856dfda8636e1d9d41443"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_brutus_623_11958_0.png",
+          "sha256": "e16b2836cac32e3fd060284553f51e33af69f00e4308ec329755615f986b90e9"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_brutus_623_11958_1.png",
+          "sha256": "4a56d101ea412977faf4d138807cf2792447297b421b390d3d7f721ca222d4e7"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_brutus_624_12394",
+      "unit_id": "brutus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 624,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.47154020240885064,
+            0.0652380857349025,
+            0.9166666784929846,
+            0.0862386070363925
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_brutus_624_12394_0.png",
+          "sha256": "ee5aecaa2a067eaeddb3378fb81df62a6cb13c2a2bb26033dab45593940ee88d"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_brutus_624_12394_1.png",
+          "sha256": "7a0929e9f65c64c6ae172a6a44208e995ed615b8bf09243affb5e0e50e6f2d56"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_624_12394-native-0.png",
+          "sha256": "b562f0952d2d89f1ed5eb9ec4d9e2c1ee0cfbca4741b411eb80e865e81e43bda"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_624_12394-native-1.png",
+          "sha256": "6e6e7007ccd2c62cb53e461f35bc7928ec8ceac23e1856dfda8636e1d9d41443"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_624_12394-native-2.png",
+          "sha256": "1c13b7074d9ec3b0b0a7ca41fe207330de59d79c76ce06ff8152020503deb2cf"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_brutus_624_12394-native-3.png",
+          "sha256": "949529a7356088f455491965aee0232387451bb6d71c1ad8fa4f2a630666e6ac"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_brutus_624_12394_0.png",
+          "sha256": "ee5aecaa2a067eaeddb3378fb81df62a6cb13c2a2bb26033dab45593940ee88d"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_brutus_624_12394_1.png",
+          "sha256": "7a0929e9f65c64c6ae172a6a44208e995ed615b8bf09243affb5e0e50e6f2d56"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_caius_marius_519_9217",
+      "unit_id": "caius_marius",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 519,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5446588702783407,
+            0.07829237967617003,
+            0.9416907133794427,
+            0.09642810690735712
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_caius_marius_519_9217_0.png",
+          "sha256": "8c4ffe35b6d1cbc356387a027797635f58343ee367061824127e745ccac8921e"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_caius_marius_519_9217_1.png",
+          "sha256": "11ad1720ba7c1c7c8bab443b05513c6f7312733dfa373b484aa40425406fea4f"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_caius_marius_519_9217_0.png",
+          "sha256": "95d8f4a0c2c257e9ecc0f54ed7e251b950f5e4e1a776d5d1d1b18e1ad8f33a3d"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_caius_marius_519_9217_1.png",
+          "sha256": "e5c671e9ada3ede9d397ca1a19d6b63a5418d8e9f857395c4bd3abd3832a3862"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_cato_minor_327_8321",
+      "unit_id": "cato_minor",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 327,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5334360358455226,
+            0.8805996242305748,
+            0.9526849812423445,
+            0.9010384827030263
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cato_minor_327_8321_0.png",
+          "sha256": "33f4ada2bf62ad19ea8536a89cbd6e076148000634445ca390e6d1b43e4aa5b1"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cato_minor_327_8321_1.png",
+          "sha256": "d64e44223d3e576d628247c8c35f4cb35de0448c360461f58ee06a2680f138fb"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cato_minor_327_8321_0.png",
+          "sha256": "c621e5c935cd7065bbc068e499a3264c8499dd8e10d455616b36d7df944ddad1"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cato_minor_327_8321_1.png",
+          "sha256": "47a3e6ab74cebb5b078fd6c182dd2e906e4db1af5d888d0f29c03831f59c6da1"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_cato_minor_329_8786",
+      "unit_id": "cato_minor",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 329,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5472670394086262,
+            0.05642608882645985,
+            0.9622312150938959,
+            0.0774345563758777
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cato_minor_329_8786_0.png",
+          "sha256": "733b73e22d8881c27e51b5c8e9f7d6bfc3efa4f3a19a280abf41e07808df31e1"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cato_minor_329_8786_1.png",
+          "sha256": "336583c2af47c0e9cb2e548c7bb7405849ed47c4fc0abf83268803cc74974262"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cato_minor_329_8786_0.png",
+          "sha256": "d69378e319db0b725de6ce58405a1f95fc5ef49ec705b1560f6ee3be7ce6d315"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cato_minor_329_8786_1.png",
+          "sha256": "b06fef9df25a3c52bcb759cfbfa75de2f2920b056861665f5ee4e3c17f58c4f1"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_cato_minor_331_9707",
+      "unit_id": "cato_minor",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 331,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5531566980051926,
+            0.05392827795585274,
+            0.9731429255687992,
+            0.07310875874929544
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cato_minor_331_9707_0.png",
+          "sha256": "d4b80094ca48ba989e5f8ec07ffe5fb8099f648e40c43cfa90813f69eedd5550"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cato_minor_331_9707_1.png",
+          "sha256": "f4b016efae6b380ead99bfa56f4ff935d79f728ab12936c301743e0d5af2812b"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cato_minor_331_9707_0.png",
+          "sha256": "83aeead5d7cc8c42345c70f9356d0f4ec1ada51c585d28836baea967a56e9d9c"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cato_minor_331_9707_1.png",
+          "sha256": "1dc311b0c04bb29eb41fde1d75ac933fa24a93e52277ba814e9a5a290d92ea50"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_cato_minor_352_15055",
+      "unit_id": "cato_minor",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 352,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.4781116622387688,
+            0.8839766563631503,
+            0.9022129066708913,
+            0.9036588016381669
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cato_minor_352_15055_0.png",
+          "sha256": "48953517a9509d1b9d08c84271c18292ded25b45fccf5c4c0e35f68e0cbc3de5"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cato_minor_352_15055_1.png",
+          "sha256": "39cb690b9d18952fd4b5802a2f45ca3817191e1cc52700c1a4f1b2055868de3b"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cato_minor_352_15055_0.png",
+          "sha256": "701be788f6829163da5d564c2daeea75c87aab045bb9a7ade5fa457fc22c9260"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cato_minor_352_15055_1.png",
+          "sha256": "ebfaa6b3a3789609bd81bcf3d9f2a499b9848f3b3bf0fce7a5f5d9d4d4162925"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_cleomenes_391_5043",
+      "unit_id": "cleomenes",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 391,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5257991285628925,
+            0.06739093701748017,
+            0.9636532160789455,
+            0.08513420802653715
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cleomenes_391_5043_0.png",
+          "sha256": "be2ebdb4a5346fd456fa5411c40850c161e2c8db87e89f78222479f35be6be21"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cleomenes_391_5043_1.png",
+          "sha256": "7060203992b0b8253412efdefd4ebe28f482fb7a3cfa7c841acc4f3dbf1a7deb"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cleomenes_391_5043_0.png",
+          "sha256": "76d8f746a600d3d4738ad12cb68ae15003988151039525d4697a5a1c923aefc0"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cleomenes_391_5043_1.png",
+          "sha256": "120ed7d20d412dcc5a52fc6c4d34d2d7050423627240710a9c31dcd4f1292997"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_cleomenes_393_5916",
+      "unit_id": "cleomenes",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 393,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5571753185723837,
+            0.06689888873867056,
+            0.969901311398218,
+            0.08592642615463875
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cleomenes_393_5916_0.png",
+          "sha256": "15d34824f9f16f4967c6869e7a215bb59cadc423e9ecbd44199a5d64c7044d8a"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_cleomenes_393_5916_1.png",
+          "sha256": "14580c0b14b6d86edc6e6aa75728d257022a15530164b48df1c1350e2da184a8"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cleomenes_393_5916_0.png",
+          "sha256": "1d01187b6f90553a3b7b28243a861d9f3ce77135720d9bcdbf55652beda13125"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_context_miss_cleomenes_393_5916_1.png",
+          "sha256": "7c16ac78f7a5310718916ba5acbee8dcd8d1935521a51bbe75cdbea1fa9672de"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_crassus_44_1144",
+      "unit_id": "crassus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 44,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.4980276024843344,
+            0.06255041638479769,
+            0.8978485367520462,
+            0.08152775664261223
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_crassus_44_1144_0.png",
+          "sha256": "2ad7fbf5ae16cdbc8cf69af2032d3b972c92c9c797e5bc7b5d1b1397d0acff6d"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_crassus_44_1144_1.png",
+          "sha256": "f2f7ca7192ff373a160c107aff43ce28da8519eba665b69a54bd716c4fb294e4"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_crassus_44_1144-native-0.png",
+          "sha256": "27cf4bbcecdb5c9d5c1352e73015192031dc2e57328e912abd646236b96d05ca"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_crassus_44_1144-native-1.png",
+          "sha256": "f10d75253b0bcd71c19f3984ca74629b6f466e4594792b0da35dac81e471d53d"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_crassus_44_1144-native-2.png",
+          "sha256": "4681b302628c8ec9a5c26b7281f8516035d7c27aa6b94fa3669a8b6038e03ac7"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_crassus_44_1144-native-3.png",
+          "sha256": "26494533bcb0597ab561d5b6752efb262d3a662336fe4c9453664ec4d930f637"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_crassus_44_1144_0.png",
+          "sha256": "2ad7fbf5ae16cdbc8cf69af2032d3b972c92c9c797e5bc7b5d1b1397d0acff6d"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_crassus_44_1144_1.png",
+          "sha256": "f2f7ca7192ff373a160c107aff43ce28da8519eba665b69a54bd716c4fb294e4"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_crassus_67_11548",
+      "unit_id": "crassus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 67,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5639326433463304,
+            0.0708501223606696,
+            0.9716817600622731,
+            0.08921109977534325
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_crassus_67_11548_0.png",
+          "sha256": "3893684331bd0812f56bf6072e6a71fe52593604c0746ddc839aa04da2c91ae1"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_crassus_67_11548_1.png",
+          "sha256": "6f7c2e6a0e814e1363da3a47e4daff9e5179810fa9ef9a11bbaa097aa5ef635f"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_crassus_67_11548-native-0.png",
+          "sha256": "02a3d331aba415e3b4012f40a6f20e7d219b422b0410967a2eaa3daf65b8bec4"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_crassus_67_11548-native-1.png",
+          "sha256": "bc43f8f0377cb9f9a490df9f406ec2e3f3b0a8186e305dfaa001e9ee4b079083"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_crassus_67_11548-native-2.png",
+          "sha256": "573da823af8ade8363e4a94df15c69a9958e13563255c8502af8b329f845b11d"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_crassus_67_11548-native-3.png",
+          "sha256": "87f057b6206b1155a672706e37cded5fc60ba9555f271968f71469db20d4bd61"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_crassus_67_11548_0.png",
+          "sha256": "3893684331bd0812f56bf6072e6a71fe52593604c0746ddc839aa04da2c91ae1"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_crassus_67_11548_1.png",
+          "sha256": "6f7c2e6a0e814e1363da3a47e4daff9e5179810fa9ef9a11bbaa097aa5ef635f"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_demosthenes_437_3468",
+      "unit_id": "demosthenes",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 437,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5223611505093895,
+            0.07015785695915666,
+            0.9598317140381897,
+            0.1370423953825764
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 4,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_demosthenes_437_3468_0.png",
+          "sha256": "0873b4a17caf6ff34694fef2963d14928aab473f8b3cbc52a47e3bf1612d8550"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_demosthenes_437_3468_1.png",
+          "sha256": "d70921982b616493d087a0b416cd56e7ab7055baa68514f862138cde40d95151"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_demosthenes_437_3468_0.png",
+          "sha256": "433557d7449d0ba08430fb1595ea5bd0ec4c9fe871f7709f04b278dd3b9618dc"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_demosthenes_437_3468_1.png",
+          "sha256": "929f7f29d0f2ad94ba56ddb1d5870abae8d603ed4383ebc7f3b59b90d4633f4f"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_demosthenes_438_4274",
+      "unit_id": "demosthenes",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 438,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.4576739965065111,
+            0.8800463817512592,
+            0.8957193703980029,
+            0.9004224200849463
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_demosthenes_438_4274_0.png",
+          "sha256": "a46de0a4422fe78311d89015c8cc68b07867c6ec97faeb0c521e93ba9d377751"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_demosthenes_438_4274_1.png",
+          "sha256": "92408149cfcd42e2b08eb260abde2100bad7d5084dc4c4db0e4d7662935a3358"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_demosthenes_438_4274_0.png",
+          "sha256": "4ac7c2eeedf14852dc65f5a49932771656db0f00c00f4d7657fa30a248a897ef"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_demosthenes_438_4274_1.png",
+          "sha256": "77b3f3d6be99f20802ba12e21b2f2cdef618f6426549c824bdb1b01ae7b17e25"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_demosthenes_443_6045",
+      "unit_id": "demosthenes",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 443,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5280035984275591,
+            0.06473154858152068,
+            0.9601174278865454,
+            0.1021550686304865
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 2,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_demosthenes_443_6045_0.png",
+          "sha256": "43ba1b146a41d33e278dc43ac82b427a103a6abb22bce40bacc274390e014b3d"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_demosthenes_443_6045_1.png",
+          "sha256": "64f020417d04a3dbd5eb7948e479cd36f3b644f5b7d96ae65fb215e88ffc833f"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_demosthenes_443_6045_0.png",
+          "sha256": "78a706656758505bc6d8549fe8e29d671ca8c7d7136f4447b497e469e5ff7bff"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_demosthenes_443_6045_1.png",
+          "sha256": "0f9843abc879fca4a90136ee4fe72598db3300ea53a8cc5d6fdebcf4c807b99e"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_demosthenes_445_6929",
+      "unit_id": "demosthenes",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 445,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5496021027267806,
+            0.06301653160738169,
+            0.9758997241744172,
+            0.08253526659062038
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_demosthenes_445_6929_0.png",
+          "sha256": "c5727f2a9f7dc5ab9a43af0fc9934708bf2e76f532c16fd06fc9d6ecb5b4822f"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_demosthenes_445_6929_1.png",
+          "sha256": "fa8b9cf893401807572827d56a6fec5106f188b5377bae97f5a1dea0c171493f"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_demosthenes_445_6929_0.png",
+          "sha256": "63f884288ddd84dccede2b6dbaf35cc67dc9b22eaa71f6ff7e1e375f92e5e795"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_demosthenes_445_6929_1.png",
+          "sha256": "e20d1ea017029cdfbc786c11ee7c8f88b3fc8f853ddce0acfb077160caeb0a99"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_dio_566_426",
+      "unit_id": "dio",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 566,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.48726490419608276,
+            0.8891614252289759,
+            0.9138988591557085,
+            0.9082826290137436
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_dio_566_426_0.png",
+          "sha256": "1410ab136c63db2a096d4e5111e5c825206f37544478deb653f9a2896318e2af"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_dio_566_426_1.png",
+          "sha256": "799aff08d462016343727e84f5295bb7bfe35dc7f0324db91952efa58bf59f5b"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_dio_566_426_0.png",
+          "sha256": "d5e8e94ec7f2fe5fe210e067ec78e3afd58c544845defb3ca80432e7996213d3"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_dio_566_426_1.png",
+          "sha256": "ccbde3fb76420716ba1bf74dac6757fb6fbe136a7b6d4e86d4e57030f0392320"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_dio_577_4979",
+      "unit_id": "dio",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 577,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5544976623390999,
+            0.06446891907696677,
+            0.9641367950177867,
+            0.08421729223792794
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_dio_577_4979_0.png",
+          "sha256": "afa61065fbce1fac2231d2a52cdafa157eedf596c4a4d714841fac659f05c44d"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_dio_577_4979_1.png",
+          "sha256": "c6d8a2ff388ba87d16e1e9b2d43c9536ee7b9bc452930eb74bb9cf38f9209964"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_dio_577_4979_0.png",
+          "sha256": "6ed864d25dee0ee9b395b2ef22dde202f1a8753acd9ecac28c852dacb79f0558"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_dio_577_4979_1.png",
+          "sha256": "15ccfa8b52cd816a9d6f54ad9e8e1c2b2459e8f4d581064ff82f77926465221e"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_dio_579_5825",
+      "unit_id": "dio",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 579,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5596539464920939,
+            0.06790143142101404,
+            0.9772313287411046,
+            0.08736918840328442
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_dio_579_5825_0.png",
+          "sha256": "93fdca2b8f30eb31b12cd3713aaa3163b1024dfde6d28ff4d4dee0671ef428da"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_dio_579_5825_1.png",
+          "sha256": "592b436075224842f0839a44262cb422741a7d2a917a5fd0bcf5d679902d4ab3"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_dio_579_5825_0.png",
+          "sha256": "cdf8ec664d0ddfd8ec43c9ff1ddd113660769a5040a297036ae11d2534e130b5"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_dio_579_5825_1.png",
+          "sha256": "9f9df412fd99e8474de5e09584011375e8fa3f3e5ae431df4680113d1e4da36a"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_dio_580_6654",
+      "unit_id": "dio",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 580,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.4927211962521019,
+            0.8869995558714361,
+            0.9177091790453524,
+            0.9071486937228963
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_dio_580_6654_0.png",
+          "sha256": "8b1ca9d44efd22e5c51caa7d4ec1648c27d5a595457650e3cdddf997dbb6c72d"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_dio_580_6654_1.png",
+          "sha256": "ebd3cb8abb930b0a65d6c7a5845b67ad04641b50eff25864589c2da503888a96"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_dio_580_6654_0.png",
+          "sha256": "48f5a60e0352a977ffb39c8fec0ec8169651d040141b455af569f3cf2ec72e47"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_dio_580_6654_1.png",
+          "sha256": "3bca4c799e50b9cf16f4577f69dd25ad07d269287bba878654a380a66ffb52ee"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_eumenes_91_1126",
+      "unit_id": "eumenes",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 91,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5418208969696188,
+            0.07242067397473279,
+            0.9536400973974996,
+            0.1049728940363293
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 2,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_eumenes_91_1126_0.png",
+          "sha256": "7904799956f73ec1dc1c4dac2f007dd1ef21110df8909a097ad34e5fa5883908"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_eumenes_91_1126_1.png",
+          "sha256": "fb7873598b77cca11f71f98f07bc0686ec3c890aa712bde30f4a236b90766d2b"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_eumenes_91_1126-native-0.png",
+          "sha256": "ecc73fbf7889d2326069741b40cab21849917f66ef25853be11ed8543c5afa0b"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_eumenes_91_1126-native-1.png",
+          "sha256": "a5a68f3ae1f598794fe5dfb7b62bd8e58cd74c72f73fef11eb10ac526256e9c5"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_eumenes_91_1126-native-2.png",
+          "sha256": "e76dfa5b0a28efdc6b8e3277b5e515875571704d3c265f7328c8d49adbfe9e8f"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_eumenes_91_1126-native-3.png",
+          "sha256": "314cbfe83404667a4d783eb3cb70ca041912a0fd49fd730206b486a460d3cf17"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_eumenes_91_1126_0.png",
+          "sha256": "7904799956f73ec1dc1c4dac2f007dd1ef21110df8909a097ad34e5fa5883908"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_eumenes_91_1126_1.png",
+          "sha256": "fb7873598b77cca11f71f98f07bc0686ec3c890aa712bde30f4a236b90766d2b"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_fabius_maximus_228_2889",
+      "unit_id": "fabius_maximus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 228,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.4626081316503085,
+            0.08130976686945944,
+            0.8612739198747805,
+            0.09918015558069988
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_fabius_maximus_228_2889_0.png",
+          "sha256": "c06ddf6323cb647407a279dea5e8a9b0cd374b81ecd0b9773a7fd0e2e435b8d5"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_fabius_maximus_228_2889_1.png",
+          "sha256": "970e91109763c0d7122549c462587ba7ed67379ed8c96f895ac507b6cec6851f"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_fabius_maximus_228_2889_0.png",
+          "sha256": "e094b2712341ef417102c1fc0c50c0dbe0b6d8fc0245c033cbc363823b831102"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_fabius_maximus_228_2889_1.png",
+          "sha256": "e514dbb7dc062b9646a4ddb888080baeca37b68742494351acb0bf59b1590716"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_iulius_caesar_252_2835",
+      "unit_id": "iulius_caesar",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 252,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.4829227489841553,
+            0.07403069173265703,
+            0.9157422086908199,
+            0.2656726317627415
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 12,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_iulius_caesar_252_2835_0.png",
+          "sha256": "e8b79c7498be3019d4222709b665b3afeab08d9edad51077cbeb6975a9e7d93d"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_iulius_caesar_252_2835_1.png",
+          "sha256": "52774885eeacc7ac6900c5cb750c9861645d70cb4973d41a71f692d0c965394e"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_iulius_caesar_252_2835-native-0.png",
+          "sha256": "6e6eb0321fc80bc78291a140783388adcc036ffe54971097005b342a17c9de4e"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_iulius_caesar_252_2835-native-1.png",
+          "sha256": "904ba15d5c9390c092d6968bb0018d14f9e835a68c5c6dd716d76b50d18e212b"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_iulius_caesar_252_2835-native-2.png",
+          "sha256": "c463c381a61ca829158c187289da9b58b33dcbcd156be9a56428b6e0fb2f3841"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_iulius_caesar_252_2835-native-3.png",
+          "sha256": "330581e63c4b994272b59f43c459edef4ffaf63f9ac95f0b324d93ca72c6dece"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_iulius_caesar_252_2835_0.png",
+          "sha256": "e8b79c7498be3019d4222709b665b3afeab08d9edad51077cbeb6975a9e7d93d"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_iulius_caesar_252_2835_1.png",
+          "sha256": "52774885eeacc7ac6900c5cb750c9861645d70cb4973d41a71f692d0c965394e"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_lucullus_607_2890",
+      "unit_id": "lucullus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 607,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5284839669883896,
+            0.07801535757955988,
+            0.9212007722987652,
+            0.09837695999639644
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_lucullus_607_2890_0.png",
+          "sha256": "31b8c76fcc6561fb35dbc79b1042e217525b66a4719d7a10fd1c49eeb40aa250"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_lucullus_607_2890_1.png",
+          "sha256": "9df0aba30c2b9b0dff5748df6a7109af141ea02b7aea8f93ef82f767340ff45b"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lucullus_607_2890-native-0.png",
+          "sha256": "bf84f9f08faf2e15d76567b07ca024d2d2cb3133d687686986c8f608cb167e98"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lucullus_607_2890-native-1.png",
+          "sha256": "4c2bdce04bbf6058ce000b1f2f013c077075bc901a9b51cb11ae9022502cd432"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lucullus_607_2890-native-2.png",
+          "sha256": "686d8d4556efb4c254654cd8c4839643da503b99ad184e66ed7d7c16c5dbed35"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lucullus_607_2890-native-3.png",
+          "sha256": "dcd22bf8e74857de108e522ed64bd56996668ae0f7c13993b9da592c2430eb8c"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_lucullus_607_2890_0.png",
+          "sha256": "31b8c76fcc6561fb35dbc79b1042e217525b66a4719d7a10fd1c49eeb40aa250"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_lucullus_607_2890_1.png",
+          "sha256": "9df0aba30c2b9b0dff5748df6a7109af141ea02b7aea8f93ef82f767340ff45b"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_lucullus_631_13150",
+      "unit_id": "lucullus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 631,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5451097613523282,
+            0.07885072227328982,
+            0.9375260297752315,
+            0.09816003402911637
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_lucullus_631_13150_0.png",
+          "sha256": "643c37a58f13750ae3b989f676e9248ddb592fa5d0d0b85b7879f18d9373d5fc"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_lucullus_631_13150_1.png",
+          "sha256": "608d60df407c361511167dc7f96a9a74f96f6a7dffd7333491d4ab93eb7def5f"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lucullus_631_13150-native-0.png",
+          "sha256": "f769cd8c5cdef5e178ff48de0fd4bfb5532cb10347b980d61a3da040eec798ea"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lucullus_631_13150-native-1.png",
+          "sha256": "b2fe6e97562c209712055bb420895e09983fcb76c4f3b7091bb0d3fb39d98027"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lucullus_631_13150-native-2.png",
+          "sha256": "95fad427273ac2363b2ba47354dee16fbb874ed0868c28696ead5f754b5ad6bc"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lucullus_631_13150-native-3.png",
+          "sha256": "e23306c7ccaae5f2fb9d070ca798458cdfa1c6d72f4c3b86f9fab68d3ea853c0"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_lucullus_631_13150_0.png",
+          "sha256": "643c37a58f13750ae3b989f676e9248ddb592fa5d0d0b85b7879f18d9373d5fc"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_lucullus_631_13150_1.png",
+          "sha256": "608d60df407c361511167dc7f96a9a74f96f6a7dffd7333491d4ab93eb7def5f"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_lycurgus_79_8882",
+      "unit_id": "lycurgus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 79,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5289746274203867,
+            0.09043609031977,
+            0.9176266797441732,
+            0.10653909019049697
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_lycurgus_79_8882_0.png",
+          "sha256": "6f7f9aeec2759793972668a414e21529dddb3a5e8c6ede22cbaa9c0ee5727954"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_lycurgus_79_8882_1.png",
+          "sha256": "ff547b9a5ae8410cfa03a8a72e88e6874baf21b833f5ddfa661acacc0dea1cb3"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lycurgus_79_8882-native-0.png",
+          "sha256": "e3be3c9712022eaeddc229152450340ece4aa1fc76f61636d362b781d2002e24"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lycurgus_79_8882-native-1.png",
+          "sha256": "266629e8059777d367b8e018a3b02d17835af38ecfc853d85b920290860de915"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lycurgus_79_8882-native-2.png",
+          "sha256": "bdf67d72ae79f49a1680008cb90d6e9f48be004228cb6ffe9297b966c4850613"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lycurgus_79_8882-native-3.png",
+          "sha256": "99b028e9c71c50de887e70ce1f5d3b0bb61afafc56167e05b873467809104148"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_lycurgus_79_8882_0.png",
+          "sha256": "6f7f9aeec2759793972668a414e21529dddb3a5e8c6ede22cbaa9c0ee5727954"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_lycurgus_79_8882_1.png",
+          "sha256": "ff547b9a5ae8410cfa03a8a72e88e6874baf21b833f5ddfa661acacc0dea1cb3"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_lysander_535_1762",
+      "unit_id": "lysander",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 535,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5269509867047738,
+            0.07633165570025072,
+            0.9238704531154036,
+            0.11570603849405156
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 2,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_lysander_535_1762_0.png",
+          "sha256": "76453436a1ec4c4b06ad6587625aac209d0caaff5d4c45ec9fad36dc18566039"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_lysander_535_1762_1.png",
+          "sha256": "56aa6e4d734958495b921db39e3b41f0ec07d51a3c4550763689ba898b0f27f4"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lysander_535_1762-native-0.png",
+          "sha256": "274efdc3253317484c75934fb6e4664214c59803e3f8d25e3f6f29b948fa5cfa"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lysander_535_1762-native-1.png",
+          "sha256": "07cfb4074fe447a9e330e3bb1aeeecc2cba855793cb5fe2431451b1ae21d1bff"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lysander_535_1762-native-2.png",
+          "sha256": "34794ad505b428cbf3a88690e2925417f5a15dcebc415a65624ca6942a6025c5"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_lysander_535_1762-native-3.png",
+          "sha256": "e05a869e675b72ba6ef973958f52d410a635325e644b36c5ff48435db16ea4b6"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_lysander_535_1762_0.png",
+          "sha256": "76453436a1ec4c4b06ad6587625aac209d0caaff5d4c45ec9fad36dc18566039"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_lysander_535_1762_1.png",
+          "sha256": "56aa6e4d734958495b921db39e3b41f0ec07d51a3c4550763689ba898b0f27f4"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_marcellus_377_3280",
+      "unit_id": "marcellus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 377,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5473688203357181,
+            0.08109534317956117,
+            0.9519903457465997,
+            0.09740178734758949
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_marcellus_377_3280_0.png",
+          "sha256": "c8112bff62639102aea9c2e14b46913c12d358c169fce143bbf858dfa7469130"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_marcellus_377_3280_1.png",
+          "sha256": "69c149e8f1d955a955eaccb42ec32e38afedea08d6221a11fc4b2334447f4e6d"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_marcellus_377_3280-native-0.png",
+          "sha256": "07f3bd9c73116a2e5a251a970f1ec9b5200bf53190108369018d1d83c0af8323"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_marcellus_377_3280-native-1.png",
+          "sha256": "d75d3ad9150a7b5310221a22bdb71b80472374cb4a1520094da55146defe10f6"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_marcellus_377_3280-native-2.png",
+          "sha256": "5dbb1910e842de7326a55368e365c2dca13ff402ca27b4e8f4feb723bf99f1ff"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_marcellus_377_3280-native-3.png",
+          "sha256": "e1fef6424688c3ea47b2bcfae60082b407043c56040c7e485675aef99bff6692"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_marcellus_377_3280_0.png",
+          "sha256": "c8112bff62639102aea9c2e14b46913c12d358c169fce143bbf858dfa7469130"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_marcellus_377_3280_1.png",
+          "sha256": "69c149e8f1d955a955eaccb42ec32e38afedea08d6221a11fc4b2334447f4e6d"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_marcius_coriolanus_292_10538",
+      "unit_id": "marcius_coriolanus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 292,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.4756230065989987,
+            0.09128724682862667,
+            0.86690924032082,
+            0.12569234056889503
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 2,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_marcius_coriolanus_292_10538_0.png",
+          "sha256": "27770c4d1ede0617d30c56e5fe5572dd16e811d61f0c563dd4bbebd88426a809"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_marcius_coriolanus_292_10538_1.png",
+          "sha256": "d3b309aadf5d04a94931ef2a92306509712238272f9979fab07c8330ab6d7a00"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_marcius_coriolanus_292_10538_0.png",
+          "sha256": "c4c5058943c49b0a5833692c7917c7f092e3dba255272ecd973dd62b3bfaf206"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_marcius_coriolanus_292_10538_1.png",
+          "sha256": "c945056e670ae5d0c1dba213f5518a2d0efd4984318353d165fdd97fad5900f2"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_nicias_25_2918",
+      "unit_id": "nicias",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 25,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5533145310229576,
+            0.06717719673089062,
+            0.9716214548694987,
+            0.08682073266434245
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_nicias_25_2918_0.png",
+          "sha256": "fca2887af703334b76ff8c37fce3a51f848b0038760ec6adf8add06a6fc6d731"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_nicias_25_2918_1.png",
+          "sha256": "9f2aceec4240fa6691e625be0f6abfd5d8f864cfbfc544515f0b84512151757f"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_nicias_25_2918_0.png",
+          "sha256": "b88330afeff0b1ac55b4854c0222c505b7363a4ad8c3b3d7e32edd7f3d0bc480"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_nicias_25_2918_1.png",
+          "sha256": "18c38d2f8781b7af099a515667dac78e61a0853a0812c02826576fac87afb8f9"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_nicias_25_3357",
+      "unit_id": "nicias",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 25,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.531656757910626,
+            0.8819957332502864,
+            0.95008427541431,
+            0.900664581693925
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_nicias_25_3357_0.png",
+          "sha256": "1024a93238d85ba1bc9ab03759b2ea982e1f1d09c046f92408e8b745cd15935e"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_nicias_25_3357_1.png",
+          "sha256": "7681ae4c3bcba73e55ee6b34fb06302c872812a96488eb6af67bf4964e206b4b"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_nicias_25_3357_0.png",
+          "sha256": "60d42c3559803157db73db71b27014c79f9a270935b18ff768ba0073d0faa3be"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_nicias_25_3357_1.png",
+          "sha256": "d9f590f401b91ab0f314e94567f0cb1c292b3d53e11186c70060d70b8dd52453"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_numa_100_7129",
+      "unit_id": "numa",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 100,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.4802620412050912,
+            0.08459736485084568,
+            0.872979409657266,
+            0.10295533932860644
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_numa_100_7129_0.png",
+          "sha256": "71b97f5a92c605a5660dbf404c79c6f8f51f48d240dbc50a36f511dbeaafa48c"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_numa_100_7129_1.png",
+          "sha256": "5feae956041c81292ef8746d619a7f431c2786247f71f267c4e81db4e0c5f023"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_numa_100_7129-native-0.png",
+          "sha256": "6bcf8eb65ffd73571bd2256daa54fa82bdc7604650ee4659cde70eb9e044f130"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_numa_100_7129-native-1.png",
+          "sha256": "cfa84fa5ec554cce3330c045e7f87a1e35f51a3b6de2c5d5d7615ecd22b5c2e0"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_numa_100_7129-native-2.png",
+          "sha256": "bf0223b02243bc81fbf92048df8db466d12f63aec2f1209ce59e3fbc447afb90"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_numa_100_7129-native-3.png",
+          "sha256": "ed258c054c4947a524deb16cd1dfea635df84b66c2a15bee4b72647fa4bb460c"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_numa_100_7129_0.png",
+          "sha256": "71b97f5a92c605a5660dbf404c79c6f8f51f48d240dbc50a36f511dbeaafa48c"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_numa_100_7129_1.png",
+          "sha256": "5feae956041c81292ef8746d619a7f431c2786247f71f267c4e81db4e0c5f023"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_pericles_200_2252",
+      "unit_id": "pericles",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 200,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.4665820892535909,
+            0.09040975761979228,
+            0.8624535668711284,
+            0.10726302990888077
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_pericles_200_2252_0.png",
+          "sha256": "d39d8f1527a2730537296d7ac947afe2f9dcf145024966582a5b3d2fe6b354c9"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_pericles_200_2252_1.png",
+          "sha256": "cee147732b758128a9cbfc018258257b65340693eec641070e14815693e56199"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_pericles_200_2252_0.png",
+          "sha256": "f3af46ef56c919c214c557169d375c4e8564dd6f6dd61281588eca019d0dbf82"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_pericles_200_2252_1.png",
+          "sha256": "2b6de6be540c84205fd50e261fbe4abbb747a1b2f8e59a030c16a50493d6e5b9"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_pericles_214_9084",
+      "unit_id": "pericles",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 214,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5120296044460811,
+            0.8625562583767108,
+            0.7916885020454053,
+            0.8801999035874757
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        },
+        {
+          "role": "source_pdf",
+          "page": 215,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5567639262645425,
+            0.07890446606933,
+            0.8028404072368361,
+            0.09396059240431381
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 2,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_pericles_214_9084_0.png",
+          "sha256": "0e71a73b2d6ce2974dc36638436b6837580f49d2d2c2e2eb90a67570cd04d338"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_pericles_214_9084_1.png",
+          "sha256": "fd1ca78a72fdc9276a08b1f4b09fab430bfc77deb0c287876166078f0bce20c3"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_pericles_214_9084_2.png",
+          "sha256": "66a9cccb706dd517c40408436ef503cd17ce45db5f48898460e237d4f06c4dd3"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_pericles_214_9084_0.png",
+          "sha256": "f94a4b99ccfba4c1333fe71231718fd29517f2ad0e622ff2f934e267eefed1a1"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_pericles_214_9084_1.png",
+          "sha256": "fcf283aad94a3e1fa9863fab835bacf9cc56659a32cdd4561e3ff8a43572bea5"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_pericles_214_9084_2.png",
+          "sha256": "caf1d13c2ded8a02178be6314e21624ca97f6251b4071d42ca50572fff88c3f4"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_phocion_291_2223",
+      "unit_id": "phocion",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 291,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5272383930014776,
+            0.07097050155560568,
+            0.9441746958547024,
+            0.08780736046515278
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_phocion_291_2223_0.png",
+          "sha256": "72f45bf4f32e8807a6ac6642bbc82c001fde28ab8e845e251a866d59c74ab671"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_phocion_291_2223_1.png",
+          "sha256": "12d668070b42abcc690bb1e14e197c830df9f25989544e2919274bc234ce204a"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_phocion_291_2223_0.png",
+          "sha256": "80da902a1bc526b1388b29bbfaed5ec03b441055b71cdd622a83c2868f501b36"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_phocion_291_2223_1.png",
+          "sha256": "92a65435c59dbbf4c28ff4c2426f0ec1f4e7a96739a7e1a42e64cf1aaf6994b0"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_phocion_294_3556",
+      "unit_id": "phocion",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 294,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5113737273030906,
+            0.06832648327095987,
+            0.9066648415904526,
+            0.08773938267205643
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_phocion_294_3556_0.png",
+          "sha256": "853eed5a6947b0a51beab4c0b1e3e456a7f79ab8250c4850a4cec6863503f7f9"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_phocion_294_3556_1.png",
+          "sha256": "958ac00d4d063ef99dc9b1f5ab29293d5b7c7cec620574b59151da7d6862f13f"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_phocion_294_3556_0.png",
+          "sha256": "b72064304d55a881774c13397fc0c9da91949c007f8f876ef73dd309127cf4a0"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_phocion_294_3556_1.png",
+          "sha256": "d7445fc35c4c204676edf2a2b841661445f7a9bbc5b3bc14658f3afbf3bd1bb3"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_phocion_299_5777",
+      "unit_id": "phocion",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 299,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.526152454507369,
+            0.05899501673734363,
+            0.9405584960137091,
+            0.07629356448531176
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_phocion_299_5777_0.png",
+          "sha256": "490f0b8b5824633cbec118e3888b6cfad5ca054d65eb51d97afb1989de3b2b3c"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_phocion_299_5777_1.png",
+          "sha256": "92eac58cd3c9f616be5692f3af9ff4d57385f9640a3833aa3c293ef55236a863"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_phocion_299_5777_0.png",
+          "sha256": "7d9c95567c3620aac9c6e5bb12e455203b7301a34838c044ebbf9b37db69b7df"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_phocion_299_5777_1.png",
+          "sha256": "213ed4a1125baf6d772820db0789960b7c50b794caab397ddbe4c44492e48d7a"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_phocion_301_6648",
+      "unit_id": "phocion",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 301,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5643569376788652,
+            0.060490844143062814,
+            0.9653163006339459,
+            0.08248050392746156
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_phocion_301_6648_0.png",
+          "sha256": "caf0628d059220968bb55ad9b52d7a3ec4321a78e3d9e8ad633be785fe37626c"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_phocion_301_6648_1.png",
+          "sha256": "3a6b4c3a3cdbe0cda411aa443372675af915b09b246ab1221942f9da1f47538e"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_phocion_301_6648_0.png",
+          "sha256": "76707f40251fb82455869e3fcf7a0ef8c22657dffcd8526131ed866289f599f7"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_phocion_301_6648_1.png",
+          "sha256": "908ccf088aeeea3aa027e8176651fd9f874191201c73a31ac8a5f825f7589d4a"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_phocion_303_7514",
+      "unit_id": "phocion",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 303,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5363190808714482,
+            0.06767783650873574,
+            0.9512923664301736,
+            0.085999952473209
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_phocion_303_7514_0.png",
+          "sha256": "67046cb60719f4b2b20c9b69062472ca1cd23c1f7750e1efd8a3b7dea68b1876"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_phocion_303_7514_1.png",
+          "sha256": "8df2eb325f7f649624557449de425123128e044e61bb6d75af37f560e5df3d7a"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_phocion_303_7514_0.png",
+          "sha256": "b394b020fb5a060e9cd18180a81bdf9fa785f3fb425819e054f59a3ff4a1ab0a"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_phocion_303_7514_1.png",
+          "sha256": "bc0d0c558a6619b7372edd3aaaaaad16c9a6af99d703b15d0e886af014c83621"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_pyrrhus_475_2507",
+      "unit_id": "pyrrhus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 475,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5235691940348858,
+            0.8591226273768746,
+            0.9206121268200098,
+            0.8774022543430346
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_pyrrhus_475_2507_0.png",
+          "sha256": "634269d29877f2d66753ace0bf79204df6f3a2b281f15558768246455eef5f5c"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_pyrrhus_475_2507_1.png",
+          "sha256": "fed2395fa28e64a793ef4e8b56181408189626486fc4973d39928da8965fefbe"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_pyrrhus_475_2507_0.png",
+          "sha256": "f47a946839230b195415b8e18cf6ed7a6110e562d90fa9828b84df2e6a45776c"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_pyrrhus_475_2507_1.png",
+          "sha256": "8f91fae3dffe4066983ffb10e8f94a3fa66632c039e7d7d9680605e15d929227"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_romulus_36_1670",
+      "unit_id": "romulus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 36,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5092826875453257,
+            0.8697624554524981,
+            0.8907088267652294,
+            0.8867192850674621
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_romulus_36_1670_0.png",
+          "sha256": "b0553613d6db6f1d1a63b1d63b794bbf21c3fbb2161c7dd639d624f35627c187"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_romulus_36_1670_1.png",
+          "sha256": "4b23e0fe7373d8577da170acc2c76470ae6db89ca47e1fbe1681ca0eff4c51d3"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_romulus_36_1670_0.png",
+          "sha256": "75eba18f93393492c11772afd001ac4b5e085ca4790d54cef6f6c3a8ba8781bd"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_romulus_36_1670_1.png",
+          "sha256": "e101cb82a6be0014e7f1230cfd9e41db07a8644592cf1ccf1100a1bc993fdef3"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_romulus_38_2595",
+      "unit_id": "romulus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 38,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.4914372070377711,
+            0.8136524438993168,
+            0.8883979090034788,
+            0.8774067741763696
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 4,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_romulus_38_2595_0.png",
+          "sha256": "a8fc862b4839cb652e82afb94d335e662fa200a308af6181adf7f7de0d2514cb"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_romulus_38_2595_1.png",
+          "sha256": "fc58b67ff26ac1c5ccc48bce5b3cf4aee2da87cd95b67f07402b5af02df69adc"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_romulus_38_2595_0.png",
+          "sha256": "4944d6429266de8767bcc5a1286be34192836010eccd21f233fb90926d444b92"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_romulus_38_2595_1.png",
+          "sha256": "f2b4d14a522b0c3ea3b44487887fd35c368a2c242d757e9549d7e5c67f19945a"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_solon_108_832",
+      "unit_id": "solon",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 108,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.4908182622665757,
+            0.85583122103822,
+            0.884284479603633,
+            0.8734405047419358
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_solon_108_832_0.png",
+          "sha256": "977591b00f0e27fd018d230266248e92ab635be7b30102f393984cfe8f1143d1"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_solon_108_832_1.png",
+          "sha256": "fa3fe54a1b85e5ddf6e1e74ecc53fbaa3046ee10f87592ca9b46c1421d3adf1a"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_solon_108_832-native-0.png",
+          "sha256": "48c61b28edbfab07224ba536c394be186f47d8070de14b3aa82d7e133d55f2c8"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_solon_108_832-native-1.png",
+          "sha256": "ae62f955ca808cd23b72903accfe575d9c39c79c8bd68d74ec87de78e64ae038"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_solon_108_832-native-2.png",
+          "sha256": "0b1e8f9bcc58fa6674e1eb8fbb1c64f77243399314d14951ac54220d85c71a96"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_solon_108_832-native-3.png",
+          "sha256": "8741f5e14878af7b9e5949ab92055e436cb406e4b7750564c8a9fd04d66aa5aa"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_solon_108_832_0.png",
+          "sha256": "977591b00f0e27fd018d230266248e92ab635be7b30102f393984cfe8f1143d1"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_solon_108_832_1.png",
+          "sha256": "fa3fe54a1b85e5ddf6e1e74ecc53fbaa3046ee10f87592ca9b46c1421d3adf1a"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_solon_115_3532",
+      "unit_id": "solon",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 115,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.505413938362241,
+            0.07348521779521779,
+            0.8949709445948132,
+            0.1072208683649003
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 2,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_solon_115_3532_0.png",
+          "sha256": "1881d178856173102a607eb34d77fa98a9fef71be69256fad0a03fa4cf04bfbd"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_solon_115_3532_1.png",
+          "sha256": "effe923b736a363133c9c8f095afaae09e894c4c126af6cce142f33252a6577c"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_solon_115_3532-native-0.png",
+          "sha256": "28e419c33a759f7e70f048932069f1e6b02c3189b79d0658d57d35d62ad390f8"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_solon_115_3532-native-1.png",
+          "sha256": "222faed28434dabba327f9c56792bd0f7ea7ab0da5b089583582f4971907245f"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_solon_115_3532-native-2.png",
+          "sha256": "478a81dfa7975c1333bb91983023476707eef42bcdc51af35cde9f6fb37500c5"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_solon_115_3532-native-3.png",
+          "sha256": "846db4f70d715a381c797de7b02fdbd3df7bb56eb82dd6016723e856dc905e33"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_solon_115_3532_0.png",
+          "sha256": "1881d178856173102a607eb34d77fa98a9fef71be69256fad0a03fa4cf04bfbd"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_solon_115_3532_1.png",
+          "sha256": "effe923b736a363133c9c8f095afaae09e894c4c126af6cce142f33252a6577c"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_theseus_15_774",
+      "unit_id": "theseus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 15,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.536441129152897,
+            0.7901748445626448,
+            0.9314166535845182,
+            0.8847658984219235
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 7,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_theseus_15_774_0.png",
+          "sha256": "4ad82611d22ef37bc2a28b6c6491f42082e94c405f2a0a42707312b337d1f398"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_theseus_15_774_1.png",
+          "sha256": "171df32282c683ac8b4873cf903049e67e4c8e731e47a28c7c35332c2f9a39df"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_theseus_15_774-native-0.png",
+          "sha256": "93d3290a96fe0a26e543a05efb2eaaa33c0c4ec4aed02425ee58add37fb6905c"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_theseus_15_774-native-1.png",
+          "sha256": "487f363f47a1b5f348e66387f07a3cbfa8ef30f307a0595cf799e780f6d0aed1"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_theseus_15_774-native-2.png",
+          "sha256": "c407badf4d1e2b1d8562d55eec6a9e814feb69d84724c757563bd87f16500914"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_theseus_15_774-native-3.png",
+          "sha256": "745e0c690c23bbfb361cb393a8e1799bed41a0738d668126abb34e0419d03595"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_theseus_15_774_0.png",
+          "sha256": "4ad82611d22ef37bc2a28b6c6491f42082e94c405f2a0a42707312b337d1f398"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_theseus_15_774_1.png",
+          "sha256": "171df32282c683ac8b4873cf903049e67e4c8e731e47a28c7c35332c2f9a39df"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_theseus_25_5427",
+      "unit_id": "theseus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 25,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.5547720296391577,
+            0.862420387671722,
+            0.8330217130008781,
+            0.8796850238586802
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_theseus_25_5427_0.png",
+          "sha256": "88844c71a29f93f29872d25024860853a6327ca66544f3126ee80b2895bf4da1"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_theseus_25_5427_1.png",
+          "sha256": "a4a5c45b6e37302f9bf3c7fcd188a8e3aac068c9f40fc714b7ad85f55bc081c8"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step101-validation-expanded-review/miss_theseus_25_5427-native-0.png",
+          "sha256": "249704fdbf5a9137fec1aced4d6effe189f4440b0331f424435284cb7eae8052"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_theseus_25_5427-native-1.png",
+          "sha256": "ee0ae1cfbba3fec6cd5510d9eb9a14db104ddddb35d6463d01e5a8a979e27855"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_theseus_25_5427-native-2.png",
+          "sha256": "dd8f5d1fdd7e9b08c63099f742e1caf7e8a889f620d4bec9e07b1cc0063ad539"
+        },
+        {
+          "path": "runs/step101-validation-expanded-review/miss_theseus_25_5427-native-3.png",
+          "sha256": "a220dc138fc8b4b4c89eb9bdd921e4eba5d9e0f545ab5e16aabac445071e0df7"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_theseus_25_5427_0.png",
+          "sha256": "88844c71a29f93f29872d25024860853a6327ca66544f3126ee80b2895bf4da1"
+        },
+        {
+          "path": "runs/step101-validation-first/crops/miss_theseus_25_5427_1.png",
+          "sha256": "a4a5c45b6e37302f9bf3c7fcd188a8e3aac068c9f40fc714b7ad85f55bc081c8"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_tiberius_gracchus_407_2016",
+      "unit_id": "tiberius_gracchus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 407,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5463649306326864,
+            0.06473292040933538,
+            0.9599434560471738,
+            0.08245110315180193
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_tiberius_gracchus_407_2016_0.png",
+          "sha256": "a76175119c7646ba55b548103c57fd8e74d3f625c5795d9ca452893d19fda84c"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_tiberius_gracchus_407_2016_1.png",
+          "sha256": "e334dbb85de1735ea42ee6ea95cff52c463a8ee13f0cca89222eb712992fcb66"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_tiberius_gracchus_407_2016_0.png",
+          "sha256": "3acd3d333fd36e9d0db68227684621bc336921ddcfe9896a836523c2b0cfecf6"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_tiberius_gracchus_407_2016_1.png",
+          "sha256": "3e9769a9ece889b443ec43fd04487b3f6d0f8ed39b8af4b2f55a2ecc4f0ec4b5"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_tiberius_gracchus_411_3764",
+      "unit_id": "tiberius_gracchus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 411,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.5207898287717209,
+            0.05796350727758995,
+            0.9501418552467726,
+            0.07784375626175322
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_tiberius_gracchus_411_3764_0.png",
+          "sha256": "d2069ade37bd86b7228853c8a82a46c48275666eec13ee9f5847adc63e99d989"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_tiberius_gracchus_411_3764_1.png",
+          "sha256": "160357803ad918f8037a7a1a7679156eb271b4d5a06180601e39bb18b4def5b4"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_tiberius_gracchus_411_3764_0.png",
+          "sha256": "5f06fca5e09bf73aa44066f27dfffaab109471a802698c87ed739947f98d78ae"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_tiberius_gracchus_411_3764_1.png",
+          "sha256": "7ebd11b04338ca914e49d651f2f2f7f4923eca8ff2b13a05d25c003c06a6180e"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_tiberius_gracchus_414_5143",
+      "unit_id": "tiberius_gracchus",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 414,
+          "input_sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684",
+          "box": [
+            0.4986037507000138,
+            0.08494472870923508,
+            0.9169909354052825,
+            0.11518504881998431
+          ],
+          "source_index": 1,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 2,
+      "confidence": "high",
+      "verdict": "confirmed",
+      "initial_tier": "A",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_tiberius_gracchus_414_5143_0.png",
+          "sha256": "af34f93b822247bb83eb98cfa0648171d9dbdad41f1792b7d96149b2224d90c6"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_tiberius_gracchus_414_5143_1.png",
+          "sha256": "8d985217aa3a59a13ef43867f08ac15586e8016d20c9abe9eccbb0d3ac8d120f"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_tiberius_gracchus_414_5143_0.png",
+          "sha256": "6cfd940331d661b111690db2c63e3fd9e027d447a629da401e59bf566000af14"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_tiberius_gracchus_414_5143_1.png",
+          "sha256": "e89bb4e333d6cfd163266847178ba521757e25038f8b05e5abff38dc2ed0ca22"
+        }
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "repair_read_status": "pending production-pixel diagnosis",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    },
+    {
+      "event_id": "miss_timoleon_318_9879",
+      "unit_id": "timoleon",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 318,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.46420584871701503,
+            0.08595967497638642,
+            0.8640511667059558,
+            0.10298929058125242
+          ],
+          "source_index": 0,
+          "occurrence_id": "expected"
+        }
+      ],
+      "missing_line_count": 1,
+      "confidence": "low",
+      "verdict": "confirmed",
+      "initial_tier": "B",
+      "candidate_crops": [
+        {
+          "path": "runs/step102-final-all-5/crops/miss_timoleon_318_9879_0.png",
+          "sha256": "6d0cc9bcb6d914e2dcbeafb0362a48832a36da87179c6d118989e7164398581d"
+        },
+        {
+          "path": "runs/step102-final-all-5/crops/miss_timoleon_318_9879_1.png",
+          "sha256": "c6ca91adc910bfd7883af82cfd5f27678fc98dc212f94ce5d5951da7cb79cb67"
+        }
+      ],
+      "review_evidence": [
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_timoleon_318_9879_0.png",
+          "sha256": "c1cd80939b79352505d91cdc40b4fa93eaac819feea89eabca074c6af0699e2e"
+        },
+        {
+          "path": "runs/step92-development-final-2/crops/review_expanded_miss_timoleon_318_9879_1.png",
+          "sha256": "698fb2f4a23df76041fc4d0b38490e22dbbb8be32827cb65a3dc8bed540bfc43"
+        }
+      ],
+      "status": "deferred",
+      "responsible_step": "1.1C",
+      "repair_read_status": "awaiting confirming human read and preservation-boundary review; no repair enabled",
+      "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
+      "reviewed_lines": []
+    }
+  ],
+  "description": "Diagnostic evidence and proposed decisions. Original-source production pixels are distinct from retained-image rows. This fixture does not enable repairs.",
+  "archive": {
+    "path": "archive/inner_tomi_audit_2026_10_08",
+    "manifest_sha256": "9844828f4aaebaa0eae7498994792ae8ede899adefd73629bbc213c9a864f8b4",
+    "verified_files": 20361,
+    "missing_evidence": []
+  },
+  "original_run": "tmp/pdfs/inner_tomi_audit/runs/step102-final-all-5",
+  "decisions": [
+    {
+      "finding_ids": [
+        "B1"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| B1 / prior G2 | Timoleon II/235-237, r227-229; v1/304, f291, mask neighborhood `vestem excutiebat` on 235 | All three pages contain flowing prose. The exact235 mask neighborhood was checked at 180 DPI; neighboring236-237 were also inspected. | **Confirmed prior divider-only pages absent.** |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "B2"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| B2 / prior G3 | Brutus VIII/130-132, r122-124; v2/625-626, f1202-1203; `subli-`, `partem secutus.`, and closing prose | Current pages carry prose; no divider-only131 remains. | **Confirmed prior divider-only page absent.** |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "B3"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| B3 / prior O5 | Marius III/297, r289, v1/530, f517, `mortem sibi ipse conscivit.`; III/298 white separator | Ending 297 contains the complete conclusion. Full180-DPI298 is entirely white. | **Confirmed old furniture-only body page absent.** White298 is legitimate recto separation, not a blank body page. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "B4"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| B4 / all-tomus sweep | All 2,678 body-image pages; endpoint coverage in category8 | No body page with generated heading/folio plus only a source divider and no prose was found. Sparse complete endings, white recto separators, and signature padding were distinguished. | **No residual example found at reviewed resolution.** |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M1"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M1 | Fabius Maximus II/81, r73 | v1/229 ->230, f216 ->217; `quæ in sum-` -> `mitatibus montium sedebat` | **Confirmed copied-margin gap**, about130 rows at 180 DPI. Split word continues; no intervening source Latin line. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M2"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M2 | Alcibiades II/139, r131 | v1/257 ->258, f244 ->245; `gra-` -> `tiam` | **Confirmed copied-margin gap.** Local split-word continuation is intact. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M3"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M3 | Coriolanus II/203, r195 | v1/289 ->290, f276 ->277; `O ma-` -> `ter, ut mecum egisti!` | **Confirmed copied-margin gap and right rule.** Old head277 is removed. Raw289/290 directly confirm the uninterrupted split word. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M4"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M4 | Timoleon II/219, r211 | v1/295 ->296, f282 ->283; `seque ei` -> `crediderunt et belli ducem cum delegerunt` | **Confirmed residual copied-margin gap**, about77 rows at 180 DPI. Old head/rule mask succeeds; no Latin line between these source pieces. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M5"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M5 | Timoleon II/223, r215 | v1/297 ->298, f284 ->285; `cum` -> `deprecatum ivisset` | **Confirmed copied-margin gap and right divider.** Old head285 is absent. Correct source seam is297/298, not298/299. No intervening source Latin line. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M6"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M6 | Timoleon II/243, r235 | v1/307 ->308, f294 ->295; `neque periit,` -> `neque vulnus accepit` | **Confirmed copied-margin gap and right rule.** Old head295 is absent; raw307/308 confirm intact local continuation. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M7"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M7 | Timoleon II/260-261, r252-253 | v1/315 ->316, f302 ->303; `nava-` -> `vit, ut eum perinde atque conditorem diligerent.` | **Confirmed copied top margin on 261 and right divider.** Split word is intact;261 contains prose. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M8"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M8 | Aemilius Paullus II/290, r282 | v1/329 ->330, f316 ->317; `Macedo-` -> `num, ut Polybius refert` | **Confirmed copied-margin gap and heavy right rule.** Split word continues without an intervening line. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M9"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M9 | Lucullus IV/48, r40 | v1/603 ->604, f590 ->591; `ea nullam magnam rerum gerendarum materiam haberet.` -> `(4) Maxime autem Pompeius in Hispania` | **Confirmed copied-margin seam and divider.** Raw603/604 comparison confirms no omitted local Latin line. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M10"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M10 | Brutus VIII/87, r79 | v2/603 ->604, f1180 ->1181; `vos feliciter` -> `quod statuistis perficere` | **Confirmed copied-margin gap**, including W5 and right rule. Source 604 starts with the visible continuation; no local omitted line established here. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "M11"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| M11 | Brutus VIII/128, r120 | v2/623 ->624, f1200 ->1201; `etiam optimus quisque pro Bruto propugnans cecidit.` -> `Is quum videret barbaros quosdam` | **Confirmed gap, watermark, and rule with a missing first source Latin line.** See C5; this seam must not be recorded as intact. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "C1"
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "historical_evidence": "| C1 | Romulus I/68, r52; v1/38 ->39, f25 ->26 | Output goes from `eo potentiæ progressuram.` to `educati, condendæ`. Source 38 has four intervening Latin lines, beginning `IX. Amulio interfecto rebusque compositis, neque Albæ` and ending `nore, ipsis consilium fuit seorsum urbis, ubi primum fuerant`. Output67-69 contain earlier/later prose, not those lines. | **Confirmed omission of four distinct source Latin lines**, including chapter IX's opening. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "C2"
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "historical_evidence": "| C2 | Coriolanus II/207, r199; v1/291 ->292, f278 ->279 | Output `Numa de-` jumps to `cum Æquis sociis atque amicis suis`. Source 292 first has `finierat, ut in ejus Vita scripsimus. (11) At res Volscorum` and `statim Marcium desideraverunt. Primo enim de principatu`. Output208 has only the genuine terminal continuation. | **Confirmed omission of two distinct source Latin lines.** The split `de-` is left without its expected continuation. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "C3"
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "historical_evidence": "| C3 | Phocion VI/229, r221; v2/298 ->299, f895 ->896 | After `Id quum impugnarent oratores postulatum,` output jumps to `vos aut armis superare`. Source 299 first contains `a senatu dicere sententiam Phocion jussus, Jubeo, inquit,`. Neighbors228/230 and the full VI OCR search do not supply it. | **Confirmed omission of one distinct source Latin line.** Separate from D6's incomplete duplicate opening. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "C4"
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1C",
+      "historical_evidence": "| C4 | Alexander VI/53, r45; v2/213, f812 | Many source line beginnings extend left of the output's vertical crop boundary. Source `rebat, ut qui deo parente` loses its initial edge; subsequent beginnings including `Atheniensibus scribens` and `et nobilem urbem` are clipped. Full300-DPI output and raw213 were compared. | **Confirmed lateral clipping of numerous Latin line beginnings.** This is distinct from horizontal slice S1. Exact total glyph count was not measured. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "C5"
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "historical_evidence": "| C5 | Brutus VIII/128, r120; v2/623 ->624, f1200 ->1201 | After source 623's `etiam optimus quisque pro Bruto propugnans cecidit.` output resumes at source 624's second Latin line `Is quum videret barbaros quosdam`. Source 624 first line is **`L. Erat inter amicos Bruti Lucilius quidam, vir fortis.`** Output127/128/129 and OCR do not contain it. | **Confirmed omission of one distinct source Latin line**, including chapter L marker and introduction of Lucilius. Found during this final continuation. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "C6"
+      ],
+      "status": "unresolved",
+      "responsible_step": "1.1C",
+      "historical_evidence": "| C6 | Romulus I/68-69, r52-53; v1/39, f26; `educati, condendæ` and `raptas.` | The left boundary cuts initial glyphs in the source 39 contribution. Source 39 shows complete `educati` and `raptas`; current68/69 clip their leftmost letters. | **Confirmed lateral clipping at these pages.** The full extent into additional Romulus pages has not been counted. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "C7"
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1C",
+      "historical_evidence": "| C7 | Otho VIII/287, r279; v2/701, f1274; clipped `rimum temporis` | Second duplicate opening loses its leftmost glyph and begins later than the source opening. | **Confirmed clipped repeat opening; unconfirmed total extent of lateral loss.** Distinct source opening survives in first occurrence D12; no additional unique-line omission is asserted. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R1"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R1 | I/24, r8 | v1/17, f4; `labatur, apprehendentem ipsum` | **Confirmed long left rule**, close to Latin and Greek scraps; generally a visible separation. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R2"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R2 | I/28, r12; I/36, r20; I/46, r30 | v1/19 f6,23 f10,28 f15; XIV/XXI/XXVIII anchors in spacing table | **Confirmed left rules through genuine printed chapter gaps.** The rules and spacing have different assessments. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R3"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R3 | I/68, r52 | v1/38-39, f25-26; `eo potentiæ progressuram.` | **Confirmed left rule through gap**, followed by Latin crop lossC1/C6. Pixels near prose require particular care in any later review. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R4"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R4 | II/203, r195 | v1/290, f277; `ter, ut mecum egisti!` | **Confirmed heavy right rule**, generally separated from prose; M3. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R5"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R5 | II/223, r215; II/243, r235; II/261, r253 | v1/298 f285,308 f295,316 f303; `deprecatum ivisset`, `neque vulnus accepit`, `vit, ut eum` | **Confirmed right rules** in copied-margin areas; visible separation at reviewed neighborhoods. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R6"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R6 | II/273-274, r265-266 | v1/321, f308; `Macedo-` / `num longe robustiorem` | **Confirmed heavy right rule**, extending through blank/watermark region across pagination; W4. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R7"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R7 | II/290, r282 | v1/330, f317; `num, ut Polybius refert` | **Confirmed heavy right rule** beside copied seam; M8. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R8"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R8 | IV/48, r40 | v1/603-604, f590-591; `Maxime autem Pompeius` | **Confirmed divider furniture** in copied seam; M9. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R9"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R9 | VII/28-30, r20-22 | v2/374-376, f957-959; `Ibi de-` / `mum Amphares` | **Confirmed conspicuous heavy right rules**, including alongside Agis prose and H2 on 29. The repeated scan also clips some Latin edges. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R10"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R10 | VI/225-227, r217-219 | v2/297-298, f894-895; `Thebas lugere.` | **Confirmed broken right rules** in second Phocion occurrence D6. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R11"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R11 | VIII/229-230, r221-222 | v2/673-674, f1248-1249; `a se gestarum occasionem` | **Confirmed broken right rules** in second Aratus occurrence D11. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R12"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R12 | VIII/287, r279 | v2/701, f1274; `rimum temporis` fragment | **Confirmed broken right rule** at Otho repeat D12. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R13"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R13 | VIII/87, r79; VIII/128, r120 | v2/603-604 f1180-1181;623-624 f1200-1201; anchorsW5/W6 | **Confirmed right rule segments** through margin/watermark areas. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "R14"
+      ],
+      "status": "proposed",
+      "responsible_step": "5.1",
+      "historical_evidence": "| R14 recheck | VI/337, r329 | v2/361, f946; `quoque, inquit, decrevistis virum` | Prior heavy right-rule mask succeeds at reviewed neighborhood; **no heavy rule visible there**. DuplicateD7 nevertheless survives. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "S1"
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1A",
+      "historical_evidence": "| S1 | Alexander VI/52-53, r44-45 | v2/213, f812; `XXVIII. Omnino autem ita se erga barbaros superbe ge-` | Tiny upper portions of the line sit at the foot of 52; lower portions appear at top53. | **Confirmed horizontal line slice at 300 DPI.** The line is split, not wholly absent. D5 second occurrence; C4 separately clips its left side. |",
+      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+    },
+    {
+      "finding_ids": [
+        "W3"
+      ],
+      "status": "non_finding",
+      "responsible_step": "5.1",
+      "reason": "Intentional Google notice page; retained front matter, outside body repairs."
+    },
+    {
+      "finding_ids": [
+        "PRAEFATIO"
+      ],
+      "status": "non_finding",
+      "responsible_step": "5.1",
+      "reason": "Intentional Praefatio transition; preserve established front-matter contract."
+    }
+  ],
+  "duplicate_blocks": [
+    {
+      "finding_id": "D4",
+      "unit_id": "agesilaus",
+      "source": 1,
+      "keep_pages": [
+        115,
+        116,
+        117,
+        118
+      ],
+      "skip_pages": [
+        119,
+        120,
+        121,
+        122
+      ],
+      "retain_sequence": [
+        118,
+        123
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1A",
+      "reason": "Human reinspection confirms equal-or-worse second scan; production-pixel boundaries pending.",
+      "reviewed_lines": []
+    },
+    {
+      "finding_id": "D5",
+      "unit_id": "alexander",
+      "source": 1,
+      "keep_pages": [
+        211,
+        212
+      ],
+      "skip_pages": [
+        213,
+        214
+      ],
+      "retain_sequence": [
+        212,
+        215
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1A",
+      "reason": "Human reinspection confirms equal-or-worse second scan; production-pixel boundaries pending.",
+      "reviewed_lines": []
+    },
+    {
+      "finding_id": "D6",
+      "unit_id": "phocion",
+      "source": 1,
+      "keep_pages": [
+        295,
+        296
+      ],
+      "skip_pages": [
+        297,
+        298
+      ],
+      "retain_sequence": [
+        296,
+        299
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1A",
+      "reason": "Human reinspection confirms equal-or-worse second scan; production-pixel boundaries pending.",
+      "reviewed_lines": []
+    },
+    {
+      "finding_id": "D7",
+      "unit_id": "cato_minor",
+      "source": 1,
+      "keep_pages": [
+        359,
+        360
+      ],
+      "skip_pages": [
+        361,
+        362
+      ],
+      "retain_sequence": [
+        360,
+        363
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1A",
+      "reason": "Human reinspection confirms equal-or-worse second scan; production-pixel boundaries pending.",
+      "reviewed_lines": []
+    },
+    {
+      "finding_id": "D8",
+      "unit_id": "agis",
+      "source": 1,
+      "keep_pages": [
+        375,
+        376
+      ],
+      "skip_pages": [
+        377,
+        378
+      ],
+      "retain_sequence": [
+        376,
+        379
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1A",
+      "reason": "Human reinspection confirms equal-or-worse second scan; production-pixel boundaries pending.",
+      "reviewed_lines": []
+    },
+    {
+      "finding_id": "D9",
+      "unit_id": "cicero",
+      "source": 1,
+      "keep_pages": [
+        463,
+        464
+      ],
+      "skip_pages": [
+        465,
+        466
+      ],
+      "retain_sequence": [
+        464,
+        467
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1A",
+      "reason": "Human reinspection confirms equal-or-worse second scan; production-pixel boundaries pending.",
+      "reviewed_lines": []
+    },
+    {
+      "finding_id": "D10",
+      "unit_id": "antonius",
+      "source": 1,
+      "keep_pages": [
+        521,
+        522
+      ],
+      "skip_pages": [
+        523,
+        524
+      ],
+      "retain_sequence": [
+        522,
+        525
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1A",
+      "reason": "Human reinspection confirms equal-or-worse second scan; production-pixel boundaries pending.",
+      "reviewed_lines": []
+    },
+    {
+      "finding_id": "D11",
+      "unit_id": "aratus",
+      "source": 1,
+      "keep_pages": [
+        671,
+        672
+      ],
+      "skip_pages": [
+        673,
+        674
+      ],
+      "retain_sequence": [
+        672,
+        675
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1A",
+      "reason": "Human reinspection confirms equal-or-worse second scan; production-pixel boundaries pending.",
+      "reviewed_lines": []
+    },
+    {
+      "finding_id": "D12",
+      "unit_id": "otho",
+      "source": 1,
+      "keep_pages": [
+        699,
+        700
+      ],
+      "skip_pages": [
+        701,
+        702
+      ],
+      "retain_sequence": [
+        700,
+        703
+      ],
+      "status": "proposed",
+      "responsible_step": "1.1A",
+      "reason": "Human reinspection confirms equal-or-worse second scan; production-pixel boundaries pending.",
+      "reviewed_lines": []
+    }
+  ],
+  "furniture_cases": [
+    {
+      "finding_ids": [
+        "W4",
+        "R6"
+      ],
+      "unit_id": "aemilius_paulus",
+      "source": 0,
+      "source_page": 321,
+      "status": "proposed",
+      "responsible_step": "1.1B",
+      "reason": "Production-pixel preservation boundary pending."
+    },
+    {
+      "finding_ids": [
+        "W5",
+        "R13"
+      ],
+      "unit_id": "brutus",
+      "source": 1,
+      "source_page": 603,
+      "status": "proposed",
+      "responsible_step": "1.1B",
+      "reason": "Production-pixel preservation boundary pending."
+    },
+    {
+      "finding_ids": [
+        "W6",
+        "R13"
+      ],
+      "unit_id": "brutus",
+      "source": 1,
+      "source_page": 623,
+      "status": "proposed",
+      "responsible_step": "1.1B",
+      "reason": "Production-pixel preservation boundary pending."
+    },
+    {
+      "finding_ids": [
+        "H1"
+      ],
+      "unit_id": "philopoemen",
+      "source": 0,
+      "source_page": 448,
+      "status": "proposed",
+      "responsible_step": "1.1B",
+      "reason": "Production-pixel preservation boundary pending."
+    },
+    {
+      "finding_ids": [
+        "H2"
+      ],
+      "unit_id": "agis",
+      "source": 1,
+      "source_page": 375,
+      "status": "proposed",
+      "responsible_step": "1.1B",
+      "reason": "Production-pixel preservation boundary pending."
+    },
+    {
+      "finding_ids": [
+        "MARIUS_HEAD"
+      ],
+      "unit_id": "caius_marius",
+      "source": 0,
+      "source_page": 528,
+      "status": "proposed",
+      "responsible_step": "1.1B",
+      "reason": "Production-pixel preservation boundary pending."
+    },
+    {
+      "finding_ids": [
+        "CATO_MAJOR_FOLIO"
+      ],
+      "unit_id": "cato_major",
+      "source": 0,
+      "source_page": 432,
+      "status": "proposed",
+      "responsible_step": "1.1B",
+      "reason": "Production-pixel preservation boundary pending."
+    },
+    {
+      "finding_ids": [
+        "S2"
+      ],
+      "unit_id": "comparatio_demosthenis_et_ciceronis",
+      "source": 1,
+      "source_page": 480,
+      "status": "proposed",
+      "responsible_step": "1.1B",
+      "reason": "Production-pixel preservation boundary pending."
+    },
+    {
+      "finding_ids": [
+        "F1"
+      ],
+      "unit_id": "theseus",
+      "source": 0,
+      "source_page": 17,
+      "status": "proposed",
+      "responsible_step": "1.1B",
+      "reason": "Production-pixel preservation boundary pending."
+    },
+    {
+      "finding_ids": [
+        "F2"
+      ],
+      "unit_id": "pyrrhus",
+      "source": 0,
+      "source_page": 470,
+      "status": "proposed",
+      "responsible_step": "1.1B",
+      "reason": "Production-pixel preservation boundary pending."
+    }
+  ]
+}
