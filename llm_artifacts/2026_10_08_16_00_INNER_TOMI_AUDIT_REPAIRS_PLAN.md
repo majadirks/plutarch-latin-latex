@@ -669,8 +669,17 @@ retained occurrences remain governed by their event-specific eligibility:
 `miss_cato_minor_331_9707` is Tier A; `miss_cato_minor_329_8786` is Tier B and
 cannot receive a correction without the required confirming human read.
 
-Other finding and omission dispositions are populated during 1.1B–1.1C and
-finalized against installed exclusions in 2.1A.
+Watermark candidates measured actual copied endpoints W4: 2881→2572 (309 rows),
+W5: 2735→2556 (179 rows), and W6: 2735→2561 (174 rows). Each is a tail, with
+no source-page Latin beneath its logo. The next source page supplies the W4/W5
+continuation; W6 still has the separate missing first line on 624. The candidate
+623 right-rule cleanup also separates the three top lines formerly swallowed by
+a merged head band; Phase 4 must verify their restoration independently.
+
+F1 and F2 are deferred: no complete safe boundary has been proven beside Latin
+and legitimate reference letters. S2 uses the specifically amended packing
+branch in 4.3. Omission dispositions are populated during 1.1C and finalized
+against installed exclusions in 2.1A.
 
 # Phase 2 — De-duplicate the nine repeated blocks D4–D12 (Suggested implementer: Opus)
 
@@ -854,6 +863,21 @@ with the exact normalized rectangles established in Phase 1:
 
 Reuse `apply_source_furniture_mask` and its existing call site in
 `render_and_band`; define a rectangle once even if it serves several findings.
+
+The measured head repairs use the smallest successful masks: H1, Marius, and
+Cato Major clear their detached folio numerals; existing furniture trims then
+remove the remaining head fragments. H2 is resolved by the verified source 375
+right-rule mask. For Cato Major source 0/page 432 specifically, clearing the folio
+moves the detected crop from [907, 1711] to [907, 1710], cutting original body ink
+at x1710. Add `preserve_known_body_crop_edge(source, page, raster, column)` after
+column detection in `render_and_band`: when and only when identity is (0, 432),
+raster dimensions are (1948, 2980), and the detected column is [907, 1710], return
+[907, 1711]. All other inputs return their unchanged column. This preserves the
+measured body edge without changing thresholds or the column detector. Add
+ordinary `cato_major_folio_cleanup_preserves_rightmost_body_pixels`, proving the
+original edge pixel survives and unrelated source/page/dimension/crop identities
+are unchanged. The installed mask record uses independently frozen expected
+crop [907, 1711] and original body-band intervals with the header removed.
 Each entry carries a comment describing the furniture and its preservation
 boundary — no plan references, no change narration. Use the smallest safe
 rectangles including pale antialiased watermark edges. Never apply a global
@@ -1133,6 +1157,24 @@ is safe may a packer change be considered — and then it requires an ordinary
 with the exact responsible function, identity scope, behavior and preservation
 boundary before coding. Add both named ordinary regressions only if that branch
 is selected; broad packer retuning remains outside scope.
+
+**Measured S2 branch:** The source 480 chapter-IV band [1516, 1647] becomes
+strip [1507, 1648] in crop [887, 1704] of raster [1852, 2836]. Skewed Latin glyph
+projections overlap; there is no safely erasable connecting furniture. Add a
+finite source-pixel predicate for this exact cropped strip: require column
+dimensions (817, 2836), strip interval [1507, 1648], and SHA-256 of its unscaled
+grayscale bytes equal to
+`b9923339da9e250ebc0404036149d63cf9a253aafbb4c2f73957398188f608d0`.
+The lossless sample in the diagnostic fixture supplies an ordinary synthetic
+regression; production uses the hash to recognize the source, never the sample
+to paint or replace text. In `compose_pages`, bypass the Tall fill-split branch
+for this recognized strip when it fits a fresh canvas; wrap it whole. Preserve
+the existing oversized-strip fallback, `lowest_ink_row`, `split_tall_strip`,
+classification, scale, and all unrelated packing. The two ordinary regressions
+above must test positive fingerprint recognition, whole cluster ownership,
+rejection of changed pixels/geometry, and unchanged ordinary packing. The real
+`comparison_s2_line_is_whole` checks every original chapter-IV line through
+returned canvases.
 
 **LLM verification:** `cargo fmt --all`; `cargo fmt --all --check`; `cargo clippy
 --all-targets -- -D warnings`; `cargo test comparison_s2_line_is_whole -- --ignored --nocapture`;

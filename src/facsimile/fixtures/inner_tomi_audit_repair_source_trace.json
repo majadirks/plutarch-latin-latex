@@ -10070,8 +10070,13 @@
       "source": 0,
       "source_page": 321,
       "status": "proposed",
-      "responsible_step": "1.1B",
-      "reason": "Production-pixel preservation boundary pending."
+      "responsible_step": "3.1",
+      "reason": "Native source image inspected. Rectangles are in the header gap or watermark tail and in the separate right scan rule, outside the reviewed Latin boundary; candidate banding and extraction must be verified before installation.",
+      "candidate_case_identity": {
+        "source": 0,
+        "source_page": 321,
+        "finding_ids": ["W4", "R6"]
+      }
     },
     {
       "finding_ids": ["W5", "R13"],
@@ -10079,8 +10084,13 @@
       "source": 1,
       "source_page": 603,
       "status": "proposed",
-      "responsible_step": "1.1B",
-      "reason": "Production-pixel preservation boundary pending."
+      "responsible_step": "3.1",
+      "reason": "Native source image inspected. Rectangles are in the header gap or watermark tail and in the separate right scan rule, outside the reviewed Latin boundary; candidate banding and extraction must be verified before installation.",
+      "candidate_case_identity": {
+        "source": 1,
+        "source_page": 603,
+        "finding_ids": ["W5", "R13"]
+      }
     },
     {
       "finding_ids": ["W6", "R13"],
@@ -10088,8 +10098,13 @@
       "source": 1,
       "source_page": 623,
       "status": "proposed",
-      "responsible_step": "1.1B",
-      "reason": "Production-pixel preservation boundary pending."
+      "responsible_step": "3.1",
+      "reason": "Native source image inspected. Rectangles are in the header gap or watermark tail and in the separate right scan rule, outside the reviewed Latin boundary; candidate banding and extraction must be verified before installation.",
+      "candidate_case_identity": {
+        "source": 1,
+        "source_page": 623,
+        "finding_ids": ["W6", "R13"]
+      }
     },
     {
       "finding_ids": ["H1"],
@@ -10097,8 +10112,13 @@
       "source": 0,
       "source_page": 448,
       "status": "proposed",
-      "responsible_step": "1.1B",
-      "reason": "Production-pixel preservation boundary pending."
+      "responsible_step": "3.1",
+      "reason": "The isolated folio rectangle lies above the first body glyphs. Removing the far-right numeral separates the surviving head from the full-measure test; candidate full-unit trimming must prove the remaining head disappears without changing Latin crop coverage.",
+      "candidate_case_identity": {
+        "source": 0,
+        "source_page": 448,
+        "finding_ids": ["H1"]
+      }
     },
     {
       "finding_ids": ["H2"],
@@ -10106,8 +10126,13 @@
       "source": 1,
       "source_page": 375,
       "status": "proposed",
-      "responsible_step": "1.1B",
-      "reason": "Production-pixel preservation boundary pending."
+      "responsible_step": "3.1",
+      "reason": "Right divider components start at x1753; all Latin ends before x1740; columns 1740-1749 are white throughout body rows 200-2579. The right rule merges the Greek head and first body lines in the baseline. Candidate unmerging must be measured before installation.",
+      "candidate_case_identity": {
+        "source": 1,
+        "source_page": 375,
+        "finding_ids": ["H2", "R9"]
+      }
     },
     {
       "finding_ids": ["MARIUS_HEAD"],
@@ -10115,8 +10140,13 @@
       "source": 0,
       "source_page": 528,
       "status": "proposed",
-      "responsible_step": "1.1B",
-      "reason": "Production-pixel preservation boundary pending."
+      "responsible_step": "3.1",
+      "reason": "The isolated folio rectangle lies above the first body glyphs. Removing the far-right numeral separates the surviving head from the full-measure test; candidate full-unit trimming must prove the remaining head disappears without changing Latin crop coverage.",
+      "candidate_case_identity": {
+        "source": 0,
+        "source_page": 528,
+        "finding_ids": ["MARIUS_HEAD"]
+      }
     },
     {
       "finding_ids": ["CATO_MAJOR_FOLIO"],
@@ -10124,8 +10154,13 @@
       "source": 0,
       "source_page": 432,
       "status": "proposed",
-      "responsible_step": "1.1B",
-      "reason": "Production-pixel preservation boundary pending."
+      "responsible_step": "3.1",
+      "reason": "The isolated folio rectangle lies above the first body glyphs. Removing the far-right numeral separates the surviving head from the full-measure test; candidate full-unit trimming must prove the remaining head disappears without changing Latin crop coverage.",
+      "candidate_case_identity": {
+        "source": 0,
+        "source_page": 432,
+        "finding_ids": ["CATO_MAJOR_FOLIO"]
+      }
     },
     {
       "finding_ids": ["S2"],
@@ -10133,26 +10168,37 @@
       "source": 1,
       "source_page": 480,
       "status": "proposed",
-      "responsible_step": "1.1B",
-      "reason": "Production-pixel preservation boundary pending."
+      "responsible_step": "4.3",
+      "reason": "Native glyph inspection shows skewed Latin line projections overlap within source band [1516,1647]; no separate connecting furniture can be erased to create horizontal white gaps without cutting glyphs.",
+      "proposed_correction": {
+        "function": "strips_in_reading_order",
+        "behavior": "Treat the reviewed source-480 merged chapter-IV band as an ordinary whole-wrapping strip. Bind eligibility to exact production crop dimensions, original band interval, and a source-pixel fingerprint. Keep compose_pages and all splitting algorithms unchanged.",
+        "raster": [1852, 2836],
+        "crop_edges": [887, 1704],
+        "band": [1516, 1647],
+        "strip": [1507, 1648],
+        "baseline_scaled_strip": [5265, 5435],
+        "baseline_canvas_cut": 5284,
+        "regression_names": ["merged_strip_wraps_at_complete_line_boundary", "unaffected_ordinary_line_packing_is_unchanged", "comparison_s2_line_is_whole"]
+      }
     },
     {
       "finding_ids": ["F1"],
       "unit_id": "theseus",
       "source": 0,
       "source_page": 17,
-      "status": "proposed",
+      "status": "deferred",
       "responsible_step": "1.1B",
-      "reason": "Production-pixel preservation boundary pending."
+      "reason": "Foreign-column fragments and margin material sit beside Latin glyphs and legitimate edition-reference letters. No complete safe local exclusion boundary has been proven; preserve the neighborhood, the existing Pyrrhus margin mask, and all Latin/reference letters."
     },
     {
       "finding_ids": ["F2"],
       "unit_id": "pyrrhus",
       "source": 0,
       "source_page": 470,
-      "status": "proposed",
+      "status": "deferred",
       "responsible_step": "1.1B",
-      "reason": "Production-pixel preservation boundary pending."
+      "reason": "Foreign-column fragments and margin material sit beside Latin glyphs and legitimate edition-reference letters. No complete safe local exclusion boundary has been proven; preserve the neighborhood, the existing Pyrrhus margin mask, and all Latin/reference letters."
     }
   ],
   "existing_duplicate_evidence": [
@@ -14932,7 +14978,3251 @@
       "preserved_latin_boundary": [991, 230, 1740, 2579],
       "status": "proposed",
       "responsible_step": "3.1",
-      "reason": "Right divider components start at x1753; all Latin ends before x1740; columns 1740-1749 are white throughout body rows 200-2579. The right rule merges the Greek head and first body lines in the baseline. Candidate unmerging must be measured before installation."
+      "reason": "Right divider components start at x1753; all Latin ends before x1740; columns 1740-1749 are white throughout body rows 200-2579. The right rule merges the Greek head and first body lines in the baseline. Candidate unmerging must be measured before installation.",
+      "baseline_trace": {
+        "path": "tmp/pdfs/inner_tomi_audit_repairs/furniture/agis/trace.json",
+        "sha256": "ef111d14c4a04338a60a9d1d249e2b525cc3a779b8101e193357e36a034ba14d"
+      },
+      "baseline_crop_edges": [991, 1797],
+      "baseline_pass_a_bands": [
+        [52, 905],
+        [915, 1587],
+        [1594, 1649],
+        [1652, 1856],
+        [1869, 1910],
+        [1922, 1926],
+        [1927, 1963],
+        [1967, 1969],
+        [1970, 1979],
+        [1980, 1981],
+        [1983, 2020],
+        [2036, 2188],
+        [2199, 2466],
+        [2484, 2522],
+        [2537, 2579]
+      ],
+      "baseline_pass_b_bands": [
+        [52, 905],
+        [915, 1587],
+        [1594, 1649],
+        [1652, 1856],
+        [1869, 1910],
+        [1922, 1926],
+        [1927, 1963],
+        [1967, 1969],
+        [1970, 1979],
+        [1980, 1981],
+        [1983, 2020],
+        [2036, 2188],
+        [2199, 2466],
+        [2484, 2522],
+        [2537, 2579]
+      ],
+      "candidate_measurements": {
+        "band_details": [
+          {
+            "ink_bounds": [0, 737],
+            "rows": [244, 276]
+          },
+          {
+            "ink_bounds": [15, 738],
+            "rows": [297, 328]
+          },
+          {
+            "ink_bounds": [14, 738],
+            "rows": [348, 381]
+          },
+          {
+            "ink_bounds": [14, 739],
+            "rows": [401, 433]
+          },
+          {
+            "ink_bounds": [14, 739],
+            "rows": [454, 486]
+          },
+          {
+            "ink_bounds": [14, 739],
+            "rows": [505, 538]
+          },
+          {
+            "ink_bounds": [16, 742],
+            "rows": [559, 592]
+          },
+          {
+            "ink_bounds": [14, 740],
+            "rows": [611, 644]
+          },
+          {
+            "ink_bounds": [13, 740],
+            "rows": [666, 698]
+          },
+          {
+            "ink_bounds": [0, 742],
+            "rows": [715, 751]
+          },
+          {
+            "ink_bounds": [13, 741],
+            "rows": [768, 801]
+          },
+          {
+            "ink_bounds": [12, 742],
+            "rows": [819, 852]
+          },
+          {
+            "ink_bounds": [12, 742],
+            "rows": [869, 903]
+          },
+          {
+            "ink_bounds": [12, 743],
+            "rows": [919, 955]
+          },
+          {
+            "ink_bounds": [12, 743],
+            "rows": [974, 1007]
+          },
+          {
+            "ink_bounds": [11, 742],
+            "rows": [1021, 1059]
+          },
+          {
+            "ink_bounds": [10, 743],
+            "rows": [1080, 1111]
+          },
+          {
+            "ink_bounds": [10, 744],
+            "rows": [1134, 1167]
+          },
+          {
+            "ink_bounds": [10, 744],
+            "rows": [1183, 1222]
+          },
+          {
+            "ink_bounds": [9, 744],
+            "rows": [1238, 1272]
+          },
+          {
+            "ink_bounds": [9, 744],
+            "rows": [1286, 1325]
+          },
+          {
+            "ink_bounds": [9, 744],
+            "rows": [1337, 1374]
+          },
+          {
+            "ink_bounds": [7, 745],
+            "rows": [1392, 1425]
+          },
+          {
+            "ink_bounds": [7, 745],
+            "rows": [1444, 1481]
+          },
+          {
+            "ink_bounds": [6, 746],
+            "rows": [1498, 1535]
+          },
+          {
+            "ink_bounds": [6, 745],
+            "rows": [1549, 1587]
+          },
+          {
+            "ink_bounds": [8, 746],
+            "rows": [1600, 1640]
+          },
+          {
+            "ink_bounds": [6, 746],
+            "rows": [1653, 1694]
+          },
+          {
+            "ink_bounds": [8, 747],
+            "rows": [1710, 1747]
+          },
+          {
+            "ink_bounds": [4, 746],
+            "rows": [1767, 1801]
+          },
+          {
+            "ink_bounds": [6, 746],
+            "rows": [1815, 1856]
+          },
+          {
+            "ink_bounds": [3, 745],
+            "rows": [1869, 1910]
+          },
+          {
+            "ink_bounds": [3, 328],
+            "rows": [1929, 1962]
+          },
+          {
+            "ink_bounds": [35, 745],
+            "rows": [1984, 2019]
+          },
+          {
+            "ink_bounds": [1, 744],
+            "rows": [2037, 2076]
+          },
+          {
+            "ink_bounds": [1, 744],
+            "rows": [2096, 2132]
+          },
+          {
+            "ink_bounds": [0, 745],
+            "rows": [2149, 2188]
+          },
+          {
+            "ink_bounds": [0, 744],
+            "rows": [2209, 2245]
+          },
+          {
+            "ink_bounds": [319, 324],
+            "rows": [2247, 2251]
+          },
+          {
+            "ink_bounds": [0, 744],
+            "rows": [2260, 2302]
+          },
+          {
+            "ink_bounds": [722, 743],
+            "rows": [2315, 2319]
+          },
+          {
+            "ink_bounds": [0, 743],
+            "rows": [2321, 2357]
+          },
+          {
+            "ink_bounds": [0, 742],
+            "rows": [2369, 2410]
+          },
+          {
+            "ink_bounds": [0, 742],
+            "rows": [2424, 2466]
+          },
+          {
+            "ink_bounds": [0, 742],
+            "rows": [2484, 2522]
+          },
+          {
+            "ink_bounds": [0, 739],
+            "rows": [2537, 2579]
+          }
+        ],
+        "crop_edges": [991, 1743],
+        "finding_ids": ["H2", "R9"],
+        "full_unit_pass_b_bands": [
+          [244, 276],
+          [297, 328],
+          [348, 381],
+          [401, 433],
+          [454, 486],
+          [505, 538],
+          [559, 592],
+          [611, 644],
+          [666, 698],
+          [715, 751],
+          [768, 801],
+          [819, 852],
+          [869, 903],
+          [919, 955],
+          [974, 1007],
+          [1021, 1059],
+          [1080, 1111],
+          [1134, 1167],
+          [1183, 1222],
+          [1238, 1272],
+          [1286, 1325],
+          [1337, 1374],
+          [1392, 1425],
+          [1444, 1481],
+          [1498, 1535],
+          [1549, 1587],
+          [1600, 1640],
+          [1653, 1694],
+          [1710, 1747],
+          [1767, 1801],
+          [1815, 1856],
+          [1869, 1910],
+          [1929, 1962],
+          [1984, 2019],
+          [2037, 2076],
+          [2096, 2132],
+          [2149, 2188],
+          [2209, 2245],
+          [2247, 2251],
+          [2260, 2302],
+          [2315, 2319],
+          [2321, 2357],
+          [2369, 2410],
+          [2424, 2466],
+          [2484, 2522],
+          [2537, 2579]
+        ],
+        "full_unit_strip_intervals": [
+          [244, 286],
+          [286, 338],
+          [338, 391],
+          [391, 443],
+          [443, 495],
+          [495, 548],
+          [548, 601],
+          [601, 655],
+          [655, 706],
+          [706, 759],
+          [759, 810],
+          [810, 860],
+          [860, 911],
+          [911, 964],
+          [964, 1014],
+          [1014, 1069],
+          [1069, 1122],
+          [1122, 1175],
+          [1175, 1230],
+          [1230, 1279],
+          [1279, 1331],
+          [1331, 1383],
+          [1383, 1434],
+          [1434, 1489],
+          [1489, 1542],
+          [1542, 1593],
+          [1593, 1646],
+          [1646, 1702],
+          [1702, 1757],
+          [1757, 1808],
+          [1808, 1862],
+          [1862, 1919],
+          [1919, 1973],
+          [1973, 2028],
+          [2028, 2086],
+          [2086, 2140],
+          [2140, 2198],
+          [2198, 2246],
+          [2255, 2308],
+          [2320, 2363],
+          [2363, 2417],
+          [2417, 2475],
+          [2475, 2529],
+          [2529, 2579]
+        ],
+        "pass_a_bands": [
+          [244, 276],
+          [297, 328],
+          [348, 381],
+          [401, 433],
+          [454, 486],
+          [505, 538],
+          [559, 592],
+          [611, 644],
+          [666, 698],
+          [715, 751],
+          [768, 801],
+          [819, 852],
+          [869, 903],
+          [919, 955],
+          [974, 1007],
+          [1021, 1059],
+          [1080, 1111],
+          [1134, 1167],
+          [1183, 1222],
+          [1238, 1272],
+          [1286, 1325],
+          [1337, 1374],
+          [1392, 1425],
+          [1444, 1481],
+          [1498, 1535],
+          [1549, 1587],
+          [1600, 1640],
+          [1653, 1694],
+          [1710, 1747],
+          [1767, 1801],
+          [1815, 1856],
+          [1869, 1910],
+          [1929, 1962],
+          [1984, 2019],
+          [2037, 2076],
+          [2096, 2132],
+          [2149, 2188],
+          [2209, 2245],
+          [2247, 2251],
+          [2260, 2302],
+          [2315, 2319],
+          [2321, 2357],
+          [2369, 2410],
+          [2424, 2466],
+          [2484, 2522],
+          [2537, 2579]
+        ]
+      },
+      "expected_crop_edges": [991, 1743],
+      "expected_pass_a_bands": [
+        [244, 276],
+        [297, 328],
+        [348, 381],
+        [401, 433],
+        [454, 486],
+        [505, 538],
+        [559, 592],
+        [611, 644],
+        [666, 698],
+        [715, 751],
+        [768, 801],
+        [819, 852],
+        [869, 903],
+        [919, 955],
+        [974, 1007],
+        [1021, 1059],
+        [1080, 1111],
+        [1134, 1167],
+        [1183, 1222],
+        [1238, 1272],
+        [1286, 1325],
+        [1337, 1374],
+        [1392, 1425],
+        [1444, 1481],
+        [1498, 1535],
+        [1549, 1587],
+        [1600, 1640],
+        [1653, 1694],
+        [1710, 1747],
+        [1767, 1801],
+        [1815, 1856],
+        [1869, 1910],
+        [1929, 1962],
+        [1984, 2019],
+        [2037, 2076],
+        [2096, 2132],
+        [2149, 2188],
+        [2209, 2245],
+        [2247, 2251],
+        [2260, 2302],
+        [2315, 2319],
+        [2321, 2357],
+        [2369, 2410],
+        [2424, 2466],
+        [2484, 2522],
+        [2537, 2579]
+      ],
+      "expected_first_band": [244, 276],
+      "expected_last_band": [2537, 2579],
+      "copied_height": {
+        "before": 2579,
+        "after": 2579
+      },
+      "neighbor_gap": 17
+    },
+    {
+      "finding_ids": ["W4", "R6"],
+      "unit_id": "aemilius_paulus",
+      "source": 0,
+      "source_page": 321,
+      "raster": [1893, 2960],
+      "mask_rectangles": [
+        [0.6275752773375595, 0.9574324324324325, 0.8425779186476492, 0.9871621621621621],
+        [0.9904912836767037, 0.0, 1.0, 1.0]
+      ],
+      "preserved_latin_boundary": [1072, 242, 1840, 2572],
+      "status": "proposed",
+      "responsible_step": "3.1",
+      "reason": "Native source image inspected. Rectangles are in the header gap or watermark tail and in the separate right scan rule, outside the reviewed Latin boundary; candidate banding and extraction must be verified before installation.",
+      "baseline_trace": {
+        "path": "tmp/pdfs/inner_tomi_audit_repairs/furniture/aemilius_paulus/trace.json",
+        "sha256": "7c7f3e3ebf06abe1063a0e742c10fc3b0544bb005f490bd2d1f78cca33a081f4"
+      },
+      "baseline_crop_edges": [1072, 1893],
+      "baseline_pass_a_bands": [
+        [242, 274],
+        [290, 321],
+        [338, 372],
+        [387, 417],
+        [437, 470],
+        [487, 518],
+        [536, 569],
+        [587, 619],
+        [626, 628],
+        [634, 667],
+        [683, 715],
+        [731, 764],
+        [780, 812],
+        [830, 862],
+        [881, 912],
+        [930, 962],
+        [977, 1009],
+        [1028, 1060],
+        [1076, 1109],
+        [1129, 1162],
+        [1179, 1209],
+        [1227, 1260],
+        [1277, 1310],
+        [1326, 1358],
+        [1373, 1407],
+        [1419, 1451],
+        [1466, 1502],
+        [1511, 1549],
+        [1558, 1595],
+        [1606, 1641],
+        [1652, 1688],
+        [1701, 1735],
+        [1746, 1784],
+        [1799, 1829],
+        [1850, 1883],
+        [1899, 1932],
+        [1948, 1985],
+        [1999, 2034],
+        [2047, 2081],
+        [2097, 2130],
+        [2145, 2179],
+        [2192, 2228],
+        [2244, 2280],
+        [2294, 2332],
+        [2341, 2381],
+        [2391, 2428],
+        [2439, 2475],
+        [2486, 2525],
+        [2528, 2572],
+        [2584, 2881]
+      ],
+      "baseline_pass_b_bands": [
+        [242, 274],
+        [290, 321],
+        [338, 372],
+        [387, 417],
+        [437, 470],
+        [487, 518],
+        [536, 569],
+        [587, 619],
+        [626, 628],
+        [634, 667],
+        [683, 715],
+        [731, 764],
+        [780, 812],
+        [830, 862],
+        [881, 912],
+        [930, 962],
+        [977, 1009],
+        [1028, 1060],
+        [1076, 1109],
+        [1129, 1162],
+        [1179, 1209],
+        [1227, 1260],
+        [1277, 1310],
+        [1326, 1358],
+        [1373, 1407],
+        [1419, 1451],
+        [1466, 1502],
+        [1511, 1549],
+        [1558, 1595],
+        [1606, 1641],
+        [1652, 1688],
+        [1701, 1735],
+        [1746, 1784],
+        [1799, 1829],
+        [1850, 1883],
+        [1899, 1932],
+        [1948, 1985],
+        [1999, 2034],
+        [2047, 2081],
+        [2097, 2130],
+        [2145, 2179],
+        [2192, 2228],
+        [2244, 2280],
+        [2294, 2332],
+        [2341, 2381],
+        [2391, 2428],
+        [2439, 2475],
+        [2486, 2525],
+        [2528, 2572],
+        [2584, 2881]
+      ],
+      "candidate_measurements": {
+        "band_details": [
+          {
+            "ink_bounds": [0, 758],
+            "rows": [242, 274]
+          },
+          {
+            "ink_bounds": [1, 759],
+            "rows": [290, 321]
+          },
+          {
+            "ink_bounds": [0, 759],
+            "rows": [338, 372]
+          },
+          {
+            "ink_bounds": [0, 757],
+            "rows": [387, 417]
+          },
+          {
+            "ink_bounds": [0, 759],
+            "rows": [437, 470]
+          },
+          {
+            "ink_bounds": [0, 759],
+            "rows": [487, 518]
+          },
+          {
+            "ink_bounds": [1, 759],
+            "rows": [536, 569]
+          },
+          {
+            "ink_bounds": [0, 759],
+            "rows": [587, 619]
+          },
+          {
+            "ink_bounds": [257, 264],
+            "rows": [626, 628]
+          },
+          {
+            "ink_bounds": [1, 760],
+            "rows": [634, 667]
+          },
+          {
+            "ink_bounds": [1, 758],
+            "rows": [683, 715]
+          },
+          {
+            "ink_bounds": [2, 759],
+            "rows": [731, 764]
+          },
+          {
+            "ink_bounds": [2, 757],
+            "rows": [780, 812]
+          },
+          {
+            "ink_bounds": [2, 758],
+            "rows": [830, 862]
+          },
+          {
+            "ink_bounds": [2, 757],
+            "rows": [881, 912]
+          },
+          {
+            "ink_bounds": [2, 757],
+            "rows": [930, 962]
+          },
+          {
+            "ink_bounds": [2, 756],
+            "rows": [977, 1009]
+          },
+          {
+            "ink_bounds": [2, 757],
+            "rows": [1028, 1060]
+          },
+          {
+            "ink_bounds": [3, 756],
+            "rows": [1076, 1109]
+          },
+          {
+            "ink_bounds": [2, 756],
+            "rows": [1129, 1162]
+          },
+          {
+            "ink_bounds": [2, 754],
+            "rows": [1179, 1209]
+          },
+          {
+            "ink_bounds": [3, 755],
+            "rows": [1227, 1260]
+          },
+          {
+            "ink_bounds": [4, 755],
+            "rows": [1277, 1310]
+          },
+          {
+            "ink_bounds": [3, 754],
+            "rows": [1326, 1358]
+          },
+          {
+            "ink_bounds": [2, 754],
+            "rows": [1373, 1407]
+          },
+          {
+            "ink_bounds": [3, 753],
+            "rows": [1419, 1451]
+          },
+          {
+            "ink_bounds": [3, 751],
+            "rows": [1466, 1502]
+          },
+          {
+            "ink_bounds": [4, 751],
+            "rows": [1511, 1549]
+          },
+          {
+            "ink_bounds": [4, 749],
+            "rows": [1558, 1595]
+          },
+          {
+            "ink_bounds": [4, 750],
+            "rows": [1606, 1641]
+          },
+          {
+            "ink_bounds": [5, 749],
+            "rows": [1652, 1688]
+          },
+          {
+            "ink_bounds": [5, 749],
+            "rows": [1701, 1735]
+          },
+          {
+            "ink_bounds": [5, 748],
+            "rows": [1746, 1784]
+          },
+          {
+            "ink_bounds": [5, 436],
+            "rows": [1799, 1829]
+          },
+          {
+            "ink_bounds": [36, 747],
+            "rows": [1850, 1883]
+          },
+          {
+            "ink_bounds": [5, 746],
+            "rows": [1899, 1932]
+          },
+          {
+            "ink_bounds": [7, 745],
+            "rows": [1948, 1985]
+          },
+          {
+            "ink_bounds": [6, 746],
+            "rows": [1999, 2034]
+          },
+          {
+            "ink_bounds": [7, 745],
+            "rows": [2047, 2081]
+          },
+          {
+            "ink_bounds": [6, 744],
+            "rows": [2097, 2130]
+          },
+          {
+            "ink_bounds": [6, 743],
+            "rows": [2145, 2179]
+          },
+          {
+            "ink_bounds": [7, 743],
+            "rows": [2192, 2228]
+          },
+          {
+            "ink_bounds": [7, 743],
+            "rows": [2244, 2280]
+          },
+          {
+            "ink_bounds": [6, 740],
+            "rows": [2294, 2332]
+          },
+          {
+            "ink_bounds": [8, 741],
+            "rows": [2341, 2381]
+          },
+          {
+            "ink_bounds": [8, 741],
+            "rows": [2391, 2428]
+          },
+          {
+            "ink_bounds": [11, 740],
+            "rows": [2439, 2475]
+          },
+          {
+            "ink_bounds": [7, 739],
+            "rows": [2486, 2524]
+          },
+          {
+            "ink_bounds": [711, 716],
+            "rows": [2529, 2533]
+          },
+          {
+            "ink_bounds": [8, 737],
+            "rows": [2534, 2572]
+          }
+        ],
+        "crop_edges": [1072, 1836],
+        "finding_ids": ["W4", "R6"],
+        "full_unit_pass_b_bands": [
+          [242, 274],
+          [290, 321],
+          [338, 372],
+          [387, 417],
+          [437, 470],
+          [487, 518],
+          [536, 569],
+          [587, 619],
+          [626, 628],
+          [634, 667],
+          [683, 715],
+          [731, 764],
+          [780, 812],
+          [830, 862],
+          [881, 912],
+          [930, 962],
+          [977, 1009],
+          [1028, 1060],
+          [1076, 1109],
+          [1129, 1162],
+          [1179, 1209],
+          [1227, 1260],
+          [1277, 1310],
+          [1326, 1358],
+          [1373, 1407],
+          [1419, 1451],
+          [1466, 1502],
+          [1511, 1549],
+          [1558, 1595],
+          [1606, 1641],
+          [1652, 1688],
+          [1701, 1735],
+          [1746, 1784],
+          [1799, 1829],
+          [1850, 1883],
+          [1899, 1932],
+          [1948, 1985],
+          [1999, 2034],
+          [2047, 2081],
+          [2097, 2130],
+          [2145, 2179],
+          [2192, 2228],
+          [2244, 2280],
+          [2294, 2332],
+          [2341, 2381],
+          [2391, 2428],
+          [2439, 2475],
+          [2486, 2524],
+          [2529, 2533],
+          [2534, 2572]
+        ],
+        "full_unit_strip_intervals": [
+          [242, 282],
+          [282, 329],
+          [329, 379],
+          [379, 427],
+          [427, 478],
+          [478, 527],
+          [527, 578],
+          [578, 622],
+          [631, 675],
+          [675, 723],
+          [723, 772],
+          [772, 821],
+          [821, 871],
+          [871, 921],
+          [921, 969],
+          [969, 1018],
+          [1018, 1068],
+          [1068, 1119],
+          [1119, 1170],
+          [1170, 1218],
+          [1218, 1268],
+          [1268, 1318],
+          [1318, 1365],
+          [1365, 1413],
+          [1413, 1458],
+          [1458, 1506],
+          [1506, 1553],
+          [1553, 1600],
+          [1600, 1646],
+          [1646, 1694],
+          [1694, 1740],
+          [1740, 1791],
+          [1791, 1839],
+          [1839, 1891],
+          [1891, 1940],
+          [1940, 1992],
+          [1992, 2040],
+          [2040, 2089],
+          [2089, 2137],
+          [2137, 2185],
+          [2185, 2236],
+          [2236, 2287],
+          [2287, 2336],
+          [2336, 2386],
+          [2386, 2433],
+          [2433, 2480],
+          [2480, 2526],
+          [2533, 2572]
+        ],
+        "pass_a_bands": [
+          [242, 274],
+          [290, 321],
+          [338, 372],
+          [387, 417],
+          [437, 470],
+          [487, 518],
+          [536, 569],
+          [587, 619],
+          [626, 628],
+          [634, 667],
+          [683, 715],
+          [731, 764],
+          [780, 812],
+          [830, 862],
+          [881, 912],
+          [930, 962],
+          [977, 1009],
+          [1028, 1060],
+          [1076, 1109],
+          [1129, 1162],
+          [1179, 1209],
+          [1227, 1260],
+          [1277, 1310],
+          [1326, 1358],
+          [1373, 1407],
+          [1419, 1451],
+          [1466, 1502],
+          [1511, 1549],
+          [1558, 1595],
+          [1606, 1641],
+          [1652, 1688],
+          [1701, 1735],
+          [1746, 1784],
+          [1799, 1829],
+          [1850, 1883],
+          [1899, 1932],
+          [1948, 1985],
+          [1999, 2034],
+          [2047, 2081],
+          [2097, 2130],
+          [2145, 2179],
+          [2192, 2228],
+          [2244, 2280],
+          [2294, 2332],
+          [2341, 2381],
+          [2391, 2428],
+          [2439, 2475],
+          [2486, 2524],
+          [2529, 2533],
+          [2534, 2572]
+        ]
+      },
+      "expected_crop_edges": [1072, 1836],
+      "expected_pass_a_bands": [
+        [242, 274],
+        [290, 321],
+        [338, 372],
+        [387, 417],
+        [437, 470],
+        [487, 518],
+        [536, 569],
+        [587, 619],
+        [626, 628],
+        [634, 667],
+        [683, 715],
+        [731, 764],
+        [780, 812],
+        [830, 862],
+        [881, 912],
+        [930, 962],
+        [977, 1009],
+        [1028, 1060],
+        [1076, 1109],
+        [1129, 1162],
+        [1179, 1209],
+        [1227, 1260],
+        [1277, 1310],
+        [1326, 1358],
+        [1373, 1407],
+        [1419, 1451],
+        [1466, 1502],
+        [1511, 1549],
+        [1558, 1595],
+        [1606, 1641],
+        [1652, 1688],
+        [1701, 1735],
+        [1746, 1784],
+        [1799, 1829],
+        [1850, 1883],
+        [1899, 1932],
+        [1948, 1985],
+        [1999, 2034],
+        [2047, 2081],
+        [2097, 2130],
+        [2145, 2179],
+        [2192, 2228],
+        [2244, 2280],
+        [2294, 2332],
+        [2341, 2381],
+        [2391, 2428],
+        [2439, 2475],
+        [2486, 2524],
+        [2529, 2533],
+        [2534, 2572]
+      ],
+      "expected_first_band": [242, 274],
+      "expected_last_band": [2534, 2572],
+      "copied_height": {
+        "before": 2881,
+        "after": 2572
+      },
+      "neighbor_gap": 15,
+      "following_reviewed_lines": [
+        {"source": 0, "source_page": 322, "region": [924, 280, 1697, 317], "role": "join_landmark"}
+      ],
+      "following_line_role": "true first Latin line"
+    },
+    {
+      "finding_ids": ["W5", "R13"],
+      "unit_id": "brutus",
+      "source": 1,
+      "source_page": 603,
+      "raster": [1834, 2831],
+      "mask_rectangles": [
+        [0.6630316248636859, 0.9576121511833274, 0.8696837513631407, 0.9865771812080537],
+        [0.9841875681570338, 0.0, 1.0, 1.0]
+      ],
+      "preserved_latin_boundary": [997, 205, 1783, 2560],
+      "status": "proposed",
+      "responsible_step": "3.1",
+      "reason": "Native source image inspected. Rectangles are in the header gap or watermark tail and in the separate right scan rule, outside the reviewed Latin boundary; candidate banding and extraction must be verified before installation.",
+      "baseline_trace": {
+        "path": "tmp/pdfs/inner_tomi_audit_repairs/furniture/brutus/trace.json",
+        "sha256": "327c1ea4482fb2593463e28dbf8b7b9a4da9bd15b9210616bb18393b6cdc0d1a"
+      },
+      "baseline_crop_edges": [997, 1831],
+      "baseline_pass_a_bands": [
+        [205, 240],
+        [248, 280],
+        [285, 316],
+        [324, 356],
+        [364, 397],
+        [402, 435],
+        [441, 477],
+        [481, 513],
+        [523, 555],
+        [566, 590],
+        [601, 632],
+        [652, 682],
+        [702, 734],
+        [751, 784],
+        [803, 832],
+        [852, 884],
+        [901, 932],
+        [951, 981],
+        [1001, 1025],
+        [1049, 1080],
+        [1100, 1131],
+        [1151, 1182],
+        [1196, 1229],
+        [1244, 1275],
+        [1292, 1324],
+        [1339, 1370],
+        [1388, 1420],
+        [1435, 1467],
+        [1482, 1513],
+        [1529, 1560],
+        [1577, 1609],
+        [1623, 1655],
+        [1673, 1704],
+        [1721, 1753],
+        [1769, 1801],
+        [1817, 1846],
+        [1863, 1893],
+        [1911, 1941],
+        [1956, 1985],
+        [2003, 2034],
+        [2052, 2084],
+        [2099, 2130],
+        [2146, 2179],
+        [2194, 2227],
+        [2241, 2273],
+        [2289, 2319],
+        [2336, 2369],
+        [2383, 2414],
+        [2430, 2463],
+        [2477, 2510],
+        [2522, 2590],
+        [2616, 2619],
+        [2623, 2735]
+      ],
+      "baseline_pass_b_bands": [
+        [205, 240],
+        [248, 280],
+        [285, 316],
+        [324, 356],
+        [364, 397],
+        [402, 435],
+        [441, 477],
+        [481, 513],
+        [523, 555],
+        [566, 590],
+        [601, 632],
+        [652, 682],
+        [702, 734],
+        [751, 784],
+        [803, 832],
+        [852, 884],
+        [901, 932],
+        [951, 981],
+        [1001, 1025],
+        [1049, 1080],
+        [1100, 1131],
+        [1151, 1182],
+        [1196, 1229],
+        [1244, 1275],
+        [1292, 1324],
+        [1339, 1370],
+        [1388, 1420],
+        [1435, 1467],
+        [1482, 1513],
+        [1529, 1560],
+        [1577, 1609],
+        [1623, 1655],
+        [1673, 1704],
+        [1721, 1753],
+        [1769, 1801],
+        [1817, 1846],
+        [1863, 1893],
+        [1911, 1941],
+        [1956, 1985],
+        [2003, 2034],
+        [2052, 2084],
+        [2099, 2130],
+        [2146, 2179],
+        [2194, 2227],
+        [2241, 2273],
+        [2289, 2319],
+        [2336, 2369],
+        [2383, 2414],
+        [2430, 2463],
+        [2477, 2510],
+        [2522, 2590],
+        [2616, 2619],
+        [2623, 2735]
+      ],
+      "candidate_measurements": {
+        "band_details": [
+          {
+            "ink_bounds": [0, 786],
+            "rows": [205, 240]
+          },
+          {
+            "ink_bounds": [0, 787],
+            "rows": [248, 280]
+          },
+          {
+            "ink_bounds": [0, 784],
+            "rows": [285, 316]
+          },
+          {
+            "ink_bounds": [0, 786],
+            "rows": [324, 356]
+          },
+          {
+            "ink_bounds": [0, 786],
+            "rows": [364, 397]
+          },
+          {
+            "ink_bounds": [1, 789],
+            "rows": [402, 435]
+          },
+          {
+            "ink_bounds": [1, 789],
+            "rows": [441, 477]
+          },
+          {
+            "ink_bounds": [0, 789],
+            "rows": [481, 513]
+          },
+          {
+            "ink_bounds": [0, 789],
+            "rows": [523, 555]
+          },
+          {
+            "ink_bounds": [1, 92],
+            "rows": [566, 590]
+          },
+          {
+            "ink_bounds": [32, 789],
+            "rows": [601, 632]
+          },
+          {
+            "ink_bounds": [2, 787],
+            "rows": [652, 682]
+          },
+          {
+            "ink_bounds": [3, 789],
+            "rows": [702, 734]
+          },
+          {
+            "ink_bounds": [3, 787],
+            "rows": [751, 784]
+          },
+          {
+            "ink_bounds": [7, 790],
+            "rows": [803, 832]
+          },
+          {
+            "ink_bounds": [5, 791],
+            "rows": [852, 884]
+          },
+          {
+            "ink_bounds": [6, 792],
+            "rows": [901, 932]
+          },
+          {
+            "ink_bounds": [8, 790],
+            "rows": [951, 981]
+          },
+          {
+            "ink_bounds": [5, 791],
+            "rows": [1001, 1025]
+          },
+          {
+            "ink_bounds": [5, 791],
+            "rows": [1049, 1080]
+          },
+          {
+            "ink_bounds": [7, 792],
+            "rows": [1100, 1131]
+          },
+          {
+            "ink_bounds": [7, 793],
+            "rows": [1151, 1182]
+          },
+          {
+            "ink_bounds": [10, 792],
+            "rows": [1196, 1229]
+          },
+          {
+            "ink_bounds": [9, 792],
+            "rows": [1244, 1275]
+          },
+          {
+            "ink_bounds": [7, 792],
+            "rows": [1292, 1324]
+          },
+          {
+            "ink_bounds": [10, 791],
+            "rows": [1339, 1370]
+          },
+          {
+            "ink_bounds": [10, 791],
+            "rows": [1388, 1420]
+          },
+          {
+            "ink_bounds": [11, 792],
+            "rows": [1435, 1467]
+          },
+          {
+            "ink_bounds": [10, 791],
+            "rows": [1482, 1513]
+          },
+          {
+            "ink_bounds": [11, 792],
+            "rows": [1529, 1560]
+          },
+          {
+            "ink_bounds": [11, 791],
+            "rows": [1577, 1609]
+          },
+          {
+            "ink_bounds": [12, 791],
+            "rows": [1623, 1655]
+          },
+          {
+            "ink_bounds": [12, 792],
+            "rows": [1673, 1704]
+          },
+          {
+            "ink_bounds": [13, 792],
+            "rows": [1721, 1753]
+          },
+          {
+            "ink_bounds": [14, 791],
+            "rows": [1769, 1801]
+          },
+          {
+            "ink_bounds": [13, 792],
+            "rows": [1817, 1846]
+          },
+          {
+            "ink_bounds": [13, 792],
+            "rows": [1863, 1893]
+          },
+          {
+            "ink_bounds": [13, 205],
+            "rows": [1911, 1941]
+          },
+          {
+            "ink_bounds": [44, 792],
+            "rows": [1956, 1985]
+          },
+          {
+            "ink_bounds": [17, 791],
+            "rows": [2003, 2034]
+          },
+          {
+            "ink_bounds": [16, 792],
+            "rows": [2052, 2084]
+          },
+          {
+            "ink_bounds": [17, 791],
+            "rows": [2099, 2130]
+          },
+          {
+            "ink_bounds": [19, 791],
+            "rows": [2146, 2179]
+          },
+          {
+            "ink_bounds": [18, 790],
+            "rows": [2194, 2227]
+          },
+          {
+            "ink_bounds": [17, 789],
+            "rows": [2241, 2273]
+          },
+          {
+            "ink_bounds": [20, 788],
+            "rows": [2289, 2319]
+          },
+          {
+            "ink_bounds": [19, 789],
+            "rows": [2336, 2369]
+          },
+          {
+            "ink_bounds": [19, 787],
+            "rows": [2383, 2414]
+          },
+          {
+            "ink_bounds": [19, 787],
+            "rows": [2430, 2462]
+          },
+          {
+            "ink_bounds": [18, 787],
+            "rows": [2477, 2510]
+          },
+          {
+            "ink_bounds": [18, 785],
+            "rows": [2524, 2556]
+          }
+        ],
+        "crop_edges": [997, 1796],
+        "finding_ids": ["W5", "R13"],
+        "full_unit_pass_b_bands": [
+          [205, 240],
+          [248, 280],
+          [285, 316],
+          [324, 356],
+          [364, 397],
+          [402, 435],
+          [441, 477],
+          [481, 513],
+          [523, 555],
+          [566, 590],
+          [601, 632],
+          [652, 682],
+          [702, 734],
+          [751, 784],
+          [803, 832],
+          [852, 884],
+          [901, 932],
+          [951, 981],
+          [1001, 1025],
+          [1049, 1080],
+          [1100, 1131],
+          [1151, 1182],
+          [1196, 1229],
+          [1244, 1275],
+          [1292, 1324],
+          [1339, 1370],
+          [1388, 1420],
+          [1435, 1467],
+          [1482, 1513],
+          [1529, 1560],
+          [1577, 1609],
+          [1623, 1655],
+          [1673, 1704],
+          [1721, 1753],
+          [1769, 1801],
+          [1817, 1846],
+          [1863, 1893],
+          [1911, 1941],
+          [1956, 1985],
+          [2003, 2034],
+          [2052, 2084],
+          [2099, 2130],
+          [2146, 2179],
+          [2194, 2227],
+          [2241, 2273],
+          [2289, 2319],
+          [2336, 2369],
+          [2383, 2414],
+          [2430, 2462],
+          [2477, 2510],
+          [2524, 2556]
+        ],
+        "full_unit_strip_intervals": [
+          [205, 244],
+          [244, 282],
+          [282, 320],
+          [320, 360],
+          [360, 399],
+          [399, 438],
+          [438, 479],
+          [479, 518],
+          [518, 560],
+          [560, 595],
+          [595, 642],
+          [642, 692],
+          [692, 742],
+          [742, 793],
+          [793, 842],
+          [842, 892],
+          [892, 941],
+          [941, 991],
+          [991, 1037],
+          [1037, 1090],
+          [1090, 1141],
+          [1141, 1189],
+          [1189, 1236],
+          [1236, 1283],
+          [1283, 1331],
+          [1331, 1379],
+          [1379, 1427],
+          [1427, 1474],
+          [1474, 1521],
+          [1521, 1568],
+          [1568, 1616],
+          [1616, 1664],
+          [1664, 1712],
+          [1712, 1761],
+          [1761, 1809],
+          [1809, 1854],
+          [1854, 1902],
+          [1902, 1948],
+          [1948, 1994],
+          [1994, 2043],
+          [2043, 2091],
+          [2091, 2138],
+          [2138, 2186],
+          [2186, 2234],
+          [2234, 2281],
+          [2281, 2327],
+          [2327, 2376],
+          [2376, 2422],
+          [2422, 2469],
+          [2469, 2517],
+          [2517, 2556]
+        ],
+        "pass_a_bands": [
+          [205, 240],
+          [248, 280],
+          [285, 316],
+          [324, 356],
+          [364, 397],
+          [402, 435],
+          [441, 477],
+          [481, 513],
+          [523, 555],
+          [566, 590],
+          [601, 632],
+          [652, 682],
+          [702, 734],
+          [751, 784],
+          [803, 832],
+          [852, 884],
+          [901, 932],
+          [951, 981],
+          [1001, 1025],
+          [1049, 1080],
+          [1100, 1131],
+          [1151, 1182],
+          [1196, 1229],
+          [1244, 1275],
+          [1292, 1324],
+          [1339, 1370],
+          [1388, 1420],
+          [1435, 1467],
+          [1482, 1513],
+          [1529, 1560],
+          [1577, 1609],
+          [1623, 1655],
+          [1673, 1704],
+          [1721, 1753],
+          [1769, 1801],
+          [1817, 1846],
+          [1863, 1893],
+          [1911, 1941],
+          [1956, 1985],
+          [2003, 2034],
+          [2052, 2084],
+          [2099, 2130],
+          [2146, 2179],
+          [2194, 2227],
+          [2241, 2273],
+          [2289, 2319],
+          [2336, 2369],
+          [2383, 2414],
+          [2430, 2462],
+          [2477, 2510],
+          [2524, 2556]
+        ]
+      },
+      "expected_crop_edges": [997, 1796],
+      "expected_pass_a_bands": [
+        [205, 240],
+        [248, 280],
+        [285, 316],
+        [324, 356],
+        [364, 397],
+        [402, 435],
+        [441, 477],
+        [481, 513],
+        [523, 555],
+        [566, 590],
+        [601, 632],
+        [652, 682],
+        [702, 734],
+        [751, 784],
+        [803, 832],
+        [852, 884],
+        [901, 932],
+        [951, 981],
+        [1001, 1025],
+        [1049, 1080],
+        [1100, 1131],
+        [1151, 1182],
+        [1196, 1229],
+        [1244, 1275],
+        [1292, 1324],
+        [1339, 1370],
+        [1388, 1420],
+        [1435, 1467],
+        [1482, 1513],
+        [1529, 1560],
+        [1577, 1609],
+        [1623, 1655],
+        [1673, 1704],
+        [1721, 1753],
+        [1769, 1801],
+        [1817, 1846],
+        [1863, 1893],
+        [1911, 1941],
+        [1956, 1985],
+        [2003, 2034],
+        [2052, 2084],
+        [2099, 2130],
+        [2146, 2179],
+        [2194, 2227],
+        [2241, 2273],
+        [2289, 2319],
+        [2336, 2369],
+        [2383, 2414],
+        [2430, 2462],
+        [2477, 2510],
+        [2524, 2556]
+      ],
+      "expected_first_band": [205, 240],
+      "expected_last_band": [2524, 2556],
+      "copied_height": {
+        "before": 2735,
+        "after": 2556
+      },
+      "neighbor_gap": 16,
+      "following_reviewed_lines": [
+        {"source": 1, "source_page": 604, "region": [877, 216, 1654, 251], "role": "join_landmark"}
+      ],
+      "following_line_role": "true first Latin line"
+    },
+    {
+      "finding_ids": ["W6", "R13"],
+      "unit_id": "brutus",
+      "source": 1,
+      "source_page": 623,
+      "raster": [1810, 2843],
+      "mask_rectangles": [
+        [0.6718232044198895, 0.9577910657755891, 0.8812154696132597, 0.9866338374956032],
+        [0.988950276243094, 0.0, 1.0, 1.0]
+      ],
+      "preserved_latin_boundary": [985, 190, 1739, 2561],
+      "status": "proposed",
+      "responsible_step": "3.1",
+      "reason": "Native source image inspected. Rectangles are in the header gap or watermark tail and in the separate right scan rule, outside the reviewed Latin boundary; candidate banding and extraction must be verified before installation.",
+      "baseline_trace": {
+        "path": "tmp/pdfs/inner_tomi_audit_repairs/furniture/brutus/trace.json",
+        "sha256": "327c1ea4482fb2593463e28dbf8b7b9a4da9bd15b9210616bb18393b6cdc0d1a"
+      },
+      "baseline_crop_edges": [985, 1810],
+      "baseline_pass_a_bands": [
+        [353, 384],
+        [398, 674],
+        [675, 676],
+        [689, 721],
+        [735, 775],
+        [784, 837],
+        [838, 924],
+        [941, 973],
+        [992, 1027],
+        [1040, 1133],
+        [1139, 1276],
+        [1280, 1504],
+        [1510, 1837],
+        [1841, 1949],
+        [1950, 1983],
+        [1997, 2034],
+        [2049, 2081],
+        [2096, 2129],
+        [2140, 2194],
+        [2196, 2229],
+        [2238, 2239],
+        [2241, 2277],
+        [2283, 2420],
+        [2435, 2521],
+        [2525, 2561],
+        [2581, 2616],
+        [2618, 2735]
+      ],
+      "baseline_pass_b_bands": [
+        [353, 384],
+        [398, 674],
+        [675, 676],
+        [689, 721],
+        [735, 775],
+        [784, 837],
+        [838, 924],
+        [941, 973],
+        [992, 1027],
+        [1040, 1133],
+        [1139, 1276],
+        [1280, 1504],
+        [1510, 1837],
+        [1841, 1949],
+        [1950, 1983],
+        [1997, 2034],
+        [2049, 2081],
+        [2096, 2129],
+        [2140, 2194],
+        [2196, 2229],
+        [2238, 2239],
+        [2241, 2277],
+        [2283, 2420],
+        [2435, 2521],
+        [2525, 2561],
+        [2581, 2616],
+        [2618, 2735]
+      ],
+      "candidate_measurements": {
+        "band_details": [
+          {
+            "ink_bounds": [0, 780],
+            "rows": [222, 254]
+          },
+          {
+            "ink_bounds": [0, 780],
+            "rows": [266, 297]
+          },
+          {
+            "ink_bounds": [0, 780],
+            "rows": [311, 341]
+          },
+          {
+            "ink_bounds": [0, 503],
+            "rows": [353, 384]
+          },
+          {
+            "ink_bounds": [28, 780],
+            "rows": [398, 428]
+          },
+          {
+            "ink_bounds": [0, 779],
+            "rows": [444, 476]
+          },
+          {
+            "ink_bounds": [0, 779],
+            "rows": [492, 524]
+          },
+          {
+            "ink_bounds": [0, 777],
+            "rows": [543, 575]
+          },
+          {
+            "ink_bounds": [0, 777],
+            "rows": [596, 627]
+          },
+          {
+            "ink_bounds": [0, 778],
+            "rows": [642, 674]
+          },
+          {
+            "ink_bounds": [0, 779],
+            "rows": [689, 721]
+          },
+          {
+            "ink_bounds": [0, 781],
+            "rows": [740, 773]
+          },
+          {
+            "ink_bounds": [0, 781],
+            "rows": [793, 825]
+          },
+          {
+            "ink_bounds": [0, 782],
+            "rows": [839, 873]
+          },
+          {
+            "ink_bounds": [1, 780],
+            "rows": [890, 922]
+          },
+          {
+            "ink_bounds": [1, 780],
+            "rows": [941, 972]
+          },
+          {
+            "ink_bounds": [1, 780],
+            "rows": [992, 1027]
+          },
+          {
+            "ink_bounds": [1, 162],
+            "rows": [1044, 1067]
+          },
+          {
+            "ink_bounds": [183, 188],
+            "rows": [1070, 1073]
+          },
+          {
+            "ink_bounds": [33, 782],
+            "rows": [1095, 1127]
+          },
+          {
+            "ink_bounds": [2, 782],
+            "rows": [1140, 1174]
+          },
+          {
+            "ink_bounds": [2, 781],
+            "rows": [1186, 1217]
+          },
+          {
+            "ink_bounds": [4, 781],
+            "rows": [1233, 1268]
+          },
+          {
+            "ink_bounds": [3, 782],
+            "rows": [1280, 1313]
+          },
+          {
+            "ink_bounds": [4, 782],
+            "rows": [1328, 1359]
+          },
+          {
+            "ink_bounds": [655, 662],
+            "rows": [1360, 1362]
+          },
+          {
+            "ink_bounds": [5, 782],
+            "rows": [1374, 1408]
+          },
+          {
+            "ink_bounds": [5, 782],
+            "rows": [1423, 1459]
+          },
+          {
+            "ink_bounds": [5, 782],
+            "rows": [1469, 1504]
+          },
+          {
+            "ink_bounds": [5, 782],
+            "rows": [1517, 1547]
+          },
+          {
+            "ink_bounds": [4, 781],
+            "rows": [1568, 1600]
+          },
+          {
+            "ink_bounds": [6, 781],
+            "rows": [1614, 1647]
+          },
+          {
+            "ink_bounds": [5, 782],
+            "rows": [1660, 1695]
+          },
+          {
+            "ink_bounds": [91, 97],
+            "rows": [1696, 1699]
+          },
+          {
+            "ink_bounds": [5, 781],
+            "rows": [1708, 1740]
+          },
+          {
+            "ink_bounds": [5, 782],
+            "rows": [1756, 1787]
+          },
+          {
+            "ink_bounds": [5, 783],
+            "rows": [1805, 1837]
+          },
+          {
+            "ink_bounds": [5, 783],
+            "rows": [1851, 1884]
+          },
+          {
+            "ink_bounds": [5, 783],
+            "rows": [1899, 1935]
+          },
+          {
+            "ink_bounds": [5, 783],
+            "rows": [1951, 1982]
+          },
+          {
+            "ink_bounds": [6, 783],
+            "rows": [1998, 2034]
+          },
+          {
+            "ink_bounds": [6, 784],
+            "rows": [2049, 2080]
+          },
+          {
+            "ink_bounds": [6, 782],
+            "rows": [2096, 2129]
+          },
+          {
+            "ink_bounds": [6, 782],
+            "rows": [2146, 2181]
+          },
+          {
+            "ink_bounds": [0, 4],
+            "rows": [2183, 2185]
+          },
+          {
+            "ink_bounds": [5, 781],
+            "rows": [2196, 2229]
+          },
+          {
+            "ink_bounds": [4, 779],
+            "rows": [2244, 2277]
+          },
+          {
+            "ink_bounds": [6, 780],
+            "rows": [2292, 2325]
+          },
+          {
+            "ink_bounds": [5, 779],
+            "rows": [2339, 2369]
+          },
+          {
+            "ink_bounds": [5, 778],
+            "rows": [2388, 2420]
+          },
+          {
+            "ink_bounds": [5, 778],
+            "rows": [2435, 2467]
+          },
+          {
+            "ink_bounds": [5, 777],
+            "rows": [2482, 2514]
+          },
+          {
+            "ink_bounds": [6, 715],
+            "rows": [2530, 2561]
+          }
+        ],
+        "crop_edges": [982, 1771],
+        "finding_ids": ["W6", "R13"],
+        "full_unit_pass_b_bands": [
+          [222, 254],
+          [266, 297],
+          [311, 341],
+          [353, 384],
+          [398, 428],
+          [444, 476],
+          [492, 524],
+          [543, 575],
+          [596, 627],
+          [642, 674],
+          [689, 721],
+          [740, 773],
+          [793, 825],
+          [839, 873],
+          [890, 922],
+          [941, 972],
+          [992, 1027],
+          [1044, 1067],
+          [1070, 1073],
+          [1095, 1127],
+          [1140, 1174],
+          [1186, 1217],
+          [1233, 1268],
+          [1280, 1313],
+          [1328, 1359],
+          [1360, 1362],
+          [1374, 1408],
+          [1423, 1459],
+          [1469, 1504],
+          [1517, 1547],
+          [1568, 1600],
+          [1614, 1647],
+          [1660, 1695],
+          [1696, 1699],
+          [1708, 1740],
+          [1756, 1787],
+          [1805, 1837],
+          [1851, 1884],
+          [1899, 1935],
+          [1951, 1982],
+          [1998, 2034],
+          [2049, 2080],
+          [2096, 2129],
+          [2146, 2181],
+          [2183, 2185],
+          [2196, 2229],
+          [2244, 2277],
+          [2292, 2325],
+          [2339, 2369],
+          [2388, 2420],
+          [2435, 2467],
+          [2482, 2514],
+          [2530, 2561]
+        ],
+        "full_unit_strip_intervals": [
+          [222, 260],
+          [260, 304],
+          [304, 347],
+          [347, 391],
+          [391, 436],
+          [436, 484],
+          [484, 533],
+          [533, 585],
+          [585, 634],
+          [634, 681],
+          [681, 730],
+          [730, 783],
+          [783, 832],
+          [832, 881],
+          [881, 931],
+          [931, 982],
+          [982, 1035],
+          [1035, 1068],
+          [1084, 1133],
+          [1133, 1180],
+          [1180, 1225],
+          [1225, 1274],
+          [1274, 1320],
+          [1320, 1359],
+          [1368, 1415],
+          [1415, 1464],
+          [1464, 1510],
+          [1510, 1557],
+          [1557, 1607],
+          [1607, 1653],
+          [1653, 1695],
+          [1703, 1748],
+          [1748, 1796],
+          [1796, 1844],
+          [1844, 1891],
+          [1891, 1943],
+          [1943, 1990],
+          [1990, 2041],
+          [2041, 2088],
+          [2088, 2137],
+          [2137, 2182],
+          [2190, 2236],
+          [2236, 2284],
+          [2284, 2332],
+          [2332, 2378],
+          [2378, 2427],
+          [2427, 2474],
+          [2474, 2522],
+          [2522, 2561]
+        ],
+        "pass_a_bands": [
+          [222, 254],
+          [266, 297],
+          [311, 341],
+          [353, 384],
+          [398, 428],
+          [444, 476],
+          [492, 524],
+          [543, 575],
+          [596, 627],
+          [642, 674],
+          [689, 721],
+          [740, 773],
+          [793, 825],
+          [839, 873],
+          [890, 922],
+          [941, 972],
+          [992, 1027],
+          [1044, 1067],
+          [1070, 1073],
+          [1095, 1127],
+          [1140, 1174],
+          [1186, 1217],
+          [1233, 1268],
+          [1280, 1313],
+          [1328, 1359],
+          [1360, 1362],
+          [1374, 1408],
+          [1423, 1459],
+          [1469, 1504],
+          [1517, 1547],
+          [1568, 1600],
+          [1614, 1647],
+          [1660, 1695],
+          [1696, 1699],
+          [1708, 1740],
+          [1756, 1787],
+          [1805, 1837],
+          [1851, 1884],
+          [1899, 1935],
+          [1951, 1982],
+          [1998, 2034],
+          [2049, 2080],
+          [2096, 2129],
+          [2146, 2181],
+          [2183, 2185],
+          [2196, 2229],
+          [2244, 2277],
+          [2292, 2325],
+          [2339, 2369],
+          [2388, 2420],
+          [2435, 2467],
+          [2482, 2514],
+          [2530, 2561]
+        ]
+      },
+      "expected_crop_edges": [982, 1771],
+      "expected_pass_a_bands": [
+        [222, 254],
+        [266, 297],
+        [311, 341],
+        [353, 384],
+        [398, 428],
+        [444, 476],
+        [492, 524],
+        [543, 575],
+        [596, 627],
+        [642, 674],
+        [689, 721],
+        [740, 773],
+        [793, 825],
+        [839, 873],
+        [890, 922],
+        [941, 972],
+        [992, 1027],
+        [1044, 1067],
+        [1070, 1073],
+        [1095, 1127],
+        [1140, 1174],
+        [1186, 1217],
+        [1233, 1268],
+        [1280, 1313],
+        [1328, 1359],
+        [1360, 1362],
+        [1374, 1408],
+        [1423, 1459],
+        [1469, 1504],
+        [1517, 1547],
+        [1568, 1600],
+        [1614, 1647],
+        [1660, 1695],
+        [1696, 1699],
+        [1708, 1740],
+        [1756, 1787],
+        [1805, 1837],
+        [1851, 1884],
+        [1899, 1935],
+        [1951, 1982],
+        [1998, 2034],
+        [2049, 2080],
+        [2096, 2129],
+        [2146, 2181],
+        [2183, 2185],
+        [2196, 2229],
+        [2244, 2277],
+        [2292, 2325],
+        [2339, 2369],
+        [2388, 2420],
+        [2435, 2467],
+        [2482, 2514],
+        [2530, 2561]
+      ],
+      "expected_first_band": [222, 254],
+      "expected_last_band": [2530, 2561],
+      "copied_height": {
+        "before": 2735,
+        "after": 2561
+      },
+      "neighbor_gap": 15,
+      "following_reviewed_lines": [
+        {"source": 1, "source_page": 624, "region": [874, 246, 1648, 277], "role": "join_landmark"}
+      ],
+      "following_line_role": "currently surviving second line; C5 first line remains a separate expectation"
+    },
+    {
+      "finding_ids": ["H1"],
+      "unit_id": "philopoemen",
+      "source": 0,
+      "source_page": 448,
+      "raster": [1988, 3007],
+      "mask_rectangles": [
+        [0.8400402414486922, 0.08513468573328899, 0.8853118712273642, 0.0984369803791154]
+      ],
+      "preserved_latin_boundary": [965, 300, 1745, 2600],
+      "status": "proposed",
+      "responsible_step": "3.1",
+      "reason": "The isolated folio rectangle lies above the first body glyphs. Removing the far-right numeral separates the surviving head from the full-measure test; candidate full-unit trimming must prove the remaining head disappears without changing Latin crop coverage.",
+      "baseline_trace": {
+        "path": "tmp/pdfs/inner_tomi_audit_repairs/furniture/philopoemen/trace.json",
+        "sha256": "23094fcc2fef2aada48d45083306548e268bf07d0ab144c0d41c06b9568c6b3b"
+      },
+      "baseline_crop_edges": [909, 1988],
+      "baseline_pass_a_bands": [
+        [229, 288],
+        [300, 1501],
+        [1527, 2663],
+        [2674, 2695],
+        [2725, 2739],
+        [2746, 2750]
+      ],
+      "baseline_pass_b_bands": [
+        [229, 288],
+        [300, 1501],
+        [1527, 2663],
+        [2674, 2695],
+        [2725, 2739],
+        [2746, 2750]
+      ],
+      "candidate_measurements": {
+        "band_details": [
+          {
+            "ink_bounds": [0, 199],
+            "rows": [229, 264]
+          },
+          {
+            "ink_bounds": [0, 836],
+            "rows": [300, 1501]
+          },
+          {
+            "ink_bounds": [0, 1079],
+            "rows": [1527, 2663]
+          },
+          {
+            "ink_bounds": [633, 1058],
+            "rows": [2674, 2695]
+          },
+          {
+            "ink_bounds": [1053, 1061],
+            "rows": [2725, 2739]
+          },
+          {
+            "ink_bounds": [1053, 1058],
+            "rows": [2746, 2750]
+          }
+        ],
+        "crop_edges": [909, 1988],
+        "finding_ids": ["H1"],
+        "full_unit_pass_b_bands": [
+          [300, 1501],
+          [1527, 2663],
+          [2674, 2695],
+          [2725, 2739],
+          [2746, 2750]
+        ],
+        "full_unit_strip_intervals": [
+          [300, 1514],
+          [1514, 2668]
+        ],
+        "pass_a_bands": [
+          [229, 264],
+          [300, 1501],
+          [1527, 2663],
+          [2674, 2695],
+          [2725, 2739],
+          [2746, 2750]
+        ]
+      },
+      "expected_crop_edges": [909, 1988],
+      "expected_pass_a_bands": [
+        [229, 264],
+        [300, 1501],
+        [1527, 2663],
+        [2674, 2695],
+        [2725, 2739],
+        [2746, 2750]
+      ],
+      "expected_first_band": [300, 1501],
+      "expected_last_band": [2746, 2750],
+      "copied_height": {
+        "before": 2668,
+        "after": 2668
+      },
+      "neighbor_gap": 26
+    },
+    {
+      "finding_ids": ["MARIUS_HEAD"],
+      "unit_id": "caius_marius",
+      "source": 0,
+      "source_page": 528,
+      "raster": [1958, 2988],
+      "mask_rectangles": [
+        [0.8375893769152196, 0.07864792503346721, 0.8886618998978549, 0.09571619812583668]
+      ],
+      "preserved_latin_boundary": [920, 294, 1718, 2621],
+      "status": "proposed",
+      "responsible_step": "3.1",
+      "reason": "The isolated folio rectangle lies above the first body glyphs. Removing the far-right numeral separates the surviving head from the full-measure test; candidate full-unit trimming must prove the remaining head disappears without changing Latin crop coverage.",
+      "baseline_trace": {
+        "path": "tmp/pdfs/inner_tomi_audit_repairs/furniture/caius_marius/trace.json",
+        "sha256": "2f4a543f80a81670776a265350a3db9d6b4cce27ed8307834ce98476d923e439"
+      },
+      "baseline_crop_edges": [920, 1718],
+      "baseline_pass_a_bands": [
+        [223, 270],
+        [294, 338],
+        [347, 389],
+        [399, 445],
+        [455, 496],
+        [503, 548],
+        [557, 596],
+        [610, 653],
+        [660, 700],
+        [711, 755],
+        [764, 807],
+        [815, 858],
+        [867, 905],
+        [921, 959],
+        [973, 1015],
+        [1025, 1066],
+        [1078, 1119],
+        [1131, 1166],
+        [1181, 1223],
+        [1230, 1274],
+        [1280, 1325],
+        [1332, 1367],
+        [1380, 1413],
+        [1424, 1463],
+        [1469, 1506],
+        [1516, 1552],
+        [1566, 1600],
+        [1613, 1651],
+        [1663, 1698],
+        [1711, 1747],
+        [1757, 1792],
+        [1803, 1839],
+        [1851, 1883],
+        [1898, 1932],
+        [1946, 1979],
+        [1992, 2024],
+        [2039, 2072],
+        [2086, 2117],
+        [2133, 2165],
+        [2181, 2214],
+        [2231, 2262],
+        [2278, 2310],
+        [2326, 2358],
+        [2371, 2405],
+        [2418, 2450],
+        [2461, 2494],
+        [2525, 2550],
+        [2587, 2621],
+        [2633, 2653]
+      ],
+      "baseline_pass_b_bands": [
+        [223, 270],
+        [294, 338],
+        [347, 389],
+        [399, 445],
+        [455, 496],
+        [503, 548],
+        [557, 596],
+        [610, 653],
+        [660, 700],
+        [711, 755],
+        [764, 807],
+        [815, 858],
+        [867, 905],
+        [921, 959],
+        [973, 1015],
+        [1025, 1066],
+        [1078, 1119],
+        [1131, 1166],
+        [1181, 1223],
+        [1230, 1274],
+        [1280, 1325],
+        [1332, 1367],
+        [1380, 1413],
+        [1424, 1463],
+        [1469, 1506],
+        [1516, 1552],
+        [1566, 1600],
+        [1613, 1651],
+        [1663, 1698],
+        [1711, 1747],
+        [1757, 1792],
+        [1803, 1839],
+        [1851, 1883],
+        [1898, 1932],
+        [1946, 1979],
+        [1992, 2024],
+        [2039, 2072],
+        [2086, 2117],
+        [2133, 2165],
+        [2181, 2214],
+        [2231, 2262],
+        [2278, 2310],
+        [2326, 2358],
+        [2371, 2405],
+        [2418, 2450],
+        [2461, 2494],
+        [2525, 2550],
+        [2587, 2621],
+        [2633, 2653]
+      ],
+      "candidate_measurements": {
+        "band_details": [
+          {
+            "ink_bounds": [22, 794],
+            "rows": [294, 338]
+          },
+          {
+            "ink_bounds": [21, 795],
+            "rows": [347, 389]
+          },
+          {
+            "ink_bounds": [21, 795],
+            "rows": [399, 445]
+          },
+          {
+            "ink_bounds": [17, 795],
+            "rows": [455, 496]
+          },
+          {
+            "ink_bounds": [0, 796],
+            "rows": [503, 548]
+          },
+          {
+            "ink_bounds": [16, 795],
+            "rows": [557, 596]
+          },
+          {
+            "ink_bounds": [14, 792],
+            "rows": [610, 653]
+          },
+          {
+            "ink_bounds": [15, 791],
+            "rows": [660, 700]
+          },
+          {
+            "ink_bounds": [13, 791],
+            "rows": [711, 755]
+          },
+          {
+            "ink_bounds": [15, 792],
+            "rows": [764, 807]
+          },
+          {
+            "ink_bounds": [14, 791],
+            "rows": [815, 858]
+          },
+          {
+            "ink_bounds": [14, 791],
+            "rows": [867, 905]
+          },
+          {
+            "ink_bounds": [12, 790],
+            "rows": [921, 959]
+          },
+          {
+            "ink_bounds": [0, 790],
+            "rows": [973, 1015]
+          },
+          {
+            "ink_bounds": [13, 790],
+            "rows": [1025, 1066]
+          },
+          {
+            "ink_bounds": [13, 788],
+            "rows": [1078, 1119]
+          },
+          {
+            "ink_bounds": [10, 789],
+            "rows": [1131, 1166]
+          },
+          {
+            "ink_bounds": [12, 785],
+            "rows": [1181, 1223]
+          },
+          {
+            "ink_bounds": [11, 788],
+            "rows": [1230, 1274]
+          },
+          {
+            "ink_bounds": [10, 785],
+            "rows": [1280, 1325]
+          },
+          {
+            "ink_bounds": [9, 786],
+            "rows": [1332, 1367]
+          },
+          {
+            "ink_bounds": [9, 607],
+            "rows": [1380, 1413]
+          },
+          {
+            "ink_bounds": [39, 783],
+            "rows": [1424, 1463]
+          },
+          {
+            "ink_bounds": [10, 783],
+            "rows": [1469, 1506]
+          },
+          {
+            "ink_bounds": [9, 781],
+            "rows": [1516, 1552]
+          },
+          {
+            "ink_bounds": [5, 782],
+            "rows": [1566, 1600]
+          },
+          {
+            "ink_bounds": [4, 782],
+            "rows": [1613, 1651]
+          },
+          {
+            "ink_bounds": [7, 781],
+            "rows": [1663, 1698]
+          },
+          {
+            "ink_bounds": [4, 779],
+            "rows": [1711, 1747]
+          },
+          {
+            "ink_bounds": [4, 780],
+            "rows": [1757, 1792]
+          },
+          {
+            "ink_bounds": [4, 779],
+            "rows": [1803, 1839]
+          },
+          {
+            "ink_bounds": [3, 778],
+            "rows": [1851, 1883]
+          },
+          {
+            "ink_bounds": [1, 778],
+            "rows": [1898, 1932]
+          },
+          {
+            "ink_bounds": [2, 778],
+            "rows": [1946, 1979]
+          },
+          {
+            "ink_bounds": [3, 776],
+            "rows": [1992, 2024]
+          },
+          {
+            "ink_bounds": [2, 775],
+            "rows": [2039, 2072]
+          },
+          {
+            "ink_bounds": [2, 776],
+            "rows": [2086, 2117]
+          },
+          {
+            "ink_bounds": [2, 775],
+            "rows": [2133, 2165]
+          },
+          {
+            "ink_bounds": [0, 776],
+            "rows": [2181, 2214]
+          },
+          {
+            "ink_bounds": [1, 775],
+            "rows": [2231, 2262]
+          },
+          {
+            "ink_bounds": [0, 776],
+            "rows": [2278, 2310]
+          },
+          {
+            "ink_bounds": [0, 774],
+            "rows": [2326, 2358]
+          },
+          {
+            "ink_bounds": [0, 771],
+            "rows": [2371, 2405]
+          },
+          {
+            "ink_bounds": [0, 772],
+            "rows": [2418, 2450]
+          },
+          {
+            "ink_bounds": [0, 770],
+            "rows": [2461, 2494]
+          },
+          {
+            "ink_bounds": [49, 574],
+            "rows": [2525, 2550]
+          },
+          {
+            "ink_bounds": [11, 765],
+            "rows": [2587, 2621]
+          },
+          {
+            "ink_bounds": [627, 662],
+            "rows": [2633, 2653]
+          }
+        ],
+        "crop_edges": [920, 1718],
+        "finding_ids": ["MARIUS_HEAD"],
+        "full_unit_pass_b_bands": [
+          [294, 338],
+          [347, 389],
+          [399, 445],
+          [455, 496],
+          [503, 548],
+          [557, 596],
+          [610, 653],
+          [660, 700],
+          [711, 755],
+          [764, 807],
+          [815, 858],
+          [867, 905],
+          [921, 959],
+          [973, 1015],
+          [1025, 1066],
+          [1078, 1119],
+          [1131, 1166],
+          [1181, 1223],
+          [1230, 1274],
+          [1280, 1325],
+          [1332, 1367],
+          [1380, 1413],
+          [1424, 1463],
+          [1469, 1506],
+          [1516, 1552],
+          [1566, 1600],
+          [1613, 1651],
+          [1663, 1698],
+          [1711, 1747],
+          [1757, 1792],
+          [1803, 1839],
+          [1851, 1883],
+          [1898, 1932],
+          [1946, 1979],
+          [1992, 2024],
+          [2039, 2072],
+          [2086, 2117],
+          [2133, 2165],
+          [2181, 2214],
+          [2231, 2262],
+          [2278, 2310],
+          [2326, 2358],
+          [2371, 2405],
+          [2418, 2450],
+          [2461, 2494],
+          [2525, 2550],
+          [2587, 2621],
+          [2633, 2653]
+        ],
+        "full_unit_strip_intervals": [
+          [294, 342],
+          [342, 394],
+          [394, 450],
+          [450, 499],
+          [499, 552],
+          [552, 603],
+          [603, 656],
+          [656, 705],
+          [705, 759],
+          [759, 811],
+          [811, 862],
+          [862, 913],
+          [913, 966],
+          [966, 1020],
+          [1020, 1072],
+          [1072, 1125],
+          [1125, 1173],
+          [1173, 1226],
+          [1226, 1277],
+          [1277, 1328],
+          [1328, 1373],
+          [1373, 1418],
+          [1418, 1466],
+          [1466, 1511],
+          [1511, 1559],
+          [1559, 1606],
+          [1606, 1657],
+          [1657, 1704],
+          [1704, 1752],
+          [1752, 1797],
+          [1797, 1845],
+          [1845, 1890],
+          [1890, 1939],
+          [1939, 1985],
+          [1985, 2031],
+          [2031, 2079],
+          [2079, 2125],
+          [2125, 2173],
+          [2173, 2222],
+          [2222, 2270],
+          [2270, 2318],
+          [2318, 2364],
+          [2364, 2411],
+          [2411, 2455],
+          [2455, 2509],
+          [2509, 2568],
+          [2568, 2627]
+        ],
+        "pass_a_bands": [
+          [294, 338],
+          [347, 389],
+          [399, 445],
+          [455, 496],
+          [503, 548],
+          [557, 596],
+          [610, 653],
+          [660, 700],
+          [711, 755],
+          [764, 807],
+          [815, 858],
+          [867, 905],
+          [921, 959],
+          [973, 1015],
+          [1025, 1066],
+          [1078, 1119],
+          [1131, 1166],
+          [1181, 1223],
+          [1230, 1274],
+          [1280, 1325],
+          [1332, 1367],
+          [1380, 1413],
+          [1424, 1463],
+          [1469, 1506],
+          [1516, 1552],
+          [1566, 1600],
+          [1613, 1651],
+          [1663, 1698],
+          [1711, 1747],
+          [1757, 1792],
+          [1803, 1839],
+          [1851, 1883],
+          [1898, 1932],
+          [1946, 1979],
+          [1992, 2024],
+          [2039, 2072],
+          [2086, 2117],
+          [2133, 2165],
+          [2181, 2214],
+          [2231, 2262],
+          [2278, 2310],
+          [2326, 2358],
+          [2371, 2405],
+          [2418, 2450],
+          [2461, 2494],
+          [2525, 2550],
+          [2587, 2621],
+          [2633, 2653]
+        ]
+      },
+      "expected_crop_edges": [920, 1718],
+      "expected_pass_a_bands": [
+        [294, 338],
+        [347, 389],
+        [399, 445],
+        [455, 496],
+        [503, 548],
+        [557, 596],
+        [610, 653],
+        [660, 700],
+        [711, 755],
+        [764, 807],
+        [815, 858],
+        [867, 905],
+        [921, 959],
+        [973, 1015],
+        [1025, 1066],
+        [1078, 1119],
+        [1131, 1166],
+        [1181, 1223],
+        [1230, 1274],
+        [1280, 1325],
+        [1332, 1367],
+        [1380, 1413],
+        [1424, 1463],
+        [1469, 1506],
+        [1516, 1552],
+        [1566, 1600],
+        [1613, 1651],
+        [1663, 1698],
+        [1711, 1747],
+        [1757, 1792],
+        [1803, 1839],
+        [1851, 1883],
+        [1898, 1932],
+        [1946, 1979],
+        [1992, 2024],
+        [2039, 2072],
+        [2086, 2117],
+        [2133, 2165],
+        [2181, 2214],
+        [2231, 2262],
+        [2278, 2310],
+        [2326, 2358],
+        [2371, 2405],
+        [2418, 2450],
+        [2461, 2494],
+        [2525, 2550],
+        [2587, 2621],
+        [2633, 2653]
+      ],
+      "expected_first_band": [294, 338],
+      "expected_last_band": [2633, 2653],
+      "copied_height": {
+        "before": 2627,
+        "after": 2627
+      },
+      "neighbor_gap": 12
+    },
+    {
+      "finding_ids": ["CATO_MAJOR_FOLIO"],
+      "unit_id": "cato_major",
+      "source": 0,
+      "source_page": 432,
+      "raster": [1948, 2980],
+      "mask_rectangles": [
+        [0.8418891170431212, 0.07718120805369127, 0.893223819301848, 0.09060402684563758]
+      ],
+      "preserved_latin_boundary": [907, 278, 1711, 2609],
+      "status": "proposed",
+      "responsible_step": "3.1",
+      "reason": "The isolated folio rectangle lies above the first body glyphs. Removing the far-right numeral separates the surviving head from the full-measure test; candidate full-unit trimming must prove the remaining head disappears without changing Latin crop coverage.",
+      "baseline_trace": {
+        "path": "tmp/pdfs/inner_tomi_audit_repairs/furniture/cato_major/trace.json",
+        "sha256": "d613d4da9ec41791c8b2047632cc1b73e320c77a29e832ce403f7ac88e18508e"
+      },
+      "baseline_crop_edges": [907, 1711],
+      "baseline_pass_a_bands": [
+        [217, 262],
+        [278, 319],
+        [333, 372],
+        [381, 417],
+        [430, 468],
+        [481, 523],
+        [529, 570],
+        [580, 618],
+        [632, 672],
+        [680, 717],
+        [730, 772],
+        [781, 823],
+        [830, 868],
+        [882, 922],
+        [934, 972],
+        [984, 1024],
+        [1036, 1072],
+        [1087, 1127],
+        [1137, 1178],
+        [1189, 1228],
+        [1239, 1278],
+        [1289, 1326],
+        [1338, 1375],
+        [1390, 1427],
+        [1438, 1477],
+        [1491, 1522],
+        [1542, 1578],
+        [1592, 1628],
+        [1640, 1676],
+        [1688, 1724],
+        [1739, 1774],
+        [1789, 1825],
+        [1837, 1876],
+        [1886, 1923],
+        [1936, 1971],
+        [1984, 2015],
+        [2031, 2066],
+        [2079, 2114],
+        [2127, 2161],
+        [2175, 2209],
+        [2223, 2256],
+        [2271, 2304],
+        [2315, 2345],
+        [2358, 2390],
+        [2402, 2434],
+        [2445, 2479],
+        [2489, 2520],
+        [2533, 2567],
+        [2576, 2609],
+        [2627, 2647],
+        [2670, 2672]
+      ],
+      "baseline_pass_b_bands": [
+        [217, 262],
+        [278, 319],
+        [333, 372],
+        [381, 417],
+        [430, 468],
+        [481, 523],
+        [529, 570],
+        [580, 618],
+        [632, 672],
+        [680, 717],
+        [730, 772],
+        [781, 823],
+        [830, 868],
+        [882, 922],
+        [934, 972],
+        [984, 1024],
+        [1036, 1072],
+        [1087, 1127],
+        [1137, 1178],
+        [1189, 1228],
+        [1239, 1278],
+        [1289, 1326],
+        [1338, 1375],
+        [1390, 1427],
+        [1438, 1477],
+        [1491, 1522],
+        [1542, 1578],
+        [1592, 1628],
+        [1640, 1676],
+        [1688, 1724],
+        [1739, 1774],
+        [1789, 1825],
+        [1837, 1876],
+        [1886, 1923],
+        [1936, 1971],
+        [1984, 2015],
+        [2031, 2066],
+        [2079, 2114],
+        [2127, 2161],
+        [2175, 2209],
+        [2223, 2256],
+        [2271, 2304],
+        [2315, 2345],
+        [2358, 2390],
+        [2402, 2434],
+        [2445, 2479],
+        [2489, 2520],
+        [2533, 2567],
+        [2576, 2609],
+        [2627, 2647]
+      ],
+      "candidate_measurements": {
+        "band_details": [
+          {
+            "ink_bounds": [0, 803],
+            "rows": [278, 319]
+          },
+          {
+            "ink_bounds": [26, 803],
+            "rows": [333, 372]
+          },
+          {
+            "ink_bounds": [25, 800],
+            "rows": [381, 417]
+          },
+          {
+            "ink_bounds": [24, 800],
+            "rows": [430, 468]
+          },
+          {
+            "ink_bounds": [26, 800],
+            "rows": [481, 523]
+          },
+          {
+            "ink_bounds": [24, 800],
+            "rows": [529, 570]
+          },
+          {
+            "ink_bounds": [0, 799],
+            "rows": [580, 618]
+          },
+          {
+            "ink_bounds": [23, 799],
+            "rows": [632, 672]
+          },
+          {
+            "ink_bounds": [22, 798],
+            "rows": [680, 717]
+          },
+          {
+            "ink_bounds": [20, 796],
+            "rows": [730, 772]
+          },
+          {
+            "ink_bounds": [19, 797],
+            "rows": [781, 823]
+          },
+          {
+            "ink_bounds": [19, 796],
+            "rows": [830, 868]
+          },
+          {
+            "ink_bounds": [18, 795],
+            "rows": [882, 922]
+          },
+          {
+            "ink_bounds": [18, 793],
+            "rows": [934, 972]
+          },
+          {
+            "ink_bounds": [18, 794],
+            "rows": [984, 1024]
+          },
+          {
+            "ink_bounds": [16, 794],
+            "rows": [1036, 1072]
+          },
+          {
+            "ink_bounds": [16, 792],
+            "rows": [1087, 1127]
+          },
+          {
+            "ink_bounds": [13, 793],
+            "rows": [1137, 1178]
+          },
+          {
+            "ink_bounds": [12, 789],
+            "rows": [1189, 1228]
+          },
+          {
+            "ink_bounds": [12, 789],
+            "rows": [1239, 1278]
+          },
+          {
+            "ink_bounds": [12, 788],
+            "rows": [1289, 1326]
+          },
+          {
+            "ink_bounds": [11, 789],
+            "rows": [1338, 1375]
+          },
+          {
+            "ink_bounds": [6, 788],
+            "rows": [1390, 1427]
+          },
+          {
+            "ink_bounds": [9, 786],
+            "rows": [1438, 1477]
+          },
+          {
+            "ink_bounds": [7, 781],
+            "rows": [1491, 1522]
+          },
+          {
+            "ink_bounds": [5, 786],
+            "rows": [1542, 1578]
+          },
+          {
+            "ink_bounds": [4, 787],
+            "rows": [1592, 1628]
+          },
+          {
+            "ink_bounds": [6, 788],
+            "rows": [1640, 1676]
+          },
+          {
+            "ink_bounds": [5, 787],
+            "rows": [1688, 1724]
+          },
+          {
+            "ink_bounds": [6, 788],
+            "rows": [1739, 1774]
+          },
+          {
+            "ink_bounds": [5, 786],
+            "rows": [1789, 1825]
+          },
+          {
+            "ink_bounds": [5, 784],
+            "rows": [1837, 1876]
+          },
+          {
+            "ink_bounds": [3, 784],
+            "rows": [1886, 1923]
+          },
+          {
+            "ink_bounds": [5, 783],
+            "rows": [1936, 1971]
+          },
+          {
+            "ink_bounds": [1, 784],
+            "rows": [1984, 2015]
+          },
+          {
+            "ink_bounds": [3, 783],
+            "rows": [2031, 2066]
+          },
+          {
+            "ink_bounds": [4, 782],
+            "rows": [2079, 2114]
+          },
+          {
+            "ink_bounds": [5, 782],
+            "rows": [2127, 2161]
+          },
+          {
+            "ink_bounds": [3, 783],
+            "rows": [2175, 2209]
+          },
+          {
+            "ink_bounds": [1, 782],
+            "rows": [2223, 2256]
+          },
+          {
+            "ink_bounds": [2, 779],
+            "rows": [2271, 2304]
+          },
+          {
+            "ink_bounds": [0, 464],
+            "rows": [2315, 2345]
+          },
+          {
+            "ink_bounds": [30, 779],
+            "rows": [2358, 2390]
+          },
+          {
+            "ink_bounds": [0, 779],
+            "rows": [2402, 2434]
+          },
+          {
+            "ink_bounds": [0, 776],
+            "rows": [2445, 2479]
+          },
+          {
+            "ink_bounds": [0, 775],
+            "rows": [2489, 2520]
+          },
+          {
+            "ink_bounds": [0, 776],
+            "rows": [2533, 2567]
+          },
+          {
+            "ink_bounds": [0, 776],
+            "rows": [2576, 2609]
+          },
+          {
+            "ink_bounds": [633, 668],
+            "rows": [2627, 2647]
+          },
+          {
+            "ink_bounds": [547, 551],
+            "rows": [2670, 2672]
+          }
+        ],
+        "crop_edges": [907, 1710],
+        "finding_ids": ["CATO_MAJOR_FOLIO"],
+        "full_unit_pass_b_bands": [
+          [278, 319],
+          [333, 372],
+          [381, 417],
+          [430, 468],
+          [481, 523],
+          [529, 570],
+          [580, 618],
+          [632, 672],
+          [680, 717],
+          [730, 772],
+          [781, 823],
+          [830, 868],
+          [882, 922],
+          [934, 972],
+          [984, 1024],
+          [1036, 1072],
+          [1087, 1127],
+          [1137, 1178],
+          [1189, 1228],
+          [1239, 1278],
+          [1289, 1326],
+          [1338, 1375],
+          [1390, 1427],
+          [1438, 1477],
+          [1491, 1522],
+          [1542, 1578],
+          [1592, 1628],
+          [1640, 1676],
+          [1688, 1724],
+          [1739, 1774],
+          [1789, 1825],
+          [1837, 1876],
+          [1886, 1923],
+          [1936, 1971],
+          [1984, 2015],
+          [2031, 2066],
+          [2079, 2114],
+          [2127, 2161],
+          [2175, 2209],
+          [2223, 2256],
+          [2271, 2304],
+          [2315, 2345],
+          [2358, 2390],
+          [2402, 2434],
+          [2445, 2479],
+          [2489, 2520],
+          [2533, 2567],
+          [2576, 2609],
+          [2627, 2647]
+        ],
+        "full_unit_strip_intervals": [
+          [278, 326],
+          [326, 376],
+          [376, 423],
+          [423, 474],
+          [474, 526],
+          [526, 575],
+          [575, 625],
+          [625, 676],
+          [676, 723],
+          [723, 776],
+          [776, 826],
+          [826, 875],
+          [875, 928],
+          [928, 978],
+          [978, 1030],
+          [1030, 1079],
+          [1079, 1132],
+          [1132, 1183],
+          [1183, 1233],
+          [1233, 1283],
+          [1283, 1332],
+          [1332, 1382],
+          [1382, 1432],
+          [1432, 1484],
+          [1484, 1532],
+          [1532, 1585],
+          [1585, 1634],
+          [1634, 1682],
+          [1682, 1731],
+          [1731, 1781],
+          [1781, 1831],
+          [1831, 1881],
+          [1881, 1929],
+          [1929, 1977],
+          [1977, 2023],
+          [2023, 2072],
+          [2072, 2120],
+          [2120, 2168],
+          [2168, 2216],
+          [2216, 2263],
+          [2263, 2309],
+          [2309, 2351],
+          [2351, 2396],
+          [2396, 2439],
+          [2439, 2484],
+          [2484, 2526],
+          [2526, 2571],
+          [2571, 2618]
+        ],
+        "pass_a_bands": [
+          [278, 319],
+          [333, 372],
+          [381, 417],
+          [430, 468],
+          [481, 523],
+          [529, 570],
+          [580, 618],
+          [632, 672],
+          [680, 717],
+          [730, 772],
+          [781, 823],
+          [830, 868],
+          [882, 922],
+          [934, 972],
+          [984, 1024],
+          [1036, 1072],
+          [1087, 1127],
+          [1137, 1178],
+          [1189, 1228],
+          [1239, 1278],
+          [1289, 1326],
+          [1338, 1375],
+          [1390, 1427],
+          [1438, 1477],
+          [1491, 1522],
+          [1542, 1578],
+          [1592, 1628],
+          [1640, 1676],
+          [1688, 1724],
+          [1739, 1774],
+          [1789, 1825],
+          [1837, 1876],
+          [1886, 1923],
+          [1936, 1971],
+          [1984, 2015],
+          [2031, 2066],
+          [2079, 2114],
+          [2127, 2161],
+          [2175, 2209],
+          [2223, 2256],
+          [2271, 2304],
+          [2315, 2345],
+          [2358, 2390],
+          [2402, 2434],
+          [2445, 2479],
+          [2489, 2520],
+          [2533, 2567],
+          [2576, 2609],
+          [2627, 2647],
+          [2670, 2672]
+        ]
+      },
+      "expected_crop_edges": [907, 1711],
+      "expected_pass_a_bands": [
+        [278, 319],
+        [333, 372],
+        [381, 417],
+        [430, 468],
+        [481, 523],
+        [529, 570],
+        [580, 618],
+        [632, 672],
+        [680, 717],
+        [730, 772],
+        [781, 823],
+        [830, 868],
+        [882, 922],
+        [934, 972],
+        [984, 1024],
+        [1036, 1072],
+        [1087, 1127],
+        [1137, 1178],
+        [1189, 1228],
+        [1239, 1278],
+        [1289, 1326],
+        [1338, 1375],
+        [1390, 1427],
+        [1438, 1477],
+        [1491, 1522],
+        [1542, 1578],
+        [1592, 1628],
+        [1640, 1676],
+        [1688, 1724],
+        [1739, 1774],
+        [1789, 1825],
+        [1837, 1876],
+        [1886, 1923],
+        [1936, 1971],
+        [1984, 2015],
+        [2031, 2066],
+        [2079, 2114],
+        [2127, 2161],
+        [2175, 2209],
+        [2223, 2256],
+        [2271, 2304],
+        [2315, 2345],
+        [2358, 2390],
+        [2402, 2434],
+        [2445, 2479],
+        [2489, 2520],
+        [2533, 2567],
+        [2576, 2609],
+        [2627, 2647],
+        [2670, 2672]
+      ],
+      "expected_first_band": [278, 319],
+      "expected_last_band": [2627, 2647],
+      "copied_height": {
+        "before": 2618,
+        "after": 2618
+      },
+      "neighbor_gap": 13,
+      "proposed_crop_correction": {
+        "function": "preserve_known_body_crop_edge",
+        "identity": {
+          "source": 0,
+          "source_page": 432,
+          "raster": [1948, 2980],
+          "detected_crop": [907, 1710]
+        },
+        "corrected_crop": [907, 1711],
+        "reason": "Clearing the numeral removes density from the right-edge projection and moves the crop inward by one pixel; original body bands include ink at x1710. Preserve the reviewed pre-mask body edge without changing detection elsewhere.",
+        "regression_name": "cato_major_folio_cleanup_preserves_rightmost_body_pixels"
+      }
     }
   ],
   "additional_source_losses": [
@@ -14959,5 +18249,27 @@
     "global_scale": 1.2023952007293701,
     "source_pair_count": 20,
     "no_unique_second_scan_lines": true
+  },
+  "source_fingerprints": {
+    "cato_minor_verse_label": {
+      "source": 1,
+      "source_page": 360,
+      "column_dimensions": [788, 2838],
+      "band": [2026, 2048],
+      "glyph_region": [3, 2026, 47, 2048],
+      "sha256": "472ea07f0f6e6d85db2dfffcc4faf9d393da12c60ea1f516ba1c28946ca56f62",
+      "gray_base64": "fz9/AAAAP39/f39/f39//////////wAAAH////////////////////////8AAAAAAAAAAAAAAAAAAAB///////9/AAAAv////////////////////////z8AAAAAAAA/f39/AAAAAH///////wAAAAD/////////////////////////vwAAAAAAP///////fwAAf///////AAAAAH//////////////////////////PwAAAAB//////////3+//////38AAAAAP/////////////////////////9/AAAAAH//////////////////AAAAAAAAf////////////////////////38AAAAAf/////////////////8/AAAAAAAA////////////////////////fwAAAAB/////f3///////////78AAAAAAD////////////////////////8AAAAAAAD//z8Af////////////wAAAAC//////////////////38/f////wAAAAAAAH9/AAB///////////+/AAAAAP//////////////////AAAAP///AAAAAAAAf78AAH///////////38AAAAA/////////////////38AAAAAf38AAAAAAAC//38Af///////////fwAAAAD/////////////////vwAAAAC/AAAAAAAAP////3+///////////9/AAAAAP//////////////////fwAAv/8/AAAAAAC//////////////////38AAAAA/////////////////////////38AAAAAAP//////////////////fwAAAAD//////////////////////////wAAAAAA////////////v/////9/AAAAAP//////////////////////////AAAAAAD//////////38Af////38AAAAAf/////////////////////////8AAAAAAH//////////PwAA////fwAAAAA/f7//////////////vwAAAD///wAAAAAAf///////vwAAAAD///+/AAAAAAAAf/////////////8AAAAAAP9/AAAAAAAA/////38AAAAAAP////8AAAAAAAB//////////////wAAAAAAfwAAAAAAAAB///8/AAAAAAB//////78AAAAAP///////////////PwAAAAC/fwAAAAA/f7////9/fz8AP7///////79/P3+/////////////////v39/v/8=",
+      "purpose": "Exact immutable source-glyph fingerprint for a finite preservation predicate and an ordinary synthetic regression; pixels are never used to replace source prose."
+    },
+    "comparison_whole_strip": {
+      "source": 1,
+      "source_page": 480,
+      "column_dimensions": [817, 2836],
+      "band": [1507, 1648],
+      "glyph_region": [0, 1507, 817, 1648],
+      "sha256": "b9923339da9e250ebc0404036149d63cf9a253aafbb4c2f73957398188f608d0",
+      "purpose": "Exact source-strip fingerprint for a finite whole-wrap predicate and an ordinary synthetic regression; the source pixels are never painted into production output.",
+      "png_base64": "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"
+    }
   }
 }

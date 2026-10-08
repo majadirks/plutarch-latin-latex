@@ -166,6 +166,47 @@ struct ReviewedSourceLine {
     role: String,
 }
 
+fn audit_fingerprint_image(record: &serde_json::Value) -> GrayImage {
+    use base64::Engine;
+    let region: [u32; 4] =
+        std::array::from_fn(|i| record["glyph_region"][i].as_u64().unwrap() as u32);
+    if let Some(encoded) = record["png_base64"].as_str() {
+        image::load_from_memory(
+            &base64::engine::general_purpose::STANDARD
+                .decode(encoded)
+                .unwrap(),
+        )
+        .unwrap()
+        .to_luma8()
+    } else {
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(record["gray_base64"].as_str().unwrap())
+            .unwrap();
+        GrayImage::from_raw(region[2] - region[0], region[3] - region[1], bytes).unwrap()
+    }
+}
+
+#[test]
+fn audit_source_fingerprints_match_reviewed_regions() {
+    use sha2::Digest;
+    let fixture = audit_repair_ledger();
+    for record in fixture["source_fingerprints"].as_object().unwrap().values() {
+        let image = audit_fingerprint_image(record);
+        let region: [u32; 4] =
+            std::array::from_fn(|i| record["glyph_region"][i].as_u64().unwrap() as u32);
+        assert_eq!(
+            image.dimensions(),
+            (region[2] - region[0], region[3] - region[1])
+        );
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(image.as_raw())),
+            record["sha256"].as_str().unwrap()
+        );
+        assert!(region[2] <= record["column_dimensions"][0].as_u64().unwrap() as u32);
+        assert!(region[3] <= record["column_dimensions"][1].as_u64().unwrap() as u32);
+    }
+}
+
 struct ReviewedLineContext<'a> {
     traces: &'a [RetainedSourcePageTrace],
     originals: &'a std::collections::BTreeMap<(usize, u32), GrayImage>,
@@ -413,6 +454,48 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
     let (strips, canvas_ranges, canvases) = strip_and_canvas_ranges(&pages, &metrics, scale, &geom);
     let mut records = Vec::new();
     let fixture = audit_repair_ledger();
+    let cases: Vec<_> = fixture["candidate_mask_cases"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|c| c["unit_id"] == id)
+        .collect();
+    let candidate_unit = if cases.is_empty() {
+        None
+    } else {
+        let range = operational_range(id);
+        let requested = std::cell::RefCell::new(Vec::new());
+        let (candidate_pages, candidate_metrics) = unit_body_strips(&range, |source, page| {
+            requested.borrow_mut().push(page);
+            let mut raw = real_source_image(source, page);
+            for case in cases.iter().filter(|c| {
+                c["source"].as_u64() == Some(source as u64)
+                    && c["source_page"].as_u64() == Some(page as u64)
+            }) {
+                for r in case["mask_rectangles"].as_array().unwrap() {
+                    apply_source_furniture_mask(
+                        &SourceFurnitureMask {
+                            source,
+                            page,
+                            left: r[0].as_f64().unwrap(),
+                            top: r[1].as_f64().unwrap(),
+                            right: r[2].as_f64().unwrap(),
+                            bottom: r[3].as_f64().unwrap(),
+                        },
+                        &mut raw,
+                    );
+                }
+            }
+            Ok(raw)
+        })
+        .unwrap();
+        assert_eq!(
+            candidate_pages.len(),
+            pages.len(),
+            "candidate masks preserve requested pages"
+        );
+        Some((requested.into_inner(), candidate_pages, candidate_metrics))
+    };
     for trace in traces.iter().filter(|t| selected.contains(&t.page)) {
         let raw = real_source_image(trace.source, trace.page);
         let raw_crop = detect_latin_column(&raw).unwrap();
@@ -485,7 +568,10 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
                 )))
                 .unwrap();
             candidate_results.push(serde_json::json!({"finding_ids":case["finding_ids"],
-                "crop_edges":[edges.left,edges.right],"pass_a_bands":as_rows(&candidate_bands),"band_details":candidate_details}));
+                "crop_edges":[edges.left,edges.right],"pass_a_bands":as_rows(&candidate_bands),"band_details":candidate_details,
+                "full_unit_pass_b_bands":candidate_unit.as_ref().map(|(ids,cp,_)|as_rows(&cp[ids.iter().position(|p|*p==trace.page).unwrap()].1)),
+                "full_unit_strip_intervals":candidate_unit.as_ref().map(|(ids,cp,cm)|strips_in_reading_order(cp,cm).iter()
+                    .filter(|s|s.page_img_index==ids.iter().position(|p|*p==trace.page).unwrap()).map(|s|[s.band.top,s.band.bottom]).collect::<Vec<_>>())}));
         }
         raw.save(dir.join(format!("s{}-p{}-raw.png", trace.source, trace.page)))
             .unwrap();
