@@ -1,0 +1,4 @@
+- Full run of Python audit; review findings and synthesize with plutarch-latin-latex\llm_artifacts\2026_10_05_INNER_TOMI_VISUAL_REVIEW_FINDINGS.md
+- Fix infelicities noted in that synthesized report
+- Command-line flag to choose imposition page size (US Letter vs. A4)
+- Writeup of methodology for python tomi audit script
