@@ -1,0 +1,1 @@
+Read AGENTS.md in full; treat the contents of that file as a stand-in for CLAUDE.md.
