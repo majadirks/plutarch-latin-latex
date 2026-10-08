@@ -190,18 +190,16 @@ fn assert_reviewed_source_lines_survive(
         scale,
         geom,
     } = context;
-    let (strips, canvas_ranges, canvases) = strip_and_canvas_ranges(pages, metrics, *scale, geom);
-    assert_eq!(
-        canvases,
-        assert_scaled_stream(
-            pages,
-            metrics,
-            *scale,
-            geom,
-            geom.first_body_budget(),
-            geom.body_budget()
-        )
+    let canvases = assert_scaled_stream(
+        pages,
+        metrics,
+        *scale,
+        geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
     );
+    let (strips, canvas_ranges, _) =
+        ranges_for_composed_canvases(pages, metrics, *scale, geom, canvases);
     let mut previous = None;
     let mut seen = std::collections::BTreeSet::new();
     for line in lines {
@@ -414,6 +412,7 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
     let scale = production_body_scale();
     let (strips, canvas_ranges, canvases) = strip_and_canvas_ranges(&pages, &metrics, scale, &geom);
     let mut records = Vec::new();
+    let fixture = audit_repair_ledger();
     for trace in traces.iter().filter(|t| selected.contains(&t.page)) {
         let raw = real_source_image(trace.source, trace.page);
         let raw_crop = detect_latin_column(&raw).unwrap();
@@ -431,6 +430,63 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
         let band_details: Vec<_> = bands.iter().map(|b| serde_json::json!({"rows":[b.top,b.bottom],
             "ink_bounds":band_ink_bounds(&column,b), "span":band_ink_span(&column,b),
             "coverage":band_ink_coverage(&column,b), "class":format!("{:?}",classify_band(&column,b,&metrics))})).collect();
+        let mut candidate_results = Vec::new();
+        for case in fixture["candidate_mask_cases"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|case| {
+                case["source"].as_u64() == Some(trace.source as u64)
+                    && case["source_page"].as_u64() == Some(trace.page as u64)
+            })
+        {
+            let mut candidate = raw.clone();
+            for rectangle in case["mask_rectangles"].as_array().unwrap() {
+                apply_source_furniture_mask(
+                    &SourceFurnitureMask {
+                        source: trace.source,
+                        page: trace.page,
+                        left: rectangle[0].as_f64().unwrap(),
+                        top: rectangle[1].as_f64().unwrap(),
+                        right: rectangle[2].as_f64().unwrap(),
+                        bottom: rectangle[3].as_f64().unwrap(),
+                    },
+                    &mut candidate,
+                );
+            }
+            let boundary: [u32; 4] = std::array::from_fn(|i| {
+                case["preserved_latin_boundary"][i].as_u64().unwrap() as u32
+            });
+            for y in boundary[1]..boundary[3] {
+                for x in boundary[0]..boundary[2] {
+                    assert_eq!(
+                        candidate.get_pixel(x, y),
+                        raw.get_pixel(x, y),
+                        "candidate preserves reviewed Latin boundary"
+                    );
+                }
+            }
+            mask_known_source_furniture(trace.source, trace.page, &mut candidate);
+            let edges = detect_latin_column(&candidate).unwrap();
+            let candidate_col = crop_column(&candidate, &edges);
+            let (_, candidate_bands) =
+                render_and_band(trace.source, trace.page, &|_, _| Ok(candidate.clone())).unwrap();
+            let candidate_details: Vec<_> = candidate_bands
+                .iter()
+                .map(|b| {
+                    serde_json::json!({
+                "rows":[b.top,b.bottom], "ink_bounds":band_ink_bounds(&candidate_col,b)})
+                })
+                .collect();
+            candidate_col
+                .save(dir.join(format!(
+                    "s{}-p{}-candidate-column.png",
+                    trace.source, trace.page
+                )))
+                .unwrap();
+            candidate_results.push(serde_json::json!({"finding_ids":case["finding_ids"],
+                "crop_edges":[edges.left,edges.right],"pass_a_bands":as_rows(&candidate_bands),"band_details":candidate_details}));
+        }
         raw.save(dir.join(format!("s{}-p{}-raw.png", trace.source, trace.page)))
             .unwrap();
         column
@@ -440,7 +496,7 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
             "raster":[raw.width(),raw.height()],"raw_crop_edges":[raw_crop.left,raw_crop.right],
             "crop_edges":[crop.left,crop.right],"raw_bands":as_rows(&bands),"band_details":band_details,
             "zone_and_gap_filtered_bands":as_rows(&zone),"pass_a_bands":as_rows(&pass_a),
-            "retained_trace":trace,"strips":retained_strips}));
+            "retained_trace":trace,"strips":retained_strips,"candidate_results":candidate_results}));
     }
     assert_eq!(
         records.len(),
@@ -481,19 +537,92 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
 #[ignore = "requires original PDFs and production-DPI raster evidence"]
 fn audit_duplicate_blocks_source_trace() {
     let fixture = audit_repair_ledger();
-    for block in fixture["duplicate_blocks"].as_array().unwrap() {
-        let pages = ["keep_pages", "skip_pages", "retain_sequence"]
-            .into_iter()
-            .flat_map(|key| {
-                block[key]
+    let mut units: std::collections::BTreeMap<&str, std::collections::BTreeSet<u32>> =
+        std::collections::BTreeMap::new();
+    for block in fixture["duplicate_blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .chain(fixture["existing_duplicate_evidence"].as_array().unwrap())
+    {
+        let pages = units.entry(block["unit_id"].as_str().unwrap()).or_default();
+        for key in ["keep_pages", "skip_pages", "retain_sequence"] {
+            if let Some(values) = block[key].as_array() {
+                pages.extend(values.iter().map(|p| p.as_u64().unwrap() as u32));
+            }
+        }
+    }
+    for (id, pages) in units {
+        audit_save_unit_trace(id, &pages, "duplicates");
+    }
+}
+
+#[test]
+fn audit_duplicate_inventory_covers_reviewed_blocks() {
+    let fixture = audit_repair_ledger();
+    let blocks = fixture["duplicate_blocks"].as_array().unwrap();
+    assert_eq!(blocks.len(), 9);
+    assert_eq!(
+        blocks
+            .iter()
+            .map(|b| b["skip_pages"].as_array().unwrap().len())
+            .sum::<usize>(),
+        20
+    );
+    let mut identities = std::collections::BTreeSet::new();
+    for block in blocks
+        .iter()
+        .chain(fixture["existing_duplicate_evidence"].as_array().unwrap())
+    {
+        let id = block["unit_id"].as_str().unwrap();
+        let lines: Vec<ReviewedSourceLine> =
+            serde_json::from_value(block["reviewed_lines"].clone()).unwrap();
+        assert!(!lines.is_empty(), "{id}: reviewed Latin regions required");
+        let mut seen = std::collections::BTreeSet::new();
+        for line in lines {
+            assert!(
+                seen.insert((line.source_page, line.region)),
+                "unique reviewed region"
+            );
+            assert_eq!(line.source, 1);
+            let measurement = block["baseline_measurements"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|m| m["source_page"].as_u64() == Some(line.source_page as u64))
+                .unwrap();
+            let [left, top, right, bottom] = line.region;
+            assert!(left < right && top < bottom);
+            assert!(right <= measurement["raster"][0].as_u64().unwrap() as u32);
+            assert!(bottom <= measurement["raster"][1].as_u64().unwrap() as u32);
+            assert_eq!(
+                measurement["strips"]
                     .as_array()
                     .unwrap()
                     .iter()
-                    .map(|p| p.as_u64().unwrap() as u32)
-            })
-            .collect();
-        audit_save_unit_trace(block["unit_id"].as_str().unwrap(), &pages, "duplicates");
+                    .filter(|s| s[0].as_u64().unwrap() <= top as u64
+                        && s[1].as_u64().unwrap() >= bottom as u64)
+                    .count(),
+                1,
+                "{id}: reviewed baseline region extracted once"
+            );
+        }
+        if let Some(finding) = block["finding_id"].as_str() {
+            assert!(identities.insert(finding));
+            assert!(block["source_pair_evidence"].as_array().unwrap().len() >= 2);
+        }
     }
+    assert_eq!(identities.len(), 9);
+    let pending = fixture["duplicate_blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|b| b["finding_id"] == "D7")
+        .unwrap();
+    assert_eq!(
+        pending["pending_line_regions"][0]["event_id"],
+        "extra_cato_minor_360_et_label"
+    );
 }
 
 #[test]

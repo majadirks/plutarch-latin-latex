@@ -631,14 +631,46 @@ Tier-B dispositions. Post-dedup repair confirmation occurs in 2.1A.
 
 ### Measured repair decisions
 
-*(Populated during 1.1A–1.1C and finalized for omissions in 2.1A. One row per
-finding and per omission event: proposed/installed repair with exact source
-identity, measured coordinates and responsible step; awaiting post-dedup trace;
-unresolved Tier-A work; or a permitted furniture/Tier-B defer or non-finding
-reason. Keep baseline and post-dedup evidence distinct. Record Tier-B confirming
-reads and promotions separately from frozen confidence. Each production repair
-requires its own resolved preservation boundary and expectations. All Tier-A
-events must be installed and verified before completion.)*
+The diagnostic fixture owns measured source coordinates and frozen baseline traces.
+No production exclusions or masks have been installed in this pass. The installed
+repair ledger remains unchanged. The source comparisons below are raw-source
+hypothetical joins; installed-exclusion pipeline verification belongs to 2.1.
+
+| Finding | Source decision | Status | Responsible step |
+| --- | --- | --- | --- |
+| D4 | v2 keep 115, 116, 117, 118; exclude 119, 120, 121, 122; no unique second-scan Latin observed | proposed | 2.1 |
+| D5 | v2 keep 211, 212; exclude 213, 214; no unique second-scan Latin observed | proposed | 2.1 |
+| D6 | v2 keep 295, 296; exclude 297, 298; no unique second-scan Latin observed | proposed | 2.1 |
+| D7 | v2 keep 359, 360; exclude 361, 362; no unique second-scan Latin observed | proposed | 2.1 |
+| D8 | v2 keep 375, 376; exclude 377, 378; no unique second-scan Latin observed | proposed | 2.1 |
+| D9 | v2 keep 463, 464; exclude 465, 466; no unique second-scan Latin observed | proposed | 2.1 |
+| D10 | v2 keep 521, 522; exclude 523, 524; no unique second-scan Latin observed | proposed | 2.1 |
+| D11 | v2 keep 671, 672; exclude 673, 674; no unique second-scan Latin observed | proposed | 2.1 |
+| D12 | v2 keep 699, 700; exclude 701, 702; no unique second-scan Latin observed | proposed | 2.1 |
+| H2 / R9 on 375 | Agis v2/375: right divider begins at x1753; reviewed Latin ends before x1740; candidate x1745..1797 preserves Latin and unmerges the head | proposed | 3.1 |
+| C3 | Phocion first source line on 299 remains missing; raw 296→299 join reviewed | awaiting post-dedup trace | 2.1A / 4.2 |
+| Additional Cato verse label | Cato Minor v2/360 `Et:`, source region [888, 2026, 932, 2048]; 374 ink pixels below the 498-pixel strip floor | unresolved | 1.1C / 4.2 |
+
+The initial omission inventory remains exactly 39 Tier-A events / 69 lines and
+20 Tier-B events / 44 lines. The additional Cato verse-label loss is tracked
+separately; it does not alter frozen event IDs, historical verdicts, confidence,
+or the initial tier partition. Its correction requires a source-preserving
+amendment to 4.2 after the complete stage trace.
+
+Agis ends on source 376 at `ceteris credidisset.`; source 379 is the shared
+Cleomenes opening and contributes no Agis body band. The 376→379 identity join
+is valid without a unit-row change. The source 375 right-rule candidate gives
+crop [991, 1743] and separates its body bands; the baseline crop is [991, 1797]
+and its leading merged band spans [52, 905], including Greek head furniture.
+
+Supplemental D1–D3 line-region evidence resides in the diagnostic fixture,
+with the existing installed records preserved. Existing omissions in those
+retained occurrences remain governed by their event-specific eligibility:
+`miss_cato_minor_331_9707` is Tier A; `miss_cato_minor_329_8786` is Tier B and
+cannot receive a correction without the required confirming human read.
+
+Other finding and omission dispositions are populated during 1.1B–1.1C and
+finalized against installed exclusions in 2.1A.
 
 # Phase 2 — De-duplicate the nine repeated blocks D4–D12 (Suggested implementer: Opus)
 
@@ -745,6 +777,15 @@ currently surviving join regions; record the missing first line as unresolved
 Tier-A evidence, not as an expectation waived globally. Its exact source
 interval is required by `phocion_c3_line_restored` in Phase 4.2, which checks the
 complete 296→299 prose join after restoration.
+
+**Additional pending source regions:** D7's retained source 360 contains the
+separate `Et:` verse label [888, 2026, 932, 2048], which the baseline strip filter
+drops. Keep this explicit pending region in the diagnostic fixture; Phase 2
+asserts all currently extracted reviewed D7 regions and does not claim the label
+restored. The complete D7 source check must include it after its specified 4.2
+correction. Supplemental D3 evidence likewise retains the separately inventoried
+331 Tier-A and 329 Tier-B losses, rather than asserting those lines already survive
+or waiving their eligibility requirements.
 
 **LLM verification:** `cargo fmt --all`; `cargo fmt --all --check`; `cargo clippy
 --all-targets -- -D warnings`; `cargo test known_duplicate`; `cargo test

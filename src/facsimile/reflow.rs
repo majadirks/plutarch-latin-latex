@@ -3400,14 +3400,6 @@ mod tests {
         scale: f32,
         geom: &TrimGeom,
     ) -> (Vec<StripRange>, Vec<CanvasRange>, Vec<GrayImage>) {
-        let mut stream_top = 0;
-        let mut strips = Vec::new();
-        for strip in strips_in_reading_order(pages, metrics) {
-            let scaled = scale_strip(&pages[strip.page_img_index].0, &strip.band, scale).unwrap();
-            let stream_bottom = stream_top + scaled.height();
-            strips.push((strip, stream_top, stream_bottom));
-            stream_top = stream_bottom;
-        }
         let canvases = compose_pages(
             pages,
             scale,
@@ -3416,6 +3408,25 @@ mod tests {
             geom.body_budget(),
             metrics,
         );
+        ranges_for_composed_canvases(pages, metrics, scale, geom, canvases)
+    }
+
+    /// Map strips into an already verified set of composed canvases.
+    fn ranges_for_composed_canvases(
+        pages: &[PageBands],
+        metrics: &LineMetrics,
+        scale: f32,
+        geom: &TrimGeom,
+        canvases: Vec<GrayImage>,
+    ) -> (Vec<StripRange>, Vec<CanvasRange>, Vec<GrayImage>) {
+        let mut stream_top = 0;
+        let mut strips = Vec::new();
+        for strip in strips_in_reading_order(pages, metrics) {
+            let scaled = scale_strip(&pages[strip.page_img_index].0, &strip.band, scale).unwrap();
+            let stream_bottom = stream_top + scaled.height();
+            strips.push((strip, stream_top, stream_bottom));
+            stream_top = stream_bottom;
+        }
         let mut canvas_top = 0;
         let canvas_ranges = canvases
             .iter()
