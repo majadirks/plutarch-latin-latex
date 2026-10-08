@@ -69,12 +69,13 @@ run directory for changed annotations. Templates contain development source
 logos; reader-output images are forbidden as templates.
 
 The case inventory includes all required report groups and 68 endpoint labels.
-Eleven findings have manually measured, inspected regions. Duplicate occurrence
-locators and contribution endpoints are recorded, but their boxes remain
-pending, as do the remaining layout, endpoint, and negative annotations. The
-25 prior-mask neighborhoods have separate defect-type negatives rather than
-whole-page clean claims. Pending annotations must be measured and reviewed
-before final calibration; panel pages also remain unreviewed.
+All 187 development annotations have independently measured, inspected regions,
+including duplicate contribution endpoints, layout, endpoints and negatives.
+The validation inventory has 138 cases, of which 134 remain pending independent
+image review. The 25 prior-mask neighborhoods have separate defect-type
+negatives rather than whole-page clean claims. Pending annotations must be measured and reviewed
+before final calibration. Fixed panel image review and candidate adjudication
+are recorded separately from these benchmark labels.
 
 Renders use the full MediaBox and identity/settings-checked caches. Word-box
 overlays were inspected on a source page and a generated reader footer. Source
@@ -94,6 +95,9 @@ Each run contains `run-manifest.json` and `candidates.json`. The manifest binds
 the baseline/input hashes, the working labels/splits/templates file hashes,
 semantic `settings` and their canonical JSON hash, candidate file hash, selected
 `units`, `scope`, `detectors`, and explicit requested/completed body-page lists.
+The semantic settings include the chosen OCR language and the fixed
+source/reader/retry DPI and page-segmentation modes. Changing `--lang` cannot
+resume an existing run or satisfy a freeze made with another OCR profile.
 Body-page keys use `TOMUS:PHYSICAL_PAGE`, such as `1:68`. `producer` distinguishes
 manual evaluator verification from detector output. A changed configuration or
 input requires a new run. The evaluator validates page ownership using cached
@@ -104,8 +108,10 @@ Candidate JSON has `schema_version: 1` and a `candidates` list. Each event needs
 an `event_id`, `unit_id`, `type`, machine-readable `relation`, source/output
 regions with captured input hashes and normalized boxes, `confidence`,
 `confidence_reasons`, `status`, `evidence_provenance`, and existing `crops` with
-work-relative paths and SHA-256 hashes. Omissions use
-`relation: missing_expected_position` and `unique_loss: true`. Duplicates use
+work-relative paths and SHA-256 hashes. Local omission nominations use
+`relation: missing_expected_position`; a localized positive also requires
+`unique_loss: true`. Retained or redundant material remains visible as
+inconclusive evidence with `unique_loss: false`. Duplicates use
 `relation: repeated_occurrence`, two nonoverlapping `contributions` with measured
 start/end page boxes, and the incomplete-second-opening assessment. Other
 relations are defined in the script's shared `RELATIONS` table. Complete endpoint
@@ -121,6 +127,31 @@ not-requested cases, and reviewed negative regressions. Unmatched events remain
 unreviewed. Candidate burden includes every grouped core event; precision and
 panel false-positive rate remain unset until their review samples exist.
 
+Supply independent candidate and fixed-panel adjudications with `--reviews`:
+
+```powershell
+python tools/audit_inner_tomi.py evaluate --run-dir tmp/pdfs/inner_tomi_audit/runs/my-development-run --split development --reviews tmp/pdfs/inner_tomi_audit/runs/my-development-run/reviews.json
+```
+
+The review JSON contains `schema_version: 1`, `baseline_id`, the actual
+`candidates_sha256`, `sample_description`, `events` and `pages`. Describe how
+the candidate sample was selected; benchmark hits alone do not establish
+candidate precision. Each event record contains `event_id`, `verdict`
+(`confirmed`, `false_positive` or `uncertain`), `reason` and `evidence`.
+Each page record contains `page_id` in `TOMUS:PHYSICAL_PAGE` form,
+`status: reviewed`, `reason` and `evidence`. Evidence is a nonempty list of
+objects with work-relative `path` and actual `sha256`, pointing to inspected
+files under `cache/` or `runs/`. The evaluator checks these identities.
+
+Pages must belong to the fixed panel and completed scope. Every core event
+touching a reviewed page requires an explicit verdict, including low and
+unknown events. A page cannot be declared negative while its candidates remain
+unreviewed. Per-class precision uses confirmed events divided by confirmed
+plus false-positive events; uncertain events are listed separately. Panel
+rates count distinct pages with a high-confidence false-positive or uncertain
+core event per 100 fully reviewed pages. Candidate-selected precision and
+the fixed-page rates describe separate samples and have separate denominators.
+
 `run` extracts OCR and nominates duplicate scans, reader order changes, and
 missing occurrences. It also compares starts and terminal prose with the same
 bounded occurrence aligner. `--detectors boundaries` processes the first and
@@ -132,6 +163,23 @@ occurrence IDs, alignment operations, retry evidence, and separate start/termina
 results. Complete endpoint observations use `relation: complete_endpoint`;
 source-supported terminal-loss nominations require reader retries and remain
 low confidence until visual adjudication. OCR disagreement remains inconclusive.
+
+Expected prose comes from generous original-source regions, with observed
+column borders and separate head, footer and neighboring-column observations.
+Greek quotations inside the Latin column remain expected text. Scan equivalence
+requires exact matched passages and independently observed matching printed
+folios; unmatched material remains independently expected. Equivalent context
+anchors can bound a local omission without treating a natural repeat elsewhere
+as coverage. Bounded alignments between anchors also account for retained text
+in verified scan-equivalent reader occurrences. A unique whole-line loss must
+still satisfy the whole-line absence fraction after that coverage is accounted
+for. The evidence records expected Latin tokens, local seam deletions, retained
+tokens in verified occurrences and still-uncovered tokens for each source line.
+Redundant local losses remain inconclusive rather than becoming unique omissions.
+Omission confidence includes source-raster agreement, informative
+contexts, regional reader OCR retries and a localized search for retained
+original line pixels. An OCR deletion with visibly retained line pixels stays
+inconclusive. These observations never edit production Latin or repair a page.
 
 ```powershell
 python tools/audit_inner_tomi.py run --baseline baseline_2026_10_06 --scope development --detectors boundaries --run-dir tmp/pdfs/inner_tomi_audit/runs/my-development-boundaries
@@ -154,6 +202,16 @@ High confidence requires stable views, at least two observed glyphs and a
 distinct second fragment or matched source-tail context. Tiny fragments and
 failed retries remain visible with their confidence conditions.
 
+Grouped logo nominations require at least one glyph supported by refined
+reader pixels or a virtual stitch. A logo in the original footer alone cannot
+establish its retention in the reader. This check happens after component
+grouping, so every weak component of a supported split event remains attached.
+Unsupported groups retain all source/output crops, component scores and probe
+decisions in `watermark-debug-<unit>.json`, `report-data.json` and the HTML's
+uncorroborated-logo-probe section. They are reported separately from accepted
+grouped core candidates; low and unknown accepted findings remain in the
+candidate JSON/CSV and normal report sections.
+
 `join_body_edges` creates diagnostic bottom/top strips from adjacent images of
 the same unit, with source page coordinates for both halves. `merge_logo_events`
 preserves every component while combining overlapping and corroborated edge
@@ -171,7 +229,12 @@ source-index statistic.
 `--detectors head` compares isolated capital fragments and separate source
 folios with original header words, occurrence-assigned source transitions and
 source image suffixes. Roman chapter markers and multiword prose lines are
-excluded. Alternate regional OCR remains available beside the image evidence.
+excluded. An isolated fragment also remains ordinary prose when its ink matches
+the registered source image at an expected body-token box. This distinguishes
+short final lines from surviving running heads without depending on the
+fragment's OCR reading. These exclusions retain their source registration,
+projected boxes and body-token evidence in `head-debug-<unit>.json`.
+Alternate regional OCR remains available beside the image evidence.
 Source folio agreement, suffix similarity, isolation and image correlation are
 separate cues; at least three cues and a source transition are needed for high
 confidence. A single glyph requires image corroboration. The report preserves
@@ -203,7 +266,10 @@ white region outside the left boundary. Horizontal candidates require glyph
 components crossing a top or bottom boundary; complementary fragments on
 adjacent pages of the same unit are grouped. The comparisons use full 300-DPI
 images, so the edge of a diagnostic crop cannot establish a slice. The report
-retains affected source words, measured correlations and unmeasured extent.
+retains individual affected-word regions beside overview crops, measured
+correlations and unmeasured extent. Adjacent lateral observations join only when they map to
+the same physical source page and column boundary, on consecutive physical reader
+pages and consecutive body ordinals. Distinct source scans remain separate.
 Failed registration or absent source assignments remain explicit in
 `clipping-debug-<unit>.json`.
 
@@ -216,11 +282,12 @@ their complete boxes remain visible in the evidence details. Scores are
 similarities, not probabilities. CSV cells are escaped against spreadsheet
 formula interpretation.
 
-`coverage.json` accounts for each requested body page. `errors.json` preserves
+`coverage.json` accounts for each requested body page and distinguishes observed
+reader OCR from inconclusive OCR on unreadable ink. `errors.json` preserves
 processing failures, OCR limitations and inconclusive image registration.
 Corpus inventory and completed requested scope are displayed separately.
-The existing evaluator writes `evaluation-<split>.json`; benchmark annotations
-remain pending until independent image review. Reports do not change detector
+The evaluator writes `evaluation-<split>.json`; pending benchmark annotations
+require independent image review. Reports do not change detector
 confidence or convert unreviewed candidates into negatives.
 
 An existing run can regenerate its report and read its original body OCR:
@@ -235,8 +302,12 @@ generation. Re-rendering a report does not rerun detector scoring.
 
 `evaluate --freeze` requires a complete final detector run over all development
 units/types and their actual body pages, reviewed development cases and
-negatives, recorded thresholds/index/tool identities, and a strong localized
-development positive for each core class. Manual or partial verification cannot
+negatives, recorded thresholds/index/tool identities, complete fixed development
+panel review and independent candidate adjudications supplied with `--reviews`.
+Each of missing occurrence, duplicate, watermark and head needs a strong
+localized high-confidence benchmark positive and an independently confirmed
+reviewed event. The final run must have been produced by the current script.
+Manual or partial verification cannot
 create a freeze. `--enforce-gates` returns exit 4 for calibration failures; these
 are diagnostic checks, not user approval requests. Exit 3 reports incomplete
 requested processing. A frozen evaluation is preserved; revisions use new runs.
@@ -245,3 +316,10 @@ Exit codes are 0 for completed requested processing, 2 for configuration/tool
 errors, 3 for interruption/incomplete processing, and 4 for an explicitly
 requested calibration gate failure. A successful capture makes no claim that the
 readers are free of defects.
+
+Run manifests stay incomplete until reporting, final input verification and
+runtime/storage recording succeed. They record elapsed runtime and measured
+run/cache storage. A failed invocation saves a timestamped `failure-*.json` in
+its diagnostic run directory when that destination is safe. Interrupted runs and their evidence are retained. Resume
+uses hash-validated completed cache entries; a stale lock requires checking
+that its owner has stopped before removing that specific lock file.
