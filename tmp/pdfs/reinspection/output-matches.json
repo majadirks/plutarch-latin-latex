@@ -1,0 +1,1442 @@
+[
+  {
+    "source": 115,
+    "tomus": 5,
+    "matches": [
+      {
+        "file": "dup5-218.txt",
+        "tomus": 5,
+        "page": 218,
+        "score": 0.8863636363636364
+      },
+      {
+        "file": "dup5-226.txt",
+        "tomus": 5,
+        "page": 226,
+        "score": 0.8629032258064516
+      },
+      {
+        "file": "dup5-217.txt",
+        "tomus": 5,
+        "page": 217,
+        "score": 0.5483870967741935
+      },
+      {
+        "file": "dup5-227.txt",
+        "tomus": 5,
+        "page": 227,
+        "score": 0.5454545454545454
+      },
+      {
+        "file": "dup5-225.txt",
+        "tomus": 5,
+        "page": 225,
+        "score": 0.4740740740740741
+      }
+    ]
+  },
+  {
+    "source": 116,
+    "tomus": 5,
+    "matches": [
+      {
+        "file": "dup5-228.txt",
+        "tomus": 5,
+        "page": 228,
+        "score": 0.7971014492753623
+      },
+      {
+        "file": "dup5-220.txt",
+        "tomus": 5,
+        "page": 220,
+        "score": 0.7878787878787878
+      },
+      {
+        "file": "dup5-219.txt",
+        "tomus": 5,
+        "page": 219,
+        "score": 0.544
+      },
+      {
+        "file": "dup5-229.txt",
+        "tomus": 5,
+        "page": 229,
+        "score": 0.5118110236220472
+      },
+      {
+        "file": "dup5-227.txt",
+        "tomus": 5,
+        "page": 227,
+        "score": 0.4318181818181818
+      }
+    ]
+  },
+  {
+    "source": 117,
+    "tomus": 5,
+    "matches": [
+      {
+        "file": "dup5-230.txt",
+        "tomus": 5,
+        "page": 230,
+        "score": 0.9281045751633987
+      },
+      {
+        "file": "dup5-222.txt",
+        "tomus": 5,
+        "page": 222,
+        "score": 0.9066666666666666
+      },
+      {
+        "file": "dup5-231.txt",
+        "tomus": 5,
+        "page": 231,
+        "score": 0.624
+      },
+      {
+        "file": "dup5-221.txt",
+        "tomus": 5,
+        "page": 221,
+        "score": 0.46923076923076923
+      },
+      {
+        "file": "dup5-223.txt",
+        "tomus": 5,
+        "page": 223,
+        "score": 0.4263565891472868
+      }
+    ]
+  },
+  {
+    "source": 118,
+    "tomus": 5,
+    "matches": [
+      {
+        "file": "dup5-224.txt",
+        "tomus": 5,
+        "page": 224,
+        "score": 0.8050847457627118
+      },
+      {
+        "file": "dup5-232.txt",
+        "tomus": 5,
+        "page": 232,
+        "score": 0.7560975609756098
+      },
+      {
+        "file": "dup5-233.txt",
+        "tomus": 5,
+        "page": 233,
+        "score": 0.568
+      },
+      {
+        "file": "dup5-223.txt",
+        "tomus": 5,
+        "page": 223,
+        "score": 0.4418604651162791
+      },
+      {
+        "file": "dup5-225.txt",
+        "tomus": 5,
+        "page": 225,
+        "score": 0.42962962962962964
+      }
+    ]
+  },
+  {
+    "source": 119,
+    "tomus": 5,
+    "matches": [
+      {
+        "file": "dup5-218.txt",
+        "tomus": 5,
+        "page": 218,
+        "score": 0.8939393939393939
+      },
+      {
+        "file": "dup5-226.txt",
+        "tomus": 5,
+        "page": 226,
+        "score": 0.8629032258064516
+      },
+      {
+        "file": "dup5-227.txt",
+        "tomus": 5,
+        "page": 227,
+        "score": 0.5681818181818182
+      },
+      {
+        "file": "dup5-217.txt",
+        "tomus": 5,
+        "page": 217,
+        "score": 0.5403225806451613
+      },
+      {
+        "file": "dup5-225.txt",
+        "tomus": 5,
+        "page": 225,
+        "score": 0.4666666666666667
+      }
+    ]
+  },
+  {
+    "source": 120,
+    "tomus": 5,
+    "matches": [
+      {
+        "file": "dup5-220.txt",
+        "tomus": 5,
+        "page": 220,
+        "score": 0.8863636363636364
+      },
+      {
+        "file": "dup5-228.txt",
+        "tomus": 5,
+        "page": 228,
+        "score": 0.8695652173913043
+      },
+      {
+        "file": "dup5-229.txt",
+        "tomus": 5,
+        "page": 229,
+        "score": 0.5984251968503937
+      },
+      {
+        "file": "dup5-219.txt",
+        "tomus": 5,
+        "page": 219,
+        "score": 0.584
+      },
+      {
+        "file": "dup5-221.txt",
+        "tomus": 5,
+        "page": 221,
+        "score": 0.47692307692307695
+      }
+    ]
+  },
+  {
+    "source": 121,
+    "tomus": 5,
+    "matches": [
+      {
+        "file": "dup5-230.txt",
+        "tomus": 5,
+        "page": 230,
+        "score": 0.9281045751633987
+      },
+      {
+        "file": "dup5-222.txt",
+        "tomus": 5,
+        "page": 222,
+        "score": 0.8933333333333333
+      },
+      {
+        "file": "dup5-231.txt",
+        "tomus": 5,
+        "page": 231,
+        "score": 0.616
+      },
+      {
+        "file": "dup5-221.txt",
+        "tomus": 5,
+        "page": 221,
+        "score": 0.46153846153846156
+      },
+      {
+        "file": "dup5-223.txt",
+        "tomus": 5,
+        "page": 223,
+        "score": 0.4263565891472868
+      }
+    ]
+  },
+  {
+    "source": 122,
+    "tomus": 5,
+    "matches": [
+      {
+        "file": "dup5-224.txt",
+        "tomus": 5,
+        "page": 224,
+        "score": 0.940677966101695
+      },
+      {
+        "file": "dup5-232.txt",
+        "tomus": 5,
+        "page": 232,
+        "score": 0.9024390243902439
+      },
+      {
+        "file": "dup5-233.txt",
+        "tomus": 5,
+        "page": 233,
+        "score": 0.68
+      },
+      {
+        "file": "dup5-223.txt",
+        "tomus": 5,
+        "page": 223,
+        "score": 0.5193798449612403
+      },
+      {
+        "file": "dup5-225.txt",
+        "tomus": 5,
+        "page": 225,
+        "score": 0.5037037037037037
+      }
+    ]
+  },
+  {
+    "source": 211,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-049.txt",
+        "tomus": 6,
+        "page": 49,
+        "score": 0.9464285714285714
+      },
+      {
+        "file": "dup6-053.txt",
+        "tomus": 6,
+        "page": 53,
+        "score": 0.8275862068965517
+      },
+      {
+        "file": "dup6-048.txt",
+        "tomus": 6,
+        "page": 48,
+        "score": 0.8253968253968254
+      },
+      {
+        "file": "dup6-052.txt",
+        "tomus": 6,
+        "page": 52,
+        "score": 0.6793893129770993
+      },
+      {
+        "file": "dup6-050.txt",
+        "tomus": 6,
+        "page": 50,
+        "score": 0.21774193548387097
+      }
+    ]
+  },
+  {
+    "source": 212,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-051.txt",
+        "tomus": 6,
+        "page": 51,
+        "score": 0.9669421487603306
+      },
+      {
+        "file": "dup6-055.txt",
+        "tomus": 6,
+        "page": 55,
+        "score": 0.957983193277311
+      },
+      {
+        "file": "dup6-054.txt",
+        "tomus": 6,
+        "page": 54,
+        "score": 0.8907563025210085
+      },
+      {
+        "file": "dup6-050.txt",
+        "tomus": 6,
+        "page": 50,
+        "score": 0.8225806451612904
+      },
+      {
+        "file": "dup6-056.txt",
+        "tomus": 6,
+        "page": 56,
+        "score": 0.28776978417266186
+      }
+    ]
+  },
+  {
+    "source": 213,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-049.txt",
+        "tomus": 6,
+        "page": 49,
+        "score": 0.8125
+      },
+      {
+        "file": "dup6-048.txt",
+        "tomus": 6,
+        "page": 48,
+        "score": 0.8095238095238095
+      },
+      {
+        "file": "dup6-053.txt",
+        "tomus": 6,
+        "page": 53,
+        "score": 0.7241379310344828
+      },
+      {
+        "file": "dup6-052.txt",
+        "tomus": 6,
+        "page": 52,
+        "score": 0.6946564885496184
+      },
+      {
+        "file": "dup6-050.txt",
+        "tomus": 6,
+        "page": 50,
+        "score": 0.21774193548387097
+      }
+    ]
+  },
+  {
+    "source": 214,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-055.txt",
+        "tomus": 6,
+        "page": 55,
+        "score": 0.8739495798319328
+      },
+      {
+        "file": "dup6-051.txt",
+        "tomus": 6,
+        "page": 51,
+        "score": 0.8677685950413223
+      },
+      {
+        "file": "dup6-054.txt",
+        "tomus": 6,
+        "page": 54,
+        "score": 0.7815126050420168
+      },
+      {
+        "file": "dup6-050.txt",
+        "tomus": 6,
+        "page": 50,
+        "score": 0.7258064516129032
+      },
+      {
+        "file": "dup6-056.txt",
+        "tomus": 6,
+        "page": 56,
+        "score": 0.2589928057553957
+      }
+    ]
+  },
+  {
+    "source": 295,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-222.txt",
+        "tomus": 6,
+        "page": 222,
+        "score": 0.9037037037037037
+      },
+      {
+        "file": "dup6-226.txt",
+        "tomus": 6,
+        "page": 226,
+        "score": 0.9022556390977443
+      },
+      {
+        "file": "dup6-221.txt",
+        "tomus": 6,
+        "page": 221,
+        "score": 0.5441176470588235
+      },
+      {
+        "file": "dup6-227.txt",
+        "tomus": 6,
+        "page": 227,
+        "score": 0.5338345864661654
+      },
+      {
+        "file": "dup6-223.txt",
+        "tomus": 6,
+        "page": 223,
+        "score": 0.5303030303030303
+      }
+    ]
+  },
+  {
+    "source": 296,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-228.txt",
+        "tomus": 6,
+        "page": 228,
+        "score": 0.8
+      },
+      {
+        "file": "dup6-224.txt",
+        "tomus": 6,
+        "page": 224,
+        "score": 0.7862595419847328
+      },
+      {
+        "file": "dup6-225.txt",
+        "tomus": 6,
+        "page": 225,
+        "score": 0.5409836065573771
+      },
+      {
+        "file": "dup6-229.txt",
+        "tomus": 6,
+        "page": 229,
+        "score": 0.49612403100775193
+      },
+      {
+        "file": "dup6-223.txt",
+        "tomus": 6,
+        "page": 223,
+        "score": 0.4772727272727273
+      }
+    ]
+  },
+  {
+    "source": 297,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-222.txt",
+        "tomus": 6,
+        "page": 222,
+        "score": 0.9037037037037037
+      },
+      {
+        "file": "dup6-226.txt",
+        "tomus": 6,
+        "page": 226,
+        "score": 0.8947368421052632
+      },
+      {
+        "file": "dup6-221.txt",
+        "tomus": 6,
+        "page": 221,
+        "score": 0.5441176470588235
+      },
+      {
+        "file": "dup6-227.txt",
+        "tomus": 6,
+        "page": 227,
+        "score": 0.5338345864661654
+      },
+      {
+        "file": "dup6-223.txt",
+        "tomus": 6,
+        "page": 223,
+        "score": 0.5227272727272727
+      }
+    ]
+  },
+  {
+    "source": 298,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-228.txt",
+        "tomus": 6,
+        "page": 228,
+        "score": 0.9214285714285714
+      },
+      {
+        "file": "dup6-224.txt",
+        "tomus": 6,
+        "page": 224,
+        "score": 0.916030534351145
+      },
+      {
+        "file": "dup6-225.txt",
+        "tomus": 6,
+        "page": 225,
+        "score": 0.5983606557377049
+      },
+      {
+        "file": "dup6-229.txt",
+        "tomus": 6,
+        "page": 229,
+        "score": 0.5503875968992248
+      },
+      {
+        "file": "dup6-223.txt",
+        "tomus": 6,
+        "page": 223,
+        "score": 0.5303030303030303
+      }
+    ]
+  },
+  {
+    "source": 359,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-338.txt",
+        "tomus": 6,
+        "page": 338,
+        "score": 0.935251798561151
+      },
+      {
+        "file": "dup6-333.txt",
+        "tomus": 6,
+        "page": 333,
+        "score": 0.9051094890510949
+      },
+      {
+        "file": "dup6-334.txt",
+        "tomus": 6,
+        "page": 334,
+        "score": 0.9
+      },
+      {
+        "file": "dup6-337.txt",
+        "tomus": 6,
+        "page": 337,
+        "score": 0.8819444444444444
+      },
+      {
+        "file": "dup6-332.txt",
+        "tomus": 6,
+        "page": 332,
+        "score": 0.19285714285714287
+      }
+    ]
+  },
+  {
+    "source": 360,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-340.txt",
+        "tomus": 6,
+        "page": 340,
+        "score": 0.8648648648648649
+      },
+      {
+        "file": "dup6-336.txt",
+        "tomus": 6,
+        "page": 336,
+        "score": 0.8571428571428571
+      },
+      {
+        "file": "dup6-335.txt",
+        "tomus": 6,
+        "page": 335,
+        "score": 0.8345864661654135
+      },
+      {
+        "file": "dup6-339.txt",
+        "tomus": 6,
+        "page": 339,
+        "score": 0.7734375
+      },
+      {
+        "file": "dup6-341.txt",
+        "tomus": 6,
+        "page": 341,
+        "score": 0.3333333333333333
+      }
+    ]
+  },
+  {
+    "source": 361,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-338.txt",
+        "tomus": 6,
+        "page": 338,
+        "score": 0.9424460431654677
+      },
+      {
+        "file": "dup6-334.txt",
+        "tomus": 6,
+        "page": 334,
+        "score": 0.9071428571428571
+      },
+      {
+        "file": "dup6-333.txt",
+        "tomus": 6,
+        "page": 333,
+        "score": 0.9051094890510949
+      },
+      {
+        "file": "dup6-337.txt",
+        "tomus": 6,
+        "page": 337,
+        "score": 0.8888888888888888
+      },
+      {
+        "file": "dup6-332.txt",
+        "tomus": 6,
+        "page": 332,
+        "score": 0.19285714285714287
+      }
+    ]
+  },
+  {
+    "source": 362,
+    "tomus": 6,
+    "matches": [
+      {
+        "file": "dup6-335.txt",
+        "tomus": 6,
+        "page": 335,
+        "score": 0.924812030075188
+      },
+      {
+        "file": "dup6-336.txt",
+        "tomus": 6,
+        "page": 336,
+        "score": 0.875
+      },
+      {
+        "file": "dup6-339.txt",
+        "tomus": 6,
+        "page": 339,
+        "score": 0.875
+      },
+      {
+        "file": "dup6-340.txt",
+        "tomus": 6,
+        "page": 340,
+        "score": 0.8648648648648649
+      },
+      {
+        "file": "dup6-341.txt",
+        "tomus": 6,
+        "page": 341,
+        "score": 0.3492063492063492
+      }
+    ]
+  },
+  {
+    "source": 375,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-033.txt",
+        "tomus": 7,
+        "page": 33,
+        "score": 0.9375
+      },
+      {
+        "file": "dup7-030.txt",
+        "tomus": 7,
+        "page": 30,
+        "score": 0.905982905982906
+      },
+      {
+        "file": "dup7-029.txt",
+        "tomus": 7,
+        "page": 29,
+        "score": 0.8695652173913043
+      },
+      {
+        "file": "dup7-034.txt",
+        "tomus": 7,
+        "page": 34,
+        "score": 0.5826086956521739
+      },
+      {
+        "file": "dup7-032.txt",
+        "tomus": 7,
+        "page": 32,
+        "score": 0.416
+      }
+    ]
+  },
+  {
+    "source": 376,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-031.txt",
+        "tomus": 7,
+        "page": 31,
+        "score": 0.7916666666666666
+      },
+      {
+        "file": "dup7-035.txt",
+        "tomus": 7,
+        "page": 35,
+        "score": 0.7903225806451613
+      },
+      {
+        "file": "dup7-036.txt",
+        "tomus": 7,
+        "page": 36,
+        "score": 0.75
+      },
+      {
+        "file": "dup7-032.txt",
+        "tomus": 7,
+        "page": 32,
+        "score": 0.504
+      },
+      {
+        "file": "dup7-034.txt",
+        "tomus": 7,
+        "page": 34,
+        "score": 0.46956521739130436
+      }
+    ]
+  },
+  {
+    "source": 377,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-033.txt",
+        "tomus": 7,
+        "page": 33,
+        "score": 0.953125
+      },
+      {
+        "file": "dup7-030.txt",
+        "tomus": 7,
+        "page": 30,
+        "score": 0.8974358974358975
+      },
+      {
+        "file": "dup7-029.txt",
+        "tomus": 7,
+        "page": 29,
+        "score": 0.8782608695652174
+      },
+      {
+        "file": "dup7-034.txt",
+        "tomus": 7,
+        "page": 34,
+        "score": 0.5739130434782609
+      },
+      {
+        "file": "dup7-032.txt",
+        "tomus": 7,
+        "page": 32,
+        "score": 0.432
+      }
+    ]
+  },
+  {
+    "source": 378,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-036.txt",
+        "tomus": 7,
+        "page": 36,
+        "score": 0.875
+      },
+      {
+        "file": "dup7-035.txt",
+        "tomus": 7,
+        "page": 35,
+        "score": 0.8709677419354839
+      },
+      {
+        "file": "dup7-031.txt",
+        "tomus": 7,
+        "page": 31,
+        "score": 0.825
+      },
+      {
+        "file": "dup7-032.txt",
+        "tomus": 7,
+        "page": 32,
+        "score": 0.536
+      },
+      {
+        "file": "dup7-034.txt",
+        "tomus": 7,
+        "page": 34,
+        "score": 0.46956521739130436
+      }
+    ]
+  },
+  {
+    "source": 463,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-209.txt",
+        "tomus": 7,
+        "page": 209,
+        "score": 0.8770491803278688
+      },
+      {
+        "file": "dup7-213.txt",
+        "tomus": 7,
+        "page": 213,
+        "score": 0.8292682926829268
+      },
+      {
+        "file": "dup7-214.txt",
+        "tomus": 7,
+        "page": 214,
+        "score": 0.6083916083916084
+      },
+      {
+        "file": "dup7-210.txt",
+        "tomus": 7,
+        "page": 210,
+        "score": 0.6044776119402985
+      },
+      {
+        "file": "dup7-208.txt",
+        "tomus": 7,
+        "page": 208,
+        "score": 0.4015748031496063
+      }
+    ]
+  },
+  {
+    "source": 464,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-211.txt",
+        "tomus": 7,
+        "page": 211,
+        "score": 0.9285714285714286
+      },
+      {
+        "file": "dup7-215.txt",
+        "tomus": 7,
+        "page": 215,
+        "score": 0.8833333333333333
+      },
+      {
+        "file": "dup7-216.txt",
+        "tomus": 7,
+        "page": 216,
+        "score": 0.6594202898550725
+      },
+      {
+        "file": "dup7-212.txt",
+        "tomus": 7,
+        "page": 212,
+        "score": 0.5955882352941176
+      },
+      {
+        "file": "dup7-210.txt",
+        "tomus": 7,
+        "page": 210,
+        "score": 0.417910447761194
+      }
+    ]
+  },
+  {
+    "source": 465,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-209.txt",
+        "tomus": 7,
+        "page": 209,
+        "score": 0.8770491803278688
+      },
+      {
+        "file": "dup7-213.txt",
+        "tomus": 7,
+        "page": 213,
+        "score": 0.8211382113821138
+      },
+      {
+        "file": "dup7-214.txt",
+        "tomus": 7,
+        "page": 214,
+        "score": 0.6153846153846154
+      },
+      {
+        "file": "dup7-210.txt",
+        "tomus": 7,
+        "page": 210,
+        "score": 0.6044776119402985
+      },
+      {
+        "file": "dup7-208.txt",
+        "tomus": 7,
+        "page": 208,
+        "score": 0.4015748031496063
+      }
+    ]
+  },
+  {
+    "source": 466,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-211.txt",
+        "tomus": 7,
+        "page": 211,
+        "score": 0.8492063492063492
+      },
+      {
+        "file": "dup7-215.txt",
+        "tomus": 7,
+        "page": 215,
+        "score": 0.8416666666666667
+      },
+      {
+        "file": "dup7-216.txt",
+        "tomus": 7,
+        "page": 216,
+        "score": 0.6086956521739131
+      },
+      {
+        "file": "dup7-212.txt",
+        "tomus": 7,
+        "page": 212,
+        "score": 0.5588235294117647
+      },
+      {
+        "file": "dup7-210.txt",
+        "tomus": 7,
+        "page": 210,
+        "score": 0.40298507462686567
+      }
+    ]
+  },
+  {
+    "source": 521,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-333.txt",
+        "tomus": 7,
+        "page": 333,
+        "score": 0.8907563025210085
+      },
+      {
+        "file": "dup7-329.txt",
+        "tomus": 7,
+        "page": 329,
+        "score": 0.8770491803278688
+      },
+      {
+        "file": "dup7-334.txt",
+        "tomus": 7,
+        "page": 334,
+        "score": 0.6439393939393939
+      },
+      {
+        "file": "dup7-330.txt",
+        "tomus": 7,
+        "page": 330,
+        "score": 0.5114503816793893
+      },
+      {
+        "file": "dup7-328.txt",
+        "tomus": 7,
+        "page": 328,
+        "score": 0.4883720930232558
+      }
+    ]
+  },
+  {
+    "source": 522,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-335.txt",
+        "tomus": 7,
+        "page": 335,
+        "score": 0.9180327868852459
+      },
+      {
+        "file": "dup7-331.txt",
+        "tomus": 7,
+        "page": 331,
+        "score": 0.905982905982906
+      },
+      {
+        "file": "dup7-336.txt",
+        "tomus": 7,
+        "page": 336,
+        "score": 0.6875
+      },
+      {
+        "file": "dup7-332.txt",
+        "tomus": 7,
+        "page": 332,
+        "score": 0.5833333333333334
+      },
+      {
+        "file": "dup7-330.txt",
+        "tomus": 7,
+        "page": 330,
+        "score": 0.4198473282442748
+      }
+    ]
+  },
+  {
+    "source": 523,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-333.txt",
+        "tomus": 7,
+        "page": 333,
+        "score": 0.907563025210084
+      },
+      {
+        "file": "dup7-329.txt",
+        "tomus": 7,
+        "page": 329,
+        "score": 0.8852459016393442
+      },
+      {
+        "file": "dup7-334.txt",
+        "tomus": 7,
+        "page": 334,
+        "score": 0.6590909090909091
+      },
+      {
+        "file": "dup7-330.txt",
+        "tomus": 7,
+        "page": 330,
+        "score": 0.5114503816793893
+      },
+      {
+        "file": "dup7-328.txt",
+        "tomus": 7,
+        "page": 328,
+        "score": 0.4806201550387597
+      }
+    ]
+  },
+  {
+    "source": 524,
+    "tomus": 7,
+    "matches": [
+      {
+        "file": "dup7-335.txt",
+        "tomus": 7,
+        "page": 335,
+        "score": 0.9262295081967213
+      },
+      {
+        "file": "dup7-331.txt",
+        "tomus": 7,
+        "page": 331,
+        "score": 0.9145299145299145
+      },
+      {
+        "file": "dup7-336.txt",
+        "tomus": 7,
+        "page": 336,
+        "score": 0.6875
+      },
+      {
+        "file": "dup7-332.txt",
+        "tomus": 7,
+        "page": 332,
+        "score": 0.5833333333333334
+      },
+      {
+        "file": "dup7-330.txt",
+        "tomus": 7,
+        "page": 330,
+        "score": 0.4122137404580153
+      }
+    ]
+  },
+  {
+    "source": 671,
+    "tomus": 8,
+    "matches": [
+      {
+        "file": "dup8-226.txt",
+        "tomus": 8,
+        "page": 226,
+        "score": 0.9230769230769231
+      },
+      {
+        "file": "dup8-230.txt",
+        "tomus": 8,
+        "page": 230,
+        "score": 0.8872180451127819
+      },
+      {
+        "file": "dup8-225.txt",
+        "tomus": 8,
+        "page": 225,
+        "score": 0.6716417910447762
+      },
+      {
+        "file": "dup8-231.txt",
+        "tomus": 8,
+        "page": 231,
+        "score": 0.6212121212121212
+      },
+      {
+        "file": "dup8-229.txt",
+        "tomus": 8,
+        "page": 229,
+        "score": 0.5038759689922481
+      }
+    ]
+  },
+  {
+    "source": 672,
+    "tomus": 8,
+    "matches": [
+      {
+        "file": "dup8-228.txt",
+        "tomus": 8,
+        "page": 228,
+        "score": 0.9154929577464789
+      },
+      {
+        "file": "dup8-232.txt",
+        "tomus": 8,
+        "page": 232,
+        "score": 0.8714285714285714
+      },
+      {
+        "file": "dup8-233.txt",
+        "tomus": 8,
+        "page": 233,
+        "score": 0.6716417910447762
+      },
+      {
+        "file": "dup8-229.txt",
+        "tomus": 8,
+        "page": 229,
+        "score": 0.5736434108527132
+      },
+      {
+        "file": "dup8-227.txt",
+        "tomus": 8,
+        "page": 227,
+        "score": 0.5303030303030303
+      }
+    ]
+  },
+  {
+    "source": 673,
+    "tomus": 8,
+    "matches": [
+      {
+        "file": "dup8-226.txt",
+        "tomus": 8,
+        "page": 226,
+        "score": 0.9384615384615385
+      },
+      {
+        "file": "dup8-230.txt",
+        "tomus": 8,
+        "page": 230,
+        "score": 0.9022556390977443
+      },
+      {
+        "file": "dup8-225.txt",
+        "tomus": 8,
+        "page": 225,
+        "score": 0.6791044776119403
+      },
+      {
+        "file": "dup8-231.txt",
+        "tomus": 8,
+        "page": 231,
+        "score": 0.6060606060606061
+      },
+      {
+        "file": "dup8-229.txt",
+        "tomus": 8,
+        "page": 229,
+        "score": 0.5038759689922481
+      }
+    ]
+  },
+  {
+    "source": 674,
+    "tomus": 8,
+    "matches": [
+      {
+        "file": "dup8-228.txt",
+        "tomus": 8,
+        "page": 228,
+        "score": 0.9366197183098591
+      },
+      {
+        "file": "dup8-232.txt",
+        "tomus": 8,
+        "page": 232,
+        "score": 0.9
+      },
+      {
+        "file": "dup8-233.txt",
+        "tomus": 8,
+        "page": 233,
+        "score": 0.6791044776119403
+      },
+      {
+        "file": "dup8-229.txt",
+        "tomus": 8,
+        "page": 229,
+        "score": 0.5813953488372093
+      },
+      {
+        "file": "dup8-227.txt",
+        "tomus": 8,
+        "page": 227,
+        "score": 0.5378787878787878
+      }
+    ]
+  },
+  {
+    "source": 699,
+    "tomus": 8,
+    "matches": [
+      {
+        "file": "dup8-284.txt",
+        "tomus": 8,
+        "page": 284,
+        "score": 0.9225352112676056
+      },
+      {
+        "file": "dup8-288.txt",
+        "tomus": 8,
+        "page": 288,
+        "score": 0.9020979020979021
+      },
+      {
+        "file": "dup8-283.txt",
+        "tomus": 8,
+        "page": 283,
+        "score": 0.8536585365853658
+      },
+      {
+        "file": "dup8-287.txt",
+        "tomus": 8,
+        "page": 287,
+        "score": 0.7952755905511811
+      },
+      {
+        "file": "dup8-289.txt",
+        "tomus": 8,
+        "page": 289,
+        "score": 0.224
+      }
+    ]
+  },
+  {
+    "source": 700,
+    "tomus": 8,
+    "matches": [
+      {
+        "file": "dup8-286.txt",
+        "tomus": 8,
+        "page": 286,
+        "score": 0.9224806201550387
+      },
+      {
+        "file": "dup8-290.txt",
+        "tomus": 8,
+        "page": 290,
+        "score": 0.9047619047619048
+      },
+      {
+        "file": "dup8-285.txt",
+        "tomus": 8,
+        "page": 285,
+        "score": 0.7862595419847328
+      },
+      {
+        "file": "dup8-289.txt",
+        "tomus": 8,
+        "page": 289,
+        "score": 0.744
+      },
+      {
+        "file": "dup8-291.txt",
+        "tomus": 8,
+        "page": 291,
+        "score": 0.3082706766917293
+      }
+    ]
+  },
+  {
+    "source": 701,
+    "tomus": 8,
+    "matches": [
+      {
+        "file": "dup8-284.txt",
+        "tomus": 8,
+        "page": 284,
+        "score": 0.9225352112676056
+      },
+      {
+        "file": "dup8-288.txt",
+        "tomus": 8,
+        "page": 288,
+        "score": 0.9090909090909091
+      },
+      {
+        "file": "dup8-283.txt",
+        "tomus": 8,
+        "page": 283,
+        "score": 0.8292682926829268
+      },
+      {
+        "file": "dup8-287.txt",
+        "tomus": 8,
+        "page": 287,
+        "score": 0.7716535433070866
+      },
+      {
+        "file": "dup8-289.txt",
+        "tomus": 8,
+        "page": 289,
+        "score": 0.224
+      }
+    ]
+  },
+  {
+    "source": 702,
+    "tomus": 8,
+    "matches": [
+      {
+        "file": "dup8-286.txt",
+        "tomus": 8,
+        "page": 286,
+        "score": 0.9224806201550387
+      },
+      {
+        "file": "dup8-290.txt",
+        "tomus": 8,
+        "page": 290,
+        "score": 0.8888888888888888
+      },
+      {
+        "file": "dup8-285.txt",
+        "tomus": 8,
+        "page": 285,
+        "score": 0.7786259541984732
+      },
+      {
+        "file": "dup8-289.txt",
+        "tomus": 8,
+        "page": 289,
+        "score": 0.752
+      },
+      {
+        "file": "dup8-291.txt",
+        "tomus": 8,
+        "page": 291,
+        "score": 0.3082706766917293
+      }
+    ]
+  }
+]

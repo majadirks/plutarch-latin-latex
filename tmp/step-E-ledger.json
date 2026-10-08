@@ -1,0 +1,287 @@
+{
+  "description": "Durable numeric ledger for the inner-tomi minimal repairs (2026-10-05 plan). Coordinates are half-open, source index zero based, PDF page one based. Mask/compaction rows are recorded in original (full-source) coordinates; retained-image rows are derived with the shared RetainedSourcePageTrace::map_row contract (subtract the height of every deletion interval ending at or before the row). This ledger records only reviewed decisions: an empty `repairs` list means no repair has yet been measured and frozen. Tests must read reviewed expectations from this committed file and must never regenerate and accept their own expected values during a regression run.",
+  "schema": {
+    "repair_record": [
+      "finding_ids: [string]",
+      "unit_id: string",
+      "source: usize (0 = v1, 1 = v2)",
+      "source_page: u32 (1-based physical source PDF page)",
+      "raster: [width, height] (production BODY_DPI raster dimensions)",
+      "crop_edges: [left, right] (original Latin-column crop, original coordinates)",
+      "bands: [[top, bottom]] (retained body bands, original coordinates)",
+      "adjacent_prose: {above: string, below: string} (exact Latin landmarks framing the repair)",
+      "disposition: 'mask' | 'row_exclusion' | 'duplicate_page' | 'boundary_pin' | 'retain'",
+      "mask_rectangles: [[left, top, right, bottom]] (normalized half-open, when disposition = mask)",
+      "row_exclusions: [[top, bottom]] (normalized half-open original rows, when disposition = row_exclusion)",
+      "preservation_boundary: string (why the erase/exclusion removes no Latin)",
+      "copied_height: {before: u32, after: u32} (measured copied blank rows)",
+      "neighbor_gap: u32 (ordinary neighboring-line gap in original rows)",
+      "final_seam_spacing: u32 (proposed retained seam rows)"
+    ],
+    "duplicate_record_extra": [
+      "occurrences: [[source_page]] (every repeated-scan occurrence)",
+      "retain_sequence: [source_page] (the source-page sequence to keep)"
+    ]
+  },
+  "scale": {
+    "baseline": 1.2023952007293701,
+    "final": 1.2023952007293701,
+    "width_sampling_ranges": [{"end_page":33,"source":0,"start_page":14,"unit_id":"theseus"},{"end_page":56,"source":0,"start_page":33,"unit_id":"romulus"},{"end_page":60,"source":0,"start_page":56,"unit_id":"comparatio_thesei_et_romuli"},{"end_page":84,"source":0,"start_page":60,"unit_id":"lycurgus"},{"end_page":102,"source":0,"start_page":84,"unit_id":"numa"},{"end_page":107,"source":0,"start_page":102,"unit_id":"comparatio_lycurgi_et_numae"},{"end_page":129,"source":0,"start_page":107,"unit_id":"solon"},{"end_page":144,"source":0,"start_page":129,"unit_id":"poplicola"},{"end_page":146,"source":0,"start_page":144,"unit_id":"comparatio_solonis_et_poplicolae"},{"end_page":167,"source":0,"start_page":146,"unit_id":"themistocles"},{"end_page":195,"source":0,"start_page":167,"unit_id":"camillus"},{"end_page":221,"source":0,"start_page":195,"unit_id":"pericles"},{"end_page":240,"source":0,"start_page":221,"unit_id":"fabius_maximus"},{"end_page":242,"source":0,"start_page":240,"unit_id":"comparatio_periclis_et_fabii"},{"end_page":268,"source":0,"start_page":242,"unit_id":"alcibiades"},{"end_page":292,"source":0,"start_page":268,"unit_id":"marcius_coriolanus"},{"end_page":295,"source":0,"start_page":292,"unit_id":"comparatio_alcibiadis_et_coriolani"},{"end_page":318,"source":0,"start_page":295,"unit_id":"timoleon"},{"end_page":343,"source":0,"start_page":318,"unit_id":"aemilius_paulus"},{"end_page":345,"source":0,"start_page":343,"unit_id":"comparatio_timoleontis_et_aemilii"},{"end_page":369,"source":0,"start_page":345,"unit_id":"pelopidas"},{"end_page":391,"source":0,"start_page":369,"unit_id":"marcellus"},{"end_page":393,"source":0,"start_page":391,"unit_id":"comparatio_pelopidae_et_marcelli"},{"end_page":414,"source":0,"start_page":393,"unit_id":"aristides"},{"end_page":434,"source":0,"start_page":414,"unit_id":"cato_major"},{"end_page":439,"source":0,"start_page":434,"unit_id":"comparatio_aristidis_et_catonis"},{"end_page":453,"source":0,"start_page":439,"unit_id":"philopoemen"},{"end_page":468,"source":0,"start_page":453,"unit_id":"flamininus"},{"end_page":470,"source":0,"start_page":468,"unit_id":"comparatio_philopoemenis_et_flaminini"},{"end_page":497,"source":0,"start_page":470,"unit_id":"pyrrhus"},{"end_page":531,"source":0,"start_page":497,"unit_id":"caius_marius"},{"end_page":552,"source":0,"start_page":531,"unit_id":"lysander"},{"end_page":581,"source":0,"start_page":552,"unit_id":"sylla"},{"end_page":585,"source":0,"start_page":581,"unit_id":"comparatio_lysandri_et_syllae"},{"end_page":600,"source":0,"start_page":585,"unit_id":"cimon"},{"end_page":635,"source":0,"start_page":600,"unit_id":"lucullus"},{"end_page":637,"source":0,"start_page":635,"unit_id":"comparatio_cimonis_et_luculli"},{"end_page":41,"source":1,"start_page":18,"unit_id":"nicias"},{"end_page":67,"source":1,"start_page":41,"unit_id":"crassus"},{"end_page":71,"source":1,"start_page":67,"unit_id":"comparatio_niciae_et_crassi"},{"end_page":88,"source":1,"start_page":71,"unit_id":"sertorius"},{"end_page":102,"source":1,"start_page":88,"unit_id":"eumenes"},{"end_page":106,"source":1,"start_page":102,"unit_id":"comparatio_sertorii_et_eumenis"},{"end_page":137,"source":1,"start_page":106,"unit_id":"agesilaus"},{"end_page":188,"source":1,"start_page":137,"unit_id":"pompeius"},{"end_page":192,"source":1,"start_page":188,"unit_id":"comparatio_agesilai_et_pompeii"},{"end_page":245,"source":1,"start_page":192,"unit_id":"alexander"},{"end_page":286,"source":1,"start_page":245,"unit_id":"iulius_caesar"},{"end_page":309,"source":1,"start_page":286,"unit_id":"phocion"},{"end_page":363,"source":1,"start_page":309,"unit_id":"cato_minor"},{"end_page":379,"source":1,"start_page":363,"unit_id":"agis"},{"end_page":402,"source":1,"start_page":379,"unit_id":"cleomenes"},{"end_page":415,"source":1,"start_page":402,"unit_id":"tiberius_gracchus"},{"end_page":425,"source":1,"start_page":415,"unit_id":"caius_gracchus"},{"end_page":429,"source":1,"start_page":425,"unit_id":"comparatio_agidis_cleomenis_et_gracchorum"},{"end_page":446,"source":1,"start_page":429,"unit_id":"demosthenes"},{"end_page":478,"source":1,"start_page":446,"unit_id":"cicero"},{"end_page":482,"source":1,"start_page":478,"unit_id":"comparatio_demosthenis_et_ciceronis"},{"end_page":513,"source":1,"start_page":482,"unit_id":"demetrius"},{"end_page":563,"source":1,"start_page":513,"unit_id":"antonius"},{"end_page":566,"source":1,"start_page":563,"unit_id":"comparatio_demetrii_et_antonii"},{"end_page":596,"source":1,"start_page":566,"unit_id":"dio"},{"end_page":626,"source":1,"start_page":596,"unit_id":"brutus"},{"end_page":629,"source":1,"start_page":626,"unit_id":"comparatio_dionis_et_bruti"},{"end_page":647,"source":1,"start_page":629,"unit_id":"artoxerxes"},{"end_page":680,"source":1,"start_page":647,"unit_id":"aratus"},{"end_page":696,"source":1,"start_page":680,"unit_id":"galba"},{"end_page":708,"source":1,"start_page":696,"unit_id":"otho"}],
+    "note": "Measured 2026-10-06 with the production global_scale_for path. Baseline is reconstructed from the identical raw-render width inputs: the unit table, sampling ranges, source rasters, and scale algorithm are unchanged by masks and duplicate exclusions. The width pass applies neither correction, so baseline and final are equal. Independent production-scale strips, canvas seams, and range measurements are saved under tmp/pdfs/inner_tomi_repairs/post_mask/."
+  },
+  "repairs": [
+    {
+      "finding_ids": ["W1"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 287,
+      "raster": [1900, 2975],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "...ceterisque omnibus sibi ad-",
+        "below": "(continues on source page 288) junctis, ad Volumniae quae mater erat Coriolani aedes venit."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.6, 0.9042017, 0.8578947, 1.0]],
+      "row_exclusions": null,
+      "preservation_boundary": "Gray 'Digitized by Google' watermark in the bottom margin, rows ~2721-2934; last Latin line ends row 2568. Mask top (row 2690) is ~120px below the last Latin line; no Latin or Greek glyph lies in the masked band.",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-03"
+    },
+    {
+      "finding_ids": ["W1"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 288,
+      "raster": [1980, 2984],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "(running head) MARCIUS CORIOLANUS. 275",
+        "below": "junctis, ad Volumniae quae mater erat Coriolani aedes venit."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.0909091, 0.0687, 0.8737374, 0.0931635]],
+      "row_exclusions": null,
+      "preservation_boundary": "Running head 'MARCIUS CORIOLANUS.' + folio '275' ink ends row 262; blank gap rows 263-278; first body line starts row 279. Mask bottom (row 278) is above the first body pixel; no body glyph in the masked band.",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-03"
+    },
+    {
+      "finding_ids": ["O1"],
+      "unit_id": "camillus",
+      "source": 0,
+      "source_page": 182,
+      "raster": [1974, 2985],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "(source page 181) ...non enim neque is jam exsul,",
+        "below": "neque nos cives sumus, patria amissa atque ab hostibus occupata."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.08612, 0.071022, 0.962513, 0.095142]],
+      "row_exclusions": null,
+      "preservation_boundary": "Leaked running head 'CAMILLUS.' + folio '169' ink rows 226-257; blank gap rows 258-286; first body line 'neque nos cives sumus...' starts row 287. Mask bottom (row 284) is above the first body pixel; no Latin or Greek glyph in the masked band.",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-05"
+    },
+    {
+      "finding_ids": ["O1C"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 290,
+      "raster": [1974, 2986],
+      "crop_edges": null,
+      "bands": null,
+      "adjacent_prose": {
+        "above": "(source page 289 tail, leaked as the top prose line)",
+        "below": "ter, ut mecum egisti! erexit eam premensque dextram: Obtinuisti, inquit, patriae salutarem..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.08612, 0.070998, 0.962513, 0.093101]],
+      "row_exclusions": null,
+      "preservation_boundary": "Leaked top running head 'MARCIUS CORIOLANUS.' + folio '277' ink rows 220-252; blank gap rows 254-281; first body line starts row 282. Mask bottom (row 278) above first body pixel. No separable right-margin divider exists (the a/b/c/d/e/f are standard edition reference letters, not a rule).",
+      "copied_height": null,
+      "neighbor_gap": null,
+      "final_seam_spacing": null,
+      "human_confirmed": "2026-10-05 RFI-07"
+    },
+    {
+      "finding_ids": ["W2", "G4"],
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page": 299,
+      "raster": [1900, 2963],
+      "adjacent_prose": {
+        "above": "...sed repulsis Corinthiis ipsis inter",
+        "below": "(source page 300) se per otium dividere insulam liceret. (3) Igitur hi triremes..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.6, 0.8775, 0.8632, 1.0]],
+      "preservation_boundary": "Google watermark in the page-tail bottom margin (rows ~2649-2921); last Latin row 2568; mask top (~row 2600) is below all Latin. This is a source-page tail (next line opens page 300), so once masked the tail is simply not copied; no whitespace compaction needed.",
+      "human_confirmed": "2026-10-06 RFI-04"
+    },
+    {
+      "finding_ids": ["O1B"],
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 281,
+      "raster": [1948, 2974],
+      "adjacent_prose": {
+        "above": "(source page 280) ...inde concepisse. (end of chapter XXI)",
+        "below": "XXII. Erat vir Antias, divitiarum, fortitudinis nobilitatisque causa inter Volscos regiae dignitatis, nomine Tullus Amphidius."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.085729, 0.061533, 0.958932, 0.080699]],
+      "preservation_boundary": "Leaked top Greek running head 'ΓΑΙΟΣ ΜΑΡΚΙΟΣ.' (-> 'ΑΡΚΙΟΣ') + folio '268' ink rows 193-221; body (chapter XXII) starts row 260; mask bottom (row 240) above the first body pixel. Far-right edge rule (x~1935) is outside the Latin measure and not masked.",
+      "human_confirmed": "2026-10-06 RFI-06"
+    },
+    {
+      "finding_ids": ["O1D", "G8B"],
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page": 298,
+      "raster": [1990, 2982],
+      "adjacent_prose": {
+        "above": "(output places this header after the ...cum interruption on II/222)",
+        "below": "deprecatum ivisset, ea neque aspectum ipsius pertulit domumque venienti occlusit..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.08593, 0.064386, 0.962814, 0.084172]],
+      "preservation_boundary": "Leaked top running head 'TIMOLEON.' + folio '285' ink rows 202-235; body starts ~row 267; mask bottom (row 251) above the first body pixel. Whitespace/divider (G8B/O7) is a separate disposition.",
+      "human_confirmed": "2026-10-06 RFI-08"
+    },
+    {
+      "finding_ids": ["G5"],
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page": 308,
+      "raster": [1998, 2982],
+      "adjacent_prose": {
+        "above": "(large top blank in output II/245)",
+        "below": "neque vulnus accepit, Timoleontis fortunae opus est, certare quodammodo cum virtute ejus visae..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.085586, 0.064386, 0.962963, 0.083501]],
+      "preservation_boundary": "Leaked top running head 'TIMOLEON.' + folio '295' ink rows 202-235; body starts ~row 264; mask bottom (row 249) above the first body pixel. Divider fragment (O7) is a separate disposition.",
+      "human_confirmed": "2026-10-06 RFI-09"
+    },
+    {
+      "finding_ids": ["O2"],
+      "unit_id": "lysander",
+      "source": 0,
+      "source_page": 550,
+      "raster": [1980, 3003],
+      "adjacent_prose": {
+        "above": "(source page 549) ...Haliartii perhibent,",
+        "below": "habitasse apud ipsos Rhadamanthum, cujus etiam sepulcrum ostendunt, Alea vocantes."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.085859, 0.068265, 0.962626, 0.089244]],
+      "preservation_boundary": "Leaked top running head 'LYSANDER.' + folio '537' ink rows ~213-267; body ('habitasse apud ipsos...') starts ~row 270; mask bottom (row 268) above the first body pixel. (Page corrected from 549: p549's own head is the Greek ΛΥΣΑΝΔΡΟΣ/536, not the O2 leak.)",
+      "human_confirmed": "2026-10-06 RFI-10"
+    },
+    {
+      "finding_ids": ["O3"],
+      "unit_id": "demosthenes",
+      "source": 1,
+      "source_page": 441,
+      "raster": [1879, 2840],
+      "adjacent_prose": {
+        "above": "(source page 440) ...moerore suo",
+        "below": "conficiat, sed et levandus verbis ejus dolor est, et abducendus ad rerum laetiorum cogitationem animus..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.074508, 0.041549, 0.904737, 0.062676], [0.987759, 0.0, 1.0, 1.0]],
+      "preservation_boundary": "Leaked top Greek running head 'ΔΗΜΟΣΘΕΝΗΣ.' + folio ink rows 130-157; body ('conficiat...') starts ~row 188; header mask bottom (row 178) above the first body pixel. Second rectangle is the far-right vertical rule (x~1860-1879); Latin text ends ~x1760, so the rule is in the right margin.",
+      "human_confirmed": "2026-10-06 RFI-11"
+    },
+    {
+      "finding_ids": ["O4"],
+      "unit_id": "antonius",
+      "source": 1,
+      "source_page": 539,
+      "raster": [1824, 2838],
+      "adjacent_prose": {
+        "above": "(source page 538) ...Eo impe-",
+        "below": "trato, hostes irruentes repulit, non, ut ante, simul ad aciem peditum retro cedens..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.076754, 0.044397, 0.926535, 0.067653]],
+      "preservation_boundary": "Leaked top Greek running head 'ΑΝΤΩΝΙΟΣ.' + folio '1116' ink rows 140-167; body ('trato, hostes...') starts ~row 198; mask bottom (row 192) above the first body pixel. Preserves the 'Eo impe-'/'trato' split word. Right margin has only a short section marker, not a rule.",
+      "human_confirmed": "2026-10-06 RFI-12"
+    },
+    {
+      "finding_ids": ["O6"],
+      "unit_id": "cato_minor",
+      "source": 1,
+      "source_page": 337,
+      "raster": [1846, 2838],
+      "adjacent_prose": {
+        "above": "(prior page tail)",
+        "below": "nonnulli etiam amici Pompeii atque domestici rei agerentur, videns ipsum saepe inflecti ad gratiam..."
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.084507, 0.047216, 0.96208, 0.069063]],
+      "preservation_boundary": "Leaked top Greek running head 'ΚΑΤΩΝ.' (-> 'ΩΝ.') + folio '934' ink rows ~142-170; clean gap 174-203; body ('nonnulli etiam amici Pompeii...') starts row 204; mask bottom (row 196) above the first body pixel. No separable right rule (user-confirmed absent).",
+      "human_confirmed": "2026-10-06 RFI-13"
+    },
+    {
+      "finding_ids": ["O5"],
+      "unit_id": "caius_marius",
+      "source": 0,
+      "source_page": 530,
+      "raster": [1963, 2984],
+      "adjacent_prose": {
+        "above": "...quae causa multa frustra tentasset et capta urbe effugere non posset, mortem sibi ipse conscivit. (Marius's complete terminal sentence)",
+        "below": "(end of the Life; only the decorative ornament and blank margin follow)"
+      },
+      "disposition": "mask",
+      "mask_rectangles": [[0.070301, 0.387735, 0.609272, 0.40382]],
+      "preservation_boundary": "Marius's prose ends complete at rows 202-687 ('...mortem sibi ipse conscivit.' / '...αὐτὸς αὑτὸν ἀπέκτεινεν.'); then ~485 blank rows; then a decorative end-of-Life ornament (horizontal flourish) at rows 1172-1190, x 168-1166, with no Latin. Masking the ornament leaves the terminal region inkless, so it emits no furniture-only body canvas. Large blank below carries no ink and produces no strip.",
+      "human_confirmed": "2026-10-06 RFI-21"
+    },
+    {
+      "finding_ids": ["D1"],
+      "unit_id": "comparatio_sertorii_et_eumenis",
+      "source": 1,
+      "source_page": 103,
+      "disposition": "duplicate_page",
+      "skip_pages": [103, 104],
+      "occurrences": [[101, 103], [102, 104]],
+      "retain_sequence": [102, 105, 106],
+      "adjacent_prose": {
+        "join_above": "(source page 102, comparison opening ends) ...Sertorius senatoria dignitate et imperiis gestis magno in",
+        "join_below": "(source page 105, comparison continues) pretio habitus, Eumenes ob scribae munus obitum contemptus, ad principatum progressi sunt."
+      },
+      "preservation_boundary": "Exact whole-page duplicates: source p103 is content-identical to p101 (folio 708, Eumenes ch. XVII-XVIII, 'Antigonus non ea modo se redditurum...Deinde impetu facto...'); source p104 is content-identical to p102 (folio 700, Eumenes ch. XIX ending '...inspicere posset' + comparison title 'SERTORII CUM EUMENE COMPARATIO' + opening 'Haec sunt quae de Eumene...magno in'). p101 (Eumenes unit 88-102) and p102 (shared tail) carry both; p103/p104 appear only in the comparison unit (102-106) and hold NO unique prose. Skipping p103/p104 in the comparison joins p102 ('...magno in') to p105 ('pretio habitus...') = 'magno in pretio habitus', the correct comparison continuation; the comparison concludes on p105. Eumenes conclusion is unaffected (its range ends at the shared p102).",
+      "implementation": "skip_known_duplicate_source_page(\"comparatio_sertorii_et_eumenis\", 1, 103) and (\"comparatio_sertorii_et_eumenis\", 1, 104) in unit_body_strips, identity-scoped to the comparison unit (Phase 2.1).",
+      "human_confirmed": "2026-10-06 RFI-01 (keep 101/102 over 103/104)"
+    },
+    {
+      "finding_ids": ["D2"],
+      "unit_id": "agis",
+      "source": 1,
+      "source_page": 369,
+      "disposition": "duplicate_page",
+      "skip_pages": [369, 370],
+      "occurrences": [[367, 369], [368, 370]],
+      "retain_sequence": [366, 367, 368, 371, 372],
+      "adjacent_prose": {
+        "join_above": "(source page 368, folio 953, ch. XI ends) ...precando et suadendo effecerunt ut unius suffragii numero",
+        "join_below": "(source page 371, folio 954) excellerent qui antiquabant legem. (2) Ceterum Lysander, magistratu nondum abdicato actionem intentavit..."
+      },
+      "preservation_boundary": "Exact whole-page duplicates in the Agis unit (source 1, range 363-379): source p369 is content-identical to p367 (folio 952, Agis ch. VII-IX, '...non modo luxum, in quo felicitatem vitae...'); source p370 is content-identical to p368 (folio 953, Agis ch. X-XI, 'ait, quum Apollinem concumbere... XI. His ita dictis, Agidem multitudo secuta est...'). Keeping the first occurrence yields the contiguous folio sequence 951(p366) -> 952(p367) -> 953(p368) -> 954(p371) -> 955(p372). The join p368 ('...ut unius suffragii numero') + p371 ('excellerent qui antiquabant legem') is exact. p369/p370 carry NO unique prose and (per the findings) the second occurrence has heavier right-side divider marks; skipping them loses nothing.",
+      "implementation": "skip_known_duplicate_source_page(\"agis\", 1, 369) and (\"agis\", 1, 370) in unit_body_strips, identity-scoped to the Agis unit (Phase 2.2, reusing the same mechanism as D1).",
+      "human_confirmed": "2026-10-06 RFI-02 (keep p367/p368 over p369/p370)"
+    }
+  ]
+}

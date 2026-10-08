@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "baseline_id": "baseline_2026_10_06",
+  "report_sha256": "5ac02a65ce32869c42f0638b5d63980ba85cfd32d9d8feeef3371d1ccc1e0474",
+  "templates": [
+    {
+      "template_id": "source_logo_287",
+      "unit_id": "marcius_coriolanus",
+      "fragment_type": "full_logo",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 287,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.6,
+            0.943,
+            0.89,
+            0.99
+          ],
+          "source_index": 0
+        }
+      ],
+      "output_regions": [],
+      "annotation_status": "reviewed",
+      "annotation_provenance": {
+        "report_path": "llm_artifacts/2026_10_06_15_40_INNER_TOMI_REINSPECTION_FINDINGS.md",
+        "method": "Independent raw development-source full 300-DPI render inspected; manually measured bottom logo crop. No reader-output image is a template."
+      }
+    },
+    {
+      "template_id": "source_logo_299",
+      "unit_id": "timoleon",
+      "fragment_type": "full_logo",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 299,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.6,
+            0.943,
+            0.89,
+            0.99
+          ],
+          "source_index": 0
+        }
+      ],
+      "output_regions": [],
+      "annotation_status": "reviewed",
+      "annotation_provenance": {
+        "report_path": "llm_artifacts/2026_10_06_15_40_INNER_TOMI_REINSPECTION_FINDINGS.md",
+        "method": "Independent raw development-source full 300-DPI render inspected; manually measured bottom logo crop. No reader-output image is a template."
+      }
+    },
+    {
+      "template_id": "source_logo_321",
+      "unit_id": "aemilius_paulus",
+      "fragment_type": "full_logo",
+      "source_regions": [
+        {
+          "role": "source_pdf",
+          "page": 321,
+          "input_sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+          "box": [
+            0.6,
+            0.943,
+            0.89,
+            0.99
+          ],
+          "source_index": 0
+        }
+      ],
+      "output_regions": [],
+      "annotation_status": "reviewed",
+      "annotation_provenance": {
+        "report_path": "llm_artifacts/2026_10_06_15_40_INNER_TOMI_REINSPECTION_FINDINGS.md",
+        "method": "Independent raw development-source full 300-DPI render inspected; manually measured bottom logo crop. No reader-output image is a template."
+      }
+    }
+  ]
+}

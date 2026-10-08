@@ -139,6 +139,113 @@ corrections and candidate evidence.
 
 ---
 
+## Inspecting the facsimile inner PDFs
+
+[`tools/audit_inner_tomi.py`](tools/audit_inner_tomi.py) inspects the eight
+facsimile inner PDFs against the original bilingual scans and reports suspected
+**duplicated passages, unique missing source occurrences, displaced or reversed
+passages, and incomplete starts or endings**. Image checks look for **surviving
+running heads and folios, Google watermark fragments, neighboring Greek-column
+scraps, copied page-margin gaps and divider rules, prose-free (blank) body
+regions, lateral glyph clipping, and lines sliced across output pages**. Every
+finding carries localized source/reader evidence and its confidence conditions.
+The audit **only inspects**: it writes diagnostic files and leaves the Latin,
+the production PDFs, the LaTeX, and the repair policy unchanged — it never
+repairs or normalizes the source Latin.
+
+Run commands from the repository root in PowerShell with a Python 3.10+
+interpreter. Poppler (`pdftoppm`) and Tesseract must be available; the
+prerequisite check prints their versions, installed OCR models, and Python
+package versions. If imports are missing, install the pinned dependencies.
+
+```powershell
+python tools/audit_inner_tomi.py check
+python -m pip install -r tools/requirements-inner-audit.txt
+```
+
+The audit works from a captured, hash-verified baseline. Prepare its working
+specs and capture the pinned inspected inputs as described in
+[`tools/README-inner-audit.md`](tools/README-inner-audit.md). The tracked
+baseline spec identifies the exact source scans, reader PDFs, LaTeX, unit table,
+and repair-policy trace; if any of these inputs change, capture stops with a
+mismatch and a new baseline needs an explicit specification. Diagnostic
+snapshots, caches, and runs live under the ignored `tmp/pdfs/inner_tomi_audit/`
+directory and are not committed.
+
+For an initial development inspection after capture:
+
+```powershell
+python tools/audit_inner_tomi.py run --baseline baseline_2026_10_06 --scope development --detectors all --workers 4 --run-dir tmp/pdfs/inner_tomi_audit/runs/my-development-run
+python tools/audit_inner_tomi.py evaluate --run-dir tmp/pdfs/inner_tomi_audit/runs/my-development-run --split development
+python tools/audit_inner_tomi.py report --run-dir tmp/pdfs/inner_tomi_audit/runs/my-development-run
+Start-Process tmp/pdfs/inner_tomi_audit/runs/my-development-run/index.html
+```
+
+A validation or full-corpus request requires a complete development **freeze**
+that matches the script, settings, specs, inputs, source index, and tool
+versions. Creating the freeze requires independent candidate adjudications and
+the fixed development page review, supplied through `evaluate --reviews … `
+with `--freeze`; the setup guide describes the review JSON and the exact
+commands. The frozen full-corpus run of record was produced with the development
+freeze like so, writing into a new run folder:
+
+```powershell
+python tools/audit_inner_tomi.py run --baseline baseline_2026_10_06 --scope all --detectors all --freeze tmp/pdfs/inner_tomi_audit/runs/step101-development-revised-1/freeze.json --lang eng --workers 4 --run-dir tmp/pdfs/inner_tomi_audit/runs/step102-final-all
+python tools/audit_inner_tomi.py evaluate --run-dir tmp/pdfs/inner_tomi_audit/runs/step102-final-all --split all --reviews tmp/pdfs/inner_tomi_audit/runs/step102-final-all/reviews.json
+python tools/audit_inner_tomi.py report --run-dir tmp/pdfs/inner_tomi_audit/runs/step102-final-all
+```
+
+Add `--resume` when repeating the same run identity so valid cached renders,
+OCR, and comparisons are reused; it also serves as a determinism rerun, whose
+candidate records must be identical to the first. `--units` and `--tomus` narrow
+the selected scope, and the reports show the actual requested/completed pages.
+Use a new run folder for any changed settings.
+
+Open a run's `index.html` in a browser to inspect findings with their confidence
+reasons, scores, physical-page and printed-folio locators, source/reader crop
+pairs, related events, and raw OCR; `boundaries.html` holds the per-unit
+start/ending comparisons. Running `report` after `evaluate` folds the saved
+evaluation into the HTML without rerunning detection. Keep each run's `crops/`
+folder beside its HTML. Machine-readable results are in `candidates.json` and
+`candidates.csv`; `evaluation-<split>.json` carries localized hit/miss and
+negative-example results. `coverage.json`, `errors.json`, and `run-manifest.json`
+record the completed scope, any processing failures or inconclusive
+observations, the input/configuration identities, runtime, and storage.
+Per-detector debug JSON retains failed comparisons and rejected logo probes for
+further inspection.
+
+The prose comparison builds its text index from **original-source observations
+only**, then maps reader OCR to source occurrences using overlapping passage
+windows, ordered anchors, and bounded alignment (a character n-gram TF-IDF index
+that is transformed, never refit, on reader windows). Repeated scans and
+multiple reader visits are tracked separately, so a missing redundant copy is
+not counted as unique source loss. Source-raster agreement, reader OCR retries,
+and retained-line image searches corroborate omission candidates. Endings are
+compared against the actual terminal source prose; a matching endpoint does not
+establish interior completeness.
+
+Furniture and clipping checks compare original-source and reader pixels with
+scale-aware template matching, source-image registration, connected components,
+and measured glyph boundaries; the Google watermark search correlates source
+logo fragments against reader pages. Virtual joins of adjacent reader edges help
+inspect fragments sliced across a page boundary while retaining both original
+coordinate systems. Generated headings, intentional notices, genuine source
+spacing, and reviewed repair neighborhoods provide local negative examples. A
+fixed development/validation split keeps reader output from fitting the source
+index or the logo templates; evaluation uses independently measured positions,
+with a separate fixed-page false-positive panel and a candidate-selected
+precision sample. Similarity scores are not probabilities, and known-defect
+regression hits do not establish corpus-wide recall. Low-confidence and
+inconclusive observations stay visible; exploratory layout and endpoint
+localization limitations are reported explicitly and require image review. See
+the dated calibration note
+[`llm_artifacts/2026_10_08_09_18_INNER_TOMI_VALIDATION_CALIBRATION.md`](llm_artifacts/2026_10_08_09_18_INNER_TOMI_VALIDATION_CALIBRATION.md)
+and the full-corpus completion note
+[`llm_artifacts/2026_10_08_14_44_INNER_TOMI_AUDIT_STEP_102_COMPLETION.md`](llm_artifacts/2026_10_08_14_44_INNER_TOMI_AUDIT_STEP_102_COMPLETION.md)
+for the verified counts, identities, and remaining limitations.
+
+---
+
 ## The transcription path
 
 Transcribes **only the Latin column** of each page with AI vision, verifies the
