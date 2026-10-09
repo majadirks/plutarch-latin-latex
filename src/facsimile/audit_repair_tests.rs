@@ -310,6 +310,137 @@ fn audit_source_fingerprints_match_reviewed_regions() {
     }
 }
 
+#[test]
+fn cato_major_folio_cleanup_preserves_rightmost_body_pixels() {
+    let mut raster = GrayImage::from_pixel(1948, 2980, Luma([255]));
+    raster.put_pixel(1710, 350, Luma([17]));
+    let corrected = preserve_known_body_crop_edge(
+        0,
+        432,
+        &raster,
+        Column {
+            left: 907,
+            right: 1710,
+        },
+    );
+    assert_eq!([corrected.left, corrected.right], [907, 1711]);
+    assert_eq!(
+        crop_column(&raster, &corrected).get_pixel(803, 350),
+        raster.get_pixel(1710, 350)
+    );
+    for (source, page, left, right) in [
+        (1, 432, 907, 1710),
+        (0, 431, 907, 1710),
+        (0, 432, 908, 1710),
+        (0, 432, 907, 1712),
+    ] {
+        let result = preserve_known_body_crop_edge(source, page, &raster, Column { left, right });
+        assert_eq!([result.left, result.right], [left, right]);
+    }
+    let other = GrayImage::from_pixel(1948, 2981, Luma([255]));
+    let unchanged = preserve_known_body_crop_edge(
+        0,
+        432,
+        &other,
+        Column {
+            left: 907,
+            right: 1710,
+        },
+    );
+    assert_eq!([unchanged.left, unchanged.right], [907, 1710]);
+}
+
+#[test]
+fn known_body_fragments_preserve_faint_latin_pixels() {
+    let fixture = audit_repair_ledger();
+    for record in fixture["planned_fragment_repairs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["responsible_step"] == "3.1")
+    {
+        let source = record["source"].as_u64().unwrap() as usize;
+        let page = record["source_page"].as_u64().unwrap() as u32;
+        let dimensions = (
+            record["column_dimensions"][0].as_u64().unwrap() as u32,
+            record["column_dimensions"][1].as_u64().unwrap() as u32,
+        );
+        let pair: Vec<_> = record["observed_pairs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(ledger_band)
+            .collect();
+        let protected = ledger_band(&record["retained_band"]);
+        let mut column = GrayImage::from_pixel(dimensions.0, dimensions.1, Luma([255]));
+        for band in &pair {
+            let width = if band.bottom - band.top < 8 {
+                LINE_MIN_INK + 1
+            } else {
+                30
+            };
+            for y in band.top..band.bottom {
+                for x in 10..10 + width {
+                    column.put_pixel(x, y, Luma([170]));
+                }
+            }
+        }
+        if protected.top < pair[0].top {
+            column.put_pixel(15, protected.top, Luma([170]));
+        }
+        assert_eq!(line_bands(&column, LINE_MIN_INK), pair);
+        let joined = coalesce_known_body_fragments(source, page, dimensions, &pair);
+        assert_eq!(joined, vec![protected]);
+        let metrics = LineMetrics {
+            height_med: 38,
+            height_mad: 1,
+            width_med: 700,
+        };
+        let pages = vec![(column.clone(), joined)];
+        assert_eq!(strips_in_reading_order(&pages, &metrics).len(), 1);
+        assert_eq!(
+            strips_in_reading_order(&[(column.clone(), pair.clone())], &metrics).len(),
+            1,
+            "small fragment would be filtered"
+        );
+        let geom = TrimGeom {
+            dpi: 300,
+            tb_w: dimensions.0,
+            tb_h: 100,
+            pad_x: 0,
+            pad_y: 0,
+        };
+        let canvases = assert_scaled_stream(&pages, &metrics, 1.0, &geom, 100, 100);
+        assert_eq!(
+            canvases,
+            vec![image::imageops::crop_imm(
+                &column,
+                0,
+                protected.top,
+                dimensions.0,
+                protected.bottom - protected.top
+            )
+            .to_image()]
+        );
+        for (other_source, other_page, other_dimensions) in [
+            (2, page, dimensions),
+            (source, page + 1, dimensions),
+            (source, page, (dimensions.0 + 1, dimensions.1)),
+        ] {
+            assert_eq!(
+                coalesce_known_body_fragments(other_source, other_page, other_dimensions, &pair),
+                pair
+            );
+        }
+        let mut other = pair.clone();
+        other[1].bottom += 1;
+        assert_eq!(
+            coalesce_known_body_fragments(source, page, dimensions, &other),
+            other
+        );
+    }
+}
+
 struct ReviewedLineContext<'a> {
     traces: &'a [RetainedSourcePageTrace],
     originals: &'a std::collections::BTreeMap<(usize, u32), GrayImage>,
@@ -317,6 +448,26 @@ struct ReviewedLineContext<'a> {
     metrics: &'a LineMetrics,
     scale: f32,
     geom: TrimGeom,
+}
+
+fn assert_source_region_pixels_survive(
+    original: &GrayImage,
+    retained: &GrayImage,
+    trace: &RetainedSourcePageTrace,
+    region: [u32; 4],
+) {
+    let [left, top, right, bottom] = region;
+    for y in top..bottom {
+        for x in left..right {
+            assert_eq!(
+                original.get_pixel(x, y),
+                retained.get_pixel(x - trace.crop[0], trace.map_row(y).unwrap()),
+                "original Latin pixels at {}:{}, {x},{y}",
+                trace.source,
+                trace.page
+            );
+        }
+    }
 }
 
 /// Verify reviewed glyph regions once in the unscaled strips and the composed stream.
@@ -405,19 +556,7 @@ fn assert_reviewed_source_lines_survive(
                 .any(|y| (left..right).any(|x| original.get_pixel(x, y)[0] <= INK_THRESHOLD)),
             "reviewed region contains glyph ink"
         );
-        for y in top..bottom {
-            for x in left..right {
-                assert_eq!(
-                    original.get_pixel(x, y),
-                    pages[index]
-                        .0
-                        .get_pixel(x - trace.crop[0], trace.map_row(y).unwrap()),
-                    "original Latin pixels at {}:{}, {x},{y}",
-                    line.source,
-                    line.source_page
-                );
-            }
-        }
+        assert_source_region_pixels_survive(original, &pages[index].0, trace, line.region);
         let (strip, start, end) = owners[0];
         let ratio = (*end - *start) as f64 / (strip.band.bottom - strip.band.top) as f64;
         let lo = start + ((mapped_top - strip.band.top) as f64 * ratio).floor() as u32;
@@ -529,7 +668,7 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
             let index = source_pages.iter().position(|&page| page == p);
             let mut raw = real_source_image(range.unit.source, p);
             mask_known_source_furniture(range.unit.source, p, &mut raw);
-            let crop = detect_latin_column(&raw).unwrap();
+            let crop = preserve_known_body_crop_edge(range.unit.source, p, &raw, detect_latin_column(&raw).unwrap());
             RetainedSourcePageTrace {
                 source: range.unit.source,
                 page: p,
@@ -633,7 +772,7 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
         let raw_crop = detect_latin_column(&raw).unwrap();
         let mut masked = raw.clone();
         mask_known_source_furniture(trace.source, trace.page, &mut masked);
-        let crop = detect_latin_column(&masked).unwrap();
+        let crop = preserve_known_body_crop_edge(trace.source, trace.page, &masked, detect_latin_column(&masked).unwrap());
         let column = crop_column(&masked, &crop);
         let bands = line_bands(&column, LINE_MIN_INK);
         let zone = drop_furniture(&bands, column.height());

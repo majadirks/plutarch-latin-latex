@@ -644,8 +644,9 @@ Tier-B dispositions. Post-dedup repair confirmation occurs in 2.1A.
 
 The diagnostic fixture owns measured source coordinates and frozen baseline traces.
 The D4?D12 production exclusions and their installed ledger records are in place;
-the existing D1?D3 records are preserved. Furniture masks and omission corrections
-remain proposed. Step 2.1 verifies the reviewed retained source-line regions
+the existing D1?D3 records are preserved. The seven step-3.1 furniture cases are installed with original-pixel, crop-edge,
+Pass-A-band and full-unit head-trim verification. Omission corrections remain
+proposed. Step 2.1 verifies the reviewed retained source-line regions
 through extracted strips and composed canvases.
 
 | Finding | Source decision | Status | Responsible step |
@@ -659,7 +660,7 @@ through extracted strips and composed canvases.
 | D10 | v2 keep 521, 522; exclude 523, 524; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
 | D11 | v2 keep 671, 672; exclude 673, 674; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
 | D12 | v2 keep 699, 700; exclude 701, 702; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
-| H2 / R9 on 375 | Agis v2/375: right divider begins at x1753; reviewed Latin ends before x1740; candidate x1745..1797 preserves Latin and unmerges the head | proposed | 3.1 |
+| H2 / R9 on 375 | Agis v2/375: right divider begins at x1753; reviewed Latin ends before x1740; candidate x1745..1797 preserves Latin and unmerges the head | installed; source-pixel and head extraction checks passed | 3.1 |
 | C3 | Phocion first source line on 299 remains missing; raw 296→299 join reviewed | post-dedup measured; correction specified; unresolved until 4.2 | 2.1A / 4.2 |
 | Additional Cato verse label | Cato Minor v2/360 `Et:`, source region [888, 2026, 932, 2048]; 374 ink pixels below the 498-pixel strip floor | unresolved | 1.1C / 4.2 |
 

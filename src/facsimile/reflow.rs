@@ -11,7 +11,7 @@ use anyhow::Result;
 use image::imageops::FilterType;
 use image::{GrayImage, Luma};
 
-use crate::facsimile::columns::{crop_column, detect_latin_column, INK_THRESHOLD};
+use crate::facsimile::columns::{crop_column, detect_latin_column, Column, INK_THRESHOLD};
 use crate::facsimile::lines::{cut_points, drop_furniture, ink_profile_rows, line_bands, Band};
 use crate::facsimile::metrics::{
     band_ink_bounds, band_ink_coverage, band_ink_span, classify_band, is_narrow, line_metrics,
@@ -376,6 +376,96 @@ const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
         right: 1.0,
         bottom: 1.0,
     },
+    // Scan-edge rule beyond the reviewed Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 375,
+        left: 1745.0 / 1797.0,
+        top: 0.0 / 2836.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Pale watermark below the final Latin line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 321,
+        left: 1188.0 / 1893.0,
+        top: 2834.0 / 2960.0,
+        right: 1595.0 / 1893.0,
+        bottom: 2922.0 / 2960.0,
+    },
+    // Scan-edge rule beyond the reviewed Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 321,
+        left: 1875.0 / 1893.0,
+        top: 0.0 / 2960.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Pale watermark below the final Latin line.
+    SourceFurnitureMask {
+        source: 1,
+        page: 603,
+        left: 1216.0 / 1834.0,
+        top: 2711.0 / 2831.0,
+        right: 1595.0 / 1834.0,
+        bottom: 2793.0 / 2831.0,
+    },
+    // Scan-edge rule beyond the reviewed Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 603,
+        left: 1805.0 / 1834.0,
+        top: 0.0 / 2831.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Pale watermark below the final Latin line.
+    SourceFurnitureMask {
+        source: 1,
+        page: 623,
+        left: 1216.0 / 1810.0,
+        top: 2723.0 / 2843.0,
+        right: 1595.0 / 1810.0,
+        bottom: 2805.0 / 2843.0,
+    },
+    // Scan-edge rule beyond the reviewed Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 623,
+        left: 1790.0 / 1810.0,
+        top: 0.0 / 2843.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Detached folio above the first Latin body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 448,
+        left: 1670.0 / 1988.0,
+        top: 256.0 / 3007.0,
+        right: 1760.0 / 1988.0,
+        bottom: 296.0 / 3007.0,
+    },
+    // Detached folio above the first Latin body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 528,
+        left: 1640.0 / 1958.0,
+        top: 235.0 / 2988.0,
+        right: 1740.0 / 1958.0,
+        bottom: 286.0 / 2988.0,
+    },
+    // Detached folio above the first Latin body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 432,
+        left: 1640.0 / 1948.0,
+        top: 230.0 / 2980.0,
+        right: 1740.0 / 1948.0,
+        bottom: 270.0 / 2980.0,
+    },
 ];
 
 fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
@@ -667,12 +757,67 @@ fn render_and_band(
 ) -> Result<(GrayImage, Vec<Band>)> {
     let mut page_img = render_fn(source, page)?;
     mask_known_source_furniture(source, page, &mut page_img);
-    let column = detect_latin_column(&page_img)?;
+    let column =
+        preserve_known_body_crop_edge(source, page, &page_img, detect_latin_column(&page_img)?);
     let cropped = crop_column(&page_img, &column);
     let bands = line_bands(&cropped, LINE_MIN_INK);
+    let bands = coalesce_known_body_fragments(source, page, cropped.dimensions(), &bands);
     let kept = drop_furniture(&bands, cropped.height());
     let bands = retain_early_aligned_body_bands(&cropped, &bands, &kept);
     Ok((cropped, bands))
+}
+
+/// Preserve reviewed edge glyphs for exact production-raster detector signatures.
+fn preserve_known_body_crop_edge(
+    source: usize,
+    page: u32,
+    raster: &GrayImage,
+    column: Column,
+) -> Column {
+    match (source, page, raster.dimensions(), column.left, column.right) {
+        (0, 432, (1948, 2980), 907, 1710) => Column {
+            left: 907,
+            right: 1711,
+        },
+        _ => column,
+    }
+}
+
+/// Join exact adjacent body fragments without changing their source pixels.
+fn coalesce_known_body_fragments(
+    source: usize,
+    page: u32,
+    dimensions: (u32, u32),
+    bands: &[Band],
+) -> Vec<Band> {
+    let joins: &[([u32; 2], [u32; 2], [u32; 2])] = match (source, page, dimensions) {
+        (0, 321, (764, 2960)) => &[([2529, 2533], [2534, 2572], [2528, 2572])],
+        (1, 375, (752, 2836)) => &[
+            ([2209, 2245], [2247, 2251], [2209, 2251]),
+            ([2315, 2319], [2321, 2357], [2315, 2357]),
+        ],
+        _ => &[],
+    };
+    let mut result = Vec::new();
+    let mut i = 0;
+    while i < bands.len() {
+        let joined = joins.iter().find(|(a, b, _)| {
+            i + 1 < bands.len()
+                && [bands[i].top, bands[i].bottom] == *a
+                && [bands[i + 1].top, bands[i + 1].bottom] == *b
+        });
+        if let Some((_, _, [top, bottom])) = joined {
+            result.push(Band {
+                top: *top,
+                bottom: *bottom,
+            });
+            i += 2;
+        } else {
+            result.push(bands[i]);
+            i += 1;
+        }
+    }
+    result
 }
 
 /// Rescue full body lines just inside the top furniture zone using their geometry.
@@ -2254,6 +2399,20 @@ mod tests {
         let mut cleaned = img.clone();
         mask_known_source_furniture(0, 233, &mut cleaned);
         assert_ne!(cleaned, img);
+        let identities: std::collections::BTreeSet<_> = SOURCE_FURNITURE_MASKS
+            .iter()
+            .map(|m| (m.source, m.page))
+            .collect();
+        for (source, page) in identities {
+            let mut cleaned = img.clone();
+            mask_known_source_furniture(source, page, &mut cleaned);
+            assert_ne!(cleaned, img, "installed identity {source}/{page}");
+            for (other_source, other_page) in [(2, page), (source, 0)] {
+                let mut cleaned = img.clone();
+                mask_known_source_furniture(other_source, other_page, &mut cleaned);
+                assert_eq!(cleaned, img);
+            }
+        }
     }
     #[test]
     fn known_source_furniture_preserves_pixels_outside_rectangle() {
@@ -2535,7 +2694,10 @@ mod tests {
             },
         );
     }
-    fn masked_tail_fixture() -> (GrayImage, Vec<PageBands>, LineMetrics) {
+    fn masked_tail_fixture(
+        bridge_width: u32,
+        watermark_shade: u8,
+    ) -> (GrayImage, Vec<PageBands>, LineMetrics) {
         let mut raw = column(
             400,
             200,
@@ -2547,7 +2709,7 @@ mod tests {
             ],
         );
         for y in 220..400 {
-            for x in 196..200 {
+            for x in 200 - bridge_width..200 {
                 raw.put_pixel(x, y, Luma([0]));
             }
         }
@@ -2558,7 +2720,7 @@ mod tests {
         }
         for y in 280..300 {
             for x in 100..160 {
-                raw.put_pixel(x, y, Luma([220]));
+                raw.put_pixel(x, y, Luma([watermark_shade]));
             }
         }
         let mut cleaned = raw.clone();
@@ -2596,42 +2758,44 @@ mod tests {
     }
     #[test]
     fn masked_tail_cut_points_exclude_furniture_rows() {
-        let (raw, pages, m) = masked_tail_fixture();
-        assert_eq!(line_bands(&raw, LINE_MIN_INK).last().unwrap().bottom, 400);
-        assert_eq!(
-            pages[0].1,
-            vec![
-                Band {
-                    top: 60,
-                    bottom: 80
-                },
-                Band {
-                    top: 100,
-                    bottom: 120
-                },
-                Band {
-                    top: 170,
-                    bottom: 190
-                },
-                Band {
-                    top: 220,
-                    bottom: 240
-                }
-            ]
-        );
-        let strips = strips_in_reading_order(&pages, &m);
-        assert_eq!(strips.last().unwrap().band.bottom, 240);
-        assert_eq!(
-            strips
-                .iter()
-                .map(|s| s.band.bottom - s.band.top)
-                .sum::<u32>(),
-            180
-        );
+        for (bridge_width, shade) in [(4, 220), (2, 230), (3, 210)] {
+            let (raw, pages, m) = masked_tail_fixture(bridge_width, shade);
+            assert_eq!(line_bands(&raw, LINE_MIN_INK).last().unwrap().bottom, 400);
+            assert_eq!(
+                pages[0].1,
+                vec![
+                    Band {
+                        top: 60,
+                        bottom: 80
+                    },
+                    Band {
+                        top: 100,
+                        bottom: 120
+                    },
+                    Band {
+                        top: 170,
+                        bottom: 190
+                    },
+                    Band {
+                        top: 220,
+                        bottom: 240
+                    }
+                ]
+            );
+            let strips = strips_in_reading_order(&pages, &m);
+            assert_eq!(strips.last().unwrap().band.bottom, 240);
+            assert_eq!(
+                strips
+                    .iter()
+                    .map(|s| s.band.bottom - s.band.top)
+                    .sum::<u32>(),
+                180
+            );
+        }
     }
     #[test]
     fn watermark_cleanup_removes_pixels_and_space() {
-        let (raw, pages, m) = masked_tail_fixture();
+        let (raw, pages, m) = masked_tail_fixture(4, 220);
         let geom = TrimGeom {
             dpi: 300,
             tb_w: 200,
@@ -2652,7 +2816,7 @@ mod tests {
     }
     #[test]
     fn watermark_cleanup_preserves_unrelated_paragraph_gap() {
-        let (raw, pages, m) = masked_tail_fixture();
+        let (raw, pages, m) = masked_tail_fixture(4, 220);
         let geom = TrimGeom {
             dpi: 300,
             tb_w: 200,
@@ -3375,7 +3539,69 @@ mod tests {
             let raw_column = detect_latin_column(&original).unwrap();
             let raw_crop = crop_column(&original, &raw_column);
             let before = drop_furniture(&line_bands(&raw_crop, LINE_MIN_INK), original.height());
-            let crop = detect_latin_column(&cleaned).unwrap();
+            let crop = preserve_known_body_crop_edge(
+                source,
+                page,
+                &cleaned,
+                detect_latin_column(&cleaned).unwrap(),
+            );
+            if let Some(expected) = repair["expected_crop_edges"].as_array() {
+                assert_eq!(
+                    vec![crop.left as u64, crop.right as u64],
+                    expected
+                        .iter()
+                        .map(|v| v.as_u64().unwrap())
+                        .collect::<Vec<_>>()
+                );
+                let expected: Vec<_> = repair["expected_pass_a_bands"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(ledger_band)
+                    .collect();
+                assert_eq!(
+                    bands, expected,
+                    "source {source} page {page}: independently reviewed Pass A"
+                );
+                let trace = RetainedSourcePageTrace {
+                    source,
+                    page,
+                    retained_index: None,
+                    crop: [0, original.width()],
+                    bands: vec![],
+                    deleted_rows: vec![],
+                };
+                for region in repair["preserved_latin_regions"].as_array().unwrap() {
+                    assert_source_region_pixels_survive(
+                        &original,
+                        &cleaned,
+                        &trace,
+                        std::array::from_fn(|i| region[i].as_u64().unwrap() as u32),
+                    );
+                }
+                if repair["finding_ids"].as_array().unwrap().iter().any(|id| {
+                    ["H1", "H2", "MARIUS_HEAD", "CATO_MAJOR_FOLIO"]
+                        .iter()
+                        .any(|name| id == name)
+                }) {
+                    let (pages, metrics, traces) =
+                        audit_traced_unit(repair["unit_id"].as_str().unwrap());
+                    let index = retained_page(&traces, source, page)
+                        .unwrap()
+                        .retained_index
+                        .unwrap();
+                    let first = ledger_band(&repair["expected_first_band"]);
+                    assert_eq!(
+                        pages[index].1.first(),
+                        Some(&first),
+                        "cleaned head leaves the reviewed first body band"
+                    );
+                    assert!(strips_in_reading_order(&pages, &metrics)
+                        .iter()
+                        .filter(|s| s.page_img_index == index)
+                        .all(|s| s.band.top >= first.top));
+                }
+            }
             let copied_span = |bands: &[Band]| {
                 bands
                     .last()
