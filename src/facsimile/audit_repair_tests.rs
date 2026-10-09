@@ -1013,6 +1013,165 @@ fn brutus_c5_line_restored() {
     assert_tier_a_unit_lines_restored("brutus");
 }
 
+fn comparison_cluster_fixture() -> (PageBands, LineMetrics, TrimGeom) {
+    let fixture = audit_repair_ledger();
+    let sample = audit_fingerprint_image(&fixture["source_fingerprints"]["comparison_whole_strip"]);
+    let mut col = column(2836, 817, &[(1468, 1498, 10, 800), (1649, 1679, 10, 800)]);
+    image::imageops::replace(&mut col, &sample, 0, 1507);
+    (
+        (
+            col,
+            vec![
+                Band {
+                    top: 1468,
+                    bottom: 1498,
+                },
+                Band {
+                    top: 1516,
+                    bottom: 1647,
+                },
+                Band {
+                    top: 1649,
+                    bottom: 1679,
+                },
+            ],
+        ),
+        LineMetrics {
+            height_med: 30,
+            height_mad: 1,
+            width_med: 790,
+        },
+        TrimGeom {
+            dpi: 300,
+            tb_w: 817,
+            tb_h: 200,
+            pad_x: 0,
+            pad_y: 0,
+        },
+    )
+}
+
+#[test]
+fn merged_strip_wraps_at_complete_line_boundary() {
+    let (page, metrics, geom) = comparison_cluster_fixture();
+    let strips = strips_in_reading_order(std::slice::from_ref(&page), &metrics);
+    assert!(matches!(strips[1].class, BandClass::Tall));
+    assert!(is_known_whole_source_strip(&page.0, &strips[1].band));
+    assert!(!is_known_whole_source_strip(
+        &page.0,
+        &Band {
+            top: 1508,
+            bottom: 1648
+        }
+    ));
+    let sample = image::imageops::crop_imm(&page.0, 0, 1507, 817, 141).to_image();
+    for (w, h) in [(818, 2836), (817, 2837)] {
+        let mut other = GrayImage::from_pixel(w, h, Luma([255]));
+        image::imageops::replace(&mut other, &sample, 0, 1507);
+        assert!(!is_known_whole_source_strip(&other, &strips[1].band));
+    }
+    let canvases =
+        assert_scaled_stream(std::slice::from_ref(&page), &metrics, 1.0, &geom, 100, 200);
+    assert_eq!(
+        canvases.iter().map(GrayImage::height).collect::<Vec<_>>(),
+        vec![39, 172]
+    );
+    assert_eq!(
+        image::imageops::crop_imm(&canvases[1], 0, 0, 817, 141).to_image(),
+        image::imageops::crop_imm(&page.0, 0, 1507, 817, 141).to_image()
+    );
+    let oversized = assert_scaled_stream(&[page], &metrics, 1.0, &geom, 100, 100);
+    assert!(oversized.len() >= 3);
+    assert!(oversized.iter().all(|c| c.height() <= 100));
+}
+
+#[test]
+fn unaffected_ordinary_line_packing_is_unchanged() {
+    let (mut page, metrics, geom) = comparison_cluster_fixture();
+    let band = Band {
+        top: 1507,
+        bottom: 1648,
+    };
+    page.0
+        .put_pixel(0, 1507, Luma([page.0.get_pixel(0, 1507)[0] ^ 1]));
+    assert!(!is_known_whole_source_strip(&page.0, &band));
+    assert!(!is_known_whole_source_strip(
+        &page.0,
+        &Band {
+            top: 1508,
+            bottom: 1648
+        }
+    ));
+    let changed = assert_scaled_stream(&[page], &metrics, 1.0, &geom, 100, 200);
+    assert!(
+        changed[0].height() > 39,
+        "unrecognized Tall strip retains fill-splitting"
+    );
+    let (page, metrics) = page_and_metrics(
+        160,
+        100,
+        &[
+            (10, 30, 5, 95),
+            (40, 60, 5, 95),
+            (70, 90, 5, 95),
+            (100, 120, 5, 95),
+        ],
+    );
+    let geom = TrimGeom {
+        dpi: 300,
+        tb_w: 100,
+        tb_h: 60,
+        pad_x: 0,
+        pad_y: 0,
+    };
+    let ordinary = assert_scaled_stream(&[page], &metrics, 1.0, &geom, 60, 60);
+    assert_eq!(
+        ordinary.iter().map(GrayImage::height).collect::<Vec<_>>(),
+        vec![55, 55]
+    );
+}
+
+#[test]
+#[ignore = "requires original source PDFs and production-scale composition"]
+fn comparison_s2_line_is_whole() {
+    let fixture = audit_repair_ledger();
+    let case = fixture["furniture_cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["finding_ids"] == serde_json::json!(["S2"]))
+        .unwrap();
+    let (pages, metrics, traces) = audit_traced_unit("comparatio_demosthenis_et_ciceronis");
+    let lines: Vec<ReviewedSourceLine> =
+        serde_json::from_value(case["proposed_correction"]["reviewed_lines"].clone()).unwrap();
+    let originals = lines
+        .iter()
+        .map(|l| {
+            (
+                (l.source, l.source_page),
+                real_source_image(l.source, l.source_page),
+            )
+        })
+        .collect();
+    let context = ReviewedLineContext {
+        traces: &traces,
+        originals: &originals,
+        pages: &pages,
+        metrics: &metrics,
+        scale: production_body_scale(),
+        geom: TrimGeom::default(),
+    };
+    let composition = assert_reviewed_source_lines_survive(&lines, &context, true);
+    let dir = std::path::Path::new("archive/inner_tomi_audit_repairs_2026_10_08/s2");
+    std::fs::create_dir_all(dir).unwrap();
+    use sha2::Digest;
+    let hashes: Vec<_> = composition.canvases.iter().enumerate().map(|(i,c)| {
+        c.save(dir.join(format!("comparison-canvas-{:03}.png",i+1))).unwrap();
+        serde_json::json!({"canvas":i+1,"sha256":format!("{:x}",sha2::Sha256::digest(c.as_raw()))})
+    }).collect();
+    std::fs::write(dir.join("verification.json"),serde_json::to_vec_pretty(&serde_json::json!({"line_coverage":composition.line_coverage,"canvas_hashes":hashes,"scale":context.scale})).unwrap()).unwrap();
+}
+
 #[test]
 #[ignore = "requires original source PDFs and production-scale composition"]
 fn audit_tier_a_source_lines_restored() {

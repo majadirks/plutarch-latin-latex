@@ -2048,19 +2048,44 @@ fn strips_in_reading_order(pages: &[(GrayImage, Vec<Band>)], m: &LineMetrics) ->
 
 /// Recognize the original short verse label despite its unchanged global ink floor.
 fn is_known_source_verse_label(column: &GrayImage, band: &Band) -> bool {
-    if column.dimensions() != (788, 2838)
-        || *band
-            != (Band {
+    column.dimensions() == (788, 2838)
+        && *band
+            == (Band {
                 top: 2010,
                 bottom: 2064,
             })
-    {
+        && matches_source_region_fingerprint(
+            column,
+            [3, 2026, 47, 2048],
+            "472ea07f0f6e6d85db2dfffcc4faf9d393da12c60ea1f516ba1c28946ca56f62",
+        )
+}
+
+/// Match immutable grayscale source pixels without substituting fixture images.
+fn matches_source_region_fingerprint(column: &GrayImage, region: [u32; 4], expected: &str) -> bool {
+    let [left, top, right, bottom] = region;
+    if left >= right || top >= bottom || right > column.width() || bottom > column.height() {
         return false;
     }
     use sha2::Digest;
-    let glyphs = image::imageops::crop_imm(column, 3, 2026, 44, 22).to_image();
-    format!("{:x}", sha2::Sha256::digest(glyphs.as_raw()))
-        == "472ea07f0f6e6d85db2dfffcc4faf9d393da12c60ea1f516ba1c28946ca56f62"
+    let glyphs =
+        image::imageops::crop_imm(column, left, top, right - left, bottom - top).to_image();
+    format!("{:x}", sha2::Sha256::digest(glyphs.as_raw())) == expected
+}
+
+/// Keep the reviewed skewed chapter cluster whole when it fits a fresh canvas.
+fn is_known_whole_source_strip(column: &GrayImage, band: &Band) -> bool {
+    column.dimensions() == (817, 2836)
+        && *band
+            == (Band {
+                top: 1507,
+                bottom: 1648,
+            })
+        && matches_source_region_fingerprint(
+            column,
+            [0, 1507, 817, 1648],
+            "b9923339da9e250ebc0404036149d63cf9a253aafbb4c2f73957398188f608d0",
+        )
 }
 
 /// Fraction of a typical scaled line used as the minimum fill-split piece, so a cut
@@ -2124,7 +2149,14 @@ fn compose_body_canvases(
             None => match iter.next() {
                 Some(strip) => {
                     match scale_strip(&pages[strip.page_img_index].0, &strip.band, scale) {
-                        Some(img) => (img, matches!(strip.class, BandClass::Tall)),
+                        Some(img) => {
+                            let whole = img.height() <= budget
+                                && is_known_whole_source_strip(
+                                    &pages[strip.page_img_index].0,
+                                    &strip.band,
+                                );
+                            (img, matches!(strip.class, BandClass::Tall) && !whole)
+                        }
                         None => continue,
                     }
                 }

@@ -60153,12 +60153,12 @@
       "unit_id": "comparatio_demosthenis_et_ciceronis",
       "source": 1,
       "source_page": 480,
-      "status": "proposed",
+      "status": "installed",
       "responsible_step": "4.3",
       "reason": "Native glyph inspection shows skewed Latin line projections overlap within source band [1516,1647]; no separate connecting furniture can be erased to create horizontal white gaps without cutting glyphs.",
       "proposed_correction": {
-        "function": "strips_in_reading_order",
-        "behavior": "Treat the reviewed source-480 merged chapter-IV band as an ordinary whole-wrapping strip. Bind eligibility to exact production crop dimensions, original band interval, and a source-pixel fingerprint. Keep compose_pages and all splitting algorithms unchanged.",
+        "function": "compose_pages",
+        "behavior": "Bypass the Tall fill-split branch for the exact original cropped-strip fingerprint when it fits a fresh canvas. Preserve classification, scale and oversized-strip fallback.",
         "raster": [
           1852,
           2836
@@ -60184,7 +60184,24 @@
           "merged_strip_wraps_at_complete_line_boundary",
           "unaffected_ordinary_line_packing_is_unchanged",
           "comparison_s2_line_is_whole"
+        ],
+        "reviewed_lines": [
+          {
+            "source": 1,
+            "source_page": 480,
+            "region": [
+              887,
+              1516,
+              1704,
+              1647
+            ],
+            "role": "whole_chapter_iv_cluster"
+          }
         ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/s2/verification.json",
+        "sha256": "765e6851d2960a7b3684b69c6321747a3ed5271c6db29e53bec7058fdc101154"
       }
     },
     {

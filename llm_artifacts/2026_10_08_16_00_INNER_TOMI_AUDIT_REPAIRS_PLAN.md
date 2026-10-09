@@ -702,8 +702,8 @@ on 624 and the three original top lines on 623. The candidate
 the Brutus restoration regression verifies their complete glyph boundaries.
 
 F1 and F2 are deferred: no complete safe boundary has been proven beside Latin
-and legitimate reference letters. S2 uses the specifically amended packing
-branch in 4.3. The baseline diagnosis covers every initial Tier-A event:
+and legitimate reference letters. S2 uses the installed exact-fingerprint packing branch in 4.3; the entire
+chapter-IV cluster passes original-pixel and single-canvas ownership checks. The baseline diagnosis covers every initial Tier-A event:
 39 events, 69 individually located source-line regions, raw/cropped band
 measurements, extraction membership and the final canvas filter. Step 4.1 restores two events / sixteen lines (Romulus 38 and Caesar 252),
 with original-pixel, once-only extraction and returned-canvas evidence. The
