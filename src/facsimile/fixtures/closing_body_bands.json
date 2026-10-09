@@ -711,6 +711,91 @@
     "noise": []
   },
   {
+    "source": 1,
+    "page": 110,
+    "dpi": 300,
+    "column": [
+      917,
+      1715
+    ],
+    "body": [
+      [
+        2519,
+        2558
+      ]
+    ],
+    "excluded": [],
+    "noise": []
+  },
+  {
+    "source": 1,
+    "page": 352,
+    "dpi": 300,
+    "column": [
+      876,
+      1683
+    ],
+    "body": [
+      [
+        2526,
+        2564
+      ]
+    ],
+    "excluded": [],
+    "noise": []
+  },
+  {
+    "source": 1,
+    "page": 566,
+    "dpi": 300,
+    "column": [
+      888,
+      1697
+    ],
+    "body": [
+      [
+        2540,
+        2577
+      ]
+    ],
+    "excluded": [],
+    "noise": []
+  },
+  {
+    "source": 1,
+    "page": 580,
+    "dpi": 300,
+    "column": [
+      889,
+      1704
+    ],
+    "body": [
+      [
+        2550,
+        2597
+      ]
+    ],
+    "excluded": [],
+    "noise": []
+  },
+  {
+    "source": 1,
+    "page": 633,
+    "dpi": 300,
+    "column": [
+      973,
+      1759
+    ],
+    "body": [
+      [
+        2522,
+        2554
+      ]
+    ],
+    "excluded": [],
+    "noise": []
+  },
+  {
     "body": [
       [
         224,

@@ -4008,34 +4008,56 @@ fn tier_b_crop_edges_preserve_reviewed_head_glyphs() {
         ),
         (0, 318, (1937, 2988), [900, 1691], [899, 1691], [899, 270]),
     ] {
-        let mut raster = GrayImage::from_pixel(dimensions.0, dimensions.1, Luma([255]));
-        raster.put_pixel(glyph[0], glyph[1], Luma([100]));
-        let original = Column {
-            left: raw_bounds[0],
-            right: raw_bounds[1],
-        };
-        let preserved = preserve_known_body_crop_edge(source, page, &raster, original);
-        assert_eq!([preserved.left, preserved.right], expected);
-        let col = crop_column(&raster, &preserved);
-        assert_eq!(col.get_pixel(glyph[0] - preserved.left, glyph[1])[0], 100);
-        for (s, p, col) in [
-            (1, page, original),
-            (source, page + 1, original),
-            (
-                source,
-                page,
-                Column {
-                    left: original.left + 1,
-                    right: original.right,
-                },
-            ),
-        ] {
-            let result = preserve_known_body_crop_edge(s, p, &raster, col);
-            assert_eq!([result.left, result.right], [col.left, col.right]);
-        }
-        let other = GrayImage::from_pixel(dimensions.0 + 1, dimensions.1, Luma([255]));
-        let result = preserve_known_body_crop_edge(source, page, &other, original);
-        assert_eq!([result.left, result.right], raw_bounds);
+        assert_reviewed_crop_edge_signature(source, page, dimensions, raw_bounds, expected, glyph);
+    }
+}
+
+fn assert_reviewed_crop_edge_signature(
+    source: usize,
+    page: u32,
+    dimensions: (u32, u32),
+    raw_bounds: [u32; 2],
+    expected: [u32; 2],
+    glyph: [u32; 2],
+) {
+    let mut raster = GrayImage::from_pixel(dimensions.0, dimensions.1, Luma([255]));
+    raster.put_pixel(glyph[0], glyph[1], Luma([100]));
+    let original = Column {
+        left: raw_bounds[0],
+        right: raw_bounds[1],
+    };
+    let preserved = preserve_known_body_crop_edge(source, page, &raster, original);
+    assert_eq!([preserved.left, preserved.right], expected);
+    let col = crop_column(&raster, &preserved);
+    assert_eq!(col.get_pixel(glyph[0] - preserved.left, glyph[1])[0], 100);
+    for (s, p, col) in [
+        (1 - source, page, original),
+        (source, page + 1, original),
+        (
+            source,
+            page,
+            Column {
+                left: original.left + 1,
+                right: original.right,
+            },
+        ),
+    ] {
+        let result = preserve_known_body_crop_edge(s, p, &raster, col);
+        assert_eq!([result.left, result.right], [col.left, col.right]);
+    }
+    let other = GrayImage::from_pixel(dimensions.0 + 1, dimensions.1, Luma([255]));
+    let result = preserve_known_body_crop_edge(source, page, &other, original);
+    assert_eq!([result.left, result.right], raw_bounds);
+}
+
+#[test]
+fn tier_b_crop_edges_preserve_reviewed_foot_glyphs() {
+    for (source, page, dimensions, raw_bounds, expected, glyph) in [
+        (1, 352, (1830, 2842), [879, 1683], [876, 1683], [876, 2535]),
+        (1, 566, (1813, 2838), [892, 1697], [888, 1697], [888, 2550]),
+        (1, 580, (1816, 2835), [892, 1704], [889, 1704], [889, 2560]),
+    ] {
+        assert_reviewed_crop_edge_signature(source, page, dimensions, raw_bounds, expected, glyph);
     }
 }
 
@@ -4320,6 +4342,7 @@ fn validate_promoted_line_coverage(
     let mut source_identities = std::collections::BTreeSet::new();
     let mut retained_indices = std::collections::BTreeSet::new();
     let mut previous_page = None;
+    let mut previous_index = None;
     for page in pages {
         let source = page["source"]
             .as_u64()
@@ -4329,18 +4352,42 @@ fn validate_promoted_line_coverage(
             .as_u64()
             .filter(|p| *p > 0)
             .ok_or_else(|| anyhow::anyhow!("invalid physical page"))?;
-        let index = page["retained_index"]
-            .as_u64()
-            .ok_or_else(|| anyhow::anyhow!("required source record excluded"))?;
         anyhow::ensure!(
-            source_identities.insert((source, physical)) && retained_indices.insert(index),
-            "duplicate source identity or retained index"
+            source_identities.insert((source, physical)),
+            "duplicate source identity"
         );
         anyhow::ensure!(
-            previous_page.is_none_or(|(s, p, i)| s == source && p < physical && i < index),
+            previous_page.is_none_or(|(s, p)| s == source && p < physical),
             "retained source records out of order"
         );
-        previous_page = Some((source, physical, index));
+        previous_page = Some((source, physical));
+        anyhow::ensure!(
+            page.get("retained_index").is_some(),
+            "missing retained index marker"
+        );
+        if page["retained_index"].is_null() {
+            anyhow::ensure!(
+                skip_known_duplicate_source_page(
+                    evidence_string(report, "unit_id")?,
+                    source as usize,
+                    physical as u32
+                ),
+                "unreviewed excluded source page"
+            );
+            anyhow::ensure!(
+                evidence_array(page, "bands")?.is_empty(),
+                "excluded source page has retained bands"
+            );
+            continue;
+        }
+        let index = page["retained_index"]
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("invalid retained index"))?;
+        anyhow::ensure!(
+            retained_indices.insert(index) && previous_index.is_none_or(|i| i < index),
+            "duplicate or out-of-order retained index"
+        );
+        previous_index = Some(index);
     }
     let mut required_keys = std::collections::BTreeSet::new();
     for line in required {
@@ -4985,6 +5032,52 @@ fn tier_b_coverage_rejects_duplicate_and_split_lines() {
         }
         assert!(
             validate_promoted_line_coverage(&bad, &required).is_err(),
+            "reject {kind}"
+        );
+    }
+}
+
+#[test]
+fn tier_b_coverage_preserves_reviewed_duplicate_page_exclusions() {
+    let event = audit_repair_ledger()["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| {
+            e["initial_tier"] == "B"
+                && e["unit_id"] == "cato_minor"
+                && e["source_regions"][0]["page"] == 352
+        })
+        .unwrap()
+        .clone();
+    let lines: Vec<ReviewedSourceLine> =
+        serde_json::from_value(event["diagnosis"]["reviewed_lines"].clone()).unwrap();
+    let mut report = synthetic_promoted_report(&event);
+    report["source_pages"].as_array_mut().unwrap().insert(0,serde_json::json!({"source":1,"page":339,"retained_index":null,"crop":[0,100],"bands":[],"deleted_rows":[]}));
+    validate_promoted_line_coverage(&report, &lines).unwrap();
+    let projected = project_restoration_report(&report).unwrap();
+    assert_eq!(projected["source_pages"].as_array().unwrap().len(), 1);
+    validate_promoted_line_coverage(&projected, &lines).unwrap();
+    for kind in [
+        "unknown_exclusion",
+        "retained_bands",
+        "missing_marker",
+        "required_excluded",
+    ] {
+        let mut bad = report.clone();
+        match kind {
+            "unknown_exclusion" => bad["source_pages"][0]["page"] = serde_json::json!(338),
+            "retained_bands" => bad["source_pages"][0]["bands"] = serde_json::json!([[1, 2]]),
+            "missing_marker" => {
+                bad["source_pages"][0]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("retained_index");
+            }
+            _ => bad["source_pages"][1]["retained_index"] = serde_json::Value::Null,
+        }
+        assert!(
+            validate_promoted_line_coverage(&bad, &lines).is_err(),
             "reject {kind}"
         );
     }

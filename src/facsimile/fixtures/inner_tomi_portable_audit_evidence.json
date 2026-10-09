@@ -19338,6 +19338,6437 @@
         "unit_id": "timoleon"
       }
     },
+    "archive/tier_b_omission_repairs_2026_10_09/installed-foot/agesilaus/agesilaus.json": {
+      "source_sha256": "620f5de57f1f355f379b4736056f2ac2885f7ac04aa07159372461ea5b5da2a7",
+      "value": {
+        "canvas_hashes": [
+          {
+            "canvas": 1,
+            "height": 1207,
+            "sha256": "761e01835b460423a09d85025cc0ec3cef16d6a32b393afe5e9d02eff04dd81d",
+            "width": 1004
+          },
+          {
+            "canvas": 2,
+            "height": 1380,
+            "sha256": "603daed3ee6b82fa740a8857e1609609dabc507fe59c01a532f18e3040c79a0b",
+            "width": 1004
+          },
+          {
+            "canvas": 3,
+            "height": 1383,
+            "sha256": "af3d44638913504831c8fbbbd8ae575bb6cddbf66280af895d70e4bd72082bc8",
+            "width": 1004
+          },
+          {
+            "canvas": 4,
+            "height": 1384,
+            "sha256": "831a98810cf0e9245f5c2204159c29bb3fcc2deee1a3f5fbc9effc67b006f78d",
+            "width": 1004
+          },
+          {
+            "canvas": 5,
+            "height": 1365,
+            "sha256": "24cfa3fa40a3131c2bcb0bc6c3ee496fd662627a4adfd938a802f32d9dbc77e3",
+            "width": 1004
+          },
+          {
+            "canvas": 6,
+            "height": 1356,
+            "sha256": "1d18f541926d93a254f919bc39e34291d37b5040c87ee3ce0ef3a9a9487fdfc2",
+            "width": 1004
+          },
+          {
+            "canvas": 7,
+            "height": 1382,
+            "sha256": "3d82e0b5ad962fbb3376f659b993305785c88f89fbc36fdebde6f0ce3fe94b5d",
+            "width": 1004
+          },
+          {
+            "canvas": 8,
+            "height": 1375,
+            "sha256": "46f1c194cbe1f355b128384b8833c0f8b6a99e319fb5799683f72183bb4606d8",
+            "width": 1004
+          },
+          {
+            "canvas": 9,
+            "height": 1340,
+            "sha256": "f56443d2ace063cd276a2a8d73c3b3ad2086a7c237c3e2b67f36cf52059674ab",
+            "width": 1004
+          },
+          {
+            "canvas": 10,
+            "height": 1345,
+            "sha256": "69f79284232d377830ddbd2f380d9eb8dd51aae453890f1b02ff27ff9f36ad71",
+            "width": 1004
+          },
+          {
+            "canvas": 11,
+            "height": 1363,
+            "sha256": "38b746ba73bb7ef43ab44e528c4d9c0e388f35da9e00e2db52bc300f4b5c6b22",
+            "width": 1004
+          },
+          {
+            "canvas": 12,
+            "height": 1367,
+            "sha256": "c9a80d176875075731b3c2d34856eef09b2fcf8def3e07ac7c6dcb675022d7c8",
+            "width": 1004
+          },
+          {
+            "canvas": 13,
+            "height": 1349,
+            "sha256": "131be33cdce01a43910cccdc5d9e953a85800230c79fd25b3814a0d913729b6e",
+            "width": 1004
+          },
+          {
+            "canvas": 14,
+            "height": 1391,
+            "sha256": "8a80579bae0cd36afd50b043c1359776be2e36c04fbdb2a14d2df7ffdc613f48",
+            "width": 1004
+          },
+          {
+            "canvas": 15,
+            "height": 1345,
+            "sha256": "c734506880b956a62c73bd4db017cb0d14913f96f87786f291590aa2993464bc",
+            "width": 1004
+          },
+          {
+            "canvas": 16,
+            "height": 1338,
+            "sha256": "47be479765bbf08833e785c6923779f4b4c28c262d44651a67ef42fdce0c50ea",
+            "width": 1004
+          },
+          {
+            "canvas": 17,
+            "height": 1353,
+            "sha256": "d24b6e3f7db8e047c21014321f80040fcf2be8f578302fa8d42a85b872dd9163",
+            "width": 1004
+          },
+          {
+            "canvas": 18,
+            "height": 1371,
+            "sha256": "6370426c6dd28de4259f03d56007655ded9a37b6ded98cf77ad5945467157bc0",
+            "width": 1004
+          },
+          {
+            "canvas": 19,
+            "height": 1364,
+            "sha256": "acbe0c0937ff50ba2304f423a36e39213008ded2ff7029e8660cc958b718d64a",
+            "width": 1004
+          },
+          {
+            "canvas": 20,
+            "height": 1381,
+            "sha256": "d9ae4cabcc01483a28f32330e501a5f111b05537b21c99a0252a9e58e0525ef5",
+            "width": 1004
+          },
+          {
+            "canvas": 21,
+            "height": 1341,
+            "sha256": "c51b7d16b6b88fefdfafa759b32f83badf409fa1ee167f1294b4a150a6c4ddbf",
+            "width": 1004
+          },
+          {
+            "canvas": 22,
+            "height": 1335,
+            "sha256": "fcbaadf2e8fc516b77745da8a00d0d94dd41b885a3e6b2c22635e1da3b430be2",
+            "width": 1004
+          },
+          {
+            "canvas": 23,
+            "height": 1383,
+            "sha256": "8827644a0cbf035c43d5b0e82f0b12fcfe24d662cb2619c81fc2042bb7b3e785",
+            "width": 1004
+          },
+          {
+            "canvas": 24,
+            "height": 1391,
+            "sha256": "82e310df987f43e3f440ab4e4317851de7f86e2d0fc1b6bfaeb89cceb2ed9066",
+            "width": 1004
+          },
+          {
+            "canvas": 25,
+            "height": 1357,
+            "sha256": "45210272c90e76653516918c631e7a0c20e6c7b2687090870d810af690a10ed4",
+            "width": 1004
+          },
+          {
+            "canvas": 26,
+            "height": 1393,
+            "sha256": "988c4a5a69d9bed9ec6c9d75f4f20360a56061a59125d4894a12647b44cf8973",
+            "width": 1004
+          },
+          {
+            "canvas": 27,
+            "height": 1357,
+            "sha256": "85fe46f49fd635bbf439d72fc3add7bb89211412630d5f5152c4fc677f11c094",
+            "width": 1004
+          },
+          {
+            "canvas": 28,
+            "height": 1363,
+            "sha256": "6dd61e754c295402845b9e4a58c35890cbc1118cb8aad57f9c6b2db3f107767f",
+            "width": 1004
+          },
+          {
+            "canvas": 29,
+            "height": 1375,
+            "sha256": "a8844055b0afbd072e22ec8ba3ef4b0a6b19a0a695fe23827fd231c67f6ac72c",
+            "width": 1004
+          },
+          {
+            "canvas": 30,
+            "height": 1339,
+            "sha256": "742f33eb37ad779525f071c16a5b29617257cf2b2d136aae55c66d8022915f73",
+            "width": 1004
+          },
+          {
+            "canvas": 31,
+            "height": 1371,
+            "sha256": "41798a1608357276d9d7c71362b53ca43aed46a9d36b956f8b60cdb757495c3d",
+            "width": 1004
+          },
+          {
+            "canvas": 32,
+            "height": 1393,
+            "sha256": "0ad1bd4101626c7ec63d61f4ddb2e589e561e7a90ea0a7419f3054099fd2e0ef",
+            "width": 1004
+          },
+          {
+            "canvas": 33,
+            "height": 1358,
+            "sha256": "01d909cc0c0ea77c0fa94d20d23e797641fbbcc4dda0d92f41b1a3ab80d504b5",
+            "width": 1004
+          },
+          {
+            "canvas": 34,
+            "height": 1354,
+            "sha256": "8f798e03b72d7ae920c76480edd6cd32bc5798bae4a868ff533f1936a59a0757",
+            "width": 1004
+          },
+          {
+            "canvas": 35,
+            "height": 1363,
+            "sha256": "986bac3cbe09002788003f69a928af050f3aa06bf0990bf3d4ce8f6ab05ef0f9",
+            "width": 1004
+          },
+          {
+            "canvas": 36,
+            "height": 1381,
+            "sha256": "646130548ac5ce915544b29b84192b13048f58361794985e65c88fea1ffe5f5c",
+            "width": 1004
+          },
+          {
+            "canvas": 37,
+            "height": 1368,
+            "sha256": "6b4a7d21c289c64fc6eaafd0b5f9436778f2e39829ed1933afa20a9524e97340",
+            "width": 1004
+          },
+          {
+            "canvas": 38,
+            "height": 1392,
+            "sha256": "1a9088e63afa0c3afb27027c361b709368e64b6403932b107d83cfe052d94b00",
+            "width": 1004
+          },
+          {
+            "canvas": 39,
+            "height": 1350,
+            "sha256": "6e064bb7089f1b727646008d611df9a654b20a8c05ea12fa1dfbab8a13b691d9",
+            "width": 1004
+          },
+          {
+            "canvas": 40,
+            "height": 1384,
+            "sha256": "8653c713740813e382376b4655e86435bed438a773e391026fb6dc39a32f7aa1",
+            "width": 1004
+          },
+          {
+            "canvas": 41,
+            "height": 1382,
+            "sha256": "42611badd662791b9b992a4f722c91092d35778db8e2a78e560090aa9e0b2993",
+            "width": 1004
+          },
+          {
+            "canvas": 42,
+            "height": 1364,
+            "sha256": "a3afd94ff5866a846052abc15face07ef15c3301aeadd683b1def6efaf7547e8",
+            "width": 1004
+          },
+          {
+            "canvas": 43,
+            "height": 1378,
+            "sha256": "1e5ec62a3f3b509a74ebbbd3e9baa335ddd9f5176262e575cf79b79ed15f7444",
+            "width": 1004
+          },
+          {
+            "canvas": 44,
+            "height": 1335,
+            "sha256": "b787639309284f19e93ce7e046255147ab49ebaea9b170b22cef10d7c0010147",
+            "width": 1004
+          },
+          {
+            "canvas": 45,
+            "height": 1347,
+            "sha256": "cdc9c6a5314a5df66ffdca5367e16b5bf8ddaa3166bb73185c9065aac4228c2f",
+            "width": 1004
+          },
+          {
+            "canvas": 46,
+            "height": 1352,
+            "sha256": "f7a5c8ea18e9f849138b7520744967dbe673a77d90a7367a5976cb70d9be726c",
+            "width": 1004
+          },
+          {
+            "canvas": 47,
+            "height": 1339,
+            "sha256": "b86739e147ce95986f2c104953c0408fa182e1759e69c43173887fb204fb7bee",
+            "width": 1004
+          },
+          {
+            "canvas": 48,
+            "height": 1383,
+            "sha256": "64a86a5e8dcb2bfb14ce89685cf9c0de8451576efa0b8ce2e2b14afd6a51caf6",
+            "width": 1004
+          },
+          {
+            "canvas": 49,
+            "height": 1392,
+            "sha256": "140adbc7279e13f405f15970ea079b5e97c912ad6d5d576a17bad6db645c45aa",
+            "width": 1004
+          },
+          {
+            "canvas": 50,
+            "height": 1352,
+            "sha256": "b046edaf9cc929dae69519272d1b894c97365f4b8cbe4efd30b9434f90e37055",
+            "width": 1004
+          },
+          {
+            "canvas": 51,
+            "height": 1350,
+            "sha256": "9ddc1c8b3763308d62b8190a8e165437263bcbb2a1aab048e33d60ac2df62d54",
+            "width": 1004
+          },
+          {
+            "canvas": 52,
+            "height": 1366,
+            "sha256": "2b147773dba60766ff2cc5d91f00aca6279b44ee57055a766693340e3eef0b1d",
+            "width": 1004
+          },
+          {
+            "canvas": 53,
+            "height": 1357,
+            "sha256": "4c15f16e0d6df564ac8744c6cbf0b8d2eb480596f4d8b252d7175c7854e6f4a1",
+            "width": 1004
+          },
+          {
+            "canvas": 54,
+            "height": 1374,
+            "sha256": "db8c01c167857e673e1c0fd277563e989c64c61aee1d5b7fdbc45e497c587b1b",
+            "width": 1004
+          },
+          {
+            "canvas": 55,
+            "height": 1383,
+            "sha256": "d609c2618d7ed10fa2200cc012a1395c38072ef3a3bc2218035d60e129353a86",
+            "width": 1004
+          },
+          {
+            "canvas": 56,
+            "height": 1356,
+            "sha256": "484f9bc274479c99a68430baeee18e99578409401d2dd9dff996522c75512d32",
+            "width": 1004
+          }
+        ],
+        "canvas_ranges": [
+          [
+            1,
+            0,
+            1207
+          ],
+          [
+            2,
+            1207,
+            2587
+          ],
+          [
+            3,
+            2587,
+            3970
+          ],
+          [
+            4,
+            3970,
+            5354
+          ],
+          [
+            5,
+            5354,
+            6719
+          ],
+          [
+            6,
+            6719,
+            8075
+          ],
+          [
+            7,
+            8075,
+            9457
+          ],
+          [
+            8,
+            9457,
+            10832
+          ],
+          [
+            9,
+            10832,
+            12172
+          ],
+          [
+            10,
+            12172,
+            13517
+          ],
+          [
+            11,
+            13517,
+            14880
+          ],
+          [
+            12,
+            14880,
+            16247
+          ],
+          [
+            13,
+            16247,
+            17596
+          ],
+          [
+            14,
+            17596,
+            18987
+          ],
+          [
+            15,
+            18987,
+            20332
+          ],
+          [
+            16,
+            20332,
+            21670
+          ],
+          [
+            17,
+            21670,
+            23023
+          ],
+          [
+            18,
+            23023,
+            24394
+          ],
+          [
+            19,
+            24394,
+            25758
+          ],
+          [
+            20,
+            25758,
+            27139
+          ],
+          [
+            21,
+            27139,
+            28480
+          ],
+          [
+            22,
+            28480,
+            29815
+          ],
+          [
+            23,
+            29815,
+            31198
+          ],
+          [
+            24,
+            31198,
+            32589
+          ],
+          [
+            25,
+            32589,
+            33946
+          ],
+          [
+            26,
+            33946,
+            35339
+          ],
+          [
+            27,
+            35339,
+            36696
+          ],
+          [
+            28,
+            36696,
+            38059
+          ],
+          [
+            29,
+            38059,
+            39434
+          ],
+          [
+            30,
+            39434,
+            40773
+          ],
+          [
+            31,
+            40773,
+            42144
+          ],
+          [
+            32,
+            42144,
+            43537
+          ],
+          [
+            33,
+            43537,
+            44895
+          ],
+          [
+            34,
+            44895,
+            46249
+          ],
+          [
+            35,
+            46249,
+            47612
+          ],
+          [
+            36,
+            47612,
+            48993
+          ],
+          [
+            37,
+            48993,
+            50361
+          ],
+          [
+            38,
+            50361,
+            51753
+          ],
+          [
+            39,
+            51753,
+            53103
+          ],
+          [
+            40,
+            53103,
+            54487
+          ],
+          [
+            41,
+            54487,
+            55869
+          ],
+          [
+            42,
+            55869,
+            57233
+          ],
+          [
+            43,
+            57233,
+            58611
+          ],
+          [
+            44,
+            58611,
+            59946
+          ],
+          [
+            45,
+            59946,
+            61293
+          ],
+          [
+            46,
+            61293,
+            62645
+          ],
+          [
+            47,
+            62645,
+            63984
+          ],
+          [
+            48,
+            63984,
+            65367
+          ],
+          [
+            49,
+            65367,
+            66759
+          ],
+          [
+            50,
+            66759,
+            68111
+          ],
+          [
+            51,
+            68111,
+            69461
+          ],
+          [
+            52,
+            69461,
+            70827
+          ],
+          [
+            53,
+            70827,
+            72184
+          ],
+          [
+            54,
+            72184,
+            73558
+          ],
+          [
+            55,
+            73558,
+            74941
+          ],
+          [
+            56,
+            74941,
+            76297
+          ]
+        ],
+        "events": [
+          "miss_agesilaus_110_1649",
+          "miss_agesilaus_110_2063"
+        ],
+        "line_coverage": [
+          {
+            "canvas_owners": [
+              9
+            ],
+            "region": [
+              935,
+              211,
+              1713,
+              249
+            ],
+            "scaled_row_stream": [
+              11072,
+              11118
+            ],
+            "source": 1,
+            "source_page": 110
+          },
+          {
+            "canvas_owners": [
+              9
+            ],
+            "region": [
+              935,
+              265,
+              1710,
+              307
+            ],
+            "scaled_row_stream": [
+              11136,
+              11187
+            ],
+            "source": 1,
+            "source_page": 110
+          },
+          {
+            "canvas_owners": [
+              11
+            ],
+            "region": [
+              919,
+              2458,
+              1692,
+              2498
+            ],
+            "scaled_row_stream": [
+              13775,
+              13824
+            ],
+            "source": 1,
+            "source_page": 110
+          },
+          {
+            "canvas_owners": [
+              11
+            ],
+            "region": [
+              920,
+              2519,
+              1691,
+              2558
+            ],
+            "scaled_row_stream": [
+              13849,
+              13896
+            ],
+            "source": 1,
+            "source_page": 110
+          },
+          {
+            "canvas_owners": [
+              11
+            ],
+            "region": [
+              1012,
+              189,
+              1788,
+              225
+            ],
+            "scaled_row_stream": [
+              13896,
+              13940
+            ],
+            "source": 1,
+            "source_page": 111
+          }
+        ],
+        "reviewed_lines": [
+          {
+            "region": [
+              935,
+              211,
+              1713,
+              249
+            ],
+            "role": "missing_source_line_1",
+            "source": 1,
+            "source_page": 110
+          },
+          {
+            "region": [
+              935,
+              265,
+              1710,
+              307
+            ],
+            "role": "adjacent_surviving_body_line",
+            "source": 1,
+            "source_page": 110
+          },
+          {
+            "region": [
+              919,
+              2458,
+              1692,
+              2498
+            ],
+            "role": "neighbor",
+            "source": 1,
+            "source_page": 110
+          },
+          {
+            "region": [
+              920,
+              2519,
+              1691,
+              2558
+            ],
+            "role": "promoted_missing_line",
+            "source": 1,
+            "source_page": 110
+          },
+          {
+            "region": [
+              1012,
+              189,
+              1788,
+              225
+            ],
+            "role": "neighbor",
+            "source": 1,
+            "source_page": 111
+          }
+        ],
+        "scale": 1.20239520072937,
+        "schema_version": 2,
+        "source_pages": [
+          {
+            "bands": [
+              [
+                211,
+                249
+              ],
+              [
+                265,
+                307
+              ],
+              [
+                320,
+                362
+              ],
+              [
+                376,
+                416
+              ],
+              [
+                432,
+                478
+              ],
+              [
+                488,
+                533
+              ],
+              [
+                540,
+                583
+              ],
+              [
+                596,
+                641
+              ],
+              [
+                652,
+                697
+              ],
+              [
+                704,
+                749
+              ],
+              [
+                760,
+                799
+              ],
+              [
+                815,
+                861
+              ],
+              [
+                873,
+                915
+              ],
+              [
+                928,
+                973
+              ],
+              [
+                984,
+                1031
+              ],
+              [
+                1038,
+                1073
+              ],
+              [
+                1084,
+                1174
+              ],
+              [
+                1179,
+                1263
+              ],
+              [
+                1268,
+                1406
+              ],
+              [
+                1408,
+                1450
+              ],
+              [
+                1454,
+                1496
+              ],
+              [
+                1499,
+                1543
+              ],
+              [
+                1546,
+                1587
+              ],
+              [
+                1596,
+                1639
+              ],
+              [
+                1643,
+                1688
+              ],
+              [
+                1690,
+                1733
+              ],
+              [
+                1735,
+                1825
+              ],
+              [
+                1829,
+                1874
+              ],
+              [
+                1876,
+                1965
+              ],
+              [
+                1968,
+                2103
+              ],
+              [
+                2105,
+                2151
+              ],
+              [
+                2152,
+                2198
+              ],
+              [
+                2200,
+                2288
+              ],
+              [
+                2293,
+                2322
+              ],
+              [
+                2339,
+                2376
+              ],
+              [
+                2395,
+                2433
+              ],
+              [
+                2458,
+                2498
+              ],
+              [
+                2519,
+                2558
+              ]
+            ],
+            "crop": [
+              917,
+              1715
+            ],
+            "deleted_rows": [],
+            "page": 110,
+            "retained_index": 4,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                189,
+                225
+              ],
+              [
+                240,
+                276
+              ],
+              [
+                290,
+                328
+              ],
+              [
+                343,
+                379
+              ],
+              [
+                394,
+                429
+              ],
+              [
+                446,
+                482
+              ],
+              [
+                496,
+                535
+              ],
+              [
+                547,
+                585
+              ],
+              [
+                599,
+                635
+              ],
+              [
+                651,
+                688
+              ],
+              [
+                705,
+                742
+              ],
+              [
+                755,
+                791
+              ],
+              [
+                806,
+                844
+              ],
+              [
+                858,
+                895
+              ],
+              [
+                908,
+                949
+              ],
+              [
+                960,
+                1002
+              ],
+              [
+                1011,
+                1049
+              ],
+              [
+                1063,
+                1103
+              ],
+              [
+                1116,
+                1155
+              ],
+              [
+                1168,
+                1210
+              ],
+              [
+                1220,
+                1260
+              ],
+              [
+                1270,
+                1311
+              ],
+              [
+                1323,
+                1364
+              ],
+              [
+                1375,
+                1416
+              ],
+              [
+                1427,
+                1464
+              ],
+              [
+                1481,
+                1519
+              ],
+              [
+                1530,
+                1570
+              ],
+              [
+                1581,
+                1616
+              ],
+              [
+                1627,
+                1668
+              ],
+              [
+                1676,
+                1714
+              ],
+              [
+                1720,
+                1762
+              ],
+              [
+                1767,
+                1806
+              ],
+              [
+                1813,
+                1853
+              ],
+              [
+                1861,
+                1900
+              ],
+              [
+                1910,
+                1950
+              ],
+              [
+                1958,
+                1998
+              ],
+              [
+                2006,
+                2047
+              ],
+              [
+                2053,
+                2093
+              ],
+              [
+                2099,
+                2134
+              ],
+              [
+                2149,
+                2182
+              ],
+              [
+                2196,
+                2235
+              ],
+              [
+                2249,
+                2282
+              ],
+              [
+                2295,
+                2332
+              ],
+              [
+                2348,
+                2385
+              ],
+              [
+                2397,
+                2431
+              ],
+              [
+                2445,
+                2477
+              ],
+              [
+                2491,
+                2524
+              ]
+            ],
+            "crop": [
+              995,
+              1792
+            ],
+            "deleted_rows": [],
+            "page": 111,
+            "retained_index": 5,
+            "source": 1
+          }
+        ],
+        "unit_id": "agesilaus",
+        "verification_policy": "promoted_tier_b"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/installed-foot/artoxerxes/artoxerxes.json": {
+      "source_sha256": "7128691cf37715d14745962a61e65cafef29d2890dddc416d6a92e73d396ad87",
+      "value": {
+        "canvas_hashes": [
+          {
+            "canvas": 1,
+            "height": 1191,
+            "sha256": "170c620ad45c5818fcadc0289a7a1dfe5e2699755dcc67e0def53ce49ba04df7",
+            "width": 1004
+          },
+          {
+            "canvas": 2,
+            "height": 1378,
+            "sha256": "01e7f6f8e703583864194001f146c12061a17f3d6554aa83a46567b7a4bba3b0",
+            "width": 1004
+          },
+          {
+            "canvas": 3,
+            "height": 1350,
+            "sha256": "57b3a4c96f66e3eaf9b2c56752bf760100680fcbd2056c84ac53c98591ca799b",
+            "width": 1004
+          },
+          {
+            "canvas": 4,
+            "height": 1347,
+            "sha256": "749ee1c041b8e4e3e766db02c97a6fb15d2194b2ca96e3ceee7910e2fdc486fd",
+            "width": 1004
+          },
+          {
+            "canvas": 5,
+            "height": 1364,
+            "sha256": "ae6b21f0b7426fb5aa14401bf1e5f85b54aadb9f3d3dd051af4123926af651a9",
+            "width": 1004
+          },
+          {
+            "canvas": 6,
+            "height": 1382,
+            "sha256": "17c1a007bae704c03ab5835c5d17b799b6ebba7becc725568ad51889fdf598ba",
+            "width": 1004
+          },
+          {
+            "canvas": 7,
+            "height": 1352,
+            "sha256": "527f523f51031d3b6e94bebfc75c7cce4bc07d1a2b7accbcdbefad9092e397c7",
+            "width": 1004
+          },
+          {
+            "canvas": 8,
+            "height": 1383,
+            "sha256": "a4eca3caa69c91006d90e5f0d5703794368f4e208d997fb0298d9771b5540ea2",
+            "width": 1004
+          },
+          {
+            "canvas": 9,
+            "height": 1381,
+            "sha256": "cd32f6ed86f4c9b5afb0a711108b1e71239fb7277b4b38f05ab2c86ac31da387",
+            "width": 1004
+          },
+          {
+            "canvas": 10,
+            "height": 1357,
+            "sha256": "a43acdb17abb5f53c2b0c8e1d8ddbf0bda9900dc988a74cdf006a94e33c4de54",
+            "width": 1004
+          },
+          {
+            "canvas": 11,
+            "height": 1343,
+            "sha256": "6f3392fcf76bd35dddcedf7e8bbe94ea6faa62b3da27e65800fe10c142249213",
+            "width": 1004
+          },
+          {
+            "canvas": 12,
+            "height": 1357,
+            "sha256": "61e30362bee934777af810a96586d5cb4f360a1592c03c158f6185467a13498e",
+            "width": 1004
+          },
+          {
+            "canvas": 13,
+            "height": 1350,
+            "sha256": "bb72e0564691599eeaf92d29829f977eb461a7100c994029ca2d8aa5616bb3ab",
+            "width": 1004
+          },
+          {
+            "canvas": 14,
+            "height": 1355,
+            "sha256": "a1d8f845e6fa7a521ccc2344b4def482bba8bb08fe88c5fa9055ee215a87fc4e",
+            "width": 1004
+          },
+          {
+            "canvas": 15,
+            "height": 1368,
+            "sha256": "d0556ebb8b86269d6406d269f5d3d2bc22baa0440f3c368ab70472048a00e39f",
+            "width": 1004
+          },
+          {
+            "canvas": 16,
+            "height": 1359,
+            "sha256": "7b9e9869d2d1cc704c2628c2e7b51a931a51801a8fdb96c689da98b412e2d6c8",
+            "width": 1004
+          },
+          {
+            "canvas": 17,
+            "height": 1390,
+            "sha256": "715120bcc62730492df6b98d4a0445c9de12ef0224c59a101ee1bdc7a1d77a71",
+            "width": 1004
+          },
+          {
+            "canvas": 18,
+            "height": 1358,
+            "sha256": "862dd91ad2e14834a36b481dcf7d0ba69cbb46d7e4a197e9dbbdc39b82d70c5b",
+            "width": 1004
+          },
+          {
+            "canvas": 19,
+            "height": 1345,
+            "sha256": "bcf07cffcb7fe4f63ba1661580a8a7ee35aaa7b4e784c5c45b1701e99fcd3d71",
+            "width": 1004
+          },
+          {
+            "canvas": 20,
+            "height": 1344,
+            "sha256": "e05ebaca11e653b72b8de23fcbefbe114ced5adc11a09143dbadec52d5d17873",
+            "width": 1004
+          },
+          {
+            "canvas": 21,
+            "height": 1379,
+            "sha256": "40340e974fdd0d4be2ce93e17adabd33a171e98bf6b924597d6565472c5f24d0",
+            "width": 1004
+          },
+          {
+            "canvas": 22,
+            "height": 1362,
+            "sha256": "cc365e808235930ede39bf6d337ada66374988aeb893e54acd7dc518c43dd073",
+            "width": 1004
+          },
+          {
+            "canvas": 23,
+            "height": 1378,
+            "sha256": "ad11ff01edf8b5cd5c3831cf361a5492d239ee67a8bbeccd63ad2a68b05ca967",
+            "width": 1004
+          },
+          {
+            "canvas": 24,
+            "height": 1328,
+            "sha256": "bd5d8837ad8c00c45a5018a89e9985171d5ddf514d3a97c860e265eab1362a64",
+            "width": 1004
+          },
+          {
+            "canvas": 25,
+            "height": 1379,
+            "sha256": "86ebfc1ac95617407c64e2f9478cbc7064e8b73d77a80c0bc82e354e36cdc189",
+            "width": 1004
+          },
+          {
+            "canvas": 26,
+            "height": 1347,
+            "sha256": "44b910fc919931cab1b5e826b78bfdb8aafe4963276e79c277efa0194806387f",
+            "width": 1004
+          },
+          {
+            "canvas": 27,
+            "height": 1379,
+            "sha256": "b63ce28fdca4fea281de3e17c1d10e8344cd09c5547e861e895ea4d9e490d0ab",
+            "width": 1004
+          },
+          {
+            "canvas": 28,
+            "height": 1371,
+            "sha256": "5da7785d995f77d7a0d3ce78046bbce168d64e5b1796cedf0ee639aa4399271b",
+            "width": 1004
+          },
+          {
+            "canvas": 29,
+            "height": 1367,
+            "sha256": "1ca8ac77df895d0ad35e3f3c38a67c14c70618060448a39f3cb10730a6eece1f",
+            "width": 1004
+          },
+          {
+            "canvas": 30,
+            "height": 1352,
+            "sha256": "bf24781475d888b340b75d9cda90b14325f686cedd7694ba42c065ccced5a2c8",
+            "width": 1004
+          },
+          {
+            "canvas": 31,
+            "height": 1388,
+            "sha256": "974483ddef174b3a34016b91ba18670456f1033401e28da2bfe52302a136f24a",
+            "width": 1004
+          },
+          {
+            "canvas": 32,
+            "height": 1356,
+            "sha256": "727e2f8865e8bb654a3009fc3c615415f018fc2ecfc06b54fda094a92d2696ef",
+            "width": 1004
+          },
+          {
+            "canvas": 33,
+            "height": 1382,
+            "sha256": "ba3d6267cb01e89b9f0d67e44327935d8896c86941dc88366c9c06d6042c02b3",
+            "width": 1004
+          },
+          {
+            "canvas": 34,
+            "height": 1345,
+            "sha256": "7ab9480bcb64973113aa36884a4430df4482f28055faa5163aaf1d0c1db04cf6",
+            "width": 1004
+          },
+          {
+            "canvas": 35,
+            "height": 1366,
+            "sha256": "eeddecb94de7eda613e4e7b2aa311354879ed4ccba949b1d60007e158dbb551f",
+            "width": 1004
+          },
+          {
+            "canvas": 36,
+            "height": 1383,
+            "sha256": "b593e51b62436d95f2cdb77bdffb727561a9de5aa2cb35db25b2e6ed8ebb2d30",
+            "width": 1004
+          },
+          {
+            "canvas": 37,
+            "height": 1344,
+            "sha256": "12081481e1a247dc570d91c475fc23001574fe9a24f5c9ff3b5c91596192b548",
+            "width": 1004
+          },
+          {
+            "canvas": 38,
+            "height": 765,
+            "sha256": "51cfb1c74950c2a0e1ed2fd904a8e97b9e8ce9c614d5d6693dd18835df30f1de",
+            "width": 1004
+          }
+        ],
+        "canvas_ranges": [
+          [
+            1,
+            0,
+            1191
+          ],
+          [
+            2,
+            1191,
+            2569
+          ],
+          [
+            3,
+            2569,
+            3919
+          ],
+          [
+            4,
+            3919,
+            5266
+          ],
+          [
+            5,
+            5266,
+            6630
+          ],
+          [
+            6,
+            6630,
+            8012
+          ],
+          [
+            7,
+            8012,
+            9364
+          ],
+          [
+            8,
+            9364,
+            10747
+          ],
+          [
+            9,
+            10747,
+            12128
+          ],
+          [
+            10,
+            12128,
+            13485
+          ],
+          [
+            11,
+            13485,
+            14828
+          ],
+          [
+            12,
+            14828,
+            16185
+          ],
+          [
+            13,
+            16185,
+            17535
+          ],
+          [
+            14,
+            17535,
+            18890
+          ],
+          [
+            15,
+            18890,
+            20258
+          ],
+          [
+            16,
+            20258,
+            21617
+          ],
+          [
+            17,
+            21617,
+            23007
+          ],
+          [
+            18,
+            23007,
+            24365
+          ],
+          [
+            19,
+            24365,
+            25710
+          ],
+          [
+            20,
+            25710,
+            27054
+          ],
+          [
+            21,
+            27054,
+            28433
+          ],
+          [
+            22,
+            28433,
+            29795
+          ],
+          [
+            23,
+            29795,
+            31173
+          ],
+          [
+            24,
+            31173,
+            32501
+          ],
+          [
+            25,
+            32501,
+            33880
+          ],
+          [
+            26,
+            33880,
+            35227
+          ],
+          [
+            27,
+            35227,
+            36606
+          ],
+          [
+            28,
+            36606,
+            37977
+          ],
+          [
+            29,
+            37977,
+            39344
+          ],
+          [
+            30,
+            39344,
+            40696
+          ],
+          [
+            31,
+            40696,
+            42084
+          ],
+          [
+            32,
+            42084,
+            43440
+          ],
+          [
+            33,
+            43440,
+            44822
+          ],
+          [
+            34,
+            44822,
+            46167
+          ],
+          [
+            35,
+            46167,
+            47533
+          ],
+          [
+            36,
+            47533,
+            48916
+          ],
+          [
+            37,
+            48916,
+            50260
+          ],
+          [
+            38,
+            50260,
+            51025
+          ]
+        ],
+        "events": [
+          "miss_artoxerxes_633_2282"
+        ],
+        "line_coverage": [
+          {
+            "canvas_owners": [
+              11
+            ],
+            "region": [
+              973,
+              2463,
+              1745,
+              2495
+            ],
+            "scaled_row_stream": [
+              13648,
+              13687
+            ],
+            "source": 1,
+            "source_page": 633
+          },
+          {
+            "canvas_owners": [
+              11
+            ],
+            "region": [
+              974,
+              2522,
+              1746,
+              2554
+            ],
+            "scaled_row_stream": [
+              13718,
+              13757
+            ],
+            "source": 1,
+            "source_page": 633
+          },
+          {
+            "canvas_owners": [
+              11
+            ],
+            "region": [
+              926,
+              240,
+              1698,
+              273
+            ],
+            "scaled_row_stream": [
+              13757,
+              13797
+            ],
+            "source": 1,
+            "source_page": 634
+          }
+        ],
+        "reviewed_lines": [
+          {
+            "region": [
+              973,
+              2463,
+              1745,
+              2495
+            ],
+            "role": "neighbor",
+            "source": 1,
+            "source_page": 633
+          },
+          {
+            "region": [
+              974,
+              2522,
+              1746,
+              2554
+            ],
+            "role": "promoted_missing_line",
+            "source": 1,
+            "source_page": 633
+          },
+          {
+            "region": [
+              926,
+              240,
+              1698,
+              273
+            ],
+            "role": "neighbor",
+            "source": 1,
+            "source_page": 634
+          }
+        ],
+        "scale": 1.20239520072937,
+        "schema_version": 2,
+        "source_pages": [
+          {
+            "bands": [
+              [
+                221,
+                255
+              ],
+              [
+                260,
+                294
+              ],
+              [
+                301,
+                336
+              ],
+              [
+                343,
+                377
+              ],
+              [
+                385,
+                420
+              ],
+              [
+                427,
+                463
+              ],
+              [
+                469,
+                504
+              ],
+              [
+                510,
+                547
+              ],
+              [
+                551,
+                588
+              ],
+              [
+                592,
+                628
+              ],
+              [
+                634,
+                666
+              ],
+              [
+                675,
+                713
+              ],
+              [
+                717,
+                757
+              ],
+              [
+                760,
+                792
+              ],
+              [
+                798,
+                835
+              ],
+              [
+                838,
+                872
+              ],
+              [
+                881,
+                916
+              ],
+              [
+                921,
+                945
+              ],
+              [
+                963,
+                1001
+              ],
+              [
+                1007,
+                1047
+              ],
+              [
+                1057,
+                1092
+              ],
+              [
+                1106,
+                1145
+              ],
+              [
+                1157,
+                1192
+              ],
+              [
+                1204,
+                1243
+              ],
+              [
+                1249,
+                1289
+              ],
+              [
+                1298,
+                1337
+              ],
+              [
+                1345,
+                1380
+              ],
+              [
+                1394,
+                1430
+              ],
+              [
+                1441,
+                1475
+              ],
+              [
+                1488,
+                1523
+              ],
+              [
+                1536,
+                1570
+              ],
+              [
+                1584,
+                1621
+              ],
+              [
+                1633,
+                1671
+              ],
+              [
+                1682,
+                1715
+              ],
+              [
+                1730,
+                1767
+              ],
+              [
+                1778,
+                1810
+              ],
+              [
+                1825,
+                1864
+              ],
+              [
+                1873,
+                1906
+              ],
+              [
+                1921,
+                1958
+              ],
+              [
+                1981,
+                2017
+              ],
+              [
+                2041,
+                2074
+              ],
+              [
+                2099,
+                2134
+              ],
+              [
+                2160,
+                2195
+              ],
+              [
+                2219,
+                2253
+              ],
+              [
+                2280,
+                2313
+              ],
+              [
+                2341,
+                2374
+              ],
+              [
+                2401,
+                2434
+              ],
+              [
+                2463,
+                2495
+              ],
+              [
+                2522,
+                2554
+              ]
+            ],
+            "crop": [
+              973,
+              1759
+            ],
+            "deleted_rows": [],
+            "page": 633,
+            "retained_index": 4,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                240,
+                273
+              ],
+              [
+                284,
+                314
+              ],
+              [
+                328,
+                360
+              ],
+              [
+                371,
+                401
+              ],
+              [
+                414,
+                445
+              ],
+              [
+                464,
+                496
+              ],
+              [
+                514,
+                546
+              ],
+              [
+                562,
+                594
+              ],
+              [
+                610,
+                642
+              ],
+              [
+                658,
+                689
+              ],
+              [
+                704,
+                735
+              ],
+              [
+                749,
+                780
+              ],
+              [
+                795,
+                828
+              ],
+              [
+                846,
+                878
+              ],
+              [
+                895,
+                928
+              ],
+              [
+                944,
+                977
+              ],
+              [
+                992,
+                1027
+              ],
+              [
+                1040,
+                1072
+              ],
+              [
+                1088,
+                1121
+              ],
+              [
+                1137,
+                1169
+              ],
+              [
+                1188,
+                1220
+              ],
+              [
+                1236,
+                1267
+              ],
+              [
+                1283,
+                1314
+              ],
+              [
+                1331,
+                1365
+              ],
+              [
+                1380,
+                1412
+              ],
+              [
+                1430,
+                1463
+              ],
+              [
+                1480,
+                1514
+              ],
+              [
+                1530,
+                1562
+              ],
+              [
+                1579,
+                1611
+              ],
+              [
+                1627,
+                1662
+              ],
+              [
+                1676,
+                1709
+              ],
+              [
+                1725,
+                1757
+              ],
+              [
+                1776,
+                1807
+              ],
+              [
+                1825,
+                1856
+              ],
+              [
+                1871,
+                1904
+              ],
+              [
+                1920,
+                1951
+              ],
+              [
+                1970,
+                2001
+              ],
+              [
+                2020,
+                2052
+              ],
+              [
+                2070,
+                2100
+              ],
+              [
+                2120,
+                2150
+              ],
+              [
+                2168,
+                2199
+              ],
+              [
+                2216,
+                2246
+              ],
+              [
+                2266,
+                2296
+              ],
+              [
+                2314,
+                2345
+              ],
+              [
+                2362,
+                2392
+              ],
+              [
+                2404,
+                2435
+              ],
+              [
+                2447,
+                2478
+              ],
+              [
+                2489,
+                2520
+              ],
+              [
+                2532,
+                2563
+              ]
+            ],
+            "crop": [
+              923,
+              1709
+            ],
+            "deleted_rows": [],
+            "page": 634,
+            "retained_index": 5,
+            "source": 1
+          }
+        ],
+        "unit_id": "artoxerxes",
+        "verification_policy": "promoted_tier_b"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/installed-foot/cato_minor/cato_minor.json": {
+      "source_sha256": "c7782c00af78ad27468e71cd5a64ef90e0e54c3573e4ca9c034644076f6ec6fb",
+      "value": {
+        "canvas_hashes": [
+          {
+            "canvas": 1,
+            "height": 1237,
+            "sha256": "4a0bd601cf297b13f21f1562482b8ae458d5438bc626625b7dbd52f8185b0873",
+            "width": 1004
+          },
+          {
+            "canvas": 2,
+            "height": 1354,
+            "sha256": "c144c6cb963873b7499aef68a1217e47c843f22df4e3f467e1089d723bc0cfd1",
+            "width": 1004
+          },
+          {
+            "canvas": 3,
+            "height": 1381,
+            "sha256": "62e7870b84f98fc5ec784387dd802a9195785c38612ede0a55996b134594ee9a",
+            "width": 1004
+          },
+          {
+            "canvas": 4,
+            "height": 1368,
+            "sha256": "52bf3a69c5b0d2cffd63d9a0c0541ac369b8b99a835ed05bcc5895fa934a3478",
+            "width": 1004
+          },
+          {
+            "canvas": 5,
+            "height": 1340,
+            "sha256": "e3cbb0c4e6b47a36528c29b90b2fd5368d8bb71f9e205ccf42adbabac61f1945",
+            "width": 1004
+          },
+          {
+            "canvas": 6,
+            "height": 1348,
+            "sha256": "8b5dbea117f4920734b457c9e53ec133293c967b38ff56871acb2d05a7faa736",
+            "width": 1004
+          },
+          {
+            "canvas": 7,
+            "height": 1342,
+            "sha256": "75986df6bd04672dd9f3406821c627935a0935ebc4a115d04f89441c1cbac13a",
+            "width": 1004
+          },
+          {
+            "canvas": 8,
+            "height": 1362,
+            "sha256": "4e032d6ee7c87263f8349ab8651ce35c7ee710f6f76864a2034c3adfdc032a6c",
+            "width": 1004
+          },
+          {
+            "canvas": 9,
+            "height": 1370,
+            "sha256": "1b72ac00d40f28eff8bdf0c4f8b433e99caba3224a773617ade46337ec3d8424",
+            "width": 1004
+          },
+          {
+            "canvas": 10,
+            "height": 1358,
+            "sha256": "f97c2a812fdb3320ab8e26269dc577ad4a73b840b095045400d11f893916dbb1",
+            "width": 1004
+          },
+          {
+            "canvas": 11,
+            "height": 1368,
+            "sha256": "169af1c0bb0fe906012a85f32ffbbc2d29309d91e1df3b6a4c0b539e1f9076e3",
+            "width": 1004
+          },
+          {
+            "canvas": 12,
+            "height": 1379,
+            "sha256": "a7d9a5db02c61151ac2a40832f5511072fa84a78960de79cd50db2967ec9c7df",
+            "width": 1004
+          },
+          {
+            "canvas": 13,
+            "height": 1346,
+            "sha256": "0722ea215a312a1139e30b514de843aca5d2880a75a15e293a514917fb8c00e2",
+            "width": 1004
+          },
+          {
+            "canvas": 14,
+            "height": 1376,
+            "sha256": "c499e0063b24d417b88ebebf874df45e9a32bf40d879ed845bd51c13a859560d",
+            "width": 1004
+          },
+          {
+            "canvas": 15,
+            "height": 1350,
+            "sha256": "6eee579c83c127e71fcefcfcb19baa1d2e968cc26aa384a6abdd5d384e3749d6",
+            "width": 1004
+          },
+          {
+            "canvas": 16,
+            "height": 1389,
+            "sha256": "032126f853b6c048af0e9be661ced51878d005b48ddd325ffb1c5ee87466ef34",
+            "width": 1004
+          },
+          {
+            "canvas": 17,
+            "height": 1384,
+            "sha256": "0420fad4bbe1c4d793f7632109abb18ff59f0d0b411acf8db4b0123010a00c91",
+            "width": 1004
+          },
+          {
+            "canvas": 18,
+            "height": 1361,
+            "sha256": "0ee6a0876817c6a1516011270436a28f73a0d0f2d6a5b7484758be65e9a7bab0",
+            "width": 1004
+          },
+          {
+            "canvas": 19,
+            "height": 1345,
+            "sha256": "f7231d0cb94db93fc63fcb0a2f18eb48f5a7577027ced8fd432c6466b09af2a1",
+            "width": 1004
+          },
+          {
+            "canvas": 20,
+            "height": 1383,
+            "sha256": "0036fff1a2b86ff783c7a72fce49afabaecebab00569d1ea735081bc6c2e630c",
+            "width": 1004
+          },
+          {
+            "canvas": 21,
+            "height": 1371,
+            "sha256": "29c458e031e533e9487ca9c2fc193d0b15ae68e9f89044e4754e891660c0cca6",
+            "width": 1004
+          },
+          {
+            "canvas": 22,
+            "height": 1351,
+            "sha256": "a39301b7bf0d968bc986b7ff2485f4706f06ee068afcd4cf3d21fe9fabfde52c",
+            "width": 1004
+          },
+          {
+            "canvas": 23,
+            "height": 1360,
+            "sha256": "36d79614cecd2b2dfa0c34dd56f9e560553d45ad47168df047f05b2b0789046c",
+            "width": 1004
+          },
+          {
+            "canvas": 24,
+            "height": 1387,
+            "sha256": "f8f5f64133b205e9e35ba679e4214cfecea41a8ba0fcba986a99b96e37a5e478",
+            "width": 1004
+          },
+          {
+            "canvas": 25,
+            "height": 1349,
+            "sha256": "a15695218cd93ed040895fd7d21a396a8371d48e6a2ccd566d7b587f583b47be",
+            "width": 1004
+          },
+          {
+            "canvas": 26,
+            "height": 1373,
+            "sha256": "aced2cca8e90c5f1244b759ea4bf2cecec0a1f30ee597c7433e3df4afec77bb6",
+            "width": 1004
+          },
+          {
+            "canvas": 27,
+            "height": 1373,
+            "sha256": "c3b48fecbe7bd76f5ce3b2627ea53bece2a00605765845f9577f9e8724b68d73",
+            "width": 1004
+          },
+          {
+            "canvas": 28,
+            "height": 1359,
+            "sha256": "10a8620c685c90db9d986fe2e5fdc97ca8ca497e9e044aa5bf8c4ab3e6c2a241",
+            "width": 1004
+          },
+          {
+            "canvas": 29,
+            "height": 1346,
+            "sha256": "aed77dbd3bbcaab2d4a0d28246ae38721479ace2cb3d1711a9966733d17d2ca9",
+            "width": 1004
+          },
+          {
+            "canvas": 30,
+            "height": 1345,
+            "sha256": "cded20757201423fb1387ea71bff9edd21f78a6f648d6d139358c0b2f183a73f",
+            "width": 1004
+          },
+          {
+            "canvas": 31,
+            "height": 1355,
+            "sha256": "19d95afbe65898bd9af00cbbf4ac0ad6d38ed4eaf66884f73299eeec5284e8a7",
+            "width": 1004
+          },
+          {
+            "canvas": 32,
+            "height": 1377,
+            "sha256": "79018fd15da5438191ef2dc0f7af28ac5841d1e9e2d3968c6119bf89ca9b39ac",
+            "width": 1004
+          },
+          {
+            "canvas": 33,
+            "height": 1382,
+            "sha256": "a0993f82ef8f4b8c60f3676130939643c4b0418ad852e7a2184850a7656845b0",
+            "width": 1004
+          },
+          {
+            "canvas": 34,
+            "height": 1358,
+            "sha256": "136a977029a1c2e65b42b21241fb99bd2da409afdd828df70844408631cf6852",
+            "width": 1004
+          },
+          {
+            "canvas": 35,
+            "height": 1348,
+            "sha256": "3fc61216e8f076bcfb2daeb839b2cc88abd6b6ab6d8b939b369e448e78c8668b",
+            "width": 1004
+          },
+          {
+            "canvas": 36,
+            "height": 1358,
+            "sha256": "a2e0e493790900636f5afcc41db4d99abc9a53632f8a86dfe6365e67df3684f3",
+            "width": 1004
+          },
+          {
+            "canvas": 37,
+            "height": 1384,
+            "sha256": "f046496e9aff7279340761d6f049fc2c6e6e2665c1c360630b61f33fcac403e6",
+            "width": 1004
+          },
+          {
+            "canvas": 38,
+            "height": 1348,
+            "sha256": "65eeaf8422cfd474c42955b0e61992520ae84de2195cbc1d68763a50dc65a6c2",
+            "width": 1004
+          },
+          {
+            "canvas": 39,
+            "height": 1349,
+            "sha256": "891aa749518b653a9a781723042bf122445974ee2ae4964e4710ac458a557a8b",
+            "width": 1004
+          },
+          {
+            "canvas": 40,
+            "height": 1377,
+            "sha256": "bfd6ee427c37dc1d8e8470e0ba5ffbe01aa0eb07b082f6ba49fb1e3d58f83c4d",
+            "width": 1004
+          },
+          {
+            "canvas": 41,
+            "height": 1381,
+            "sha256": "e043d242a6a3d72faf215ecef5bd0f9da83fc199944a18ee25b076e2b47b3c1b",
+            "width": 1004
+          },
+          {
+            "canvas": 42,
+            "height": 1388,
+            "sha256": "1179644dbb875e99e2c8e67b5b67d1280f6dd775190a91bf6a7b0e141fb9fcbb",
+            "width": 1004
+          },
+          {
+            "canvas": 43,
+            "height": 1360,
+            "sha256": "e402d2781e93e20ab4739022d627ae7e447663781bcacf006290012d809604c3",
+            "width": 1004
+          },
+          {
+            "canvas": 44,
+            "height": 1390,
+            "sha256": "c8b891daf655ef581272dd639afd44d5883e5921ea5cf3680187f8ba1a56b3fa",
+            "width": 1004
+          },
+          {
+            "canvas": 45,
+            "height": 1382,
+            "sha256": "1e68da32c9c627e34aec6aea4fe1d81fbe9300f70a716dc0c782f4db5d29febb",
+            "width": 1004
+          },
+          {
+            "canvas": 46,
+            "height": 1392,
+            "sha256": "fa190ded0a774a1d62ed566b3b2311b7fd368d009c11935d36c690eb04516c07",
+            "width": 1004
+          },
+          {
+            "canvas": 47,
+            "height": 1337,
+            "sha256": "96b2aa305a0e19cb6b43f077d082ee9759b8632e41fdea5a0ae911b9b458b211",
+            "width": 1004
+          },
+          {
+            "canvas": 48,
+            "height": 1345,
+            "sha256": "3bcbfaabb25cecf03f82e0f4993b9ab3ff68cd31c895212f03775fbcc2e87bc6",
+            "width": 1004
+          },
+          {
+            "canvas": 49,
+            "height": 1357,
+            "sha256": "c26bda0838b1f58ff2a9a5c8714f421e77d8d33202d91aacf4bfe7406f8222c4",
+            "width": 1004
+          },
+          {
+            "canvas": 50,
+            "height": 1365,
+            "sha256": "4c0d256f0d961bf495788b5aa52b1921856e1bd56e20e0c0e0bfbde97eab94c6",
+            "width": 1004
+          },
+          {
+            "canvas": 51,
+            "height": 1364,
+            "sha256": "1f03a12ee91091a0b7547125193f00f399d00a7ef32c28aa3cfb2eaf556b99ff",
+            "width": 1004
+          },
+          {
+            "canvas": 52,
+            "height": 1365,
+            "sha256": "2a620f1c7fde46a75af9405678d8a39513875de1ebd45a6c10069f542b3e4b30",
+            "width": 1004
+          },
+          {
+            "canvas": 53,
+            "height": 1349,
+            "sha256": "5dd2e9794476a28cf024d87dbf7edceae95bbd777aeb4e897311fb5203e289f8",
+            "width": 1004
+          },
+          {
+            "canvas": 54,
+            "height": 1364,
+            "sha256": "e8949140f29b02a8af6a954a9e2a4d87de9d97cf1208d0ed0a20a051c9bc598d",
+            "width": 1004
+          },
+          {
+            "canvas": 55,
+            "height": 1370,
+            "sha256": "c6dd4c23a09cb2169c07f3bebbe72229b187c7a5c420eb5b7826f8bf0642f9cd",
+            "width": 1004
+          },
+          {
+            "canvas": 56,
+            "height": 1383,
+            "sha256": "01b5ef4e675895a15bc5d6273e1bfd56d5807da890b6c63ed40e003206fb4301",
+            "width": 1004
+          },
+          {
+            "canvas": 57,
+            "height": 1358,
+            "sha256": "c66f2562472c92fd00faafc4f2f4d909a15333b428dc687c16aac2e911e146c9",
+            "width": 1004
+          },
+          {
+            "canvas": 58,
+            "height": 1381,
+            "sha256": "30a01983748dfb4689f2a8ae8efea9ed2f5c08aaf4a654919bc3ac5360fda288",
+            "width": 1004
+          },
+          {
+            "canvas": 59,
+            "height": 1348,
+            "sha256": "f88c0d963692af7e1e6d4ef5e89ee42d18e8e82f5193f5128b398ece76d4aa6a",
+            "width": 1004
+          },
+          {
+            "canvas": 60,
+            "height": 1355,
+            "sha256": "4a53b2dec55343b717fd65ec57690e06b3214ee9a628eac78b09a4f5a7b81df7",
+            "width": 1004
+          },
+          {
+            "canvas": 61,
+            "height": 1379,
+            "sha256": "c58d7c8deda2f64f5ff9a0740a6715e0c42f8d9319c167d675961b3730ad683e",
+            "width": 1004
+          },
+          {
+            "canvas": 62,
+            "height": 1389,
+            "sha256": "da9740c6df2fc58716a6ea6aada55749172826609a98bfd8e37ea82935258e52",
+            "width": 1004
+          },
+          {
+            "canvas": 63,
+            "height": 1344,
+            "sha256": "a9c1599c5209e7a1f7bdf4328f0000cbe70e8ce9db32df9f3931503bba88f4a4",
+            "width": 1004
+          },
+          {
+            "canvas": 64,
+            "height": 1352,
+            "sha256": "e2c6f8d5041296f53a4fcc20ee662fff7fa08ada29052cb7fe507ee73cf8f5e7",
+            "width": 1004
+          },
+          {
+            "canvas": 65,
+            "height": 1390,
+            "sha256": "39ad01d4ebbc8774f78cbc0c1bf98479e328ccebdf448dcee30d0512e67ec062",
+            "width": 1004
+          },
+          {
+            "canvas": 66,
+            "height": 1342,
+            "sha256": "58af39b0fbed34598c6f82f85106d2badb8030cce95697b56d60e01737c4207e",
+            "width": 1004
+          },
+          {
+            "canvas": 67,
+            "height": 1351,
+            "sha256": "bbe666a1419e9ccea35db34cf97a949b019525ffa9da8743f91830a3fc17278c",
+            "width": 1004
+          },
+          {
+            "canvas": 68,
+            "height": 1384,
+            "sha256": "dd27997144a027dbc204596fcecdaeeb443c5452e126c5304c6d72a1f42cbdfa",
+            "width": 1004
+          },
+          {
+            "canvas": 69,
+            "height": 1369,
+            "sha256": "8a27604e14c43bc2e52e02d7f41ba468a93c45ea57f4e0e7d281887f94dd31b1",
+            "width": 1004
+          },
+          {
+            "canvas": 70,
+            "height": 1350,
+            "sha256": "c452fc01cb62e406b3e81ce29b529220381c8d82caa0ea892372ecdad858c8c1",
+            "width": 1004
+          },
+          {
+            "canvas": 71,
+            "height": 1362,
+            "sha256": "93c296746519f7ae1c1caf9512becf4cf9ce84fb9cff33e44ffbe4daf3d8f2cb",
+            "width": 1004
+          },
+          {
+            "canvas": 72,
+            "height": 1345,
+            "sha256": "cc3103fc34caba4a7ccf2d183620d44cc33cc6fe164e69f14574fd9ae5270f88",
+            "width": 1004
+          },
+          {
+            "canvas": 73,
+            "height": 1389,
+            "sha256": "c1dd91343f5f7fe20dcd2da1bd95039e76f12a0027b35a832c24b15fe8a57fa5",
+            "width": 1004
+          },
+          {
+            "canvas": 74,
+            "height": 1386,
+            "sha256": "b4461ff5e4be7575004c5a63d192b4f15939d78e5cbfcb9dc1439c5e2f10c7d8",
+            "width": 1004
+          },
+          {
+            "canvas": 75,
+            "height": 1394,
+            "sha256": "73b0b4df3949436da7d1415fad081850c21efbba668f8ebef125245383ec295d",
+            "width": 1004
+          },
+          {
+            "canvas": 76,
+            "height": 1360,
+            "sha256": "494dcec413c4bc38a926e29ffc58f3647f64bd67603ff36f6c2a71c500b2b454",
+            "width": 1004
+          },
+          {
+            "canvas": 77,
+            "height": 1385,
+            "sha256": "ed07c54993af2cf648f3447c15b15839ee73b86da97526579002618d266291ed",
+            "width": 1004
+          },
+          {
+            "canvas": 78,
+            "height": 1358,
+            "sha256": "1611335b2f092b3bb594e192968acbe4b392f7951cacd7bf2a3a3a8e14a02a9c",
+            "width": 1004
+          },
+          {
+            "canvas": 79,
+            "height": 1377,
+            "sha256": "88b2dbb72223ec6bd89756f928563d8e8eb57d957a73573edbe2ea6a7e296e1e",
+            "width": 1004
+          },
+          {
+            "canvas": 80,
+            "height": 1369,
+            "sha256": "dafc8414890e566255e35d3b29535fe2305add44477a14d4ea744190ea27aed3",
+            "width": 1004
+          },
+          {
+            "canvas": 81,
+            "height": 1394,
+            "sha256": "177c1c43003a44d91a07b31db7a92eac8ac6c60a3b905015894afb11b6168a44",
+            "width": 1004
+          },
+          {
+            "canvas": 82,
+            "height": 1394,
+            "sha256": "2a77d9366a7a7a5711e8e7195bd05dcc85504c51b5150a692248bc7a25e637eb",
+            "width": 1004
+          },
+          {
+            "canvas": 83,
+            "height": 1339,
+            "sha256": "a73976aabc20dbb190d6142a57410586bf769f4e74bb25f1723e4c11b353b7de",
+            "width": 1004
+          },
+          {
+            "canvas": 84,
+            "height": 1382,
+            "sha256": "e62a478f075de510e06fa49e2a2e156905e4214243bf8167ba5cf5ef91127a95",
+            "width": 1004
+          },
+          {
+            "canvas": 85,
+            "height": 1364,
+            "sha256": "6df9d4fb7860c8f4131fb5af96fda908b137089b911e70ce2455a0b2222d4d1b",
+            "width": 1004
+          },
+          {
+            "canvas": 86,
+            "height": 1370,
+            "sha256": "1f4491101637a7322c6e098405aacdbfb883c99bf414054f917d670aabd48055",
+            "width": 1004
+          },
+          {
+            "canvas": 87,
+            "height": 578,
+            "sha256": "55becb415ce04e5fc5661c17cb7309dac4ee336a0f9a1168f17dc3f8cd8a1478",
+            "width": 1004
+          }
+        ],
+        "canvas_ranges": [
+          [
+            1,
+            0,
+            1237
+          ],
+          [
+            2,
+            1237,
+            2591
+          ],
+          [
+            3,
+            2591,
+            3972
+          ],
+          [
+            4,
+            3972,
+            5340
+          ],
+          [
+            5,
+            5340,
+            6680
+          ],
+          [
+            6,
+            6680,
+            8028
+          ],
+          [
+            7,
+            8028,
+            9370
+          ],
+          [
+            8,
+            9370,
+            10732
+          ],
+          [
+            9,
+            10732,
+            12102
+          ],
+          [
+            10,
+            12102,
+            13460
+          ],
+          [
+            11,
+            13460,
+            14828
+          ],
+          [
+            12,
+            14828,
+            16207
+          ],
+          [
+            13,
+            16207,
+            17553
+          ],
+          [
+            14,
+            17553,
+            18929
+          ],
+          [
+            15,
+            18929,
+            20279
+          ],
+          [
+            16,
+            20279,
+            21668
+          ],
+          [
+            17,
+            21668,
+            23052
+          ],
+          [
+            18,
+            23052,
+            24413
+          ],
+          [
+            19,
+            24413,
+            25758
+          ],
+          [
+            20,
+            25758,
+            27141
+          ],
+          [
+            21,
+            27141,
+            28512
+          ],
+          [
+            22,
+            28512,
+            29863
+          ],
+          [
+            23,
+            29863,
+            31223
+          ],
+          [
+            24,
+            31223,
+            32610
+          ],
+          [
+            25,
+            32610,
+            33959
+          ],
+          [
+            26,
+            33959,
+            35332
+          ],
+          [
+            27,
+            35332,
+            36705
+          ],
+          [
+            28,
+            36705,
+            38064
+          ],
+          [
+            29,
+            38064,
+            39410
+          ],
+          [
+            30,
+            39410,
+            40755
+          ],
+          [
+            31,
+            40755,
+            42110
+          ],
+          [
+            32,
+            42110,
+            43487
+          ],
+          [
+            33,
+            43487,
+            44869
+          ],
+          [
+            34,
+            44869,
+            46227
+          ],
+          [
+            35,
+            46227,
+            47575
+          ],
+          [
+            36,
+            47575,
+            48933
+          ],
+          [
+            37,
+            48933,
+            50317
+          ],
+          [
+            38,
+            50317,
+            51665
+          ],
+          [
+            39,
+            51665,
+            53014
+          ],
+          [
+            40,
+            53014,
+            54391
+          ],
+          [
+            41,
+            54391,
+            55772
+          ],
+          [
+            42,
+            55772,
+            57160
+          ],
+          [
+            43,
+            57160,
+            58520
+          ],
+          [
+            44,
+            58520,
+            59910
+          ],
+          [
+            45,
+            59910,
+            61292
+          ],
+          [
+            46,
+            61292,
+            62684
+          ],
+          [
+            47,
+            62684,
+            64021
+          ],
+          [
+            48,
+            64021,
+            65366
+          ],
+          [
+            49,
+            65366,
+            66723
+          ],
+          [
+            50,
+            66723,
+            68088
+          ],
+          [
+            51,
+            68088,
+            69452
+          ],
+          [
+            52,
+            69452,
+            70817
+          ],
+          [
+            53,
+            70817,
+            72166
+          ],
+          [
+            54,
+            72166,
+            73530
+          ],
+          [
+            55,
+            73530,
+            74900
+          ],
+          [
+            56,
+            74900,
+            76283
+          ],
+          [
+            57,
+            76283,
+            77641
+          ],
+          [
+            58,
+            77641,
+            79022
+          ],
+          [
+            59,
+            79022,
+            80370
+          ],
+          [
+            60,
+            80370,
+            81725
+          ],
+          [
+            61,
+            81725,
+            83104
+          ],
+          [
+            62,
+            83104,
+            84493
+          ],
+          [
+            63,
+            84493,
+            85837
+          ],
+          [
+            64,
+            85837,
+            87189
+          ],
+          [
+            65,
+            87189,
+            88579
+          ],
+          [
+            66,
+            88579,
+            89921
+          ],
+          [
+            67,
+            89921,
+            91272
+          ],
+          [
+            68,
+            91272,
+            92656
+          ],
+          [
+            69,
+            92656,
+            94025
+          ],
+          [
+            70,
+            94025,
+            95375
+          ],
+          [
+            71,
+            95375,
+            96737
+          ],
+          [
+            72,
+            96737,
+            98082
+          ],
+          [
+            73,
+            98082,
+            99471
+          ],
+          [
+            74,
+            99471,
+            100857
+          ],
+          [
+            75,
+            100857,
+            102251
+          ],
+          [
+            76,
+            102251,
+            103611
+          ],
+          [
+            77,
+            103611,
+            104996
+          ],
+          [
+            78,
+            104996,
+            106354
+          ],
+          [
+            79,
+            106354,
+            107731
+          ],
+          [
+            80,
+            107731,
+            109100
+          ],
+          [
+            81,
+            109100,
+            110494
+          ],
+          [
+            82,
+            110494,
+            111888
+          ],
+          [
+            83,
+            111888,
+            113227
+          ],
+          [
+            84,
+            113227,
+            114609
+          ],
+          [
+            85,
+            114609,
+            115973
+          ],
+          [
+            86,
+            115973,
+            117343
+          ],
+          [
+            87,
+            117343,
+            117921
+          ]
+        ],
+        "events": [
+          "miss_cato_minor_327_8321",
+          "miss_cato_minor_331_9707",
+          "miss_cato_minor_352_15055"
+        ],
+        "line_coverage": [
+          {
+            "canvas_owners": [
+              39
+            ],
+            "region": [
+              992,
+              2458,
+              1765,
+              2491
+            ],
+            "scaled_row_stream": [
+              52864,
+              52905
+            ],
+            "source": 1,
+            "source_page": 327
+          },
+          {
+            "canvas_owners": [
+              39
+            ],
+            "region": [
+              992,
+              2509,
+              1768,
+              2540
+            ],
+            "scaled_row_stream": [
+              52925,
+              52963
+            ],
+            "source": 1,
+            "source_page": 327
+          },
+          {
+            "canvas_owners": [
+              46
+            ],
+            "region": [
+              1025,
+              170,
+              1804,
+              208
+            ],
+            "scaled_row_stream": [
+              61335,
+              61381
+            ],
+            "source": 1,
+            "source_page": 331
+          },
+          {
+            "canvas_owners": [
+              46
+            ],
+            "region": [
+              1024,
+              215,
+              1803,
+              251
+            ],
+            "scaled_row_stream": [
+              61388,
+              61433
+            ],
+            "source": 1,
+            "source_page": 331
+          },
+          {
+            "canvas_owners": [
+              70
+            ],
+            "region": [
+              879,
+              2475,
+              1649,
+              2513
+            ],
+            "scaled_row_stream": [
+              94909,
+              94955
+            ],
+            "source": 1,
+            "source_page": 352
+          },
+          {
+            "canvas_owners": [
+              70
+            ],
+            "region": [
+              876,
+              2526,
+              1648,
+              2564
+            ],
+            "scaled_row_stream": [
+              94970,
+              95016
+            ],
+            "source": 1,
+            "source_page": 352
+          },
+          {
+            "canvas_owners": [
+              70
+            ],
+            "region": [
+              1003,
+              198,
+              1781,
+              230
+            ],
+            "scaled_row_stream": [
+              95016,
+              95055
+            ],
+            "source": 1,
+            "source_page": 353
+          },
+          {
+            "canvas_owners": [
+              86
+            ],
+            "region": [
+              888,
+              2026,
+              932,
+              2048
+            ],
+            "scaled_row_stream": [
+              116793,
+              116820
+            ],
+            "source": 1,
+            "source_page": 360
+          }
+        ],
+        "reviewed_lines": [
+          {
+            "region": [
+              992,
+              2458,
+              1765,
+              2491
+            ],
+            "role": "adjacent_surviving_body_line",
+            "source": 1,
+            "source_page": 327
+          },
+          {
+            "region": [
+              992,
+              2509,
+              1768,
+              2540
+            ],
+            "role": "missing_source_line_1",
+            "source": 1,
+            "source_page": 327
+          },
+          {
+            "region": [
+              1025,
+              170,
+              1804,
+              208
+            ],
+            "role": "missing_source_line_1",
+            "source": 1,
+            "source_page": 331
+          },
+          {
+            "region": [
+              1024,
+              215,
+              1803,
+              251
+            ],
+            "role": "adjacent_surviving_body_line",
+            "source": 1,
+            "source_page": 331
+          },
+          {
+            "region": [
+              879,
+              2475,
+              1649,
+              2513
+            ],
+            "role": "neighbor",
+            "source": 1,
+            "source_page": 352
+          },
+          {
+            "region": [
+              876,
+              2526,
+              1648,
+              2564
+            ],
+            "role": "promoted_missing_line",
+            "source": 1,
+            "source_page": 352
+          },
+          {
+            "region": [
+              1003,
+              198,
+              1781,
+              230
+            ],
+            "role": "neighbor",
+            "source": 1,
+            "source_page": 353
+          },
+          {
+            "region": [
+              888,
+              2026,
+              932,
+              2048
+            ],
+            "role": "retained_body",
+            "source": 1,
+            "source_page": 360
+          }
+        ],
+        "scale": 1.20239520072937,
+        "schema_version": 2,
+        "source_pages": [
+          {
+            "bands": [
+              [
+                215,
+                254
+              ],
+              [
+                261,
+                296
+              ],
+              [
+                303,
+                340
+              ],
+              [
+                348,
+                386
+              ],
+              [
+                390,
+                425
+              ],
+              [
+                435,
+                465
+              ],
+              [
+                478,
+                516
+              ],
+              [
+                525,
+                563
+              ],
+              [
+                573,
+                610
+              ],
+              [
+                620,
+                659
+              ],
+              [
+                667,
+                706
+              ],
+              [
+                713,
+                754
+              ],
+              [
+                761,
+                801
+              ],
+              [
+                808,
+                844
+              ],
+              [
+                853,
+                891
+              ],
+              [
+                901,
+                941
+              ],
+              [
+                946,
+                986
+              ],
+              [
+                992,
+                1029
+              ],
+              [
+                1038,
+                1081
+              ],
+              [
+                1085,
+                1127
+              ],
+              [
+                1132,
+                1169
+              ],
+              [
+                1180,
+                1220
+              ],
+              [
+                1229,
+                1267
+              ],
+              [
+                1275,
+                1315
+              ],
+              [
+                1322,
+                1362
+              ],
+              [
+                1370,
+                1409
+              ],
+              [
+                1417,
+                1460
+              ],
+              [
+                1464,
+                1506
+              ],
+              [
+                1514,
+                1554
+              ],
+              [
+                1557,
+                1597
+              ],
+              [
+                1603,
+                1641
+              ],
+              [
+                1649,
+                1737
+              ],
+              [
+                1738,
+                1777
+              ],
+              [
+                1785,
+                1827
+              ],
+              [
+                1831,
+                1872
+              ],
+              [
+                1878,
+                1916
+              ],
+              [
+                1925,
+                1962
+              ],
+              [
+                1972,
+                2007
+              ],
+              [
+                2018,
+                2052
+              ],
+              [
+                2063,
+                2101
+              ],
+              [
+                2109,
+                2149
+              ],
+              [
+                2155,
+                2186
+              ],
+              [
+                2204,
+                2240
+              ],
+              [
+                2256,
+                2288
+              ],
+              [
+                2307,
+                2340
+              ],
+              [
+                2357,
+                2388
+              ],
+              [
+                2407,
+                2441
+              ],
+              [
+                2458,
+                2491
+              ],
+              [
+                2509,
+                2540
+              ]
+            ],
+            "crop": [
+              992,
+              1787
+            ],
+            "deleted_rows": [],
+            "page": 327,
+            "retained_index": 18,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                170,
+                208
+              ],
+              [
+                215,
+                251
+              ],
+              [
+                255,
+                293
+              ],
+              [
+                300,
+                327
+              ],
+              [
+                344,
+                378
+              ],
+              [
+                391,
+                426
+              ],
+              [
+                438,
+                475
+              ],
+              [
+                488,
+                524
+              ],
+              [
+                533,
+                570
+              ],
+              [
+                581,
+                615
+              ],
+              [
+                627,
+                662
+              ],
+              [
+                676,
+                710
+              ],
+              [
+                721,
+                757
+              ],
+              [
+                769,
+                803
+              ],
+              [
+                818,
+                852
+              ],
+              [
+                865,
+                897
+              ],
+              [
+                913,
+                945
+              ],
+              [
+                962,
+                995
+              ],
+              [
+                1013,
+                1047
+              ],
+              [
+                1058,
+                1091
+              ],
+              [
+                1104,
+                1140
+              ],
+              [
+                1156,
+                1191
+              ],
+              [
+                1203,
+                1238
+              ],
+              [
+                1250,
+                1285
+              ],
+              [
+                1293,
+                1321
+              ],
+              [
+                1341,
+                1378
+              ],
+              [
+                1380,
+                1416
+              ],
+              [
+                1421,
+                1456
+              ],
+              [
+                1458,
+                1491
+              ],
+              [
+                1499,
+                1535
+              ],
+              [
+                1541,
+                1575
+              ],
+              [
+                1584,
+                1619
+              ],
+              [
+                1624,
+                1660
+              ],
+              [
+                1666,
+                1700
+              ],
+              [
+                1707,
+                1743
+              ],
+              [
+                1749,
+                1783
+              ],
+              [
+                1792,
+                1822
+              ],
+              [
+                1831,
+                1866
+              ],
+              [
+                1873,
+                1906
+              ],
+              [
+                1914,
+                1948
+              ],
+              [
+                1954,
+                1987
+              ],
+              [
+                1995,
+                2026
+              ],
+              [
+                2035,
+                2068
+              ],
+              [
+                2076,
+                2111
+              ],
+              [
+                2118,
+                2151
+              ],
+              [
+                2159,
+                2191
+              ],
+              [
+                2203,
+                2235
+              ],
+              [
+                2243,
+                2273
+              ],
+              [
+                2298,
+                2331
+              ],
+              [
+                2354,
+                2386
+              ],
+              [
+                2410,
+                2443
+              ],
+              [
+                2465,
+                2497
+              ]
+            ],
+            "crop": [
+              1014,
+              1806
+            ],
+            "deleted_rows": [],
+            "page": 331,
+            "retained_index": 22,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                230,
+                270
+              ],
+              [
+                275,
+                321
+              ],
+              [
+                323,
+                414
+              ],
+              [
+                416,
+                509
+              ],
+              [
+                511,
+                554
+              ],
+              [
+                559,
+                601
+              ],
+              [
+                606,
+                648
+              ],
+              [
+                651,
+                697
+              ],
+              [
+                703,
+                742
+              ],
+              [
+                747,
+                791
+              ],
+              [
+                792,
+                883
+              ],
+              [
+                886,
+                924
+              ],
+              [
+                938,
+                981
+              ],
+              [
+                983,
+                1027
+              ],
+              [
+                1032,
+                1076
+              ],
+              [
+                1077,
+                1125
+              ],
+              [
+                1128,
+                1168
+              ],
+              [
+                1175,
+                1216
+              ],
+              [
+                1225,
+                1271
+              ],
+              [
+                1272,
+                1317
+              ],
+              [
+                1320,
+                1362
+              ],
+              [
+                1366,
+                1457
+              ],
+              [
+                1463,
+                1508
+              ],
+              [
+                1511,
+                1553
+              ],
+              [
+                1557,
+                1600
+              ],
+              [
+                1604,
+                1695
+              ],
+              [
+                1698,
+                1739
+              ],
+              [
+                1744,
+                1788
+              ],
+              [
+                1792,
+                1836
+              ],
+              [
+                1842,
+                1883
+              ],
+              [
+                1884,
+                1930
+              ],
+              [
+                1932,
+                1975
+              ],
+              [
+                1982,
+                2021
+              ],
+              [
+                2032,
+                2077
+              ],
+              [
+                2079,
+                2121
+              ],
+              [
+                2127,
+                2167
+              ],
+              [
+                2177,
+                2217
+              ],
+              [
+                2226,
+                2268
+              ],
+              [
+                2275,
+                2318
+              ],
+              [
+                2324,
+                2361
+              ],
+              [
+                2374,
+                2416
+              ],
+              [
+                2425,
+                2465
+              ],
+              [
+                2475,
+                2513
+              ],
+              [
+                2526,
+                2564
+              ]
+            ],
+            "crop": [
+              876,
+              1683
+            ],
+            "deleted_rows": [],
+            "page": 352,
+            "retained_index": 33,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                198,
+                230
+              ],
+              [
+                242,
+                274
+              ],
+              [
+                285,
+                315
+              ],
+              [
+                328,
+                359
+              ],
+              [
+                372,
+                403
+              ],
+              [
+                414,
+                447
+              ],
+              [
+                458,
+                490
+              ],
+              [
+                501,
+                533
+              ],
+              [
+                545,
+                576
+              ],
+              [
+                589,
+                619
+              ],
+              [
+                632,
+                663
+              ],
+              [
+                675,
+                706
+              ],
+              [
+                719,
+                749
+              ],
+              [
+                762,
+                793
+              ],
+              [
+                806,
+                836
+              ],
+              [
+                849,
+                880
+              ],
+              [
+                892,
+                923
+              ],
+              [
+                936,
+                967
+              ],
+              [
+                979,
+                1010
+              ],
+              [
+                1022,
+                1052
+              ],
+              [
+                1065,
+                1097
+              ],
+              [
+                1109,
+                1140
+              ],
+              [
+                1152,
+                1182
+              ],
+              [
+                1195,
+                1226
+              ],
+              [
+                1239,
+                1270
+              ],
+              [
+                1283,
+                1313
+              ],
+              [
+                1326,
+                1358
+              ],
+              [
+                1369,
+                1400
+              ],
+              [
+                1412,
+                1443
+              ],
+              [
+                1456,
+                1487
+              ],
+              [
+                1499,
+                1528
+              ],
+              [
+                1543,
+                1568
+              ],
+              [
+                1586,
+                1617
+              ],
+              [
+                1630,
+                1661
+              ],
+              [
+                1673,
+                1703
+              ],
+              [
+                1715,
+                1745
+              ],
+              [
+                1758,
+                1787
+              ],
+              [
+                1798,
+                1829
+              ],
+              [
+                1842,
+                1874
+              ],
+              [
+                1884,
+                1916
+              ],
+              [
+                1928,
+                1959
+              ],
+              [
+                1971,
+                2002
+              ],
+              [
+                2014,
+                2046
+              ],
+              [
+                2058,
+                2090
+              ],
+              [
+                2100,
+                2134
+              ],
+              [
+                2144,
+                2174
+              ],
+              [
+                2187,
+                2220
+              ],
+              [
+                2232,
+                2265
+              ],
+              [
+                2275,
+                2309
+              ],
+              [
+                2319,
+                2352
+              ],
+              [
+                2362,
+                2393
+              ],
+              [
+                2406,
+                2440
+              ],
+              [
+                2449,
+                2481
+              ],
+              [
+                2491,
+                2526
+              ]
+            ],
+            "crop": [
+              1003,
+              1791
+            ],
+            "deleted_rows": [],
+            "page": 353,
+            "retained_index": 34,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                252,
+                284
+              ],
+              [
+                310,
+                342
+              ],
+              [
+                371,
+                402
+              ],
+              [
+                431,
+                462
+              ],
+              [
+                477,
+                508
+              ],
+              [
+                525,
+                556
+              ],
+              [
+                574,
+                604
+              ],
+              [
+                621,
+                653
+              ],
+              [
+                668,
+                700
+              ],
+              [
+                716,
+                747
+              ],
+              [
+                761,
+                791
+              ],
+              [
+                805,
+                839
+              ],
+              [
+                852,
+                884
+              ],
+              [
+                902,
+                935
+              ],
+              [
+                953,
+                985
+              ],
+              [
+                1001,
+                1033
+              ],
+              [
+                1049,
+                1081
+              ],
+              [
+                1097,
+                1129
+              ],
+              [
+                1152,
+                1184
+              ],
+              [
+                1205,
+                1238
+              ],
+              [
+                1256,
+                1287
+              ],
+              [
+                1304,
+                1334
+              ],
+              [
+                1356,
+                1382
+              ],
+              [
+                1404,
+                1435
+              ],
+              [
+                1455,
+                1488
+              ],
+              [
+                1503,
+                1533
+              ],
+              [
+                1556,
+                1587
+              ],
+              [
+                1605,
+                1637
+              ],
+              [
+                1663,
+                1695
+              ],
+              [
+                1721,
+                1754
+              ],
+              [
+                1784,
+                1816
+              ],
+              [
+                1843,
+                1874
+              ],
+              [
+                1903,
+                1934
+              ],
+              [
+                1967,
+                1994
+              ],
+              [
+                2026,
+                2048
+              ],
+              [
+                2080,
+                2108
+              ],
+              [
+                2132,
+                2164
+              ],
+              [
+                2179,
+                2202
+              ],
+              [
+                2232,
+                2260
+              ],
+              [
+                2280,
+                2312
+              ],
+              [
+                2332,
+                2364
+              ],
+              [
+                2385,
+                2416
+              ],
+              [
+                2440,
+                2472
+              ],
+              [
+                2494,
+                2526
+              ],
+              [
+                2550,
+                2582
+              ]
+            ],
+            "crop": [
+              885,
+              1673
+            ],
+            "deleted_rows": [],
+            "page": 360,
+            "retained_index": 41,
+            "source": 1
+          }
+        ],
+        "unit_id": "cato_minor",
+        "verification_policy": "promoted_tier_b"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/installed-foot/dio/dio.json": {
+      "source_sha256": "0baa75a06a85ecababf9236f73584e1325fa68a904c306c4588d81e2ac6bcdb9",
+      "value": {
+        "canvas_hashes": [
+          {
+            "canvas": 1,
+            "height": 1251,
+            "sha256": "85106232c62cca892214409d0bdc9cf8b1265e17cc537282e9df732389d2075e",
+            "width": 1004
+          },
+          {
+            "canvas": 2,
+            "height": 1366,
+            "sha256": "9eb33dcb88e2640791f4ff2cf68bc4753c024a2cb2f4f2dade3efce5bd09ab44",
+            "width": 1004
+          },
+          {
+            "canvas": 3,
+            "height": 1347,
+            "sha256": "80b4afc7fcdfc2bda7ac93ed832824d3a2ac962c568c7cd6fcef50d7328afe12",
+            "width": 1004
+          },
+          {
+            "canvas": 4,
+            "height": 1352,
+            "sha256": "2a0120b5d2a00e5d5294c39beba7901642636697d73553a1b96af773b69fb049",
+            "width": 1004
+          },
+          {
+            "canvas": 5,
+            "height": 1393,
+            "sha256": "a3eebde21844f6dada7eef3404a64aacc27eb21e4b791787e6ec6ad02be55c1e",
+            "width": 1004
+          },
+          {
+            "canvas": 6,
+            "height": 1339,
+            "sha256": "185e78da39e2b195623c6ea772b4080ea798e7836be84a9b8ff3f818ef27e2b0",
+            "width": 1004
+          },
+          {
+            "canvas": 7,
+            "height": 1356,
+            "sha256": "80c0a0bc53ea988176887a5afe5b8c230798aaa9abf2d79913d695bc25f85586",
+            "width": 1004
+          },
+          {
+            "canvas": 8,
+            "height": 1388,
+            "sha256": "601a3fb9d2f9e7a6db3893495e7545b818cc58a4faf41b8283ca8050887b6021",
+            "width": 1004
+          },
+          {
+            "canvas": 9,
+            "height": 1359,
+            "sha256": "ea37e53a01cf39a662443413c87c1f4809c9ae3ed743e4d4017cefab377bfde3",
+            "width": 1004
+          },
+          {
+            "canvas": 10,
+            "height": 1364,
+            "sha256": "497f5622a035d90c5565e79ad8d72f7ef8530be064fa037683a032a1d20c9a5c",
+            "width": 1004
+          },
+          {
+            "canvas": 11,
+            "height": 1393,
+            "sha256": "8d992b79a0c276e2b42b236a9b317792df78ca3af6d4654296b6360e149c650e",
+            "width": 1004
+          },
+          {
+            "canvas": 12,
+            "height": 1368,
+            "sha256": "df6325a612c4c50f529e9b504ca51a965812ee9f115401ea8bf8a0f50b717f94",
+            "width": 1004
+          },
+          {
+            "canvas": 13,
+            "height": 1376,
+            "sha256": "20dc3091e089ab7975ad91678e1225df97929817c8953d7ba6194bf4507af134",
+            "width": 1004
+          },
+          {
+            "canvas": 14,
+            "height": 1382,
+            "sha256": "1f105837f264fa38d3e36c8605812cd7190446a76e63fa1edb5f9300a036e11d",
+            "width": 1004
+          },
+          {
+            "canvas": 15,
+            "height": 1360,
+            "sha256": "ca49dc4c00a375011014b09eea8db3f06a30a0bcd604f2f017790a393fa96bda",
+            "width": 1004
+          },
+          {
+            "canvas": 16,
+            "height": 1373,
+            "sha256": "3680ef51acf1175549ccf6c20c59df759a46588b075365377ab2e234d56f3611",
+            "width": 1004
+          },
+          {
+            "canvas": 17,
+            "height": 1351,
+            "sha256": "a585cc581ad3350ed0e1a9a4ba15c9fd46cb5725a3a35db261ef4ebbc41c135a",
+            "width": 1004
+          },
+          {
+            "canvas": 18,
+            "height": 1385,
+            "sha256": "f02cfbaceed6b9f70c1a7691c42f9728770c2c038fc400bd11bd40e45a2c04ac",
+            "width": 1004
+          },
+          {
+            "canvas": 19,
+            "height": 1339,
+            "sha256": "c3bb4baec4aef4fae1aca88bb86cb336b200ca02a01e87435b142fa4bb3122d8",
+            "width": 1004
+          },
+          {
+            "canvas": 20,
+            "height": 1383,
+            "sha256": "817af8790ec89280b5365c604bcaba2d693323e99cfe68030a1930e4c2b9ef3c",
+            "width": 1004
+          },
+          {
+            "canvas": 21,
+            "height": 1356,
+            "sha256": "51516234b4b3a986a7631091b46865f3da28d81be9d0e080b431c5f975043ac7",
+            "width": 1004
+          },
+          {
+            "canvas": 22,
+            "height": 1375,
+            "sha256": "410b35f5d8f325c91034c318bd041f7199cdf930cc5233fe1fca07ef953221b4",
+            "width": 1004
+          },
+          {
+            "canvas": 23,
+            "height": 1344,
+            "sha256": "1f9b92fda898712b37946da252af57c883b0de0ed23d35e6ec74eb4f2184bb92",
+            "width": 1004
+          },
+          {
+            "canvas": 24,
+            "height": 1349,
+            "sha256": "cc1ea45a9d462096f0e56161c0ee7b10e9dc7b4ddb5fa76374191f704c2cb338",
+            "width": 1004
+          },
+          {
+            "canvas": 25,
+            "height": 1341,
+            "sha256": "9ef3061e6e58df4f0fcf581152c4610c535258154aca8ef36f3b95cf6275c396",
+            "width": 1004
+          },
+          {
+            "canvas": 26,
+            "height": 1341,
+            "sha256": "454b0287d4308557a6a795ca6e00fde04b16dd49c12313f5b1b993af7043ea5e",
+            "width": 1004
+          },
+          {
+            "canvas": 27,
+            "height": 1392,
+            "sha256": "d3d268f0cdff9c329f4a8b4d82032cd7152848f5502cc8f1d6ea4385c30fa142",
+            "width": 1004
+          },
+          {
+            "canvas": 28,
+            "height": 1393,
+            "sha256": "ffeeb54b14dbc348f285d64653608ee0cab6c2600b303cbdc57cebf2137c8f47",
+            "width": 1004
+          },
+          {
+            "canvas": 29,
+            "height": 1392,
+            "sha256": "6d13c5d7f61b292aa0c3048a2a6c5b8f43b49fc1c4a66ff352c8efe811bfa1ff",
+            "width": 1004
+          },
+          {
+            "canvas": 30,
+            "height": 1385,
+            "sha256": "f3ead6825b736706bc6b75f3ec48a6d6c37a9c03ba988a2a73b00ad1f868a227",
+            "width": 1004
+          },
+          {
+            "canvas": 31,
+            "height": 1376,
+            "sha256": "7de7f3d3e7794ec06ae57714d76a9c93d9d796bb9cf14328d12e731f0664504f",
+            "width": 1004
+          },
+          {
+            "canvas": 32,
+            "height": 1345,
+            "sha256": "b962e83959dafefccc174d8ba7a28eaaa6f723133b05dcf9f875a6d9875e4aa5",
+            "width": 1004
+          },
+          {
+            "canvas": 33,
+            "height": 1355,
+            "sha256": "7953bace3456cda318dc8cc97e1c08bbdefa5f6a8abaa3ab3c353d0231e88082",
+            "width": 1004
+          },
+          {
+            "canvas": 34,
+            "height": 1369,
+            "sha256": "a68133e5d5f5c73b7d2c67d8b9af537e3e0b54c99b2313b21823c4b31846afcf",
+            "width": 1004
+          },
+          {
+            "canvas": 35,
+            "height": 1354,
+            "sha256": "003e0f99afe5e555fe620bace3d6caf12d9762d05ddffc4f8a935ee99d2aae95",
+            "width": 1004
+          },
+          {
+            "canvas": 36,
+            "height": 1386,
+            "sha256": "b94e8b6e5d01fd9ef174f3d8aadbdaf9585a66a379168f06225f2ffeded87215",
+            "width": 1004
+          },
+          {
+            "canvas": 37,
+            "height": 1379,
+            "sha256": "e9d3b079cb1ba85f7fafc364c6ed90e2a28c3542410e419c44d40ec21c677ab5",
+            "width": 1004
+          },
+          {
+            "canvas": 38,
+            "height": 1381,
+            "sha256": "102cd9bfc5f2cc3e5bc5428edcaee2d24d772f40920da5eec0fc6874bcd89f0b",
+            "width": 1004
+          },
+          {
+            "canvas": 39,
+            "height": 1357,
+            "sha256": "556dbedabc1e73c78f39f2677944824f0af450cea206b4b141e5a3f31ced8995",
+            "width": 1004
+          },
+          {
+            "canvas": 40,
+            "height": 1376,
+            "sha256": "3bc8d2106f9dfe148abdf9fa88cfd2722273f7628390265f7181411368c0d6f0",
+            "width": 1004
+          },
+          {
+            "canvas": 41,
+            "height": 1346,
+            "sha256": "8fc94165a2def9a6568e0e1ba3ecbb06641e552e04eaea1c567a61a504277796",
+            "width": 1004
+          },
+          {
+            "canvas": 42,
+            "height": 1382,
+            "sha256": "24da1cf3aee6ec414f2e3f565c467114504628baf12838fd6d68713654760929",
+            "width": 1004
+          },
+          {
+            "canvas": 43,
+            "height": 1371,
+            "sha256": "a8b7dd5b0911c63e2d4efd04c4e16d426dbea40de67545155d83d6e86346ad4f",
+            "width": 1004
+          },
+          {
+            "canvas": 44,
+            "height": 1357,
+            "sha256": "495c3dd3005d374a0ef986ebb38bd1beaa16093e1e3fc7ec509b92664152c289",
+            "width": 1004
+          },
+          {
+            "canvas": 45,
+            "height": 1370,
+            "sha256": "42cbecdaeaa9d6cc344d15645084414349bdff3364c24f0b2444375fd748cb60",
+            "width": 1004
+          },
+          {
+            "canvas": 46,
+            "height": 1339,
+            "sha256": "d4cb314d2e865efc4e5b2460b66d395ba7c02c297ffa56b0a4a790de0b3a12e6",
+            "width": 1004
+          },
+          {
+            "canvas": 47,
+            "height": 1391,
+            "sha256": "a5104c6358ba32fe2aa84b3e7dedb18288884b3cdcfe8175c841cca947ebd1d1",
+            "width": 1004
+          },
+          {
+            "canvas": 48,
+            "height": 1366,
+            "sha256": "ec514fe9aff8d8eb35e8a9b56a8b651cb80ce3fbdefe622d9dbb67670979c85e",
+            "width": 1004
+          },
+          {
+            "canvas": 49,
+            "height": 1385,
+            "sha256": "89a8a6950929a8153e161f98dd6bd13caf784fa21b33cda099feefd3001fca26",
+            "width": 1004
+          },
+          {
+            "canvas": 50,
+            "height": 1367,
+            "sha256": "1d4e14a569fa882f9abb3bfb29c885575785de5d612d764f54a1977c2fa40e59",
+            "width": 1004
+          },
+          {
+            "canvas": 51,
+            "height": 1387,
+            "sha256": "09c2d3e5b0481a8df35ac62142ea6570e1f321fcb1e439c6dcf72212a95657d9",
+            "width": 1004
+          },
+          {
+            "canvas": 52,
+            "height": 1392,
+            "sha256": "ecf92a62a658070597c7cf6422fe591b2bb032ae165a0d64375dc019f3f7847b",
+            "width": 1004
+          },
+          {
+            "canvas": 53,
+            "height": 1358,
+            "sha256": "4d4f5579e837ef2b642a7da1c001b3e8309a93c8848566ecf5ecda738b1f2bed",
+            "width": 1004
+          },
+          {
+            "canvas": 54,
+            "height": 1352,
+            "sha256": "2c134ceb086ddf83699fa2783aa038b42dde3fa36b87208c224d8fcdceeb116a",
+            "width": 1004
+          },
+          {
+            "canvas": 55,
+            "height": 1378,
+            "sha256": "85f9970f5b69199e06c86396a0948191207688f7d7dff782ba2e2dcd4caced80",
+            "width": 1004
+          },
+          {
+            "canvas": 56,
+            "height": 1381,
+            "sha256": "e04ac7e70ab75a56ecb4e932fabfdf0cca2701963e1a87d43d68e2d9935dc4cb",
+            "width": 1004
+          },
+          {
+            "canvas": 57,
+            "height": 1386,
+            "sha256": "ca2818b3eee6c29520792d8ea56ee19db2e51995b00d77da4c3707c00dc8b6c4",
+            "width": 1004
+          },
+          {
+            "canvas": 58,
+            "height": 1328,
+            "sha256": "ec0e5d669cd0dec1581dd5ef0dd4fe7087a7dd16ce9f95cdb20b25e6edd11a9d",
+            "width": 1004
+          },
+          {
+            "canvas": 59,
+            "height": 1336,
+            "sha256": "b9e3603e6ed7a9cbb45823f9ee2c72e9f99add6be6917274de672ec20e201ef4",
+            "width": 1004
+          },
+          {
+            "canvas": 60,
+            "height": 1365,
+            "sha256": "e317982297605d3f2cef727a873e94a26692f44e0cfd70ef4f29aa87968b367a",
+            "width": 1004
+          },
+          {
+            "canvas": 61,
+            "height": 1373,
+            "sha256": "4104bc5bde9111a722ba0ba9a8484c10e0a38e7f3ef4d24cca36dfdd2a3996d3",
+            "width": 1004
+          },
+          {
+            "canvas": 62,
+            "height": 1304,
+            "sha256": "2f4c3b35bc247e517ea60521ff756dec45665b85ae6364c1bf7f34a5fa3374da",
+            "width": 1004
+          }
+        ],
+        "canvas_ranges": [
+          [
+            1,
+            0,
+            1251
+          ],
+          [
+            2,
+            1251,
+            2617
+          ],
+          [
+            3,
+            2617,
+            3964
+          ],
+          [
+            4,
+            3964,
+            5316
+          ],
+          [
+            5,
+            5316,
+            6709
+          ],
+          [
+            6,
+            6709,
+            8048
+          ],
+          [
+            7,
+            8048,
+            9404
+          ],
+          [
+            8,
+            9404,
+            10792
+          ],
+          [
+            9,
+            10792,
+            12151
+          ],
+          [
+            10,
+            12151,
+            13515
+          ],
+          [
+            11,
+            13515,
+            14908
+          ],
+          [
+            12,
+            14908,
+            16276
+          ],
+          [
+            13,
+            16276,
+            17652
+          ],
+          [
+            14,
+            17652,
+            19034
+          ],
+          [
+            15,
+            19034,
+            20394
+          ],
+          [
+            16,
+            20394,
+            21767
+          ],
+          [
+            17,
+            21767,
+            23118
+          ],
+          [
+            18,
+            23118,
+            24503
+          ],
+          [
+            19,
+            24503,
+            25842
+          ],
+          [
+            20,
+            25842,
+            27225
+          ],
+          [
+            21,
+            27225,
+            28581
+          ],
+          [
+            22,
+            28581,
+            29956
+          ],
+          [
+            23,
+            29956,
+            31300
+          ],
+          [
+            24,
+            31300,
+            32649
+          ],
+          [
+            25,
+            32649,
+            33990
+          ],
+          [
+            26,
+            33990,
+            35331
+          ],
+          [
+            27,
+            35331,
+            36723
+          ],
+          [
+            28,
+            36723,
+            38116
+          ],
+          [
+            29,
+            38116,
+            39508
+          ],
+          [
+            30,
+            39508,
+            40893
+          ],
+          [
+            31,
+            40893,
+            42269
+          ],
+          [
+            32,
+            42269,
+            43614
+          ],
+          [
+            33,
+            43614,
+            44969
+          ],
+          [
+            34,
+            44969,
+            46338
+          ],
+          [
+            35,
+            46338,
+            47692
+          ],
+          [
+            36,
+            47692,
+            49078
+          ],
+          [
+            37,
+            49078,
+            50457
+          ],
+          [
+            38,
+            50457,
+            51838
+          ],
+          [
+            39,
+            51838,
+            53195
+          ],
+          [
+            40,
+            53195,
+            54571
+          ],
+          [
+            41,
+            54571,
+            55917
+          ],
+          [
+            42,
+            55917,
+            57299
+          ],
+          [
+            43,
+            57299,
+            58670
+          ],
+          [
+            44,
+            58670,
+            60027
+          ],
+          [
+            45,
+            60027,
+            61397
+          ],
+          [
+            46,
+            61397,
+            62736
+          ],
+          [
+            47,
+            62736,
+            64127
+          ],
+          [
+            48,
+            64127,
+            65493
+          ],
+          [
+            49,
+            65493,
+            66878
+          ],
+          [
+            50,
+            66878,
+            68245
+          ],
+          [
+            51,
+            68245,
+            69632
+          ],
+          [
+            52,
+            69632,
+            71024
+          ],
+          [
+            53,
+            71024,
+            72382
+          ],
+          [
+            54,
+            72382,
+            73734
+          ],
+          [
+            55,
+            73734,
+            75112
+          ],
+          [
+            56,
+            75112,
+            76493
+          ],
+          [
+            57,
+            76493,
+            77879
+          ],
+          [
+            58,
+            77879,
+            79207
+          ],
+          [
+            59,
+            79207,
+            80543
+          ],
+          [
+            60,
+            80543,
+            81908
+          ],
+          [
+            61,
+            81908,
+            83281
+          ],
+          [
+            62,
+            83281,
+            84585
+          ]
+        ],
+        "events": [
+          "miss_dio_566_426",
+          "miss_dio_577_4979",
+          "miss_dio_579_5825",
+          "miss_dio_580_6654"
+        ],
+        "line_coverage": [
+          {
+            "canvas_owners": [
+              2
+            ],
+            "region": [
+              892,
+              2496,
+              1662,
+              2528
+            ],
+            "scaled_row_stream": [
+              2518,
+              2558
+            ],
+            "source": 1,
+            "source_page": 566
+          },
+          {
+            "canvas_owners": [
+              2
+            ],
+            "region": [
+              888,
+              2540,
+              1661,
+              2577
+            ],
+            "scaled_row_stream": [
+              2572,
+              2617
+            ],
+            "source": 1,
+            "source_page": 566
+          },
+          {
+            "canvas_owners": [
+              3
+            ],
+            "region": [
+              973,
+              226,
+              1757,
+              257
+            ],
+            "scaled_row_stream": [
+              2617,
+              2655
+            ],
+            "source": 1,
+            "source_page": 567
+          },
+          {
+            "canvas_owners": [
+              23
+            ],
+            "region": [
+              1020,
+              199,
+              1773,
+              230
+            ],
+            "scaled_row_stream": [
+              30682,
+              30720
+            ],
+            "source": 1,
+            "source_page": 577
+          },
+          {
+            "canvas_owners": [
+              23
+            ],
+            "region": [
+              987,
+              247,
+              1772,
+              277
+            ],
+            "scaled_row_stream": [
+              30739,
+              30777
+            ],
+            "source": 1,
+            "source_page": 577
+          },
+          {
+            "canvas_owners": [
+              27
+            ],
+            "region": [
+              1024,
+              210,
+              1790,
+              237
+            ],
+            "scaled_row_stream": [
+              36297,
+              36330
+            ],
+            "source": 1,
+            "source_page": 579
+          },
+          {
+            "canvas_owners": [
+              27
+            ],
+            "region": [
+              998,
+              263,
+              1787,
+              295
+            ],
+            "scaled_row_stream": [
+              36360,
+              36399
+            ],
+            "source": 1,
+            "source_page": 579
+          },
+          {
+            "canvas_owners": [
+              31
+            ],
+            "region": [
+              892,
+              2499,
+              1662,
+              2542
+            ],
+            "scaled_row_stream": [
+              41837,
+              41890
+            ],
+            "source": 1,
+            "source_page": 580
+          },
+          {
+            "canvas_owners": [
+              31
+            ],
+            "region": [
+              889,
+              2550,
+              1660,
+              2597
+            ],
+            "scaled_row_stream": [
+              41898,
+              41955
+            ],
+            "source": 1,
+            "source_page": 580
+          },
+          {
+            "canvas_owners": [
+              31
+            ],
+            "region": [
+              993,
+              209,
+              1782,
+              240
+            ],
+            "scaled_row_stream": [
+              41955,
+              41992
+            ],
+            "source": 1,
+            "source_page": 581
+          }
+        ],
+        "reviewed_lines": [
+          {
+            "region": [
+              892,
+              2496,
+              1662,
+              2528
+            ],
+            "role": "neighbor",
+            "source": 1,
+            "source_page": 566
+          },
+          {
+            "region": [
+              888,
+              2540,
+              1661,
+              2577
+            ],
+            "role": "promoted_missing_line",
+            "source": 1,
+            "source_page": 566
+          },
+          {
+            "region": [
+              973,
+              226,
+              1757,
+              257
+            ],
+            "role": "neighbor",
+            "source": 1,
+            "source_page": 567
+          },
+          {
+            "region": [
+              1020,
+              199,
+              1773,
+              230
+            ],
+            "role": "missing_source_line_1",
+            "source": 1,
+            "source_page": 577
+          },
+          {
+            "region": [
+              987,
+              247,
+              1772,
+              277
+            ],
+            "role": "adjacent_surviving_body_line",
+            "source": 1,
+            "source_page": 577
+          },
+          {
+            "region": [
+              1024,
+              210,
+              1790,
+              237
+            ],
+            "role": "missing_source_line_1",
+            "source": 1,
+            "source_page": 579
+          },
+          {
+            "region": [
+              998,
+              263,
+              1787,
+              295
+            ],
+            "role": "adjacent_surviving_body_line",
+            "source": 1,
+            "source_page": 579
+          },
+          {
+            "region": [
+              892,
+              2499,
+              1662,
+              2542
+            ],
+            "role": "neighbor",
+            "source": 1,
+            "source_page": 580
+          },
+          {
+            "region": [
+              889,
+              2550,
+              1660,
+              2597
+            ],
+            "role": "promoted_missing_line",
+            "source": 1,
+            "source_page": 580
+          },
+          {
+            "region": [
+              993,
+              209,
+              1782,
+              240
+            ],
+            "role": "neighbor",
+            "source": 1,
+            "source_page": 581
+          }
+        ],
+        "scale": 1.20239520072937,
+        "schema_version": 2,
+        "source_pages": [
+          {
+            "bands": [
+              [
+                404,
+                451
+              ],
+              [
+                453,
+                538
+              ],
+              [
+                540,
+                583
+              ],
+              [
+                585,
+                625
+              ],
+              [
+                627,
+                668
+              ],
+              [
+                671,
+                798
+              ],
+              [
+                801,
+                843
+              ],
+              [
+                844,
+                883
+              ],
+              [
+                889,
+                970
+              ],
+              [
+                974,
+                1014
+              ],
+              [
+                1018,
+                1105
+              ],
+              [
+                1107,
+                1151
+              ],
+              [
+                1155,
+                1191
+              ],
+              [
+                1197,
+                1237
+              ],
+              [
+                1243,
+                1276
+              ],
+              [
+                1284,
+                1366
+              ],
+              [
+                1369,
+                1410
+              ],
+              [
+                1413,
+                1584
+              ],
+              [
+                1588,
+                1630
+              ],
+              [
+                1634,
+                1677
+              ],
+              [
+                1678,
+                1718
+              ],
+              [
+                1723,
+                1764
+              ],
+              [
+                1767,
+                1809
+              ],
+              [
+                1810,
+                1850
+              ],
+              [
+                1854,
+                1893
+              ],
+              [
+                1897,
+                1937
+              ],
+              [
+                1942,
+                1985
+              ],
+              [
+                1989,
+                2032
+              ],
+              [
+                2034,
+                2075
+              ],
+              [
+                2081,
+                2124
+              ],
+              [
+                2126,
+                2166
+              ],
+              [
+                2173,
+                2211
+              ],
+              [
+                2220,
+                2258
+              ],
+              [
+                2267,
+                2304
+              ],
+              [
+                2316,
+                2354
+              ],
+              [
+                2360,
+                2401
+              ],
+              [
+                2413,
+                2437
+              ],
+              [
+                2453,
+                2489
+              ],
+              [
+                2496,
+                2528
+              ],
+              [
+                2540,
+                2577
+              ]
+            ],
+            "crop": [
+              888,
+              1697
+            ],
+            "deleted_rows": [],
+            "page": 566,
+            "retained_index": 0,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                226,
+                257
+              ],
+              [
+                276,
+                310
+              ],
+              [
+                327,
+                360
+              ],
+              [
+                380,
+                413
+              ],
+              [
+                430,
+                464
+              ],
+              [
+                485,
+                518
+              ],
+              [
+                539,
+                573
+              ],
+              [
+                595,
+                628
+              ],
+              [
+                650,
+                683
+              ],
+              [
+                705,
+                735
+              ],
+              [
+                760,
+                791
+              ],
+              [
+                815,
+                846
+              ],
+              [
+                868,
+                899
+              ],
+              [
+                922,
+                953
+              ],
+              [
+                976,
+                1008
+              ],
+              [
+                1029,
+                1060
+              ],
+              [
+                1080,
+                1111
+              ],
+              [
+                1133,
+                1163
+              ],
+              [
+                1176,
+                1207
+              ],
+              [
+                1220,
+                1250
+              ],
+              [
+                1263,
+                1294
+              ],
+              [
+                1307,
+                1338
+              ],
+              [
+                1350,
+                1381
+              ],
+              [
+                1393,
+                1425
+              ],
+              [
+                1438,
+                1468
+              ],
+              [
+                1481,
+                1511
+              ],
+              [
+                1525,
+                1554
+              ],
+              [
+                1568,
+                1598
+              ],
+              [
+                1612,
+                1642
+              ],
+              [
+                1658,
+                1688
+              ],
+              [
+                1704,
+                1735
+              ],
+              [
+                1751,
+                1781
+              ],
+              [
+                1796,
+                1827
+              ],
+              [
+                1840,
+                1870
+              ],
+              [
+                1886,
+                1916
+              ],
+              [
+                1932,
+                1964
+              ],
+              [
+                1978,
+                2012
+              ],
+              [
+                2025,
+                2057
+              ],
+              [
+                2071,
+                2102
+              ],
+              [
+                2117,
+                2149
+              ],
+              [
+                2163,
+                2196
+              ],
+              [
+                2208,
+                2242
+              ],
+              [
+                2254,
+                2285
+              ],
+              [
+                2299,
+                2331
+              ],
+              [
+                2343,
+                2375
+              ],
+              [
+                2387,
+                2418
+              ],
+              [
+                2431,
+                2461
+              ],
+              [
+                2474,
+                2505
+              ],
+              [
+                2517,
+                2550
+              ]
+            ],
+            "crop": [
+              973,
+              1763
+            ],
+            "deleted_rows": [],
+            "page": 567,
+            "retained_index": 1,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                199,
+                230
+              ],
+              [
+                247,
+                277
+              ],
+              [
+                294,
+                326
+              ],
+              [
+                342,
+                374
+              ],
+              [
+                389,
+                421
+              ],
+              [
+                437,
+                469
+              ],
+              [
+                485,
+                517
+              ],
+              [
+                532,
+                562
+              ],
+              [
+                578,
+                610
+              ],
+              [
+                623,
+                655
+              ],
+              [
+                671,
+                703
+              ],
+              [
+                719,
+                752
+              ],
+              [
+                768,
+                798
+              ],
+              [
+                814,
+                848
+              ],
+              [
+                863,
+                897
+              ],
+              [
+                914,
+                947
+              ],
+              [
+                960,
+                993
+              ],
+              [
+                1011,
+                1042
+              ],
+              [
+                1058,
+                1090
+              ],
+              [
+                1105,
+                1138
+              ],
+              [
+                1152,
+                1185
+              ],
+              [
+                1200,
+                1233
+              ],
+              [
+                1246,
+                1271
+              ],
+              [
+                1292,
+                1324
+              ],
+              [
+                1347,
+                1379
+              ],
+              [
+                1403,
+                1439
+              ],
+              [
+                1459,
+                1490
+              ],
+              [
+                1516,
+                1548
+              ],
+              [
+                1571,
+                1603
+              ],
+              [
+                1625,
+                1656
+              ],
+              [
+                1678,
+                1709
+              ],
+              [
+                1734,
+                1764
+              ],
+              [
+                1786,
+                1818
+              ],
+              [
+                1844,
+                1875
+              ],
+              [
+                1901,
+                1932
+              ],
+              [
+                1958,
+                1988
+              ],
+              [
+                2011,
+                2042
+              ],
+              [
+                2067,
+                2098
+              ],
+              [
+                2121,
+                2152
+              ],
+              [
+                2180,
+                2211
+              ],
+              [
+                2237,
+                2267
+              ],
+              [
+                2291,
+                2323
+              ],
+              [
+                2344,
+                2375
+              ],
+              [
+                2402,
+                2434
+              ],
+              [
+                2456,
+                2489
+              ],
+              [
+                2511,
+                2536
+              ],
+              [
+                2537,
+                2540
+              ]
+            ],
+            "crop": [
+              986,
+              1778
+            ],
+            "deleted_rows": [],
+            "page": 577,
+            "retained_index": 11,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                210,
+                237
+              ],
+              [
+                263,
+                295
+              ],
+              [
+                316,
+                346
+              ],
+              [
+                368,
+                398
+              ],
+              [
+                419,
+                451
+              ],
+              [
+                472,
+                503
+              ],
+              [
+                524,
+                554
+              ],
+              [
+                575,
+                607
+              ],
+              [
+                626,
+                658
+              ],
+              [
+                678,
+                710
+              ],
+              [
+                730,
+                761
+              ],
+              [
+                781,
+                813
+              ],
+              [
+                833,
+                865
+              ],
+              [
+                885,
+                916
+              ],
+              [
+                937,
+                968
+              ],
+              [
+                989,
+                1023
+              ],
+              [
+                1042,
+                1071
+              ],
+              [
+                1093,
+                1120
+              ],
+              [
+                1145,
+                1177
+              ],
+              [
+                1197,
+                1229
+              ],
+              [
+                1248,
+                1280
+              ],
+              [
+                1302,
+                1334
+              ],
+              [
+                1355,
+                1386
+              ],
+              [
+                1406,
+                1438
+              ],
+              [
+                1460,
+                1493
+              ],
+              [
+                1512,
+                1545
+              ],
+              [
+                1566,
+                1599
+              ],
+              [
+                1619,
+                1655
+              ],
+              [
+                1673,
+                1710
+              ],
+              [
+                1731,
+                1763
+              ],
+              [
+                1779,
+                1810
+              ],
+              [
+                1828,
+                1860
+              ],
+              [
+                1874,
+                1906
+              ],
+              [
+                1921,
+                1957
+              ],
+              [
+                1969,
+                2006
+              ],
+              [
+                2016,
+                2053
+              ],
+              [
+                2066,
+                2100
+              ],
+              [
+                2116,
+                2149
+              ],
+              [
+                2165,
+                2200
+              ],
+              [
+                2214,
+                2249
+              ],
+              [
+                2265,
+                2296
+              ],
+              [
+                2315,
+                2353
+              ],
+              [
+                2366,
+                2402
+              ],
+              [
+                2420,
+                2455
+              ],
+              [
+                2469,
+                2501
+              ],
+              [
+                2518,
+                2560
+              ]
+            ],
+            "crop": [
+              998,
+              1796
+            ],
+            "deleted_rows": [],
+            "page": 579,
+            "retained_index": 13,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                245,
+                418
+              ],
+              [
+                420,
+                455
+              ],
+              [
+                464,
+                652
+              ],
+              [
+                654,
+                704
+              ],
+              [
+                707,
+                747
+              ],
+              [
+                755,
+                802
+              ],
+              [
+                805,
+                848
+              ],
+              [
+                858,
+                905
+              ],
+              [
+                907,
+                948
+              ],
+              [
+                956,
+                1000
+              ],
+              [
+                1004,
+                1052
+              ],
+              [
+                1055,
+                1105
+              ],
+              [
+                1109,
+                1159
+              ],
+              [
+                1160,
+                1205
+              ],
+              [
+                1215,
+                1360
+              ],
+              [
+                1364,
+                1411
+              ],
+              [
+                1414,
+                1452
+              ],
+              [
+                1464,
+                1612
+              ],
+              [
+                1614,
+                1659
+              ],
+              [
+                1665,
+                1712
+              ],
+              [
+                1716,
+                1760
+              ],
+              [
+                1764,
+                1857
+              ],
+              [
+                1861,
+                1905
+              ],
+              [
+                1908,
+                1954
+              ],
+              [
+                1956,
+                2003
+              ],
+              [
+                2006,
+                2058
+              ],
+              [
+                2059,
+                2344
+              ],
+              [
+                2347,
+                2394
+              ],
+              [
+                2398,
+                2496
+              ],
+              [
+                2499,
+                2542
+              ],
+              [
+                2550,
+                2597
+              ]
+            ],
+            "crop": [
+              889,
+              1704
+            ],
+            "deleted_rows": [],
+            "page": 580,
+            "retained_index": 14,
+            "source": 1
+          },
+          {
+            "bands": [
+              [
+                209,
+                240
+              ],
+              [
+                253,
+                285
+              ],
+              [
+                297,
+                328
+              ],
+              [
+                343,
+                364
+              ],
+              [
+                385,
+                415
+              ],
+              [
+                432,
+                462
+              ],
+              [
+                478,
+                510
+              ],
+              [
+                526,
+                557
+              ],
+              [
+                573,
+                603
+              ],
+              [
+                620,
+                651
+              ],
+              [
+                667,
+                698
+              ],
+              [
+                716,
+                746
+              ],
+              [
+                762,
+                792
+              ],
+              [
+                808,
+                841
+              ],
+              [
+                856,
+                889
+              ],
+              [
+                903,
+                934
+              ],
+              [
+                951,
+                982
+              ],
+              [
+                998,
+                1028
+              ],
+              [
+                1047,
+                1080
+              ],
+              [
+                1098,
+                1129
+              ],
+              [
+                1148,
+                1179
+              ],
+              [
+                1198,
+                1230
+              ],
+              [
+                1248,
+                1280
+              ],
+              [
+                1298,
+                1328
+              ],
+              [
+                1348,
+                1378
+              ],
+              [
+                1400,
+                1431
+              ],
+              [
+                1449,
+                1479
+              ],
+              [
+                1498,
+                1529
+              ],
+              [
+                1548,
+                1579
+              ],
+              [
+                1596,
+                1629
+              ],
+              [
+                1645,
+                1676
+              ],
+              [
+                1696,
+                1727
+              ],
+              [
+                1745,
+                1777
+              ],
+              [
+                1791,
+                1822
+              ],
+              [
+                1839,
+                1870
+              ],
+              [
+                1888,
+                1919
+              ],
+              [
+                1936,
+                1966
+              ],
+              [
+                1986,
+                2016
+              ],
+              [
+                2033,
+                2064
+              ],
+              [
+                2080,
+                2110
+              ],
+              [
+                2127,
+                2157
+              ],
+              [
+                2174,
+                2205
+              ],
+              [
+                2222,
+                2253
+              ],
+              [
+                2269,
+                2299
+              ],
+              [
+                2316,
+                2346
+              ],
+              [
+                2367,
+                2397
+              ],
+              [
+                2414,
+                2445
+              ],
+              [
+                2460,
+                2493
+              ],
+              [
+                2507,
+                2540
+              ]
+            ],
+            "crop": [
+              993,
+              1794
+            ],
+            "deleted_rows": [],
+            "page": 581,
+            "retained_index": 15,
+            "source": 1
+          }
+        ],
+        "unit_id": "dio",
+        "verification_policy": "promoted_tier_b"
+      }
+    },
     "archive/tier_b_omission_repairs_2026_10_09/installed-head-corrected/aemilius_paulus/aemilius_paulus.json": {
       "source_sha256": "97b88bd35abc4a49bed90625773e62f2701fa57991033767bd61fa00b2991b56",
       "value": {

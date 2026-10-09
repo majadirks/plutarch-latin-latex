@@ -891,6 +891,18 @@ fn preserve_known_body_crop_edge(
             left: 899,
             right: 1691,
         },
+        (1, 352, (1830, 2842), 879, 1683) => Column {
+            left: 876,
+            right: 1683,
+        },
+        (1, 566, (1813, 2838), 892, 1697) => Column {
+            left: 888,
+            right: 1697,
+        },
+        (1, 580, (1816, 2835), 892, 1704) => Column {
+            left: 889,
+            right: 1704,
+        },
         _ => column,
     }
 }
@@ -1687,6 +1699,76 @@ const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
         protected: Band {
             top: 263,
             bottom: 295,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 110,
+        unit_id: "agesilaus",
+        dimensions: (798, 2834),
+        observed: Band {
+            top: 2519,
+            bottom: 2558,
+        },
+        protected: Band {
+            top: 2519,
+            bottom: 2558,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 633,
+        unit_id: "artoxerxes",
+        dimensions: (786, 2826),
+        observed: Band {
+            top: 2522,
+            bottom: 2554,
+        },
+        protected: Band {
+            top: 2522,
+            bottom: 2554,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 352,
+        unit_id: "cato_minor",
+        dimensions: (807, 2842),
+        observed: Band {
+            top: 2526,
+            bottom: 2564,
+        },
+        protected: Band {
+            top: 2526,
+            bottom: 2564,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 566,
+        unit_id: "dio",
+        dimensions: (809, 2838),
+        observed: Band {
+            top: 2540,
+            bottom: 2577,
+        },
+        protected: Band {
+            top: 2540,
+            bottom: 2577,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 580,
+        unit_id: "dio",
+        dimensions: (815, 2835),
+        observed: Band {
+            top: 2550,
+            bottom: 2597,
+        },
+        protected: Band {
+            top: 2550,
+            bottom: 2597,
         },
     },
 ];

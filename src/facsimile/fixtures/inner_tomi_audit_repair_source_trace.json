@@ -945,10 +945,10 @@
           "sha256": "1686056931565ca63452329649ca1c25192bb8b567a977600a9b4ea86b428f29"
         }
       ],
-      "status": "pending_repair",
+      "status": "installed",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Confirming read authorizes repair investigation; production restoration and rebuilt-reader review remain pending.",
+      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -1325,6 +1325,10 @@
         ],
         "regression_name": "tier_b_non_antonius_source_lines_restored",
         "downstream_trial_loss_stage": "pending candidate composition verification"
+      },
+      "passing_evidence": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-foot/agesilaus/agesilaus.json",
+        "sha256": "620f5de57f1f355f379b4736056f2ac2885f7ac04aa07159372461ea5b5da2a7"
       }
     },
     {
@@ -5975,10 +5979,10 @@
           "sha256": "a89f3f13d3efffb6e6f513fb9cd398763057ccf4a30691c9f90efd2c78d0cfd2"
         }
       ],
-      "status": "pending_repair",
+      "status": "installed",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Confirming read authorizes repair investigation; production restoration and rebuilt-reader review remain pending.",
+      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -6443,6 +6447,10 @@
         ],
         "regression_name": "tier_b_non_antonius_source_lines_restored",
         "downstream_trial_loss_stage": "pending candidate composition verification"
+      },
+      "passing_evidence": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-foot/artoxerxes/artoxerxes.json",
+        "sha256": "7128691cf37715d14745962a61e65cafef29d2890dddc416d6a92e73d396ad87"
       }
     },
     {
@@ -11984,10 +11992,10 @@
           "sha256": "ebfaa6b3a3789609bd81bcf3d9f2a499b9848f3b3bf0fce7a5f5d9d4d4162925"
         }
       ],
-      "status": "pending_repair",
+      "status": "installed",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Confirming read authorizes repair investigation; production restoration and rebuilt-reader review remain pending.",
+      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -12020,7 +12028,7 @@
         "reviewed_lines": [
           {
             "region": [
-              879,
+              876,
               2526,
               1648,
               2564
@@ -12029,7 +12037,7 @@
             "source": 1,
             "source_page": 352,
             "baseline": {
-              "first_loss_stage": "pass_a_furniture_filter",
+              "first_loss_stage": "production_crop_and_pass_a_furniture_filter",
               "production_column": [
                 879,
                 1683
@@ -12412,6 +12420,10 @@
         ],
         "regression_name": "tier_b_non_antonius_source_lines_restored",
         "downstream_trial_loss_stage": "pending candidate composition verification"
+      },
+      "passing_evidence": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-foot/cato_minor/cato_minor.json",
+        "sha256": "c7782c00af78ad27468e71cd5a64ef90e0e54c3573e4ca9c034644076f6ec6fb"
       }
     },
     {
@@ -16290,10 +16302,10 @@
           "sha256": "ccbde3fb76420716ba1bf74dac6757fb6fbe136a7b6d4e86d4e57030f0392320"
         }
       ],
-      "status": "pending_repair",
+      "status": "installed",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Confirming read authorizes repair investigation; production restoration and rebuilt-reader review remain pending.",
+      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -16326,7 +16338,7 @@
         "reviewed_lines": [
           {
             "region": [
-              892,
+              888,
               2540,
               1661,
               2577
@@ -16335,7 +16347,7 @@
             "source": 1,
             "source_page": 566,
             "baseline": {
-              "first_loss_stage": "pass_a_furniture_filter",
+              "first_loss_stage": "production_crop_and_pass_a_furniture_filter",
               "production_column": [
                 892,
                 1697
@@ -16694,6 +16706,10 @@
         ],
         "regression_name": "tier_b_non_antonius_source_lines_restored",
         "downstream_trial_loss_stage": "pending candidate composition verification"
+      },
+      "passing_evidence": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-foot/dio/dio.json",
+        "sha256": "0baa75a06a85ecababf9236f73584e1325fa68a904c306c4588d81e2ac6bcdb9"
       }
     },
     {
@@ -17546,10 +17562,10 @@
           "sha256": "3bca4c799e50b9cf16f4577f69dd25ad07d269287bba878654a380a66ffb52ee"
         }
       ],
-      "status": "pending_repair",
+      "status": "installed",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Confirming read authorizes repair investigation; production restoration and rebuilt-reader review remain pending.",
+      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -17870,6 +17886,10 @@
         ],
         "regression_name": "tier_b_non_antonius_source_lines_restored",
         "downstream_trial_loss_stage": "pending candidate composition verification"
+      },
+      "passing_evidence": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-foot/dio/dio.json",
+        "sha256": "0baa75a06a85ecababf9236f73584e1325fa68a904c306c4588d81e2ac6bcdb9"
       }
     },
     {
@@ -35728,7 +35748,7 @@
       ],
       "status": "proposed",
       "responsible_step": "5.1",
-      "historical_evidence": "| M1 | Fabius Maximus II/81, r73 | v1/229 ->230, f216 ->217; `quÃ¦ in sum-` -> `mitatibus montium sedebat` | **Confirmed copied-margin gap**, about130 rows at 180 DPI. Split word continues; no intervening source Latin line. |",
+      "historical_evidence": "| M1 | Fabius Maximus II/81, r73 | v1/229 ->230, f216 ->217; `quÃƒÂ¦ in sum-` -> `mitatibus montium sedebat` | **Confirmed copied-margin gap**, about130 rows at 180 DPI. Split word continues; no intervening source Latin line. |",
       "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
     },
     {
@@ -35827,7 +35847,7 @@
       ],
       "status": "restored",
       "responsible_step": "1.1C",
-      "historical_evidence": "| C1 | Romulus I/68, r52; v1/38 ->39, f25 ->26 | Output goes from `eo potentiÃ¦ progressuram.` to `educati, condendÃ¦`. Source 38 has four intervening Latin lines, beginning `IX. Amulio interfecto rebusque compositis, neque AlbÃ¦` and ending `nore, ipsis consilium fuit seorsum urbis, ubi primum fuerant`. Output67-69 contain earlier/later prose, not those lines. | **Confirmed omission of four distinct source Latin lines**, including chapter IX's opening. |",
+      "historical_evidence": "| C1 | Romulus I/68, r52; v1/38 ->39, f25 ->26 | Output goes from `eo potentiÃƒÂ¦ progressuram.` to `educati, condendÃƒÂ¦`. Source 38 has four intervening Latin lines, beginning `IX. Amulio interfecto rebusque compositis, neque AlbÃƒÂ¦` and ending `nore, ipsis consilium fuit seorsum urbis, ubi primum fuerant`. Output67-69 contain earlier/later prose, not those lines. | **Confirmed omission of four distinct source Latin lines**, including chapter IX's opening. |",
       "reason": "The Romulus source-to-canvas regression preserves chapter IX, the native adjacent printed line, and the complete clipped words."
     },
     {
@@ -35836,7 +35856,7 @@
       ],
       "status": "restored",
       "responsible_step": "1.1C",
-      "historical_evidence": "| C2 | Coriolanus II/207, r199; v1/291 ->292, f278 ->279 | Output `Numa de-` jumps to `cum Ã†quis sociis atque amicis suis`. Source 292 first has `finierat, ut in ejus Vita scripsimus. (11) At res Volscorum` and `statim Marcium desideraverunt. Primo enim de principatu`. Output208 has only the genuine terminal continuation. | **Confirmed omission of two distinct source Latin lines.** The split `de-` is left without its expected continuation. |",
+      "historical_evidence": "| C2 | Coriolanus II/207, r199; v1/291 ->292, f278 ->279 | Output `Numa de-` jumps to `cum Ãƒâ€ quis sociis atque amicis suis`. Source 292 first has `finierat, ut in ejus Vita scripsimus. (11) At res Volscorum` and `statim Marcium desideraverunt. Primo enim de principatu`. Output208 has only the genuine terminal continuation. | **Confirmed omission of two distinct source Latin lines.** The split `de-` is left without its expected continuation. |",
       "reason": "Reviewed missing Latin and adjacent source regions pass once-only original-pixel extraction and returned-canvas assertions."
     },
     {
@@ -35872,7 +35892,7 @@
       ],
       "status": "restored",
       "responsible_step": "1.1C",
-      "historical_evidence": "| C6 | Romulus I/68-69, r52-53; v1/39, f26; `educati, condendÃ¦` and `raptas.` | The left boundary cuts initial glyphs in the source 39 contribution. Source 39 shows complete `educati` and `raptas`; current68/69 clip their leftmost letters. | **Confirmed lateral clipping at these pages.** The full extent into additional Romulus pages has not been counted. |",
+      "historical_evidence": "| C6 | Romulus I/68-69, r52-53; v1/39, f26; `educati, condendÃƒÂ¦` and `raptas.` | The left boundary cuts initial glyphs in the source 39 contribution. Source 39 shows complete `educati` and `raptas`; current68/69 clip their leftmost letters. | **Confirmed lateral clipping at these pages.** The full extent into additional Romulus pages has not been counted. |",
       "reason": "The Romulus source-to-canvas regression preserves chapter IX, the native adjacent printed line, and the complete clipped words."
     },
     {
@@ -35908,7 +35928,7 @@
       ],
       "status": "proposed",
       "responsible_step": "5.1",
-      "historical_evidence": "| R3 | I/68, r52 | v1/38-39, f25-26; `eo potentiÃ¦ progressuram.` | **Confirmed left rule through gap**, followed by Latin crop lossC1/C6. Pixels near prose require particular care in any later review. |",
+      "historical_evidence": "| R3 | I/68, r52 | v1/38-39, f25-26; `eo potentiÃƒÂ¦ progressuram.` | **Confirmed left rule through gap**, followed by Latin crop lossC1/C6. Pixels near prose require particular care in any later review. |",
       "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
     },
     {
