@@ -643,21 +643,22 @@ Tier-B dispositions. Post-dedup repair confirmation occurs in 2.1A.
 ### Measured repair decisions
 
 The diagnostic fixture owns measured source coordinates and frozen baseline traces.
-No production exclusions or masks have been installed in this pass. The installed
-repair ledger remains unchanged. The source comparisons below are raw-source
-hypothetical joins; installed-exclusion pipeline verification belongs to 2.1.
+The D4?D12 production exclusions and their installed ledger records are in place;
+the existing D1?D3 records are preserved. Furniture masks and omission corrections
+remain proposed. Step 2.1 verifies the reviewed retained source-line regions
+through extracted strips and composed canvases.
 
 | Finding | Source decision | Status | Responsible step |
 | --- | --- | --- | --- |
-| D4 | v2 keep 115, 116, 117, 118; exclude 119, 120, 121, 122; no unique second-scan Latin observed | proposed | 2.1 |
-| D5 | v2 keep 211, 212; exclude 213, 214; no unique second-scan Latin observed | proposed | 2.1 |
-| D6 | v2 keep 295, 296; exclude 297, 298; no unique second-scan Latin observed | proposed | 2.1 |
-| D7 | v2 keep 359, 360; exclude 361, 362; no unique second-scan Latin observed | proposed | 2.1 |
-| D8 | v2 keep 375, 376; exclude 377, 378; no unique second-scan Latin observed | proposed | 2.1 |
-| D9 | v2 keep 463, 464; exclude 465, 466; no unique second-scan Latin observed | proposed | 2.1 |
-| D10 | v2 keep 521, 522; exclude 523, 524; no unique second-scan Latin observed | proposed | 2.1 |
-| D11 | v2 keep 671, 672; exclude 673, 674; no unique second-scan Latin observed | proposed | 2.1 |
-| D12 | v2 keep 699, 700; exclude 701, 702; no unique second-scan Latin observed | proposed | 2.1 |
+| D4 | v2 keep 115, 116, 117, 118; exclude 119, 120, 121, 122; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
+| D5 | v2 keep 211, 212; exclude 213, 214; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
+| D6 | v2 keep 295, 296; exclude 297, 298; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
+| D7 | v2 keep 359, 360; exclude 361, 362; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
+| D8 | v2 keep 375, 376; exclude 377, 378; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
+| D9 | v2 keep 463, 464; exclude 465, 466; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
+| D10 | v2 keep 521, 522; exclude 523, 524; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
+| D11 | v2 keep 671, 672; exclude 673, 674; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
+| D12 | v2 keep 699, 700; exclude 701, 702; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
 | H2 / R9 on 375 | Agis v2/375: right divider begins at x1753; reviewed Latin ends before x1740; candidate x1745..1797 preserves Latin and unmerges the head | proposed | 3.1 |
 | C3 | Phocion first source line on 299 remains missing; raw 296→299 join reviewed | awaiting post-dedup trace | 2.1A / 4.2 |
 | Additional Cato verse label | Cato Minor v2/360 `Et:`, source region [888, 2026, 932, 2048]; 374 ink pixels below the 498-pixel strip floor | unresolved | 1.1C / 4.2 |

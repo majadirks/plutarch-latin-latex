@@ -571,8 +571,15 @@ fn skip_known_duplicate_source_page(unit_id: &str, source: usize, page: u32) -> 
     matches!(
         (unit_id, source, page),
         ("comparatio_sertorii_et_eumenis", 1, 103 | 104)
-            | ("agis", 1, 369 | 370)
-            | ("cato_minor", 1, 339..=348)
+            | ("agis", 1, 369 | 370 | 377 | 378)
+            | ("cato_minor", 1, 339..=348 | 361 | 362)
+            | ("agesilaus", 1, 119..=122)
+            | ("alexander", 1, 213 | 214)
+            | ("phocion", 1, 297 | 298)
+            | ("cicero", 1, 465 | 466)
+            | ("antonius", 1, 523 | 524)
+            | ("aratus", 1, 673 | 674)
+            | ("otho", 1, 701 | 702)
     )
 }
 /// Render, column-detect, crop, band, and de-furniture every source page in a
@@ -1474,28 +1481,17 @@ mod tests {
         );
         assert_source_endpoint(&range, 708);
         let (pages, m) = traced_real_unit(&range);
+        let source_pages: Vec<_> = (range.unit.start_page..=range.end_page)
+            .filter(|p| !skip_known_duplicate_source_page("otho", 1, *p))
+            .collect();
+        assert!(!source_pages.contains(&701) && !source_pages.contains(&702));
+        let retained = |p| &pages[source_pages.iter().position(|page| *page == p).unwrap()];
         for page in 705..=708 {
-            let retained = &pages[(page - range.unit.start_page) as usize];
-            save_retained_crop(&format!("otho_{page}"), retained);
+            save_retained_crop(&format!("otho_{page}"), retained(page));
         }
-        assert_ocr_landmark(
-            1,
-            705,
-            "videbantur",
-            &pages[(705 - range.unit.start_page) as usize],
-        );
-        assert_ocr_landmark(
-            1,
-            708,
-            "XVIII",
-            &pages[(708 - range.unit.start_page) as usize],
-        );
-        assert_ocr_landmark(
-            1,
-            708,
-            "conjunxerunt",
-            &pages[(708 - range.unit.start_page) as usize],
-        );
+        assert_ocr_landmark(1, 705, "videbantur", retained(705));
+        assert_ocr_landmark(1, 708, "XVIII", retained(708));
+        assert_ocr_landmark(1, 708, "conjunxerunt", retained(708));
         verify_real_composition("otho", &pages, &m);
     }
 
@@ -1575,8 +1571,11 @@ mod tests {
                 Ok(image.clone())
             })
             .unwrap();
-            assert_eq!(*requests.borrow(), (start..=end).collect::<Vec<_>>());
-            assert_eq!(pages.len() as u32, end - start + 1);
+            let expected: Vec<_> = (start..=end)
+                .filter(|p| !skip_known_duplicate_source_page(id, source, *p))
+                .collect();
+            assert_eq!(*requests.borrow(), expected);
+            assert_eq!(pages.len(), expected.len());
             assert!(!pages.last().unwrap().1.is_empty());
             assert!(!ranges[0].shared_tail);
         }
@@ -1615,7 +1614,9 @@ mod tests {
         })
         .unwrap();
         let trace = trace.into_inner();
-        let expected: Vec<_> = (range.unit.start_page..=range.end_page).collect();
+        let expected: Vec<_> = (range.unit.start_page..=range.end_page)
+            .filter(|p| !skip_known_duplicate_source_page(&range.unit.id, range.unit.source, *p))
+            .collect();
         assert_eq!(trace.requests, expected);
         assert_eq!(trace.renders, expected);
         assert_eq!(trace.detections, expected);
@@ -1631,7 +1632,7 @@ mod tests {
                 && expected.contains(&r.page)
                 && !(r.page == 434 && range.unit.id != "cato_major")
         }) {
-            let retained = &pages[(record.page - range.unit.start_page) as usize];
+            let retained = &pages[expected.iter().position(|p| *p == record.page).unwrap()];
             let original = real_source_image(record.source, record.page);
             let column = detect_latin_column(&original).unwrap();
             assert_eq!(record.dpi, BODY_DPI);
@@ -2982,42 +2983,79 @@ mod tests {
 
     fn assert_reviewed_duplicate_sequence(id: &str) {
         let ledger = repair_ledger();
-        let repair = ledger["repairs"]
+        let repairs: Vec<_> = ledger["repairs"]
             .as_array()
             .unwrap()
             .iter()
-            .find(|r| r["unit_id"] == id && r["disposition"] == "duplicate_page")
-            .unwrap();
+            .filter(|r| r["unit_id"] == id && r["disposition"] == "duplicate_page")
+            .collect();
+        assert!(!repairs.is_empty());
+        let skipped: std::collections::BTreeSet<_> = repairs
+            .iter()
+            .flat_map(|r| r["skip_pages"].as_array().unwrap())
+            .map(|p| p.as_u64().unwrap() as u32)
+            .collect();
         let range = operational_range(id);
-        let requested = std::cell::RefCell::new(Vec::new());
-        let (pages, _) = unit_body_strips(&range, |source, page| {
-            requested.borrow_mut().push(page);
-            Ok(real_source_image(source, page))
-        })
-        .unwrap();
-        let sequence = requested.into_inner();
-        assert_eq!(
-            sequence.len(),
-            pages.len(),
-            "every retained page must render successfully"
-        );
+        let (pages, metrics, traces) = audit_traced_unit(id);
+        let sequence: Vec<_> = traces
+            .iter()
+            .filter(|t| t.retained_index.is_some())
+            .map(|t| t.page)
+            .collect();
         let expected: Vec<_> = (range.unit.start_page..=range.end_page)
-            .filter(|page| {
-                !repair["skip_pages"]
+            .filter(|p| !skipped.contains(p))
+            .collect();
+        assert_eq!(sequence, expected);
+        assert_eq!(pages.len(), sequence.len());
+        let diagnostic = audit_repair_ledger();
+        let mut reviewed = Vec::new();
+        for repair in &repairs {
+            let seam: Vec<_> = repair["retain_sequence"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| p.as_u64().unwrap() as u32)
+                .collect();
+            assert!(sequence.windows(seam.len()).any(|w| w == seam));
+            for p in repair["skip_pages"].as_array().unwrap() {
+                assert!(!sequence.contains(&(p.as_u64().unwrap() as u32)));
+            }
+            let evidence = if repair["reviewed_lines"].is_array() {
+                *repair
+            } else {
+                diagnostic["existing_duplicate_evidence"]
                     .as_array()
                     .unwrap()
                     .iter()
-                    .any(|p| p.as_u64() == Some(*page as u64))
-            })
-            .collect();
-        assert_eq!(sequence, expected);
-        let seam: Vec<_> = repair["retain_sequence"]
-            .as_array()
-            .unwrap()
+                    .find(|r| r["unit_id"] == id && r["finding_ids"] == repair["finding_ids"])
+                    .unwrap()
+            };
+            let lines: Vec<ReviewedSourceLine> =
+                serde_json::from_value(evidence["reviewed_lines"].clone()).unwrap();
+            assert!(!lines.is_empty());
+            reviewed.extend(lines);
+        }
+        reviewed.sort_by_key(|l| (l.source_page, l.region[1]));
+        reviewed.dedup_by_key(|l| (l.source_page, l.region));
+        let originals = reviewed
             .iter()
-            .map(|p| p.as_u64().unwrap() as u32)
+            .map(|l| (l.source, l.source_page))
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .map(|(source, page)| ((source, page), real_source_image(source, page)))
             .collect();
-        assert!(sequence.windows(seam.len()).any(|w| w == seam));
+        assert_reviewed_source_lines_survive(
+            &reviewed,
+            &ReviewedLineContext {
+                traces: &traces,
+                originals: &originals,
+                pages: &pages,
+                metrics: &metrics,
+                scale: production_body_scale(),
+                geom: TrimGeom::default(),
+            },
+            false,
+        );
         for (index, (&page, (column, bands))) in sequence.iter().zip(&pages).enumerate() {
             let raw = real_source_image(range.unit.source, page);
             // Detect the column on the masked image so the crop matches production on
@@ -3057,7 +3095,10 @@ mod tests {
         }
         println!(
             "{id}: reviewed retained sequence {sequence:?}; join {:?}",
-            repair["adjacent_prose"]
+            repairs
+                .iter()
+                .map(|r| &r["adjacent_prose"])
+                .collect::<Vec<_>>()
         );
     }
 
@@ -3077,6 +3118,48 @@ mod tests {
     #[ignore = "requires source PDFs and production-DPI renders"]
     fn cato_minor_repeated_folios_survive_once() {
         assert_reviewed_duplicate_sequence("cato_minor");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn agesilaus_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("agesilaus");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn alexander_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("alexander");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn phocion_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("phocion");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn cicero_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("cicero");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn antonius_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("antonius");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn aratus_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("aratus");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn otho_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("otho");
     }
 
     #[test]
