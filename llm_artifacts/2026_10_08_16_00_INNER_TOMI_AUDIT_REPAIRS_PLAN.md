@@ -647,8 +647,15 @@ The D4–D12 production exclusions and their installed ledger records are in pla
 the existing D1–D3 records are preserved. All thirteen verified furniture cases are installed with original-pixel,
 crop-edge, furniture-stage band and full-unit head-trim verification. Every
 initial Tier-A omission and the additional Cato verse label pass their
-original-source extraction and returned-canvas assertions. Step 2.1 verifies the reviewed retained source-line regions
-through extracted strips and composed canvases.
+original-source extraction and returned-canvas assertions. The final offline
+build compiled all eight inner readers and eight imposed PDFs. All 39 Tier-A
+events / 69 lines are restored, with zero unresolved events and zero promotions;
+20 Tier-B events / 44 lines retain their pending-human-read disposition.
+The final source-PDF regression sweep passed all 30 selected tests. Rebuilt PDF
+images match the verified returned canvases; all 69 repaired source-line regions
+and all 68 terminal endings were visually inspected. Commands, source mappings,
+current output locators, signatures, retained artifacts and evidence hashes are
+recorded in [the final verification note](2026_10_09_00_10_INNER_TOMI_AUDIT_REPAIRS_VERIFICATION.md).
 
 | Finding | Source decision | Status | Responsible step |
 | --- | --- | --- | --- |
@@ -668,8 +675,8 @@ through extracted strips and composed canvases.
 The initial omission inventory remains exactly 39 Tier-A events / 69 lines and
 20 Tier-B events / 44 lines. The additional Cato verse-label loss is tracked
 separately; it does not alter frozen event IDs, historical verdicts, confidence,
-or the initial tier partition. Its correction requires a source-preserving
-amendment to 4.2 after the complete stage trace.
+or the initial tier partition. Its source-preserving correction in 4.2 follows
+the complete stage trace and passes original-glyph and canvas-ownership checks.
 
 Agis ends on source 376 at `ceteris credidisset.`; source 379 is the shared
 Cleomenes opening and contributes no Agis body band. The 376→379 identity join
@@ -707,7 +714,7 @@ chapter-IV cluster passes original-pixel and single-canvas ownership checks. The
 39 events, 69 individually located source-line regions, raw/cropped band
 measurements, extraction membership and the final canvas filter. Step 4.1 restores two events / sixteen lines (Romulus 38 and Caesar 252),
 with original-pixel, once-only extraction and returned-canvas evidence. The
-remaining 37 events / 53 lines await step 4.2. C6’s two reviewed clipped words
+remaining 37 events / 53 lines are restored and verified in step 4.2. C6’s two reviewed clipped words
 on Romulus 39 also pass, without changing the frozen omission counts.
 The 20 Tier-B events retain their confirmed historical verdict and explicit
 pending-human-read disposition; none is promoted or targeted.
@@ -715,8 +722,10 @@ The finite body-band correction specification contains 47 observed signatures;
 multi-line blocks share one retained interval without duplicating any source row.
 Step 2.1A freezes post-exclusion coverage for all 39 Tier-A events / 69 lines
 in the diagnostic fixture and hash-bound archive traces. No omission is restored by de-duplication. The post-mask trace confirms all
-47 proposed band signatures. Step 4.1 installs and verifies the Romulus/Caesar
-corrections; step 4.2 covers the remaining finite cases.
+47 observed band signatures. Step 4.1 installs and verifies the Romulus/Caesar
+corrections; step 4.2 covers the remaining finite cases, and the final whole-set
+completion gate passes. Production global scale remains 1.2023952007293701;
+source PDFs, raw caches, transcription caches and unit rows are unchanged.
 
 The separate diagnostic archive is
 `archive/inner_tomi_audit_repairs_2026_10_08/baseline`: 4,404 files,
