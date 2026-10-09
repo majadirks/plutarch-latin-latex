@@ -1,5 +1,198 @@
 # Inner-tomi audit setup
 
+## Regression and evidence verification
+
+There are three verification layers. They answer different questions:
+
+| Layer | What a pass establishes | Inputs |
+| --- | --- | --- |
+| `cargo test` | Tracked and synthetic regression contracts agree, including the omission inventory, diagnoses, measured repair signatures and completion checks | Git-tracked files and test-created temporary data |
+| Named ignored source-PDF tests | Current extraction and composition preserve the reviewed original source pixels and line boundaries | Exact source scans and Poppler; rasters are rendered when caches are absent |
+| Seven ignored `audit_evidence_` tests | Historical files match their pinned byte identities, and shared semantic validators agree | Separately supplied frozen archives |
+
+Ordinary tests require no scans, historical archives, API credentials, or rendered
+caches. Other optional tests retain their existing prerequisite behavior. The
+normal generator still requires the exact source scans and its rendering tools;
+a full PDF build additionally requires LuaLaTeX.
+
+From the repository root in PowerShell:
+
+```powershell
+$env:CARGO_TARGET_DIR = Join-Path (Get-Location) 'target'
+cargo fmt --all --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+python -m unittest discover -s tools -p test_check_portable_tests.py
+python tools/check_portable_tests.py --offline --log tmp/portable-tests.log
+```
+
+The Python tool requires Python 3.10+, Git and Cargo, with no audit/OCR/image
+packages. It locates the repository from its own file and can be invoked from
+another working directory. `--log` is required and its parent directory is
+created automatically. Omit `--offline` on a first run if Cargo needs to fetch
+dependencies. New files must be staged: `git ls-files --cached -z` selects paths,
+and their current working-tree contents are copied. This is a prospective
+tracked-files snapshot, not authentication of a committed revision.
+
+The snapshot excludes `tmp/`, `archive/`, build outputs, source PDFs, rendered
+caches and secret data. Child processes receive no inherited API-key or
+secret-path variables; the tool gives Cargo an owned target directory outside
+the copied checkout and points the evidence root at an empty directory. It checks
+the required ordinary names are listed and actually pass in the full suite.
+It then runs exactly one historical inventory test and requires a
+missing-evidence failure. Unexpected success, zero selected tests and unrelated
+failures make the tool fail. Cleanup removes its owned temporary directory;
+original scans, archives and caches stay in place. Complete command output and
+exit statuses are available in the log.
+
+### Current source-PDF checks
+
+Supply `Ploutarchou_Bioi_v1.pdf` and `Ploutarchou_Bioi_v2.pdf` in the repository
+root and make Poppler available. Run these tests individually. The release
+profile makes their image processing faster while retaining their assertions:
+
+```powershell
+$env:CARGO_TARGET_DIR = Join-Path (Get-Location) 'target'
+cargo test --release --lib facsimile::reflow::tests::romulus_c1_c6_lines_restored -- --ignored --exact --nocapture
+cargo test --release --lib facsimile::reflow::tests::audit_tier_a_source_lines_restored -- --ignored --exact --nocapture
+cargo test --release --lib facsimile::reflow::tests::comparison_s2_line_is_whole -- --ignored --exact --nocapture
+```
+
+Fresh restoration reports and their canvas images go to
+`tmp/pdfs/inner_tomi_audit_repairs/restoration-current/step-4.2/`.
+The comparison check writes
+`tmp/pdfs/inner_tomi_audit_repairs/s2-current/verification.json` and canvas images.
+These tests do not require the historical audit archives and do not overwrite
+frozen restoration reports.
+
+### Historical archive authentication
+
+All seven tests have the ignore reason
+`requires frozen inner-tomi audit evidence archives`. They read and authenticate
+historical JSON and PNG bytes, reuse the ordinary semantic validators, and never
+invoke the generator, Poppler, LuaLaTeX, a network operation or a paid API call.
+They fail with the logical and resolved path when required evidence is missing,
+and show expected/actual digests on hash mismatch.
+
+| Test | Authentication |
+| --- | --- |
+| `audit_evidence_historical_inventory_authenticated` | Candidates, reviews and original audit manifest; full inventory validation |
+| `audit_evidence_baseline_diagnosis_authenticated` | Baseline manifest, unique Tier-A traces and reviewed source-overlay PNGs; diagnosis validation |
+| `audit_evidence_post_dedup_traces_authenticated` | Post-dedup manifest and traces; line-region and metadata agreement |
+| `audit_evidence_post_mask_signatures_authenticated` | Post-mask manifest and traces; all 47 measured source signatures |
+| `audit_evidence_restoration_reports_authenticated` | Initial/promoted Tier-A and extra-source-item passing reports; completion validation |
+| `audit_evidence_portable_fixture_matches_archives` | All original JSON inputs; exact semantic equality with the tracked projection, including its paths and source digests |
+| `audit_evidence_archive_manifests_authenticated` | Every entry in both historical manifests and both stage manifests; hashes, declared sizes and pinned counts/totals |
+
+Set `PLUTARCH_AUDIT_EVIDENCE_ROOT` to a directory **containing** the
+repository-relative `archive/` tree. It defaults to `CARGO_MANIFEST_DIR`, so local
+archives in the checkout work without an override. For archives stored elsewhere:
+
+```powershell
+$env:CARGO_TARGET_DIR = Join-Path (Get-Location) 'target'
+$env:PLUTARCH_AUDIT_EVIDENCE_ROOT = 'D:\Plutarch-evidence'
+cargo test --lib audit_evidence_ -- --ignored --list
+cargo test --lib audit_evidence_ -- --ignored --nocapture --test-threads=1
+```
+
+The list must contain exactly the seven names above. Select these checks
+explicitly: the crate also has ignored live API and unrelated expensive tests.
+
+The expected tree beneath that evidence root includes:
+
+```text
+archive/
+  inner_tomi_audit_2026_10_08/
+    manifest.json
+    runs/step102-final-all-5/candidates.json
+    runs/step102-final-all-5/reviews.json
+    ... all 20,361 manifest entries
+  inner_tomi_audit_repairs_2026_10_08/
+    baseline/
+      manifest.json
+      omissions-baseline/<unit>/trace.json
+      reviewed-source-lines/<event>.png
+      ... all 4,404 baseline manifest entries
+    post-dedup/
+      manifest.json
+      <unit>/trace.json
+    post-masks/
+      manifest.json
+      <unit>/trace.json
+    restoration/step-4.2/<unit>.json
+```
+
+Both stage manifests name 24 trace files. Passing reports cover all required
+units, including the report containing the separate Cato Minor `Et:` region.
+Historical `files[].path` entries are relative to their manifest's archive
+directory; stage-list paths are repository-relative. Absolute `source`,
+`destination` and `archive` descriptions inside manifests are retained metadata,
+not file locations to open. The reader rejects absolute references, drive
+prefixes, parent traversal and resolved escapes through symlinks or junctions.
+Duplicate manifest paths are errors; identical digests at different stage paths
+are legal. Large-file hashes are streamed.
+
+The archives remain local and Git-ignored and must be supplied separately. No
+public retrieval location has been established. Running the latest generator
+cannot reconstruct their original bytes. An unavailable historical archive is a
+prerequisite failure for these explicitly selected tests; it does not prevent
+the ordinary suite from passing.
+
+### Portable fixture maintenance and limits
+
+`src/facsimile/fixtures/inner_tomi_portable_audit_evidence.json` is a compact,
+tracked projection with provenance. Its 98 documents retain candidates (including
+rejected unique-loss nominations), matching reviews, required trace measurements
+and complete restoration report lines, including neighbors and the Cato label.
+The initial exported file is 448,689 UTF-8 bytes. It supplements the full ledger
+and historical archives. It contains no image payloads or rendered canvases.
+
+Each `source_sha256` identifies the original historical file, not the projected
+JSON. The fields and digest metadata are copied historical expectations. A green
+ordinary suite confirms those contracts agree; authenticating original JSON/PNG
+bytes requires the historical tests. Ordinary results alone are not a new
+69-line source-preservation claim or human acceptance of the generated readers.
+
+To refresh the projection deliberately, authenticate the supplied archives and
+export to an explicit temporary review file:
+
+```powershell
+$env:CARGO_TARGET_DIR = Join-Path (Get-Location) 'target'
+$env:PLUTARCH_AUDIT_EVIDENCE_ROOT = 'D:\Plutarch-evidence'
+$env:PLUTARCH_PORTABLE_FIXTURE_OUT = Join-Path (Get-Location) 'tmp/portable-evidence-review.json'
+cargo test --lib facsimile::reflow::tests::export_portable_fixture -- --ignored --exact --nocapture
+```
+
+The exporter authenticates every original input before using the shared
+projection definition. It creates the output parent directory, requires the
+explicit output variable, and refuses the tracked fixture as an output target.
+It uses the canonical archived candidates/reviews without a mutable run fallback.
+Ordinary tests never update the fixture or bless new historical hashes.
+
+Review the temporary JSON semantically: check candidate/review
+`miss_romulus_38_2595`, its four reviewed ledger lines and matching restoration
+projection; confirm the extra Cato label remains separate. Check provenance,
+original roles, measured crop/mask variants, complete cases and fixture size
+(target below 512 KiB; hard limit 1 MiB). Run the exporter twice to distinct
+temporary files and compare their raw bytes. After review, deliberately copy the
+chosen export into the tracked fixture and verify the complete comparison:
+
+```powershell
+Copy-Item -LiteralPath tmp/portable-evidence-review.json -Destination src/facsimile/fixtures/inner_tomi_portable_audit_evidence.json
+cargo test portable_audit
+cargo test portable_evidence_document
+cargo test --lib facsimile::reflow::tests::audit_evidence_portable_fixture_matches_archives -- --ignored --exact --nocapture
+cargo test --lib audit_evidence_ -- --ignored --nocapture --test-threads=1
+```
+
+Keep the ledger's historical hashes, original archives and dated plans/notes.
+Any deliberate change to historical expectations requires separate review.
+Rust changes in the included audit test file require an explicit
+`rustfmt --edition 2021 src/facsimile/audit_repair_tests.rs` pass in addition to
+`cargo fmt --all`, since Cargo's formatter does not traverse that `include!` file.
+
+## Diagnostic audit setup
+
 `audit_inner_tomi.py` is an offline diagnostic tool. Its commands check
 prerequisites, capture the inspected baseline, render benchmark annotations,
 extract OCR, compare source/reader occurrences, boundaries, furniture and

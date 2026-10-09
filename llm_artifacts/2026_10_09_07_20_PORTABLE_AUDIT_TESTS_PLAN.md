@@ -257,9 +257,15 @@ $env:PLUTARCH_PORTABLE_FIXTURE_OUT = Join-Path (Get-Location) 'tmp/portable-evid
 cargo test --lib facsimile::reflow::tests::export_portable_fixture -- --ignored --exact --nocapture
 ```
 
-Confirm that every projected original-source hash agrees with the ledger and that
-the new fixture is added to Git. `cargo fmt --all` does not traverse the current
-`include!` test file, so the explicit `rustfmt` invocation is required.
+Verified on 2026-10-09: both authenticated exports produced identical raw bytes.
+The tracked fixture contains 98 documents and is **448,689 UTF-8 bytes**, below
+the 512 KiB target. Every projected original-source digest agrees with the ledger.
+The three `portable_audit` tests and the separate `portable_evidence_document`
+test passed. The full suite at this step passed 384 library tests and 9 CLI tests,
+with 55 library tests ignored; formatting, Clippy, build and diff checks passed.
+The fixture and shared support were committed and pushed as `e211ca8`.
+`cargo fmt --all` does not traverse the current `include!` test file, so the
+explicit `rustfmt` invocation is required.
 
 **Human verification:** Read the fixture's candidate/review row for
 `miss_romulus_38_2595`, its four reviewed source lines in the existing ledger,
@@ -387,13 +393,32 @@ cargo test --lib audit_evidence_ -- --ignored --nocapture --test-threads=1
 git diff --check
 ```
 
-The list must contain exactly the seven ignored historical tests, with no
-ordinary test and no exporter. All seven must pass against the present archives.
-Run the existing source-PDF regressions
-`romulus_c1_c6_lines_restored`, `audit_tier_a_source_lines_restored`, and
-`comparison_s2_line_is_whole` individually with `--ignored --nocapture`; their
-fresh reports must appear beneath the new temporary output directories. Hash
-the historical passing reports before and after to prove they are unchanged.
+Verified on 2026-10-09: the ignored list contains exactly the seven historical
+tests, with no ordinary test or exporter, and all seven passed against the local
+archives. The focused omission, completion, reader and manifest tests passed.
+The full ordinary suite passed 390 library tests and 9 CLI tests, with 62 library
+tests ignored. Formatting, Clippy, build and diff checks passed.
+
+The three existing source-PDF regressions passed individually with exact
+selection in the release profile. This profile retains the assertions and makes
+image processing faster:
+
+```powershell
+cargo test --release --lib facsimile::reflow::tests::romulus_c1_c6_lines_restored -- --ignored --exact --nocapture
+cargo test --release --lib facsimile::reflow::tests::audit_tier_a_source_lines_restored -- --ignored --exact --nocapture
+cargo test --release --lib facsimile::reflow::tests::comparison_s2_line_is_whole -- --ignored --exact --nocapture
+```
+
+The Tier-A check covered all 24 units. There are 24 fresh restoration JSON
+reports under `tmp/pdfs/inner_tomi_audit_repairs/restoration-current/step-4.2/`
+and an S2 `verification.json` under
+`tmp/pdfs/inner_tomi_audit_repairs/s2-current/`. SHA-256 comparisons before and
+after these checks confirm all 24 historical passing reports are unchanged.
+Windows denied symlink creation with privilege error 1314; all lexical escape
+checks ran, and the evidence reader still checks canonicalized paths
+to contain symlink and junction escapes. The symlink creation branch could not
+be exercised on this machine. Steps 2.1 and 3.1 were committed and pushed together
+as `4a92e19`, as authorized during implementation.
 
 **Human verification:** Read one passing ordinary inventory/completion result
 and one passing evidence-authentication result. Confirm the output descriptions
@@ -471,12 +496,21 @@ git diff --check
 git status --short
 ```
 
-Inspect the snapshot log for the full ordinary test results and the single
-expected missing-evidence failure. Any unrelated newly exposed ordinary-test
-dependency on untracked data must be identified and repaired with tracked or
-test-created inputs before this step passes; document its exact test name and
-smallest necessary fix in this plan without renumbering existing steps. Do not
-hide it with a skip or declare the tracked-files contract satisfied prematurely.
+Verified on 2026-10-09: all four standard-library Python tests passed. The
+tracked-files snapshot copied 127 files, compiled and listed all ten required
+ordinary audit/portable names, and passed the full ordinary suite: 390 library
+tests and 9 CLI tests, with 62 library tests ignored. The exact historical
+inventory probe executed one test and failed with exit 101 and the expected
+`missing historical evidence: logical archive/...` diagnostic. The tool accepted
+that explicit negative probe and exited successfully.
+
+The snapshot excludes evidence, source scans, rendered caches, build outputs and
+secret data; it uses an empty evidence root and its own Cargo target directory.
+Its secret-data exclusion preserves the tracked `src/secrets.rs` loader module,
+with a Python regression assertion distinguishing that module from secret data
+files. No unrelated ordinary-test dependency on untracked inputs was exposed,
+and no additional prerequisite skip was introduced. The complete suite output
+and negative probe are retained in the local portability logs.
 
 **Human verification:** Run the command and read the final log. Confirm it does
 not remove, rename or modify the original archives, source scans or caches.
@@ -547,12 +581,35 @@ git diff --check
 git status --short
 ```
 
-Inspect the diff and confirm that production code outside test support, all
-existing source/Latin caches, `facsimile_units.json`, existing ledger historical
-hashes and archive bytes remain unchanged. Changes in generated temporary logs
-must not enter the implementation commits. A full sixteen-PDF rebuild is not
-required because runtime/generated-output behavior does not change; the three
-named real-source regressions in 2.1 verify the adjusted test-output destinations.
+Final verification on 2026-10-09 passed the explicit included-file rustfmt pass,
+Cargo formatting/check, Clippy with warnings denied, full ordinary suite, build,
+four Python tests, final tracked-files snapshot, seven-name ignored list, all
+seven historical authentication tests, and diff checks. Both populated and
+evidence-free checkouts passed **390 library tests plus 9 CLI tests**, with
+**62 library tests ignored**. The snapshot also required the single expected
+missing-evidence failure. The final fixture remains **448,689 bytes / 98
+documents**. The Windows symlink-creation limitation is recorded under 2.1;
+lexical checks and canonicalized containment remain active.
+
+The final manifest walker authenticated these original entries:
+
+| Manifest | Files | Total authenticated bytes |
+| --- | ---: | ---: |
+| Historical audit | 20,361 | 2,144,334,160 |
+| Repair baseline | 4,404 | 1,657,727,176 |
+| Post-dedup | 24 | 5,356,261 |
+| Post-mask | 24 | 5,374,068 |
+
+Diff inspection confirms that production code outside test support, all existing
+tracked source/Latin caches, `facsimile_units.json`, ledger historical hashes and
+unrelated Cargo configuration remain unchanged. Every entry in the four manifests
+passed byte authentication, and all 24 passing reports retained their original hashes
+after source regressions. Generated logs and review exports remain local beneath
+`tmp/pdfs/inner_tomi_audit_repairs/portable-verification/` and do not enter the
+implementation commits. A full sixteen-PDF rebuild is not required because
+runtime/generated-output behavior does not change; the three named real-source
+regressions in 2.1 verified the adjusted test-output destinations. Human acceptance
+of the generated readers remains separate from these automated results.
 
 **Human verification:** Follow the portable checkout instructions without the
 archives, then the explicit evidence instructions with the archives. Confirm the

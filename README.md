@@ -172,6 +172,25 @@ mismatch and a new baseline needs an explicit specification. Diagnostic
 snapshots, caches, and runs live under the ignored `tmp/pdfs/inner_tomi_audit/`
 directory and are not committed.
 
+The ordinary Rust regression suite runs from tracked fixtures and synthetic or
+test-created inputs. It does not require source scans, historical audit archives,
+API credentials, or preexisting rendered caches. The normal generator and the
+diagnostic audit above require the exact scans and their tools. To verify the
+ordinary suite in a temporary snapshot of tracked working-tree files, run:
+
+```powershell
+$env:CARGO_TARGET_DIR = Join-Path (Get-Location) 'target'
+cargo test
+python tools/check_portable_tests.py --offline --log tmp/portable-tests.log
+```
+
+Omit `--offline` if Cargo needs to download dependencies. Stage intended new files
+before creating the snapshot. The tool excludes local evidence and scans, runs
+the full ordinary suite, and requires an explicitly selected historical test to
+fail clearly without its evidence. See the
+[verification and fixture-maintenance instructions](tools/README-inner-audit.md#regression-and-evidence-verification)
+for the separate source-PDF checks and seven historical authentication tests.
+
 For an initial development inspection after capture:
 
 ```powershell
