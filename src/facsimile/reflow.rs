@@ -3729,6 +3729,84 @@ mod tests {
         image::open(png).expect("decode source raster").to_luma8()
     }
 
+    /// Diagnostic (not a regression): band every Tier-B dropped-line source page and
+    /// print the raw `line_bands` output near the audit box, with ink-span, survival
+    /// through `render_and_band`, and a saved crop per candidate band. Supplies the
+    /// `(dimensions, observed)` coordinates for `SOURCE_BODY_BANDS` repair entries.
+    #[test]
+    #[ignore]
+    fn extract_tier_b_source_bands() {
+        // (unit_id, source, page, y0, y1) — audit box page fractions for each dropped line.
+        let events: &[(&str, usize, u32, f32, f32)] = &[
+            ("aemilius_paulus", 0, 326, 0.0872, 0.1045),
+            ("agesilaus", 1, 110, 0.886, 0.9057),
+            ("alcibiades", 0, 242, 0.8652, 0.8829),
+            ("antonius", 1, 562, 0.0834, 0.479),
+            ("artoxerxes", 1, 633, 0.8872, 0.9065),
+            ("brutus", 1, 619, 0.0632, 0.0826),
+            ("caius_marius", 0, 519, 0.0783, 0.0964),
+            ("cato_minor", 1, 329, 0.0564, 0.0774),
+            ("cato_minor", 1, 352, 0.884, 0.9037),
+            ("crassus", 1, 44, 0.0626, 0.0815),
+            ("demosthenes", 1, 445, 0.063, 0.0825),
+            ("dio", 1, 566, 0.8892, 0.9083),
+            ("dio", 1, 580, 0.887, 0.9071),
+            ("lucullus", 0, 631, 0.0789, 0.0982),
+            ("lysander", 0, 535, 0.0763, 0.1157),
+            ("marcellus", 0, 377, 0.0811, 0.0974),
+            ("nicias", 1, 25, 0.0672, 0.0868),
+            ("pericles", 0, 214, 0.8626, 0.8802),
+            ("pericles", 0, 215, 0.0789, 0.094),
+            ("phocion", 1, 291, 0.071, 0.0878),
+            ("timoleon", 0, 318, 0.086, 0.103),
+        ];
+        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_audit_repairs/band_extract");
+        std::fs::create_dir_all(dir).unwrap();
+        for &(id, source, page, y0, y1) in events {
+            let mut img = real_source_image(source, page);
+            mask_known_source_furniture(source, page, &mut img);
+            let column = preserve_known_body_crop_edge(
+                source,
+                page,
+                &img,
+                detect_latin_column(&img).unwrap(),
+            );
+            let cropped = crop_column(&img, &column);
+            let (w, h) = cropped.dimensions();
+            let raw = line_bands(&cropped, LINE_MIN_INK);
+            let (_, kept) =
+                render_and_band(source, page, &|s, p| Ok(real_source_image(s, p))).unwrap();
+            let lo = (y0 * h as f32) as u32;
+            let hi = (y1 * h as f32) as u32;
+            let margin = h / 40;
+            println!(
+                "=== {id} v{} p{page} dims=({w},{h}) target_rows~{lo}..{hi} raw_bands={} ===",
+                source + 1,
+                raw.len()
+            );
+            for (i, b) in raw.iter().enumerate() {
+                let c = (b.top + b.bottom) / 2;
+                if c + margin >= lo && c <= hi + margin {
+                    let span = band_ink_span(&cropped, b);
+                    let survives = kept.iter().any(|k| k.top == b.top && k.bottom == b.bottom);
+                    println!(
+                        "  raw[{i}] {}..{} h={} ink_span={} frac={:.3} survives_render_and_band={}",
+                        b.top,
+                        b.bottom,
+                        b.bottom - b.top,
+                        span,
+                        span as f32 / w as f32,
+                        survives
+                    );
+                    image::imageops::crop_imm(&cropped, 0, b.top, w, b.bottom - b.top)
+                        .to_image()
+                        .save(dir.join(format!("{id}_p{page}_b{:05}.png", b.top)))
+                        .unwrap();
+                }
+            }
+        }
+    }
+
     fn save_retained_crop(id: &str, page: &PageBands) {
         let dir = std::path::Path::new("tmp/pdfs/recto_units_verification/crops");
         std::fs::create_dir_all(dir).unwrap();
