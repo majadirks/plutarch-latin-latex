@@ -466,6 +466,60 @@ const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
         right: 1740.0 / 1948.0,
         bottom: 270.0 / 2980.0,
     },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 391,
+        left: 1790.0 / 1825.0,
+        top: 0.0 / 2825.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 393,
+        left: 1850.0 / 1887.0,
+        top: 0.0 / 2832.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 437,
+        left: 1800.0 / 1841.0,
+        top: 0.0 / 2838.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 443,
+        left: 1800.0 / 1846.0,
+        top: 0.0 / 2838.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 407,
+        left: 1840.0 / 1889.0,
+        top: 0.0 / 2830.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 411,
+        left: 1830.0 / 1883.0,
+        top: 0.0 / 2830.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
 ];
 
 fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
@@ -769,13 +823,19 @@ fn render_and_band(
     let column =
         preserve_known_body_crop_edge(source, page, &page_img, detect_latin_column(&page_img)?);
     let cropped = crop_column(&page_img, &column);
-    let raw = line_bands(&cropped, LINE_MIN_INK);
-    let bands = coalesce_known_body_fragments(source, page, cropped.dimensions(), &raw);
-    let kept = drop_furniture(&bands, cropped.height());
-    let bands = retain_early_aligned_body_bands(&cropped, &bands, &kept);
+    let (raw, bands) = band_source_column(source, page, &cropped);
     let bands =
         retain_known_source_body_bands(None, source, page, cropped.dimensions(), &raw, &bands);
     Ok((cropped, bands))
+}
+
+/// Raw line evidence and furniture-filtered bands on an owned Latin column.
+fn band_source_column(source: usize, page: u32, cropped: &GrayImage) -> (Vec<Band>, Vec<Band>) {
+    let raw = line_bands(cropped, LINE_MIN_INK);
+    let bands = coalesce_known_body_fragments(source, page, cropped.dimensions(), &raw);
+    let kept = drop_furniture(&bands, cropped.height());
+    let kept = retain_early_aligned_body_bands(cropped, &bands, &kept);
+    (raw, kept)
 }
 
 /// Preserve reviewed edge glyphs for exact production-raster detector signatures.
@@ -789,6 +849,10 @@ fn preserve_known_body_crop_edge(
         (0, 432, (1948, 2980), 907, 1710) => Column {
             left: 907,
             right: 1711,
+        },
+        (1, 623, (1810, 2843), 982, 1771) => Column {
+            left: 976,
+            right: 1771,
         },
         (0, 38, (1988, 3000), 929, 1763) => Column {
             left: 932,
@@ -817,17 +881,353 @@ struct SourceBodyBand {
 
 const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
     SourceBodyBand {
-        source: 0,
-        page: 38,
-        unit_id: "romulus",
-        dimensions: (842, 3000),
+        source: 1,
+        page: 110,
+        unit_id: "agesilaus",
+        dimensions: (798, 2834),
         observed: Band {
-            top: 2451,
-            bottom: 2651,
+            top: 211,
+            bottom: 248,
         },
         protected: Band {
-            top: 2451,
-            bottom: 2651,
+            top: 211,
+            bottom: 249,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 251,
+        unit_id: "alcibiades",
+        dimensions: (795, 2975),
+        observed: Band {
+            top: 2556,
+            bottom: 2588,
+        },
+        protected: Band {
+            top: 2556,
+            bottom: 2589,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 263,
+        unit_id: "alcibiades",
+        dimensions: (799, 2989),
+        observed: Band {
+            top: 2578,
+            bottom: 2607,
+        },
+        protected: Band {
+            top: 2578,
+            bottom: 2607,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 231,
+        unit_id: "alexander",
+        dimensions: (810, 2844),
+        observed: Band {
+            top: 208,
+            bottom: 247,
+        },
+        protected: Band {
+            top: 207,
+            bottom: 247,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 623,
+        unit_id: "brutus",
+        dimensions: (795, 2843),
+        observed: Band {
+            top: 222,
+            bottom: 254,
+        },
+        protected: Band {
+            top: 221,
+            bottom: 254,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 623,
+        unit_id: "brutus",
+        dimensions: (795, 2843),
+        observed: Band {
+            top: 266,
+            bottom: 297,
+        },
+        protected: Band {
+            top: 266,
+            bottom: 297,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 623,
+        unit_id: "brutus",
+        dimensions: (795, 2843),
+        observed: Band {
+            top: 311,
+            bottom: 341,
+        },
+        protected: Band {
+            top: 310,
+            bottom: 344,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 624,
+        unit_id: "brutus",
+        dimensions: (786, 2830),
+        observed: Band {
+            top: 200,
+            bottom: 231,
+        },
+        protected: Band {
+            top: 199,
+            bottom: 231,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 327,
+        unit_id: "cato_minor",
+        dimensions: (795, 2834),
+        observed: Band {
+            top: 2509,
+            bottom: 2540,
+        },
+        protected: Band {
+            top: 2509,
+            bottom: 2540,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 331,
+        unit_id: "cato_minor",
+        dimensions: (792, 2838),
+        observed: Band {
+            top: 170,
+            bottom: 207,
+        },
+        protected: Band {
+            top: 170,
+            bottom: 208,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 391,
+        unit_id: "cleomenes",
+        dimensions: (782, 2825),
+        observed: Band {
+            top: 196,
+            bottom: 230,
+        },
+        protected: Band {
+            top: 196,
+            bottom: 230,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 393,
+        unit_id: "cleomenes",
+        dimensions: (789, 2832),
+        observed: Band {
+            top: 208,
+            bottom: 244,
+        },
+        protected: Band {
+            top: 207,
+            bottom: 245,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 67,
+        unit_id: "crassus",
+        dimensions: (795, 2830),
+        observed: Band {
+            top: 216,
+            bottom: 249,
+        },
+        protected: Band {
+            top: 216,
+            bottom: 251,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 437,
+        unit_id: "demosthenes",
+        dimensions: (788, 2838),
+        observed: Band {
+            top: 203,
+            bottom: 235,
+        },
+        protected: Band {
+            top: 203,
+            bottom: 236,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 437,
+        unit_id: "demosthenes",
+        dimensions: (788, 2838),
+        observed: Band {
+            top: 252,
+            bottom: 284,
+        },
+        protected: Band {
+            top: 252,
+            bottom: 284,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 437,
+        unit_id: "demosthenes",
+        dimensions: (788, 2838),
+        observed: Band {
+            top: 299,
+            bottom: 331,
+        },
+        protected: Band {
+            top: 299,
+            bottom: 331,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 437,
+        unit_id: "demosthenes",
+        dimensions: (788, 2838),
+        observed: Band {
+            top: 348,
+            bottom: 378,
+        },
+        protected: Band {
+            top: 347,
+            bottom: 378,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 438,
+        unit_id: "demosthenes",
+        dimensions: (794, 2844),
+        observed: Band {
+            top: 2520,
+            bottom: 2553,
+        },
+        protected: Band {
+            top: 2520,
+            bottom: 2556,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 443,
+        unit_id: "demosthenes",
+        dimensions: (807, 2838),
+        observed: Band {
+            top: 197,
+            bottom: 229,
+        },
+        protected: Band {
+            top: 196,
+            bottom: 229,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 443,
+        unit_id: "demosthenes",
+        dimensions: (807, 2838),
+        observed: Band {
+            top: 246,
+            bottom: 278,
+        },
+        protected: Band {
+            top: 246,
+            bottom: 278,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 577,
+        unit_id: "dio",
+        dimensions: (792, 2843),
+        observed: Band {
+            top: 199,
+            bottom: 230,
+        },
+        protected: Band {
+            top: 199,
+            bottom: 230,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 579,
+        unit_id: "dio",
+        dimensions: (798, 2832),
+        observed: Band {
+            top: 210,
+            bottom: 237,
+        },
+        protected: Band {
+            top: 210,
+            bottom: 237,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 91,
+        unit_id: "eumenes",
+        dimensions: (789, 2836),
+        observed: Band {
+            top: 208,
+            bottom: 239,
+        },
+        protected: Band {
+            top: 207,
+            bottom: 239,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 91,
+        unit_id: "eumenes",
+        dimensions: (789, 2836),
+        observed: Band {
+            top: 259,
+            bottom: 289,
+        },
+        protected: Band {
+            top: 259,
+            bottom: 290,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 228,
+        unit_id: "fabius_maximus",
+        dimensions: (822, 3004),
+        observed: Band {
+            top: 262,
+            bottom: 297,
+        },
+        protected: Band {
+            top: 261,
+            bottom: 297,
         },
     },
     SourceBodyBand {
@@ -842,6 +1242,300 @@ const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
         protected: Band {
             top: 239,
             bottom: 745,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 607,
+        unit_id: "lucullus",
+        dimensions: (825, 2982),
+        observed: Band {
+            top: 248,
+            bottom: 287,
+        },
+        protected: Band {
+            top: 247,
+            bottom: 288,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 79,
+        unit_id: "lycurgus",
+        dimensions: (810, 3005),
+        observed: Band {
+            top: 280,
+            bottom: 313,
+        },
+        protected: Band {
+            top: 280,
+            bottom: 313,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 292,
+        unit_id: "marcius_coriolanus",
+        dimensions: (1035, 2994),
+        observed: Band {
+            top: 280,
+            bottom: 312,
+        },
+        protected: Band {
+            top: 280,
+            bottom: 312,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 292,
+        unit_id: "marcius_coriolanus",
+        dimensions: (1035, 2994),
+        observed: Band {
+            top: 335,
+            bottom: 368,
+        },
+        protected: Band {
+            top: 334,
+            bottom: 369,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 25,
+        unit_id: "nicias",
+        dimensions: (812, 2832),
+        observed: Band {
+            top: 2508,
+            bottom: 2544,
+        },
+        protected: Band {
+            top: 2508,
+            bottom: 2544,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 100,
+        unit_id: "numa",
+        dimensions: (798, 2976),
+        observed: Band {
+            top: 260,
+            bottom: 293,
+        },
+        protected: Band {
+            top: 260,
+            bottom: 293,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 200,
+        unit_id: "pericles",
+        dimensions: (793, 2986),
+        observed: Band {
+            top: 280,
+            bottom: 312,
+        },
+        protected: Band {
+            top: 280,
+            bottom: 312,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 294,
+        unit_id: "phocion",
+        dimensions: (794, 2839),
+        observed: Band {
+            top: 210,
+            bottom: 241,
+        },
+        protected: Band {
+            top: 210,
+            bottom: 241,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 299,
+        unit_id: "phocion",
+        dimensions: (791, 2832),
+        observed: Band {
+            top: 178,
+            bottom: 209,
+        },
+        protected: Band {
+            top: 177,
+            bottom: 210,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 301,
+        unit_id: "phocion",
+        dimensions: (787, 2836),
+        observed: Band {
+            top: 192,
+            bottom: 220,
+        },
+        protected: Band {
+            top: 192,
+            bottom: 220,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 303,
+        unit_id: "phocion",
+        dimensions: (860, 2836),
+        observed: Band {
+            top: 204,
+            bottom: 235,
+        },
+        protected: Band {
+            top: 203,
+            bottom: 235,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 475,
+        unit_id: "pyrrhus",
+        dimensions: (795, 2962),
+        observed: Band {
+            top: 2556,
+            bottom: 2589,
+        },
+        protected: Band {
+            top: 2555,
+            bottom: 2590,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 36,
+        unit_id: "romulus",
+        dimensions: (795, 2978),
+        observed: Band {
+            top: 2602,
+            bottom: 2633,
+        },
+        protected: Band {
+            top: 2601,
+            bottom: 2633,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 38,
+        unit_id: "romulus",
+        dimensions: (842, 3000),
+        observed: Band {
+            top: 2451,
+            bottom: 2651,
+        },
+        protected: Band {
+            top: 2451,
+            bottom: 2651,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 108,
+        unit_id: "solon",
+        dimensions: (796, 2975),
+        observed: Band {
+            top: 2554,
+            bottom: 2591,
+        },
+        protected: Band {
+            top: 2553,
+            bottom: 2592,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 115,
+        unit_id: "solon",
+        dimensions: (986, 3020),
+        observed: Band {
+            top: 240,
+            bottom: 325,
+        },
+        protected: Band {
+            top: 240,
+            bottom: 326,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 15,
+        unit_id: "theseus",
+        dimensions: (801, 2973),
+        observed: Band {
+            top: 2368,
+            bottom: 2630,
+        },
+        protected: Band {
+            top: 2367,
+            bottom: 2632,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 25,
+        unit_id: "theseus",
+        dimensions: (793, 2986),
+        observed: Band {
+            top: 2592,
+            bottom: 2622,
+        },
+        protected: Band {
+            top: 2592,
+            bottom: 2622,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 407,
+        unit_id: "tiberius_gracchus",
+        dimensions: (796, 2830),
+        observed: Band {
+            top: 186,
+            bottom: 218,
+        },
+        protected: Band {
+            top: 186,
+            bottom: 218,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 411,
+        unit_id: "tiberius_gracchus",
+        dimensions: (785, 2830),
+        observed: Band {
+            top: 179,
+            bottom: 211,
+        },
+        protected: Band {
+            top: 179,
+            bottom: 211,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 414,
+        unit_id: "tiberius_gracchus",
+        dimensions: (794, 2844),
+        observed: Band {
+            top: 247,
+            bottom: 320,
+        },
+        protected: Band {
+            top: 247,
+            bottom: 320,
         },
     },
 ];
@@ -900,6 +1594,9 @@ fn coalesce_known_body_fragments(
             ([2209, 2245], [2247, 2251], [2209, 2251]),
             ([2315, 2319], [2321, 2357], [2315, 2357]),
         ],
+        (1, 391, (782, 2825)) => &[([1192, 1195], [1196, 1231], [1192, 1231])],
+        (1, 393, (789, 2832)) => &[([928, 959], [961, 962], [928, 962])],
+        (1, 443, (807, 2838)) => &[([2153, 2179], [2180, 2185], [2153, 2185])],
         _ => &[],
     };
     let mut result = Vec::new();
@@ -1324,7 +2021,15 @@ fn strips_in_reading_order(pages: &[(GrayImage, Vec<Band>)], m: &LineMetrics) ->
                     .iter()
                     .map(|&ink| ink as u64)
                     .sum();
-                if ink < min_ink {
+                if ink < min_ink
+                    && !is_known_source_verse_label(
+                        col,
+                        &Band {
+                            top: w[0],
+                            bottom: w[1],
+                        },
+                    )
+                {
                     continue;
                 }
             }
@@ -1339,6 +2044,23 @@ fn strips_in_reading_order(pages: &[(GrayImage, Vec<Band>)], m: &LineMetrics) ->
         }
     }
     strips
+}
+
+/// Recognize the original short verse label despite its unchanged global ink floor.
+fn is_known_source_verse_label(column: &GrayImage, band: &Band) -> bool {
+    if column.dimensions() != (788, 2838)
+        || *band
+            != (Band {
+                top: 2010,
+                bottom: 2064,
+            })
+    {
+        return false;
+    }
+    use sha2::Digest;
+    let glyphs = image::imageops::crop_imm(column, 3, 2026, 44, 22).to_image();
+    format!("{:x}", sha2::Sha256::digest(glyphs.as_raw()))
+        == "472ea07f0f6e6d85db2dfffcc4faf9d393da12c60ea1f516ba1c28946ca56f62"
 }
 
 /// Fraction of a typical scaled line used as the minimum fill-split piece, so a cut
@@ -1961,7 +2683,15 @@ mod tests {
                             .count() as u64
                     })
                     .sum();
-                if minimum_ink(m).is_some_and(|floor| ink < floor) {
+                if minimum_ink(m).is_some_and(|floor| ink < floor)
+                    && !is_known_source_verse_label(
+                        col,
+                        &Band {
+                            top: pair[0],
+                            bottom: pair[1],
+                        },
+                    )
+                {
                     continue;
                 }
                 let resized = scale_strip(
@@ -3664,7 +4394,8 @@ mod tests {
                     .map(ledger_band)
                     .collect();
                 assert_eq!(
-                    bands, expected,
+                    band_source_column(source, page, &crop_column(&cleaned, &crop)).1,
+                    expected,
                     "source {source} page {page}: independently reviewed Pass A"
                 );
                 let trace = RetainedSourcePageTrace {
@@ -3979,6 +4710,12 @@ mod tests {
                     .as_array()
                     .unwrap()
                     .iter()
+                    .chain(
+                        evidence["restoration_copied_rows"]
+                            .as_array()
+                            .into_iter()
+                            .flatten(),
+                    )
                     .map(|r| {
                         let band = ledger_band(r);
                         assert!(band.bottom <= end);

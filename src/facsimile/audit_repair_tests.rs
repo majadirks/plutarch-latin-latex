@@ -277,6 +277,111 @@ fn audit_omission_source_signatures_match_proposed_repairs() {
     }
 }
 
+fn validate_tier_a_completion(fixture: &serde_json::Value) -> Result<()> {
+    use sha2::Digest;
+    validate_audit_omission_inventory(fixture)?;
+    let mut counts = [0, 0];
+    for event in fixture["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["initial_tier"] == "A" || e["promoted_tier"] == "A")
+    {
+        anyhow::ensure!(
+            event["status"] == "restored",
+            "unresolved Tier-A event: {}",
+            event["event_id"]
+        );
+        let reference = &event["passing_evidence"];
+        let path = reference["path"]
+            .as_str()
+            .ok_or_else(|| anyhow::anyhow!("passing evidence missing"))?;
+        let bytes = std::fs::read(path)?;
+        anyhow::ensure!(
+            format!("{:x}", sha2::Sha256::digest(&bytes)) == reference["sha256"],
+            "passing evidence hash differs"
+        );
+        let report: serde_json::Value = serde_json::from_slice(&bytes)?;
+        anyhow::ensure!(
+            report["events"]
+                .as_array()
+                .unwrap()
+                .contains(&event["event_id"]),
+            "event absent from passing evidence"
+        );
+        let lines: Vec<ReviewedSourceLine> =
+            serde_json::from_value(event["diagnosis"]["reviewed_lines"].clone())?;
+        anyhow::ensure!(
+            lines.len() as u64 == event["missing_line_count"].as_u64().unwrap(),
+            "source line count differs"
+        );
+        for line in &lines {
+            anyhow::ensure!(
+                report["reviewed_lines"]
+                    .as_array()
+                    .unwrap()
+                    .contains(&serde_json::to_value(line)?),
+                "reviewed line absent from passing evidence"
+            );
+        }
+        if event["initial_tier"] == "A" {
+            counts[0] += 1;
+            counts[1] += lines.len();
+        }
+    }
+    anyhow::ensure!(counts == [39, 69], "initial Tier-A completion differs");
+    for extra in fixture["additional_source_losses"].as_array().unwrap() {
+        anyhow::ensure!(
+            extra["status"] == "restored",
+            "additional reviewed source item unresolved"
+        );
+        let reference = &extra["passing_evidence"];
+        let bytes = std::fs::read(reference["path"].as_str().unwrap())?;
+        anyhow::ensure!(
+            format!("{:x}", sha2::Sha256::digest(&bytes)) == reference["sha256"],
+            "additional source evidence hash differs"
+        );
+        let report: serde_json::Value = serde_json::from_slice(&bytes)?;
+        for line in extra["reviewed_lines"].as_array().unwrap() {
+            anyhow::ensure!(
+                report["reviewed_lines"].as_array().unwrap().contains(line),
+                "additional source glyph region absent"
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn audit_tier_a_completion_requires_all_lines() {
+    let fixture = audit_repair_ledger();
+    validate_tier_a_completion(&fixture).unwrap();
+    for kind in ["unresolved", "missing_line", "missing_evidence"] {
+        let mut changed = fixture.clone();
+        let event = changed["events"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|e| e["initial_tier"] == "A")
+            .unwrap();
+        match kind {
+            "unresolved" => event["status"] = "unresolved".into(),
+            "missing_line" => {
+                event["diagnosis"]["reviewed_lines"]
+                    .as_array_mut()
+                    .unwrap()
+                    .pop();
+            }
+            "missing_evidence" => event["passing_evidence"]["path"] = serde_json::Value::Null,
+            _ => unreachable!(),
+        }
+        assert!(
+            validate_tier_a_completion(&changed).is_err(),
+            "completion rejects {kind}"
+        );
+    }
+}
+
 #[test]
 fn audit_omission_inventory_rejects_false_positive_and_duplicate_events() {
     let fixture = audit_repair_ledger();
@@ -403,7 +508,11 @@ fn known_body_fragments_preserve_faint_latin_pixels() {
         .as_array()
         .unwrap()
         .iter()
-        .filter(|r| r["responsible_step"] == "3.1")
+        .filter(|r| {
+            ["3.1", "4.2"]
+                .iter()
+                .any(|step| r["responsible_step"] == *step)
+        })
     {
         let source = record["source"].as_u64().unwrap() as usize;
         let page = record["source_page"].as_u64().unwrap() as u32;
@@ -494,7 +603,11 @@ fn known_body_crop_corrections_preserve_clipped_glyphs() {
         .as_array()
         .unwrap()
         .iter()
-        .filter(|r| r["responsible_step"] == "4.1")
+        .filter(|r| {
+            ["4.1", "4.2"]
+                .iter()
+                .any(|step| r["responsible_step"] == *step)
+        })
     {
         let source = record["source"].as_u64().unwrap() as usize;
         let page = record["source_page"].as_u64().unwrap() as u32;
@@ -562,7 +675,7 @@ fn known_source_body_bands_survive_furniture_filters() {
         let kept = drop_furniture(&raw, col.height());
         assert!(
             !kept.contains(&record.observed),
-            "native gap-outlier shape drops genuine body"
+            "furniture filtering drops the reviewed body interval"
         );
         let rescued = retain_known_source_body_bands(
             None,
@@ -642,6 +755,49 @@ fn known_source_body_bands_survive_furniture_filters() {
                 |s| s.band.top <= record.protected.top && s.band.bottom >= record.protected.bottom
             ));
     }
+    let record = SOURCE_BODY_BANDS
+        .iter()
+        .find(|r| r.source == 0 && r.page == 292)
+        .unwrap();
+    let col = column(
+        record.dimensions.1,
+        record.dimensions.0,
+        &[
+            (280, 312, 10, 510),
+            (335, 368, 10, 710),
+            (385, 417, 10, 710),
+            (434, 466, 10, 710),
+        ],
+    );
+    let raw = line_bands(&col, LINE_MIN_INK);
+    let metrics = LineMetrics {
+        height_med: 33,
+        height_mad: 1,
+        width_med: 700,
+    };
+    let trimmed = drop_interior_running_head(&col, &raw, &metrics);
+    assert!(!trimmed.contains(&record.observed));
+    let protected = retain_known_source_body_bands(
+        Some(record.unit_id),
+        0,
+        292,
+        record.dimensions,
+        &raw,
+        &trimmed,
+    );
+    assert!(protected.contains(&record.protected));
+    let shared = drop_shared_tail(&col, &raw, Some(320.0 / col.height() as f32), &metrics);
+    assert_eq!(
+        retain_known_source_body_bands(
+            Some("adjacent_comparison"),
+            0,
+            292,
+            record.dimensions,
+            &raw,
+            &shared
+        ),
+        shared
+    );
 }
 
 fn assert_tier_a_unit_lines_restored(id: &str) {
@@ -683,8 +839,39 @@ fn assert_tier_a_unit_lines_restored(id: &str) {
                 .unwrap(),
         );
     }
+    for extra in fixture["additional_source_losses"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| {
+            r["unit_id"] == id
+                && ["installed", "restored"]
+                    .iter()
+                    .any(|status| r["status"] == *status)
+        })
+    {
+        lines.extend(
+            serde_json::from_value::<Vec<ReviewedSourceLine>>(extra["reviewed_lines"].clone())
+                .unwrap(),
+        );
+    }
     lines.sort_by_key(|l| (l.source_page, l.region[1]));
+    lines.dedup_by_key(|l| (l.source_page, l.region));
     let (pages, metrics, traces) = audit_traced_unit(id);
+    let sequence: Vec<_> = traces
+        .iter()
+        .filter(|t| t.retained_index.is_some())
+        .map(|t| t.page)
+        .collect();
+    let seam: &[u32] = match id {
+        "phocion" => &[296, 299],
+        "marcius_coriolanus" => &[291, 292],
+        "brutus" => &[623, 624],
+        _ => &[],
+    };
+    if !seam.is_empty() {
+        assert!(sequence.windows(seam.len()).any(|w| w == seam));
+    }
     let originals = lines
         .iter()
         .map(|l| (l.source, l.source_page))
@@ -700,12 +887,25 @@ fn assert_tier_a_unit_lines_restored(id: &str) {
         scale: production_body_scale(),
         geom: TrimGeom::default(),
     };
-    assert_reviewed_source_lines_survive(&lines, &context, false);
+    let composition = assert_reviewed_source_lines_survive(&lines, &context, false);
     let dir = std::path::Path::new("archive/inner_tomi_audit_repairs_2026_10_08/restoration")
         .join(fixture["restoration_stage"].as_str().unwrap());
     std::fs::create_dir_all(&dir).unwrap();
+    use sha2::Digest;
+    let canvas_hashes: Vec<_> = composition.canvases.iter().enumerate().map(|(i,c)|serde_json::json!({"canvas":i+1,"width":c.width(),"height":c.height(),"sha256":format!("{:x}",sha2::Sha256::digest(c.as_raw()))})).collect();
+    let touched: std::collections::BTreeSet<_> = composition
+        .line_coverage
+        .iter()
+        .flat_map(|l| l["canvas_owners"].as_array().unwrap())
+        .map(|v| v.as_u64().unwrap() as usize)
+        .collect();
+    for i in touched {
+        composition.canvases[i - 1]
+            .save(dir.join(format!("{id}-canvas-{i:03}.png")))
+            .unwrap();
+    }
     let evidence = serde_json::json!({"unit_id":id,"scale":context.scale,"events":events.iter().map(|e|e["event_id"].clone()).collect::<Vec<_>>(),
-        "reviewed_lines":lines,"source_pages":traces,"verification":"original pixels, unique retained bands and strips, source order, and returned canvases passed"});
+        "reviewed_lines":lines,"line_coverage":composition.line_coverage,"canvas_ranges":composition.canvas_ranges,"canvas_hashes":canvas_hashes,"source_pages":traces,"verification":"original pixels, unique retained bands and strips, source order, and returned canvases passed"});
     std::fs::write(
         dir.join(format!("{id}.json")),
         serde_json::to_vec_pretty(&evidence).unwrap(),
@@ -722,6 +922,95 @@ fn assert_tier_a_unit_lines_restored(id: &str) {
 #[ignore = "requires original source PDFs and production-scale composition"]
 fn romulus_c1_c6_lines_restored() {
     assert_tier_a_unit_lines_restored("romulus");
+}
+
+#[test]
+fn known_source_verse_label_survives_ink_floor() {
+    let fixture = audit_repair_ledger();
+    let glyphs = audit_fingerprint_image(&fixture["source_fingerprints"]["cato_minor_verse_label"]);
+    let mut col = column(2838, 788, &[(1964, 1994, 100, 160), (2080, 2110, 100, 160)]);
+    image::imageops::replace(&mut col, &glyphs, 3, 2026);
+    let bands = vec![
+        Band {
+            top: 1964,
+            bottom: 1994,
+        },
+        Band {
+            top: 2026,
+            bottom: 2048,
+        },
+        Band {
+            top: 2080,
+            bottom: 2110,
+        },
+    ];
+    let metrics = LineMetrics {
+        height_med: 38,
+        height_mad: 1,
+        width_med: 700,
+    };
+    let pages = vec![(col.clone(), bands.clone())];
+    let strips = strips_in_reading_order(&pages, &metrics);
+    assert_eq!(strips.len(), 3);
+    assert!(is_known_source_verse_label(&col, &strips[1].band));
+    let geom = TrimGeom {
+        dpi: 300,
+        tb_w: 788,
+        tb_h: 100,
+        pad_x: 0,
+        pad_y: 0,
+    };
+    let canvases = assert_scaled_stream(&pages, &metrics, 1.0, &geom, 100, 100);
+    let flattened: Vec<_> = canvases
+        .iter()
+        .flat_map(|c| c.as_raw().iter().copied())
+        .collect();
+    let expected: Vec<_> = strips
+        .iter()
+        .flat_map(|s| {
+            image::imageops::crop_imm(&col, 0, s.band.top, 788, s.band.bottom - s.band.top)
+                .to_image()
+                .into_raw()
+        })
+        .collect();
+    assert_eq!(flattened, expected);
+    let mut changed = col.clone();
+    changed.put_pixel(3, 2026, Luma([col.get_pixel(3, 2026)[0] ^ 1]));
+    assert!(!is_known_source_verse_label(&changed, &strips[1].band));
+    assert_eq!(
+        strips_in_reading_order(&[(changed, bands)], &metrics).len(),
+        2
+    );
+    assert!(!is_known_source_verse_label(
+        &col,
+        &Band {
+            top: 2011,
+            bottom: 2064
+        }
+    ));
+    for (w, h) in [(789, 2838), (788, 2839)] {
+        let mut other = GrayImage::from_pixel(w, h, Luma([255]));
+        image::imageops::replace(&mut other, &glyphs, 3, 2026);
+        assert!(!is_known_source_verse_label(&other, &strips[1].band));
+    }
+}
+
+#[test]
+#[ignore = "requires original source PDFs and production-scale composition"]
+fn coriolanus_c2_lines_restored() {
+    assert_tier_a_unit_lines_restored("marcius_coriolanus");
+}
+
+#[test]
+#[ignore = "requires original source PDFs and production-scale composition"]
+fn phocion_c3_line_restored() {
+    assert_tier_a_unit_lines_restored("phocion");
+}
+
+#[test]
+#[ignore = "requires original source PDFs and production-scale composition"]
+fn brutus_c5_line_restored() {
+    assert_tier_a_unit_lines_restored("brutus");
 }
 
 #[test]
@@ -762,6 +1051,12 @@ struct ReviewedLineContext<'a> {
     geom: TrimGeom,
 }
 
+struct ReviewedComposition {
+    canvases: Vec<GrayImage>,
+    canvas_ranges: Vec<CanvasRange>,
+    line_coverage: Vec<serde_json::Value>,
+}
+
 fn assert_source_region_pixels_survive(
     original: &GrayImage,
     retained: &GrayImage,
@@ -787,7 +1082,7 @@ fn assert_reviewed_source_lines_survive(
     lines: &[ReviewedSourceLine],
     context: &ReviewedLineContext<'_>,
     whole_line: bool,
-) {
+) -> ReviewedComposition {
     assert!(!lines.is_empty(), "reviewed source regions are required");
     let ReviewedLineContext {
         traces,
@@ -805,10 +1100,11 @@ fn assert_reviewed_source_lines_survive(
         geom.first_body_budget(),
         geom.body_budget(),
     );
-    let (strips, canvas_ranges, _) =
+    let (strips, canvas_ranges, canvases) =
         ranges_for_composed_canvases(pages, metrics, *scale, geom, canvases);
     let mut previous = None;
     let mut seen = std::collections::BTreeSet::new();
+    let mut line_coverage = Vec::new();
     for line in lines {
         assert!(
             seen.insert((line.source, line.source_page, line.region)),
@@ -846,7 +1142,10 @@ fn assert_reviewed_source_lines_survive(
                 .count(),
             1,
             "whole reviewed line covered once: source {} page {} region {:?}, retained {:?}",
-            line.source, line.source_page, line.region, pages[index].1
+            line.source,
+            line.source_page,
+            line.region,
+            pages[index].1
         );
         let owners: Vec<_> = strips
             .iter()
@@ -884,8 +1183,13 @@ fn assert_reviewed_source_lines_survive(
         );
         assert!(
             ((right - trace.crop[0]) as f32 * scale).ceil() as u32 + geom.pad_x <= geom.tb_w,
-            "reviewed right glyphs fit output text width"
+            "reviewed right glyphs fit output text width: source {} page {} region {:?}",
+            line.source,
+            line.source_page,
+            line.region
         );
+        line_coverage.push(serde_json::json!({"source":line.source,"source_page":line.source_page,"region":line.region,
+            "scaled_row_stream":[lo,hi],"canvas_owners":canvas_ranges.iter().filter(|(_,a,b)|*a < hi && *b > lo).map(|(i,_,_)|*i).collect::<Vec<_>>() }));
         if whole_line {
             assert_eq!(
                 canvas_ranges
@@ -896,6 +1200,11 @@ fn assert_reviewed_source_lines_survive(
                 "reviewed line stays whole on one canvas"
             );
         }
+    }
+    ReviewedComposition {
+        canvases,
+        canvas_ranges,
+        line_coverage,
     }
 }
 

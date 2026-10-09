@@ -95,13 +95,13 @@
           "sha256": "346cdba35ad3f78e866f89ef67713ab0002c9aee4069f0d553e970be109cfb00"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1877,
@@ -406,7 +406,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 110,
+            "region": [
+              935,
+              265,
+              1710,
+              307
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/agesilaus.json",
+        "sha256": "5eb6f7f18f8d470aceac6f08535149f4601cb49c01cdf15cb4814a07396782d7"
       }
     },
     {
@@ -579,13 +597,13 @@
           "sha256": "dbe762f2b49a79b1313ec7f3fa36f7b11406ae42e981c1e3a3cc95fac531eb96"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1986,
@@ -897,7 +915,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 251,
+            "region": [
+              1058,
+              2507,
+              1833,
+              2541
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/alcibiades.json",
+        "sha256": "301c0adc41317566d62747994d846660fb8ce0f30ba4e82354cbf3a72740f07c"
       }
     },
     {
@@ -958,13 +994,13 @@
           "sha256": "98ece3e003b39edb3385e68b0835b0235bcc61a9244e798ebfc224f15ab89d2d"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1980,
@@ -1303,7 +1339,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 263,
+            "region": [
+              1080,
+              2473,
+              1742,
+              2505
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/alcibiades.json",
+        "sha256": "301c0adc41317566d62747994d846660fb8ce0f30ba4e82354cbf3a72740f07c"
       }
     },
     {
@@ -1348,13 +1402,13 @@
           "sha256": "f8fc0dbd6c5b2dc0739469fce2dd36efd2837d29b9acc05d7b7dd96d655cee5f"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1900,
@@ -1714,7 +1768,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 231,
+            "region": [
+              1019,
+              280,
+              1678,
+              317
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/alexander.json",
+        "sha256": "882a9420d4344b530c270cc8ce86686dce56b0f158745664be33dbfbd7f0f8de"
       }
     },
     {
@@ -1951,13 +2023,13 @@
           "sha256": "4a56d101ea412977faf4d138807cf2792447297b421b390d3d7f721ca222d4e7"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1810,
@@ -4715,7 +4787,25 @@
               }
             }
           ]
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 623,
+            "region": [
+              982,
+              353,
+              1485,
+              384
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/brutus.json",
+        "sha256": "eaed46355c14ea4b2cb8fc3d82b9fb80bb9ff80fc1426e88f3297574b1890d1a"
       }
     },
     {
@@ -4776,13 +4866,13 @@
           "sha256": "7a0929e9f65c64c6ae172a6a44208e995ed615b8bf09243affb5e0e50e6f2d56"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1793,
@@ -5109,7 +5199,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 624,
+            "region": [
+              874,
+              246,
+              1648,
+              277
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/brutus.json",
+        "sha256": "eaed46355c14ea4b2cb8fc3d82b9fb80bb9ff80fc1426e88f3297574b1890d1a"
       }
     },
     {
@@ -5202,13 +5310,13 @@
           "sha256": "47a3e6ab74cebb5b078fd6c182dd2e906e4db1af5d888d0f29c03831f59c6da1"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1852,
@@ -5575,7 +5683,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 327,
+            "region": [
+              992,
+              2458,
+              1765,
+              2491
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/cato_minor.json",
+        "sha256": "b11097441406d62341952a506b4a7cf813fd56d1e1f30e9834aa406ecceac5c7"
       }
     },
     {
@@ -5668,13 +5794,13 @@
           "sha256": "1dc311b0c04bb29eb41fde1d75ac933fa24a93e52277ba814e9a5a290d92ea50"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1854,
@@ -6023,7 +6149,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 331,
+            "region": [
+              1024,
+              215,
+              1803,
+              251
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/cato_minor.json",
+        "sha256": "b11097441406d62341952a506b4a7cf813fd56d1e1f30e9834aa406ecceac5c7"
       }
     },
     {
@@ -6116,13 +6260,13 @@
           "sha256": "120ed7d20d412dcc5a52fc6c4d34d2d7050423627240710a9c31dcd4f1292997"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1825,
@@ -6430,7 +6574,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 391,
+            "region": [
+              990,
+              247,
+              1761,
+              281
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/cleomenes.json",
+        "sha256": "33b1990ee81bc46bed8e729cdfd4ea4238c32538788eb909faea74090d959e0c"
       }
     },
     {
@@ -6475,13 +6637,13 @@
           "sha256": "7c16ac78f7a5310718916ba5acbee8dcd8d1935521a51bbe75cdbea1fa9672de"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1887,
@@ -6781,7 +6943,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 393,
+            "region": [
+              1050,
+              261,
+              1828,
+              294
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/cleomenes.json",
+        "sha256": "33b1990ee81bc46bed8e729cdfd4ea4238c32538788eb909faea74090d959e0c"
       }
     },
     {
@@ -6906,13 +7086,13 @@
           "sha256": "6f7c2e6a0e814e1363da3a47e4daff9e5179810fa9ef9a11bbaa097aa5ef635f"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1891,
@@ -7227,7 +7407,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 67,
+            "region": [
+              1068,
+              282,
+              1837,
+              320
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/crassus.json",
+        "sha256": "9f9a7e753b0c92c2771a80bcc4d5458771dbec06d7b225c7897c4c722cf219df"
       }
     },
     {
@@ -7272,13 +7470,13 @@
           "sha256": "929f7f29d0f2ad94ba56ddb1d5870abae8d603ed4383ebc7f3b59b90d4633f4f"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1841,
@@ -8000,7 +8198,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 437,
+            "region": [
+              988,
+              394,
+              1767,
+              425
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/demosthenes.json",
+        "sha256": "192b8720131d9e37a4171ea0d3fba3b029bd1a53e3d6c3d202d81eff97628343"
       }
     },
     {
@@ -8045,13 +8261,13 @@
           "sha256": "77b3f3d6be99f20802ba12e21b2f2cdef618f6426549c824bdb1b01ae7b17e25"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1840,
@@ -8348,7 +8564,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 438,
+            "region": [
+              875,
+              2453,
+              1648,
+              2486
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/demosthenes.json",
+        "sha256": "192b8720131d9e37a4171ea0d3fba3b029bd1a53e3d6c3d202d81eff97628343"
       }
     },
     {
@@ -8393,13 +8627,13 @@
           "sha256": "0f9843abc879fca4a90136ee4fe72598db3300ea53a8cc5d6fdebcf4c807b99e"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1846,
@@ -8849,7 +9083,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 443,
+            "region": [
+              979,
+              296,
+              1771,
+              328
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/demosthenes.json",
+        "sha256": "192b8720131d9e37a4171ea0d3fba3b029bd1a53e3d6c3d202d81eff97628343"
       }
     },
     {
@@ -8990,13 +9242,13 @@
           "sha256": "15ccfa8b52cd816a9d6f54ad9e8e1c2b2459e8f4d581064ff82f77926465221e"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1838,
@@ -9331,7 +9583,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 577,
+            "region": [
+              987,
+              247,
+              1772,
+              277
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/dio.json",
+        "sha256": "1690222c7e4619171b940c88623ad2cd0f98694adba94dc800b4a1741bbebc74"
       }
     },
     {
@@ -9376,13 +9646,13 @@
           "sha256": "9f9df412fd99e8474de5e09584011375e8fa3f3e5ae431df4680113d1e4da36a"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1830,
@@ -9717,7 +9987,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 579,
+            "region": [
+              998,
+              263,
+              1787,
+              295
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/dio.json",
+        "sha256": "1690222c7e4619171b940c88623ad2cd0f98694adba94dc800b4a1741bbebc74"
       }
     },
     {
@@ -9826,13 +10114,13 @@
           "sha256": "fb7873598b77cca11f71f98f07bc0686ec3c890aa712bde30f4a236b90766d2b"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1891,
@@ -10246,7 +10534,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 91,
+            "region": [
+              1059,
+              339,
+              1804,
+              369
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/eumenes.json",
+        "sha256": "621d18e237866c22e5cdd4ed9d4c8d9143968b873672bbfeda794569772cc741"
       }
     },
     {
@@ -10291,13 +10597,13 @@
           "sha256": "e514dbb7dc062b9646a4ddb888080baeca37b68742494351acb0bf59b1590716"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1964,
@@ -10586,7 +10892,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 228,
+            "region": [
+              916,
+              313,
+              1692,
+              356
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/fabius_maximus.json",
+        "sha256": "cf653712ddaa0ec59ebbb6f00025e8bd7126e81001d911c8df9e0e6f79eab9a2"
       }
     },
     {
@@ -13047,8 +13371,8 @@
         ]
       },
       "passing_evidence": {
-        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.1/iulius_caesar.json",
-        "sha256": "9527ecd20f69becca4f9d33d25f91408509b15a603629b5fbe5add9b1f9ea3ef"
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/iulius_caesar.json",
+        "sha256": "31c5ededff5d3499f0ae2b645174065783d5ebdcd2cc0ee548518cd38049e1da"
       }
     },
     {
@@ -13109,13 +13433,13 @@
           "sha256": "9df0aba30c2b9b0dff5748df6a7109af141ea02b7aea8f93ef82f767340ff45b"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1990,
@@ -13430,7 +13754,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 607,
+            "region": [
+              1070,
+              302,
+              1843,
+              350
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/lucullus.json",
+        "sha256": "d936e274b002f42a4c49c37e532596b3f2e95aff0ee30a4c01d5e63beb0ace34"
       }
     },
     {
@@ -13555,13 +13897,13 @@
           "sha256": "ff547b9a5ae8410cfa03a8a72e88e6874baf21b833f5ddfa661acacc0dea1cb3"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1996,
@@ -13898,7 +14240,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 79,
+            "region": [
+              1063,
+              337,
+              1840,
+              371
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/lycurgus.json",
+        "sha256": "72285139373e1db55377671a237dc132327643b0cb13acf72e8fcb4f1829bcaf"
       }
     },
     {
@@ -14071,13 +14431,13 @@
           "sha256": "c945056e670ae5d0c1dba213f5518a2d0efd4984318353d165fdd97fad5900f2"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1994,
@@ -14521,7 +14881,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 292,
+            "region": [
+              959,
+              391,
+              1729,
+              423
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/marcius_coriolanus.json",
+        "sha256": "234e7d418ba1a11b9652acc900b493c2db69c9ee8800bcb5ca900ded068ff3ee"
       }
     },
     {
@@ -14614,13 +14992,13 @@
           "sha256": "d9f590f401b91ab0f314e94567f0cb1c292b3d53e11186c70060d70b8dd52453"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1860,
@@ -14939,7 +15317,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 25,
+            "region": [
+              996,
+              2463,
+              1770,
+              2498
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/nicias.json",
+        "sha256": "5bab8790b3c88624be9bc6563d19994a8637f5a128b7e66328957472163303ad"
       }
     },
     {
@@ -15000,13 +15396,13 @@
           "sha256": "5feae956041c81292ef8746d619a7f431c2786247f71f267c4e81db4e0c5f023"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1960,
@@ -15330,7 +15726,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 100,
+            "region": [
+              947,
+              322,
+              1722,
+              353
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/numa.json",
+        "sha256": "8aec78611fe5fc617e64b12a25ff588b83435387f9b111c4f904a152d7736170"
       }
     },
     {
@@ -15375,13 +15789,13 @@
           "sha256": "2b6de6be540c84205fd50e261fbe4abbb747a1b2f8e59a030c16a50493d6e5b9"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1970,
@@ -15717,7 +16131,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 200,
+            "region": [
+              924,
+              333,
+              1697,
+              366
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/pericles.json",
+        "sha256": "8db7138f3e625c47b75e1b124f1bcaa690cc68b3183ae312f1be55af871cb7d2"
       }
     },
     {
@@ -15879,13 +16311,13 @@
           "sha256": "d7445fc35c4c204676edf2a2b841661445f7a9bbc5b3bc14658f3afbf3bd1bb3"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1883,
@@ -16210,7 +16642,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 294,
+            "region": [
+              936,
+              248,
+              1708,
+              280
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/phocion.json",
+        "sha256": "3e8b2bc276b17cfa8b15ac9502eaf98eecde8cebc0ed8fa3b8d9337f87190126"
       }
     },
     {
@@ -16255,13 +16705,13 @@
           "sha256": "213ed4a1125baf6d772820db0789960b7c50b794caab397ddbe4c44492e48d7a"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1881,
@@ -16563,7 +17013,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 299,
+            "region": [
+              991,
+              227,
+              1770,
+              260
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/phocion.json",
+        "sha256": "3e8b2bc276b17cfa8b15ac9502eaf98eecde8cebc0ed8fa3b8d9337f87190126"
       }
     },
     {
@@ -16608,13 +17076,13 @@
           "sha256": "908ccf088aeeea3aa027e8176651fd9f874191201c73a31ac8a5f825f7589d4a"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1862,
@@ -16933,7 +17401,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 301,
+            "region": [
+              1024,
+              243,
+              1796,
+              275
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/phocion.json",
+        "sha256": "3e8b2bc276b17cfa8b15ac9502eaf98eecde8cebc0ed8fa3b8d9337f87190126"
       }
     },
     {
@@ -16978,13 +17464,13 @@
           "sha256": "bc0d0c558a6619b7372edd3aaaaaad16c9a6af99d703b15d0e886af014c83621"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1870,
@@ -17293,7 +17779,30 @@
             }
           ],
           "proposed_crop_cases": []
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 303,
+            "region": [
+              1006,
+              249,
+              1780,
+              280
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ],
+        "native_neighbor_review": {
+          "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration_review/phocion-neighbor-native.png",
+          "sha256": "d050f935424f6d67f9a515ac3a0d35f114f17329f817895ab19a133d1f01c541",
+          "description": "Native Latin continuation line; the separate right-margin scan stripe is outside the reviewed text region."
         }
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/phocion.json",
+        "sha256": "3e8b2bc276b17cfa8b15ac9502eaf98eecde8cebc0ed8fa3b8d9337f87190126"
       }
     },
     {
@@ -17338,13 +17847,13 @@
           "sha256": "8f91fae3dffe4066983ffb10e8f94a3fa66632c039e7d7d9680605e15d929227"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1954,
@@ -17660,7 +18169,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 475,
+            "region": [
+              1025,
+              2498,
+              1799,
+              2531
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/pyrrhus.json",
+        "sha256": "026e70c708f83e4e69ce6051b7c874066f5f0cdecdc8c69d3068a96c07006e9a"
       }
     },
     {
@@ -17705,13 +18232,13 @@
           "sha256": "e101cb82a6be0014e7f1230cfd9e41db07a8644592cf1ccf1100a1bc993fdef3"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1975,
@@ -18017,7 +18544,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 36,
+            "region": [
+              980,
+              2375,
+              1637,
+              2408
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/romulus.json",
+        "sha256": "155506be2858a6ccd65aae680598f519e5a4ea33285cd3464bdb144e13d4c4c6"
       }
     },
     {
@@ -19772,8 +20317,8 @@
         }
       },
       "passing_evidence": {
-        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.1/romulus.json",
-        "sha256": "382f63766478f98c530dd61dea337e78c1ee2d869e5764df44b36f0fbe61cbde"
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/romulus.json",
+        "sha256": "155506be2858a6ccd65aae680598f519e5a4ea33285cd3464bdb144e13d4c4c6"
       }
     },
     {
@@ -19834,13 +20379,13 @@
           "sha256": "fa3fe54a1b85e5ddf6e1e74ecc53fbaa3046ee10f87592ca9b46c1421d3adf1a"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1970,
@@ -20149,7 +20694,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 108,
+            "region": [
+              967,
+              2491,
+              1741,
+              2529
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/solon.json",
+        "sha256": "a288e3028db88eb495690d4b322276842e446b9c6e758bf39381a72bf7651a3d"
       }
     },
     {
@@ -20210,13 +20773,13 @@
           "sha256": "effe923b736a363133c9c8f095afaae09e894c4c126af6cce142f33252a6577c"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           2008,
@@ -20642,7 +21205,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 115,
+            "region": [
+              1023,
+              469,
+              1802,
+              511
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/solon.json",
+        "sha256": "a288e3028db88eb495690d4b322276842e446b9c6e758bf39381a72bf7651a3d"
       }
     },
     {
@@ -20703,13 +21284,13 @@
           "sha256": "171df32282c683ac8b4873cf903049e67e4c8e731e47a28c7c35332c2f9a39df"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1996,
@@ -21597,7 +22178,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 15,
+            "region": [
+              1072,
+              2285,
+              1827,
+              2321
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/theseus.json",
+        "sha256": "36be81484ac26d816c18195214ac15104424fc7bccb261d5898fd7c45ab898fa"
       }
     },
     {
@@ -21658,13 +22257,13 @@
           "sha256": "a4a5c45b6e37302f9bf3c7fcd188a8e3aac068c9f40fc714b7ad85f55bc081c8"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           2004,
@@ -21990,7 +22589,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 0,
+            "source_page": 25,
+            "region": [
+              1061,
+              2524,
+              1339,
+              2556
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/theseus.json",
+        "sha256": "36be81484ac26d816c18195214ac15104424fc7bccb261d5898fd7c45ab898fa"
       }
     },
     {
@@ -22035,13 +22652,13 @@
           "sha256": "3e9769a9ece889b443ec43fd04487b3f6d0f8ed39b8af4b2f55a2ecc4f0ec4b5"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1889,
@@ -22316,7 +22933,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 407,
+            "region": [
+              1033,
+              234,
+              1813,
+              265
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/tiberius_gracchus.json",
+        "sha256": "ea4ebe9256bf98aeeb4da2e8b560a4fb9d4fbd94bde4ea3353f1bee4c19b6d9d"
       }
     },
     {
@@ -22361,13 +22996,13 @@
           "sha256": "7ebd11b04338ca914e49d651f2f2f7f4923eca8ff2b13a05d25c003c06a6180e"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1883,
@@ -22655,7 +23290,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 411,
+            "region": [
+              1015,
+              220,
+              1791,
+              250
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/tiberius_gracchus.json",
+        "sha256": "ea4ebe9256bf98aeeb4da2e8b560a4fb9d4fbd94bde4ea3353f1bee4c19b6d9d"
       }
     },
     {
@@ -22700,13 +23353,13 @@
           "sha256": "e89bb4e333d6cfd163266847178ba521757e25038f8b05e5abff38dc2ed0ca22"
         }
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "pending production-pixel diagnosis",
       "reason": "Historical confirmed verdict retained; source regions locate evidence, not production-pixel repair boundaries.",
       "reviewed_lines": [],
       "diagnosis": {
-        "status": "safe_correction_specified",
+        "status": "restored",
         "responsible_step": "4.2",
         "source_raster": [
           1851,
@@ -23104,7 +23757,25 @@
             }
           ],
           "proposed_crop_cases": []
-        }
+        },
+        "installed_repair_step": "4.2",
+        "reviewed_neighbor_lines": [
+          {
+            "source": 1,
+            "source_page": 414,
+            "region": [
+              957,
+              335,
+              1700,
+              382
+            ],
+            "role": "adjacent_surviving_body_line"
+          }
+        ]
+      },
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/tiberius_gracchus.json",
+        "sha256": "ea4ebe9256bf98aeeb4da2e8b560a4fb9d4fbd94bde4ea3353f1bee4c19b6d9d"
       }
     },
     {
@@ -23313,19 +23984,19 @@
       "finding_ids": [
         "C2"
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "historical_evidence": "| C2 | Coriolanus II/207, r199; v1/291 ->292, f278 ->279 | Output `Numa de-` jumps to `cum Æquis sociis atque amicis suis`. Source 292 first has `finierat, ut in ejus Vita scripsimus. (11) At res Volscorum` and `statim Marcium desideraverunt. Primo enim de principatu`. Output208 has only the genuine terminal continuation. | **Confirmed omission of two distinct source Latin lines.** The split `de-` is left without its expected continuation. |",
-      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+      "reason": "Reviewed missing Latin and adjacent source regions pass once-only original-pixel extraction and returned-canvas assertions."
     },
     {
       "finding_ids": [
         "C3"
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "historical_evidence": "| C3 | Phocion VI/229, r221; v2/298 ->299, f895 ->896 | After `Id quum impugnarent oratores postulatum,` output jumps to `vos aut armis superare`. Source 299 first contains `a senatu dicere sententiam Phocion jussus, Jubeo, inquit,`. Neighbors228/230 and the full VI OCR search do not supply it. | **Confirmed omission of one distinct source Latin line.** Separate from D6's incomplete duplicate opening. |",
-      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+      "reason": "Reviewed missing Latin and adjacent source regions pass once-only original-pixel extraction and returned-canvas assertions."
     },
     {
       "finding_ids": [
@@ -23340,10 +24011,10 @@
       "finding_ids": [
         "C5"
       ],
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "1.1C",
       "historical_evidence": "| C5 | Brutus VIII/128, r120; v2/623 ->624, f1200 ->1201 | After source 623's `etiam optimus quisque pro Bruto propugnans cecidit.` output resumes at source 624's second Latin line `Is quum videret barbaros quosdam`. Source 624 first line is **`L. Erat inter amicos Bruti Lucilius quidam, vir fortis.`** Output127/128/129 and OCR do not contain it. | **Confirmed omission of one distinct source Latin line**, including chapter L marker and introduction of Lucilius. Found during this final continuation. |",
-      "reason": "Historical report preserved; production-pixel diagnosis or final recheck pending."
+      "reason": "Reviewed missing Latin and adjacent source regions pass once-only original-pixel extraction and returned-canvas assertions."
     },
     {
       "finding_ids": [
@@ -96563,7 +97234,7 @@
         1790,
         2600
       ],
-      "status": "proposed",
+      "status": "installed",
       "responsible_step": "4.2",
       "reason": "Native page and right-edge strips reviewed: body glyph components end at x1767; the divider is separated by white columns before x1790. Mask the external divider to unmerge the head from body lines.",
       "candidate_measurements": {
@@ -98125,7 +98796,7 @@
         1850,
         2600
       ],
-      "status": "proposed",
+      "status": "installed",
       "responsible_step": "4.2",
       "reason": "Native page and right-edge strips reviewed: body glyph components end at x1828; the divider is separated by white columns before x1850. Mask the external divider to unmerge the head from body lines.",
       "candidate_measurements": {
@@ -99627,7 +100298,7 @@
         1800,
         2600
       ],
-      "status": "proposed",
+      "status": "installed",
       "responsible_step": "4.2",
       "reason": "Native page and right-edge strips reviewed: body glyph components end at x1770; the divider is separated by white columns before x1800. Mask the external divider to unmerge the head from body lines.",
       "candidate_measurements": {
@@ -101111,7 +101782,7 @@
         1800,
         2600
       ],
-      "status": "proposed",
+      "status": "installed",
       "responsible_step": "4.2",
       "reason": "Native page and right-edge strips reviewed: body glyph components end at x1783; the divider is separated by white columns before x1800. Mask the external divider to unmerge the head from body lines.",
       "candidate_measurements": {
@@ -102673,7 +103344,7 @@
         1840,
         2600
       ],
-      "status": "proposed",
+      "status": "installed",
       "responsible_step": "4.2",
       "reason": "Native page and right-edge strips reviewed: body glyph components end at x1813; the divider is separated by white columns before x1840. Mask the external divider to unmerge the head from body lines.",
       "candidate_measurements": {
@@ -104217,7 +104888,7 @@
         1830,
         2600
       ],
-      "status": "proposed",
+      "status": "installed",
       "responsible_step": "4.2",
       "reason": "Native page and right-edge strips reviewed: body glyph components end at x1791; the divider is separated by white columns before x1830. Mask the external divider to unmerge the head from body lines.",
       "candidate_measurements": {
@@ -105818,12 +106489,17 @@
         }
       ],
       "prose_landmark": "Et: (the separate short verse label on source 360)",
-      "status": "unresolved",
+      "status": "restored",
       "responsible_step": "4.2",
       "dropping_stage": "minimum_ink strip filter",
       "source_ink": 374,
       "minimum_ink": 498,
-      "reason": "Native source label read in retained and repeated scans; survives retained band but no extracted strip covers it. No fix specified or enabled."
+      "reason": "The exact original verse-label fingerprint survives extraction and returned canvases at the unchanged global ink floor.",
+      "regression_name": "audit_tier_a_source_lines_restored",
+      "passing_evidence": {
+        "path": "archive/inner_tomi_audit_repairs_2026_10_08/restoration/step-4.2/cato_minor.json",
+        "sha256": "b11097441406d62341952a506b4a7cf813fd56d1e1f30e9834aa406ecceac5c7"
+      }
     }
   ],
   "duplicate_diagnosis": {
@@ -108881,7 +109557,7 @@
         976,
         1771
       ],
-      "status": "proposed",
+      "status": "installed",
       "responsible_step": "4.2",
       "reason": "After W6 cleanup the first letters of the three top lines still extend left of the detected x982 boundary; native full-column review shows their original beginnings before x982. Include the complete source glyphs.",
       "measurements": {
@@ -109969,7 +110645,8 @@
       "event_ids": [
         "miss_agesilaus_110_1649"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -109990,7 +110667,8 @@
       "event_ids": [
         "miss_alcibiades_251_4338"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110011,7 +110689,8 @@
       "event_ids": [
         "miss_alcibiades_263_9839"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110032,7 +110711,8 @@
       "event_ids": [
         "miss_alexander_231_16439"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110053,7 +110733,8 @@
       "event_ids": [
         "miss_brutus_623_11958"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110074,7 +110755,8 @@
       "event_ids": [
         "miss_brutus_623_11958"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110095,7 +110777,8 @@
       "event_ids": [
         "miss_brutus_623_11958"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110116,7 +110799,8 @@
       "event_ids": [
         "miss_brutus_624_12394"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110137,7 +110821,8 @@
       "event_ids": [
         "miss_cato_minor_327_8321"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110158,7 +110843,8 @@
       "event_ids": [
         "miss_cato_minor_331_9707"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110179,7 +110865,8 @@
       "event_ids": [
         "miss_cleomenes_391_5043"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110200,7 +110887,8 @@
       "event_ids": [
         "miss_cleomenes_393_5916"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110221,7 +110909,8 @@
       "event_ids": [
         "miss_crassus_67_11548"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110242,7 +110931,8 @@
       "event_ids": [
         "miss_demosthenes_437_3468"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110263,7 +110953,8 @@
       "event_ids": [
         "miss_demosthenes_437_3468"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110284,7 +110975,8 @@
       "event_ids": [
         "miss_demosthenes_437_3468"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110305,7 +110997,8 @@
       "event_ids": [
         "miss_demosthenes_437_3468"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110326,7 +111019,8 @@
       "event_ids": [
         "miss_demosthenes_438_4274"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110347,7 +111041,8 @@
       "event_ids": [
         "miss_demosthenes_443_6045"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110368,7 +111063,8 @@
       "event_ids": [
         "miss_demosthenes_443_6045"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110389,7 +111085,8 @@
       "event_ids": [
         "miss_dio_577_4979"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110410,7 +111107,8 @@
       "event_ids": [
         "miss_dio_579_5825"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110431,7 +111129,8 @@
       "event_ids": [
         "miss_eumenes_91_1126"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110452,7 +111151,8 @@
       "event_ids": [
         "miss_eumenes_91_1126"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110473,7 +111173,8 @@
       "event_ids": [
         "miss_fabius_maximus_228_2889"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110516,7 +111217,8 @@
       "event_ids": [
         "miss_lucullus_607_2890"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110537,7 +111239,8 @@
       "event_ids": [
         "miss_lycurgus_79_8882"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110558,7 +111261,8 @@
       "event_ids": [
         "miss_marcius_coriolanus_292_10538"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110579,7 +111283,8 @@
       "event_ids": [
         "miss_marcius_coriolanus_292_10538"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110600,7 +111305,8 @@
       "event_ids": [
         "miss_nicias_25_3357"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110621,7 +111327,8 @@
       "event_ids": [
         "miss_numa_100_7129"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110642,7 +111349,8 @@
       "event_ids": [
         "miss_pericles_200_2252"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110663,7 +111371,8 @@
       "event_ids": [
         "miss_phocion_294_3556"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110684,7 +111393,8 @@
       "event_ids": [
         "miss_phocion_299_5777"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110705,7 +111415,8 @@
       "event_ids": [
         "miss_phocion_301_6648"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110726,7 +111437,8 @@
       "event_ids": [
         "miss_phocion_303_7514"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110747,7 +111459,8 @@
       "event_ids": [
         "miss_pyrrhus_475_2507"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110768,7 +111481,8 @@
       "event_ids": [
         "miss_romulus_36_1670"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110811,7 +111525,8 @@
       "event_ids": [
         "miss_solon_108_832"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110832,7 +111547,8 @@
       "event_ids": [
         "miss_solon_115_3532"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110853,7 +111569,8 @@
       "event_ids": [
         "miss_theseus_15_774"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 0,
@@ -110874,7 +111591,8 @@
       "event_ids": [
         "miss_theseus_25_5427"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110895,7 +111613,8 @@
       "event_ids": [
         "miss_tiberius_gracchus_407_2016"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110916,7 +111635,8 @@
       "event_ids": [
         "miss_tiberius_gracchus_411_3764"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     },
     {
       "source": 1,
@@ -110937,7 +111657,8 @@
       "event_ids": [
         "miss_tiberius_gracchus_414_5143"
       ],
-      "responsible_step": "4.2"
+      "responsible_step": "4.2",
+      "status": "installed"
     }
   ],
   "diagnostic_archive": {
@@ -111097,5 +111818,5 @@
       "sha256": "1eaea5ec72ec299072b0f93a48478147b9113d46f780474690ba9b6df96b8e07"
     }
   },
-  "restoration_stage": "step-4.1"
+  "restoration_stage": "step-4.2"
 }

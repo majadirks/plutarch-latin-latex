@@ -644,9 +644,10 @@ Tier-B dispositions. Post-dedup repair confirmation occurs in 2.1A.
 
 The diagnostic fixture owns measured source coordinates and frozen baseline traces.
 The D4–D12 production exclusions and their installed ledger records are in place;
-the existing D1–D3 records are preserved. The seven step-3.1 furniture cases are installed with original-pixel, crop-edge,
-Pass-A-band and full-unit head-trim verification. Omission corrections remain
-proposed. Step 2.1 verifies the reviewed retained source-line regions
+the existing D1–D3 records are preserved. All thirteen verified furniture cases are installed with original-pixel,
+crop-edge, furniture-stage band and full-unit head-trim verification. Every
+initial Tier-A omission and the additional Cato verse label pass their
+original-source extraction and returned-canvas assertions. Step 2.1 verifies the reviewed retained source-line regions
 through extracted strips and composed canvases.
 
 | Finding | Source decision | Status | Responsible step |
@@ -661,8 +662,8 @@ through extracted strips and composed canvases.
 | D11 | v2 keep 671, 672; exclude 673, 674; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
 | D12 | v2 keep 699, 700; exclude 701, 702; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
 | H2 / R9 on 375 | Agis v2/375: right divider begins at x1753; reviewed Latin ends before x1740; candidate x1745..1797 preserves Latin and unmerges the head | installed; source-pixel and head extraction checks passed | 3.1 |
-| C3 | Phocion first source line on 299 remains missing; raw 296→299 join reviewed | post-dedup measured; correction specified; unresolved until 4.2 | 2.1A / 4.2 |
-| Additional Cato verse label | Cato Minor v2/360 `Et:`, source region [888, 2026, 932, 2048]; 374 ink pixels below the 498-pixel strip floor | unresolved | 1.1C / 4.2 |
+| C3 | Phocion first source line on 299 restored; retained 296→299 identity join verified | installed; source-to-canvas regression passed | 2.1A / 4.2 |
+| Additional Cato verse label | Cato Minor v2/360 `Et:`, source region [888, 2026, 932, 2048]; exact source fingerprint retained through the unchanged ink floor | restored; source-to-canvas regression passed | 1.1C / 4.2 |
 
 The initial omission inventory remains exactly 39 Tier-A events / 69 lines and
 20 Tier-B events / 44 lines. The additional Cato verse-label loss is tracked
@@ -685,17 +686,20 @@ cannot receive a correction without the required confirming human read.
 Watermark candidates measured copied endpoints W4: 2881→2572,
 W5: 2735→2556, and W6: 2735→2561. Summing actual extracted strip intervals
 gives installed page copied heights W4 2630→2321, W5 2512→2351, and W6
-2321→2298. W4’s mask-only candidate copied 2314 rows; its finite fragment
+2321→2299 after body restoration. W4’s mask-only candidate copied 2314 rows; its finite fragment
 join restores the independently frozen seven-row interval [2526,2533].
+W6’s body protection adds the independently reviewed first glyph row [221,222];
+its mask-only copied height remains 2298.
 Actual copied furniture-tail rows beyond the reviewed last Latin are respectively
 309→0, 161→0 and 128→0. Endpoint subtraction would overstate W5/W6 tail
 removal because the strip floor already discards some intervening intervals.
 W6 also restores top-body rows, so its total copied height cannot stand in for
 tail removal. Each watermark is a tail, with
 no source-page Latin beneath its logo. The next source page supplies the W4/W5
-continuation; W6 still has the separate missing first line on 624. The candidate
-623 right-rule cleanup also separates the three top lines formerly swallowed by
-a merged head band; Phase 4 must verify their restoration independently.
+continuation; step 4.2 separately restores and verifies the true first line
+on 624 and the three original top lines on 623. The candidate
+623 right-rule cleanup separates the three top lines from the head band;
+the Brutus restoration regression verifies their complete glyph boundaries.
 
 F1 and F2 are deferred: no complete safe boundary has been proven beside Latin
 and legitimate reference letters. S2 uses the specifically amended packing
