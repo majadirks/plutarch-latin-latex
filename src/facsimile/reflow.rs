@@ -820,13 +820,22 @@ fn render_and_band(
 ) -> Result<(GrayImage, Vec<Band>)> {
     let mut page_img = render_fn(source, page)?;
     mask_known_source_furniture(source, page, &mut page_img);
-    let column =
-        preserve_known_body_crop_edge(source, page, &page_img, detect_latin_column(&page_img)?);
+    let column = production_source_column(source, page, &page_img)?;
     let cropped = crop_column(&page_img, &column);
     let (raw, bands) = band_source_column(source, page, &cropped);
     let bands =
         retain_known_source_body_bands(None, source, page, cropped.dimensions(), &raw, &bands);
     Ok((cropped, bands))
+}
+
+/// Column bounds on a raster after edition-specific furniture masking.
+fn production_source_column(source: usize, page: u32, masked: &GrayImage) -> Result<Column> {
+    Ok(preserve_known_body_crop_edge(
+        source,
+        page,
+        masked,
+        detect_latin_column(masked)?,
+    ))
 }
 
 /// Raw line evidence and furniture-filtered bands on an owned Latin column.
@@ -1569,6 +1578,10 @@ fn retain_known_source_body_bands(
     if !matched {
         return result;
     }
+    merge_source_body_bands(result)
+}
+
+fn merge_source_body_bands(mut result: Vec<Band>) -> Vec<Band> {
     result.sort_by_key(|b| b.top);
     let mut merged: Vec<Band> = Vec::new();
     for band in result {
@@ -2595,103 +2608,24 @@ mod tests {
         noise: Vec<[u32; 2]>,
     }
 
-    struct SourcePageTrace {
-        requests: Vec<u32>,
-        renders: Vec<u32>,
-        detections: Vec<u32>,
-    }
-
     fn traced_real_unit(range: &UnitRange) -> (Vec<PageBands>, LineMetrics) {
-        let trace = std::cell::RefCell::new(SourcePageTrace {
-            requests: vec![],
-            renders: vec![],
-            detections: vec![],
-        });
-        let (pages, m) = unit_body_strips(range, |s, p| {
-            trace.borrow_mut().requests.push(p);
-            let image = real_source_image(s, p);
-            trace.borrow_mut().renders.push(p);
-            detect_latin_column(&image).expect("successful Latin-column detection");
-            trace.borrow_mut().detections.push(p);
-            Ok(image)
-        })
-        .unwrap();
-        let trace = trace.into_inner();
-        let expected: Vec<_> = (range.unit.start_page..=range.end_page)
-            .filter(|p| !skip_known_duplicate_source_page(&range.unit.id, range.unit.source, *p))
+        let (pages, metrics, traces) = audit_traced_unit(&range.unit.id);
+        let originals = traces
+            .iter()
+            .filter(|t| t.retained_index.is_some())
+            .map(|t| ((t.source, t.page), real_source_image(t.source, t.page)))
             .collect();
-        assert_eq!(trace.requests, expected);
-        assert_eq!(trace.renders, expected);
-        assert_eq!(trace.detections, expected);
-        assert_eq!(
-            pages.len(),
-            expected.len(),
-            "no skipped pages before indexing source coordinates"
-        );
         let ledger: Vec<ReviewedBands> =
             serde_json::from_str(include_str!("fixtures/closing_body_bands.json")).unwrap();
-        for record in ledger.iter().filter(|r| {
-            r.source == range.unit.source
-                && expected.contains(&r.page)
-                && !(r.page == 434 && range.unit.id != "cato_major")
-        }) {
-            let retained = &pages[expected.iter().position(|p| *p == record.page).unwrap()];
-            let original = real_source_image(record.source, record.page);
-            let column = detect_latin_column(&original).unwrap();
-            assert_eq!(record.dpi, BODY_DPI);
-            assert_eq!(record.column, [column.left, column.right]);
-            let mut previous = 0;
-            for &[top, bottom] in &record.body {
-                let band = Band { top, bottom };
-                assert!(top >= previous, "review ledger in source order");
-                previous = bottom;
-                assert_eq!(
-                    retained.1.iter().filter(|b| **b == band).count(),
-                    1,
-                    "source {} page {} body band {band:?}",
-                    record.source,
-                    record.page
-                );
-                let source_crop = image::imageops::crop_imm(
-                    &original,
-                    column.left,
-                    top,
-                    column.right - column.left,
-                    bottom - top,
-                )
-                .to_image();
-                let kept_crop = image::imageops::crop_imm(
-                    &retained.0,
-                    0,
-                    top,
-                    retained.0.width(),
-                    bottom - top,
-                )
-                .to_image();
-                assert_eq!(source_crop, kept_crop, "original unscaled source pixels");
-            }
-            let body_top = record.body.first().unwrap()[0];
-            let body_bottom = record.body.last().unwrap()[1];
-            // A shared page's other unit is checked by its own boundary regression.
-            for &[top, bottom] in &record.excluded {
-                if (range.unit.id == "cato_major" && top < body_top)
-                    || (range.unit.id == "comparatio_aristidis_et_catonis" && bottom > body_bottom)
-                {
-                    continue;
-                }
-                assert!(
-                    !strips_in_reading_order(std::slice::from_ref(retained), &m)
-                        .iter()
-                        .any(|s| s.band.top < bottom && s.band.bottom > top),
-                    "excluded furniture on page {}: {top}..{bottom}",
-                    record.page
-                );
-            }
-            for &[top, bottom] in &record.noise {
-                assert!(bottom - top < 12);
-            }
-        }
-        (pages, m)
+        assert_reviewed_band_ledger(
+            &range.unit.id,
+            &ledger,
+            &pages,
+            &metrics,
+            &traces,
+            &originals,
+        );
+        (pages, metrics)
     }
 
     /// Independently resize cut-point intervals and concatenate rows; no packing oracle.
@@ -3736,75 +3670,7 @@ mod tests {
     #[test]
     #[ignore]
     fn extract_tier_b_source_bands() {
-        // (unit_id, source, page, y0, y1) — audit box page fractions for each dropped line.
-        let events: &[(&str, usize, u32, f32, f32)] = &[
-            ("aemilius_paulus", 0, 326, 0.0872, 0.1045),
-            ("agesilaus", 1, 110, 0.886, 0.9057),
-            ("alcibiades", 0, 242, 0.8652, 0.8829),
-            ("antonius", 1, 562, 0.0834, 0.479),
-            ("artoxerxes", 1, 633, 0.8872, 0.9065),
-            ("brutus", 1, 619, 0.0632, 0.0826),
-            ("caius_marius", 0, 519, 0.0783, 0.0964),
-            ("cato_minor", 1, 329, 0.0564, 0.0774),
-            ("cato_minor", 1, 352, 0.884, 0.9037),
-            ("crassus", 1, 44, 0.0626, 0.0815),
-            ("demosthenes", 1, 445, 0.063, 0.0825),
-            ("dio", 1, 566, 0.8892, 0.9083),
-            ("dio", 1, 580, 0.887, 0.9071),
-            ("lucullus", 0, 631, 0.0789, 0.0982),
-            ("lysander", 0, 535, 0.0763, 0.1157),
-            ("marcellus", 0, 377, 0.0811, 0.0974),
-            ("nicias", 1, 25, 0.0672, 0.0868),
-            ("pericles", 0, 214, 0.8626, 0.8802),
-            ("pericles", 0, 215, 0.0789, 0.094),
-            ("phocion", 1, 291, 0.071, 0.0878),
-            ("timoleon", 0, 318, 0.086, 0.103),
-        ];
-        let dir = std::path::Path::new("tmp/pdfs/inner_tomi_audit_repairs/band_extract");
-        std::fs::create_dir_all(dir).unwrap();
-        for &(id, source, page, y0, y1) in events {
-            let mut img = real_source_image(source, page);
-            mask_known_source_furniture(source, page, &mut img);
-            let column = preserve_known_body_crop_edge(
-                source,
-                page,
-                &img,
-                detect_latin_column(&img).unwrap(),
-            );
-            let cropped = crop_column(&img, &column);
-            let (w, h) = cropped.dimensions();
-            let raw = line_bands(&cropped, LINE_MIN_INK);
-            let (_, kept) =
-                render_and_band(source, page, &|s, p| Ok(real_source_image(s, p))).unwrap();
-            let lo = (y0 * h as f32) as u32;
-            let hi = (y1 * h as f32) as u32;
-            let margin = h / 40;
-            println!(
-                "=== {id} v{} p{page} dims=({w},{h}) target_rows~{lo}..{hi} raw_bands={} ===",
-                source + 1,
-                raw.len()
-            );
-            for (i, b) in raw.iter().enumerate() {
-                let c = (b.top + b.bottom) / 2;
-                if c + margin >= lo && c <= hi + margin {
-                    let span = band_ink_span(&cropped, b);
-                    let survives = kept.iter().any(|k| k.top == b.top && k.bottom == b.bottom);
-                    println!(
-                        "  raw[{i}] {}..{} h={} ink_span={} frac={:.3} survives_render_and_band={}",
-                        b.top,
-                        b.bottom,
-                        b.bottom - b.top,
-                        span,
-                        span as f32 / w as f32,
-                        survives
-                    );
-                    image::imageops::crop_imm(&cropped, 0, b.top, w, b.bottom - b.top)
-                        .to_image()
-                        .save(dir.join(format!("{id}_p{page}_b{:05}.png", b.top)))
-                        .unwrap();
-                }
-            }
-        }
+        measure_tier_b_source_bands();
     }
 
     fn save_retained_crop(id: &str, page: &PageBands) {
