@@ -172,28 +172,45 @@ head fragment or large blank gap appears above `rum. Interim Rhodi …`.
 
 # Phase 3 — Restore and verify the Antonius 23-line block (Suggested implementer: Opus)
 
-## 3.1 Install the Antonius entry and verify composition
+A test-install of the plain single-band entry was run and **failed** — see
+[`2026_10_09_15_30_ANTONIUS_BLOCK_COMPOSITION_FINDINGS.md`](2026_10_09_15_30_ANTONIUS_BLOCK_COMPOSITION_FINDINGS.md).
+The protection fired (the band was retained), but `compose_pages` cannot split a single
+1107-px `Tall` strip that has **no internal low-ink rows** into readable lines, so the
+block did not appear at its reading-order position in the rebuilt reader. The block also
+cannot be line-split automatically (no ≥6-row blanks; dense-coverage separation yields
+only ~4 groups — the left-margin section letters and tight leading keep ink in every
+inter-line row). Phase 3 therefore installs **explicit, hand-measured line bands**, not
+one tall band.
 
-Append the antonius v2 p562 entry (`observed 249..1356`, `protected 249..1356`). Add the
-`[249,1356]` interval to `closing_body_bands.json` `body` for page 562. Rebuild
-`tomus_7_inner.pdf` and inspect the Antonius ending: the 23 lines
-(`vatam dicunt … a Cæsare redemit.`) must appear, **correctly separated into lines**,
-in reading order, between `… aspidem asser-` and chapter `LXXXVII. Antonius ex tribus
-uxoribus …`.
+## 3.1 Decide the split method
 
-If `compose_pages` does **not** fill-split the tall strip into readable lines (lines
-overlap, run together, or a line is clipped), this entry does not suffice: record the
-Antonius event as unresolved, do not ship a mangled block, and amend this step with the
-specific alternative (e.g. a per-page `line_bands` split override analogous to
-`coalesce_known_body_fragments`, splitting 249..1356 at its inter-line gaps into
-individual protected bands), with its own tests, before coding it.
+Choose, and record the choice with evidence:
+
+- **(a) Per-page crop-edge adjustment.** Test whether excluding the left-margin section
+  letters from the p562 column crop (a `preserve_known_body_crop_edge`-style entry) lets
+  `line_bands` clear the inter-line rows and emit 23 separate bands. If so, Antonius
+  reduces to ordinary single-line `SOURCE_BODY_BANDS` entries (or needs none). Verify it
+  changes nothing else on p562.
+- **(b) Explicit line bands (fallback).** If (a) does not cleanly separate the lines,
+  hand-measure the 23 line bands at the printed pitch (~48 px across `249..1356`) and
+  install 23 `SOURCE_BODY_BANDS` records that all share `observed: 249..1356` with one
+  non-overlapping line each in `protected` (small gaps between them so the retain merge
+  keeps them separate). `retain_known_source_body_bands` pushes every matching record's
+  `protected`, so one merged `observed` re-inserts 23 lines — no new mechanism.
+
+## 3.2 Install and verify
+
+Install the chosen method. Add each restored line interval to `closing_body_bands.json`
+`body` for page 562. Rebuild `tomus_7_inner.pdf`.
 
 **LLM verification:** the antonius real-source test and `known_source_body_bands...`
 pass; fmt and clippy clean.
 
-**Human verification:** Real-eyes read of the rebuilt tomus 7 Antonius ending — all 23
-lines present, individually legible, in order, neighbours intact. This is the gating
-check for Phase 3.
+**Human verification (gating):** Real-eyes read of the rebuilt tomus 7 Antonius ending —
+all 23 lines (`vatam dicunt … a Cæsare redemit.`) present, **individually legible and
+correctly separated**, in order, between `… aspidem asser-` and `LXXXVII. Antonius ex
+tribus uxoribus …`, neighbours intact. If this cannot be achieved, Antonius stays an
+unresolved Tier-A event; it does not block the other 21 repairs, which ship independently.
 
 # Phase 4 — Rebuild, verify all seams, and record evidence (Suggested implementer: Opus)
 
