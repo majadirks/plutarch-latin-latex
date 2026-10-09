@@ -701,16 +701,18 @@ F1 and F2 are deferred: no complete safe boundary has been proven beside Latin
 and legitimate reference letters. S2 uses the specifically amended packing
 branch in 4.3. The baseline diagnosis covers every initial Tier-A event:
 39 events, 69 individually located source-line regions, raw/cropped band
-measurements, extraction membership and the final canvas filter. All remain
-unresolved until installed repairs pass their source-to-canvas assertions.
+measurements, extraction membership and the final canvas filter. Step 4.1 restores two events / sixteen lines (Romulus 38 and Caesar 252),
+with original-pixel, once-only extraction and returned-canvas evidence. The
+remaining 37 events / 53 lines await step 4.2. C6’s two reviewed clipped words
+on Romulus 39 also pass, without changing the frozen omission counts.
 The 20 Tier-B events retain their confirmed historical verdict and explicit
 pending-human-read disposition; none is promoted or targeted.
 The finite body-band correction specification contains 47 observed signatures;
 multi-line blocks share one retained interval without duplicating any source row.
 Step 2.1A freezes post-exclusion coverage for all 39 Tier-A events / 69 lines
-in the diagnostic fixture and hash-bound archive traces. All 39 still require
-the finite corrections specified below; no omission is claimed restored by
-de-duplication. Final repair dispositions await source-to-canvas regressions.
+in the diagnostic fixture and hash-bound archive traces. No omission is restored by de-duplication. The post-mask trace confirms all
+47 proposed band signatures. Step 4.1 installs and verifies the Romulus/Caesar
+corrections; step 4.2 covers the remaining finite cases.
 
 The separate diagnostic archive is
 `archive/inner_tomi_audit_repairs_2026_10_08/baseline`: 4,404 files,

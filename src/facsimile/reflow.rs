@@ -728,6 +728,7 @@ pub fn unit_body_strips(
     // When the unit's one page is both first and shared-last, both boundary trims
     // apply to it.
     for (page, (col, bands)) in source_pages.into_iter().zip(pages.iter_mut()) {
+        let observed = bands.clone();
         if page == range.unit.start_page {
             *bands = drop_opening_bands(
                 col,
@@ -742,6 +743,14 @@ pub fn unit_body_strips(
         if range.shared_tail && page == range.end_page {
             *bands = drop_shared_tail(col, bands, range.tail_cut_frac, &metrics);
         }
+        *bands = retain_known_source_body_bands(
+            Some(&range.unit.id),
+            source,
+            page,
+            col.dimensions(),
+            &observed,
+            bands,
+        );
     }
 
     Ok((pages, metrics))
@@ -760,10 +769,12 @@ fn render_and_band(
     let column =
         preserve_known_body_crop_edge(source, page, &page_img, detect_latin_column(&page_img)?);
     let cropped = crop_column(&page_img, &column);
-    let bands = line_bands(&cropped, LINE_MIN_INK);
-    let bands = coalesce_known_body_fragments(source, page, cropped.dimensions(), &bands);
+    let raw = line_bands(&cropped, LINE_MIN_INK);
+    let bands = coalesce_known_body_fragments(source, page, cropped.dimensions(), &raw);
     let kept = drop_furniture(&bands, cropped.height());
     let bands = retain_early_aligned_body_bands(&cropped, &bands, &kept);
+    let bands =
+        retain_known_source_body_bands(None, source, page, cropped.dimensions(), &raw, &bands);
     Ok((cropped, bands))
 }
 
@@ -779,8 +790,101 @@ fn preserve_known_body_crop_edge(
             left: 907,
             right: 1711,
         },
+        (0, 38, (1988, 3000), 929, 1763) => Column {
+            left: 932,
+            right: 1774,
+        },
+        (0, 39, (2004, 2989), 1101, 1892) => Column {
+            left: 1085,
+            right: 1892,
+        },
+        (1, 252, (1874, 2831), 891, 1706) => Column {
+            left: 891,
+            right: 1722,
+        },
         _ => column,
     }
+}
+
+struct SourceBodyBand {
+    source: usize,
+    page: u32,
+    unit_id: &'static str,
+    dimensions: (u32, u32),
+    observed: Band,
+    protected: Band,
+}
+
+const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
+    SourceBodyBand {
+        source: 0,
+        page: 38,
+        unit_id: "romulus",
+        dimensions: (842, 3000),
+        observed: Band {
+            top: 2451,
+            bottom: 2651,
+        },
+        protected: Band {
+            top: 2451,
+            bottom: 2651,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 252,
+        unit_id: "iulius_caesar",
+        dimensions: (831, 2831),
+        observed: Band {
+            top: 240,
+            bottom: 744,
+        },
+        protected: Band {
+            top: 239,
+            bottom: 745,
+        },
+    },
+];
+
+/// Keep verified source body intervals when their exact band signature survives.
+/// Pass B requires the owning unit so neighboring shared-page Latin stays excluded.
+fn retain_known_source_body_bands(
+    owner: Option<&str>,
+    source: usize,
+    page: u32,
+    dimensions: (u32, u32),
+    observed: &[Band],
+    kept: &[Band],
+) -> Vec<Band> {
+    let mut result = kept.to_vec();
+    let mut matched = false;
+    for record in SOURCE_BODY_BANDS.iter().filter(|r| {
+        r.source == source
+            && r.page == page
+            && r.dimensions == dimensions
+            && owner.is_none_or(|id| id == r.unit_id)
+    }) {
+        if observed
+            .iter()
+            .any(|b| *b == record.observed || *b == record.protected)
+        {
+            result.push(record.protected);
+            matched = true;
+        }
+    }
+    if !matched {
+        return result;
+    }
+    result.sort_by_key(|b| b.top);
+    let mut merged: Vec<Band> = Vec::new();
+    for band in result {
+        if let Some(last) = merged.last_mut().filter(|last| band.top <= last.bottom) {
+            last.bottom = last.bottom.max(band.bottom);
+        } else {
+            merged.push(band);
+        }
+    }
+    merged
 }
 
 /// Join exact adjacent body fragments without changing their source pixels.
