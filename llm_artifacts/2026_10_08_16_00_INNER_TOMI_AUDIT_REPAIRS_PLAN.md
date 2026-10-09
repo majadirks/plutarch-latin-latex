@@ -660,7 +660,7 @@ through extracted strips and composed canvases.
 | D11 | v2 keep 671, 672; exclude 673, 674; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
 | D12 | v2 keep 699, 700; exclude 701, 702; no unique second-scan Latin observed | installed; source-line regression passed | 2.1 |
 | H2 / R9 on 375 | Agis v2/375: right divider begins at x1753; reviewed Latin ends before x1740; candidate x1745..1797 preserves Latin and unmerges the head | proposed | 3.1 |
-| C3 | Phocion first source line on 299 remains missing; raw 296→299 join reviewed | awaiting post-dedup trace | 2.1A / 4.2 |
+| C3 | Phocion first source line on 299 remains missing; raw 296→299 join reviewed | post-dedup measured; correction specified; unresolved until 4.2 | 2.1A / 4.2 |
 | Additional Cato verse label | Cato Minor v2/360 `Et:`, source region [888, 2026, 932, 2048]; 374 ink pixels below the 498-pixel strip floor | unresolved | 1.1C / 4.2 |
 
 The initial omission inventory remains exactly 39 Tier-A events / 69 lines and
@@ -704,7 +704,10 @@ The 20 Tier-B events retain their confirmed historical verdict and explicit
 pending-human-read disposition; none is promoted or targeted.
 The finite body-band correction specification contains 47 observed signatures;
 multi-line blocks share one retained interval without duplicating any source row.
-Post-exclusion measurements and final repair disposition belong to 2.1A.
+Step 2.1A freezes post-exclusion coverage for all 39 Tier-A events / 69 lines
+in the diagnostic fixture and hash-bound archive traces. All 39 still require
+the finite corrections specified below; no omission is claimed restored by
+de-duplication. Final repair dispositions await source-to-canvas regressions.
 
 The separate diagnostic archive is
 `archive/inner_tomi_audit_repairs_2026_10_08/baseline`: 4,404 files,

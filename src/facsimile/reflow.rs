@@ -2679,9 +2679,13 @@ mod tests {
     }
 
     fn real_source_image(source: usize, page: u32) -> GrayImage {
+        static POPPLER: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
         let pdf = std::path::PathBuf::from(format!("Ploutarchou_Bioi_v{}.pdf", source + 1));
         assert!(pdf.is_file(), "required source PDF {}", pdf.display());
-        assert!(crate::render::pdftotext_available(), "Poppler is required");
+        assert!(
+            *POPPLER.get_or_init(crate::render::pdftotext_available),
+            "Poppler is required"
+        );
         let cache = std::path::Path::new("build_facsimile/render_cache");
         let png = cache.join(format!(
             "Ploutarchou_Bioi_v{}-p{page:04}-{BODY_DPI}dpi.png",

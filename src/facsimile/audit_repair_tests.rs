@@ -185,6 +185,53 @@ fn audit_omission_diagnosis_covers_all_source_lines() {
 }
 
 #[test]
+fn audit_omission_post_dedup_covers_all_source_lines() {
+    use sha2::Digest;
+    let fixture = audit_repair_ledger();
+    let mut counts = [0, 0];
+    for event in fixture["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["initial_tier"] == "A")
+    {
+        let measured = &event["diagnosis"]["post_dedup"];
+        let lines = measured["lines"]
+            .as_array()
+            .expect("post-dedup source-line evidence");
+        assert_eq!(
+            lines.len() as u64,
+            event["missing_line_count"].as_u64().unwrap()
+        );
+        let bytes = std::fs::read(measured["trace"]["path"].as_str().unwrap()).unwrap();
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(bytes)),
+            measured["trace"]["sha256"]
+        );
+        for (line, reviewed) in lines
+            .iter()
+            .zip(event["diagnosis"]["reviewed_lines"].as_array().unwrap())
+        {
+            assert_eq!(line["region"], reviewed["region"]);
+            assert!(!line["measured"]["first_loss_stage"]
+                .as_str()
+                .unwrap()
+                .is_empty());
+        }
+        assert!(measured["scale"].as_f64().unwrap() > 0.0);
+        if !measured["complete"].as_bool().unwrap() {
+            assert!(!measured["proposed_body_bands"]
+                .as_array()
+                .unwrap()
+                .is_empty());
+        }
+        counts[0] += 1;
+        counts[1] += lines.len();
+    }
+    assert_eq!(counts, [39, 69]);
+}
+
+#[test]
 fn audit_omission_inventory_rejects_false_positive_and_duplicate_events() {
     let fixture = audit_repair_ledger();
     validate_audit_omission_inventory(&fixture).unwrap();
