@@ -3,8 +3,11 @@
 Written 2026-10-09. This is the diagnostic output that feeds the Tier-B repair plan.
 For each of the 20 promoted Tier-B omissions (see
 [`2026_10_09_10_45_TIER_B_PROMOTION_REVIEW_WORKSHEET.md`](2026_10_09_10_45_TIER_B_PROMOTION_REVIEW_WORKSHEET.md)),
-it records the exact `line_bands` band coordinates needed for a `SOURCE_BODY_BANDS`
-repair entry in `src/facsimile/reflow.rs`.
+it records 22 detector-band measurements for 20 events. The 21 non-Antonius
+protection tuples are installable after the repair plan's verification preparation.
+The Antonius tuple records a failed single-band trial and is not an installable
+standalone repair; see the
+[`Antonius findings`](2026_10_09_15_30_ANTONIUS_BLOCK_COMPOSITION_FINDINGS.md).
 
 ## How this was produced
 
@@ -28,7 +31,10 @@ cargo test --release -p plutarch-reader extract_tier_b_source_bands -- --ignored
 ```
 
 `dimensions` is the cropped Latin-column size `(width, height)` in pixels (the column
-height equals the full page height — `crop_column` crops horizontally only). `observed`
+height equals the full page height — `crop_column` crops horizontally only). Width and
+height do not identify absolute column bounds. The repair plan's Step 0.1 requires the
+diagnostic to emit raw and production `[left, right]` bounds, source identities, and
+source overlays before constructing ledger records. `observed`
 and `protected` are `{top, bottom}` bands in that cropped-column coordinate space.
 `retain_known_source_body_bands` matches `observed` against the raw `line_bands` output
 by **exact equality** and re-inserts `protected`, so `observed` must be the precise band
@@ -36,26 +42,30 @@ the detector emits.
 
 ## Which stage drops each line (informational)
 
-`survives_render_and_band` distinguishes two drop stages, but the fix is identical for
-both because `retain_known_source_body_bands` runs after the furniture pass *and* after
-the Pass-B boundary trims:
+For the non-Antonius tuples, `survives_render_and_band` distinguishes two drop
+stages. Protection runs after the furniture pass and the Pass-B boundary trims;
+restoration still requires source and composition tests:
 
 - `survives=false`: the band is removed at the `render_and_band` stage — the top/bottom
-  **furniture zone** (`drop_furniture`) swallows the first/last body line and
-  `retain_early_aligned_body_bands` (which only rescues bands centered in the `0.07..0.08`
-  fraction) does not reach it. Most head and foot losses are here.
+  furniture zone or leading/trailing gap filter in `drop_furniture` removes it, and
+  `retain_early_aligned_body_bands` (which rescues eligible aligned bands only in the
+  `0.07..0.08` centre fraction) does not restore it. Most head and foot losses are here.
 - `survives=true` but still missing in production: dropped later in **Pass B** by
   `drop_interior_running_head` → `drop_trailing_furniture` (a short first/last line,
   `< 0.8 × width`, detached by an above-median gap). Lysander's second line and both
   Pericles verse lines are here.
 
-No heuristic is changed. Each dropped band is restored by one ad hoc protection entry,
-exactly as the 48 existing `SOURCE_BODY_BANDS` entries restored the Tier-A losses.
+The 21 non-Antonius tuples use the same ad hoc mechanism as the 47 installed Tier-A
+protection records, without heuristic changes. Survival through `render_and_band`
+is stage evidence, not proof of final composition. Antonius requires the downstream
+trace and method-specific checks in Phase 3 of the repair plan.
 
-## The extraction — 22 entries for 20 events
+## The extraction — 22 measurements for 20 events
 
 Lysander (2 lines, one page) and Pericles (2 lines across two pages) contribute two
-entries each; Antonius's 23-line loss is a single merged band. For **clean** bands
+entries each; Antonius's 23-line loss is one measured merged band whose standalone
+protection failed the reader check. Row numbers identify the original measurements
+and remain unchanged. For **clean** bands
 `protected = observed`. For bands that `line_bands` **merged with a running-head
 fragment** above the Latin line, `protected` is the lower Latin sub-range only (the
 Greek/head scrap stays dropped), measured from the band's row ink profile.
@@ -94,24 +104,40 @@ Greek/head scrap stays dropped), measured from the band's row ink profile.
   so there is no conflict.
 - **Antonius (#4) is the one high-risk entry.** `line_bands` returns the whole 23-line
   conclusion as a **single 1107-px band** (`249..1356`), not 23 separate bands — the
-  inter-line gaps on v2 p562 never fall below `LINE_MIN_INK`, so the detector never
-  split them. Restoring it is one entry, but composition (`compose_pages`) must then
-  fill-split that tall strip back into readable lines. This must be verified in the
-  rebuilt reader (real-eyes) before Antonius is declared done; if it composes badly it
-  needs its own handling rather than a plain protection entry.
+  inter-line rows on v2 p562 stay above `LINE_MIN_INK`, so the detector never
+  split them. A standalone protection trial retained the band but failed the reader
+  check. The composer packs raster strips and cuts at page boundaries; it does not
+  reconstruct individual lines. The downstream loss stage and safe method remain
+  open. Phase 3 requires a full trace and evaluates whole-block recognition, faithful
+  crop adjustment, and glyph-safe explicit bands. Keep this tuple as diagnostic
+  provenance; do not install it alone as a completed repair.
 - **Merged entries (#6, #8, #11)** deliberately set `protected` below the Greek/Latin
   running-head fragment that `line_bands` merged into the band, so the fix restores the
   Latin line only and does **not** re-introduce furniture. Sub-ranges were measured from
   the band's row ink profile (bottom-most inked group → band bottom).
 - **dio p580 (#13)** is the skewed-crop case flagged in the worksheet; `observed`/
   `protected` are the detected band, but verification should confirm no bottom clip and
-  extend `protected` a few pixels down if a descender is lost (per the human directive
-  to prefer extra space over a mangled line).
+  measure an extension of `protected` if a descender is lost (per the human directive
+  to prefer extra space over a mangled line). Keep `observed` fixed, update retained
+  ledger intervals and neighboring glyph evidence, regenerate output, and repeat the
+  source/composition and final delivery checks after any adjustment.
 
-### Ready-to-install entries
+### Head-fragment exclusion candidates
 
-Append to `SOURCE_BODY_BANDS` in `src/facsimile/reflow.rs` (clean entries shown with
-`protected = observed`; merged/flagged entries carry the measured sub-range):
+The repair plan proposes brutus `[129,158]`, cato_minor p329 `[114,142]`, and
+demosthenes `[127,156]` for `excluded`. Their measured row-group derivation was not
+recorded in this original extraction. Treat them as candidates: remeasure source ink
+groups in Step 0.1, save overlays tying each interval to furniture above the Latin,
+and record confirmed bounds before installing exclusion assertions. Do not present
+these candidate coordinates as verified measurements. Phocion p291 tightens upper
+whitespace; it has no reviewed head fragment to exclude.
+
+### Ready-to-install non-Antonius entries
+
+After the repair plan's Phase 0, append these 21 tuples to `SOURCE_BODY_BANDS` in
+`src/facsimile/reflow.rs`. Clean entries have `protected = observed`; three head
+sub-ranges and the Phocion whitespace tightening use `protected.top > observed.top`.
+The failed Antonius tuple remains in table row 4 as diagnostic provenance.
 
 ```rust
 // aemilius_paulus — ute[rentur]
@@ -123,9 +149,6 @@ SourceBodyBand { source: 1, page: 110, unit_id: "agesilaus", dimensions: (798, 2
 // alcibiades — verse "Tunc Alcibiades ad me ait balbutiens:"
 SourceBodyBand { source: 0, page: 242, unit_id: "alcibiades", dimensions: (787, 2981),
     observed: Band { top: 2598, bottom: 2623 }, protected: Band { top: 2598, bottom: 2623 } },
-// antonius — the whole 23-line conclusion (ONE merged band; verify composition)
-SourceBodyBand { source: 1, page: 562, unit_id: "antonius", dimensions: (815, 2835),
-    observed: Band { top: 249, bottom: 1356 }, protected: Band { top: 249, bottom: 1356 } },
 // artoxerxes — foot
 SourceBodyBand { source: 1, page: 633, unit_id: "artoxerxes", dimensions: (786, 2826),
     observed: Band { top: 2522, bottom: 2554 }, protected: Band { top: 2522, bottom: 2554 } },
