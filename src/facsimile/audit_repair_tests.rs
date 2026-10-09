@@ -80,16 +80,542 @@ fn read_verified_evidence_bytes(
     root: &std::path::Path,
     reference: &serde_json::Value,
 ) -> Result<Vec<u8>> {
+    Ok(authenticate_evidence_file(root, reference, true)?.0)
+}
+
+fn authenticate_evidence_file(
+    root: &std::path::Path,
+    reference: &serde_json::Value,
+    retain: bool,
+) -> Result<(Vec<u8>, u64)> {
     use sha2::Digest;
+    use std::io::Read;
     let logical = evidence_string(reference, "path")?;
     let expected = evidence_digest(reference, "sha256")?;
     let resolved = resolve_evidence_path(root, logical)?;
-    let bytes = std::fs::read(&resolved)?;
-    let actual = format!("{:x}", sha2::Sha256::digest(&bytes));
+    let mut reader = std::io::BufReader::new(std::fs::File::open(&resolved)?);
+    let mut hash = sha2::Sha256::new();
+    let mut buffer = [0u8; 64 * 1024];
+    let mut bytes = Vec::new();
+    let mut size = 0;
+    loop {
+        let count = reader.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        hash.update(&buffer[..count]);
+        size += count as u64;
+        if retain {
+            bytes.extend_from_slice(&buffer[..count]);
+        }
+    }
+    let actual = format!("{:x}", hash.finalize());
     anyhow::ensure!(actual == expected,
-        "evidence hash mismatch: logical {logical}, resolved {}, expected {expected}, actual {actual}",
-        resolved.display());
-    Ok(bytes)
+        "evidence hash mismatch: logical {logical}, resolved {}, expected {expected}, actual {actual}", resolved.display());
+    Ok((bytes, size))
+}
+
+struct AuditEvidenceRoot {
+    root: std::path::PathBuf,
+}
+
+impl AuditEvidenceRoot {
+    fn from_environment() -> Self {
+        Self {
+            root: std::env::var_os("PLUTARCH_AUDIT_EVIDENCE_ROOT")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|| env!("CARGO_MANIFEST_DIR").into()),
+        }
+    }
+
+    fn resolve(&self, logical_path: &str) -> Result<std::path::PathBuf> {
+        resolve_evidence_path(&self.root, logical_path)
+    }
+
+    fn read_verified(&self, reference: &serde_json::Value) -> Result<Vec<u8>> {
+        read_verified_evidence_bytes(&self.root, reference)
+    }
+
+    fn read_verified_json(&self, reference: &serde_json::Value) -> Result<serde_json::Value> {
+        Ok(serde_json::from_slice(&self.read_verified(reference)?)?)
+    }
+
+    fn verify_streamed(&self, reference: &serde_json::Value) -> Result<u64> {
+        Ok(authenticate_evidence_file(&self.root, reference, false)?.1)
+    }
+}
+
+fn authenticated_audit_documents(
+    root: &AuditEvidenceRoot,
+    ledger: &serde_json::Value,
+    kinds: &[AuditDocumentKind],
+) -> Result<serde_json::Value> {
+    let mut documents = serde_json::Map::new();
+    for (path, (reference, kind)) in required_audit_references(ledger)? {
+        if kinds.contains(&kind) {
+            documents.insert(
+                path,
+                serde_json::json!({"source_sha256":reference["sha256"],
+                "value": root.read_verified_json(&reference)?}),
+            );
+        }
+    }
+    Ok(serde_json::json!({"schema_version":1,"documents":documents}))
+}
+
+fn archive_manifest_reference(ledger: &serde_json::Value, key: &str) -> Result<serde_json::Value> {
+    let archive = &ledger[key];
+    Ok(
+        serde_json::json!({"path":format!("{}/manifest.json", evidence_string(archive,"path")?),
+        "sha256":evidence_digest(archive,"manifest_sha256")?}),
+    )
+}
+
+fn authenticate_evidence_manifest(
+    root: &AuditEvidenceRoot,
+    reference: &serde_json::Value,
+    pinned: &serde_json::Value,
+    seen: &mut std::collections::BTreeMap<String, String>,
+) -> Result<(u64, u64)> {
+    let manifest = root.read_verified_json(reference)?;
+    let logical = normalized_evidence_path(evidence_string(reference, "path")?)?;
+    let archive_directory = logical.rsplit_once('/').map(|(dir, _)| dir).unwrap_or("");
+    let is_stage = manifest.is_array();
+    let entries = if is_stage {
+        manifest.as_array().unwrap()
+    } else {
+        evidence_array(&manifest, "files")?
+    };
+    let mut total = 0;
+    for entry in entries {
+        let relative = normalized_evidence_path(evidence_string(entry, "path")?)?;
+        let path = if is_stage || archive_directory.is_empty() {
+            relative
+        } else {
+            format!("{archive_directory}/{relative}")
+        };
+        let hash = evidence_digest(entry, "sha256")?;
+        anyhow::ensure!(
+            !seen.contains_key(&path),
+            "duplicate or conflicting manifest path: {path}"
+        );
+        seen.insert(path.clone(), hash.clone());
+        let bytes = root.verify_streamed(&serde_json::json!({"path":path,"sha256":hash}))?;
+        for key in ["bytes", "size"] {
+            if let Some(size) = entry.get(key) {
+                anyhow::ensure!(
+                    size.as_u64() == Some(bytes),
+                    "declared manifest size differs: {path}"
+                );
+            }
+        }
+        total += bytes;
+    }
+    let count = entries.len() as u64;
+    for metadata in [&manifest, pinned] {
+        for key in ["file_count", "verified_files"] {
+            if let Some(expected) = metadata.get(key) {
+                anyhow::ensure!(
+                    expected.as_u64() == Some(count),
+                    "manifest {key} differs: {logical}"
+                );
+            }
+        }
+        if let Some(expected) = metadata.get("total_bytes") {
+            anyhow::ensure!(
+                expected.as_u64() == Some(total),
+                "manifest total_bytes differs: {logical}"
+            );
+        }
+    }
+    println!("authenticated manifest {logical}: {count} files, {total} bytes");
+    Ok((count, total))
+}
+
+#[test]
+#[ignore = "requires frozen inner-tomi audit evidence archives"]
+fn audit_evidence_historical_inventory_authenticated() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let root = AuditEvidenceRoot::from_environment();
+    let documents = authenticated_audit_documents(
+        &root,
+        &ledger,
+        &[AuditDocumentKind::Candidates, AuditDocumentKind::Reviews],
+    )?;
+    root.read_verified(&archive_manifest_reference(&ledger, "archive")?)?;
+    validate_omission_inventory_data(&ledger, &documents)?;
+    println!(
+        "historical candidate/review and manifest bytes authenticated; Tier A 39/69, Tier B 20/44"
+    );
+    Ok(())
+}
+
+#[test]
+#[ignore = "requires frozen inner-tomi audit evidence archives"]
+fn audit_evidence_baseline_diagnosis_authenticated() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let root = AuditEvidenceRoot::from_environment();
+    root.read_verified(&archive_manifest_reference(&ledger, "diagnostic_archive")?)?;
+    let documents = authenticated_audit_documents(&root, &ledger, &[AuditDocumentKind::Baseline])?;
+    let mut overlays = std::collections::BTreeMap::new();
+    for event in evidence_array(&ledger, "events")?
+        .iter()
+        .filter(|e| e["initial_tier"] == "A")
+    {
+        let reference = &event["diagnosis"]["reviewed_source_overlay"];
+        let path = normalized_evidence_path(evidence_string(reference, "path")?)?;
+        let hash = evidence_digest(reference, "sha256")?;
+        if let Some(previous) = overlays.get(&path) {
+            anyhow::ensure!(*previous == hash, "conflicting overlay identity: {path}");
+        } else {
+            root.read_verified(reference)?;
+            overlays.insert(path, hash);
+        }
+    }
+    validate_omission_diagnosis_data(&ledger, &documents)
+}
+
+#[test]
+#[ignore = "requires frozen inner-tomi audit evidence archives"]
+fn audit_evidence_post_dedup_traces_authenticated() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let root = AuditEvidenceRoot::from_environment();
+    root.read_verified(&ledger["diagnosis_archives"]["post-dedup"])?;
+    let documents = authenticated_audit_documents(&root, &ledger, &[AuditDocumentKind::PostDedup])?;
+    validate_post_dedup_data(&ledger, &documents)
+}
+
+#[test]
+#[ignore = "requires frozen inner-tomi audit evidence archives"]
+fn audit_evidence_post_mask_signatures_authenticated() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let root = AuditEvidenceRoot::from_environment();
+    root.read_verified(&ledger["diagnosis_archives"]["post-masks"])?;
+    let documents = authenticated_audit_documents(&root, &ledger, &[AuditDocumentKind::PostMasks])?;
+    validate_source_signature_data(&ledger, &documents)
+}
+
+#[test]
+#[ignore = "requires frozen inner-tomi audit evidence archives"]
+fn audit_evidence_restoration_reports_authenticated() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let root = AuditEvidenceRoot::from_environment();
+    let documents = authenticated_audit_documents(
+        &root,
+        &ledger,
+        &[
+            AuditDocumentKind::Candidates,
+            AuditDocumentKind::Reviews,
+            AuditDocumentKind::Restoration,
+        ],
+    )?;
+    validate_tier_a_completion_data(&ledger, &documents)?;
+    println!("historical passing reports authenticated for 69 initial Tier-A lines and the separate Cato label");
+    Ok(())
+}
+
+#[test]
+#[ignore = "requires frozen inner-tomi audit evidence archives"]
+fn audit_evidence_portable_fixture_matches_archives() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let root = AuditEvidenceRoot::from_environment();
+    let documents = load_fixture_source_documents(&ledger, &root.root)?;
+    let projected = project_audit_evidence(&ledger, &documents)?;
+    anyhow::ensure!(
+        projected == portable_audit_evidence(),
+        "tracked projection differs from authenticated archives"
+    );
+    Ok(())
+}
+
+#[test]
+#[ignore = "requires frozen inner-tomi audit evidence archives"]
+fn audit_evidence_archive_manifests_authenticated() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let root = AuditEvidenceRoot::from_environment();
+    let mut seen = std::collections::BTreeMap::new();
+    for key in ["archive", "diagnostic_archive"] {
+        authenticate_evidence_manifest(
+            &root,
+            &archive_manifest_reference(&ledger, key)?,
+            &ledger[key],
+            &mut seen,
+        )?;
+    }
+    for key in ["post-dedup", "post-masks"] {
+        authenticate_evidence_manifest(
+            &root,
+            &ledger["diagnosis_archives"][key],
+            &serde_json::Value::Null,
+            &mut seen,
+        )?;
+    }
+    Ok(())
+}
+
+fn tiny_evidence_file(
+    root: &AuditEvidenceRoot,
+    path: &str,
+    bytes: &[u8],
+) -> Result<serde_json::Value> {
+    use sha2::Digest;
+    let file = root.root.join(path);
+    std::fs::create_dir_all(file.parent().unwrap())?;
+    std::fs::write(file, bytes)?;
+    Ok(serde_json::json!({"path":path,"sha256":format!("{:x}",sha2::Sha256::digest(bytes))}))
+}
+
+#[test]
+fn evidence_reader_rejects_missing_file() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let root = AuditEvidenceRoot {
+        root: dir.path().to_path_buf(),
+    };
+    let reference = serde_json::json!({"path":"archive/missing.json","sha256":"a".repeat(64)});
+    let error = root.read_verified(&reference).unwrap_err().to_string();
+    assert!(
+        error.contains("missing historical evidence") && error.contains("archive/missing.json")
+    );
+    assert!(root.resolve("archive/missing.json").is_err());
+    Ok(())
+}
+
+#[test]
+fn evidence_reader_rejects_hash_mismatch() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let root = AuditEvidenceRoot {
+        root: dir.path().to_path_buf(),
+    };
+    let mut reference = tiny_evidence_file(&root, "archive/tiny.json", b"{}")?;
+    assert_eq!(root.read_verified_json(&reference)?, serde_json::json!({}));
+    assert_eq!(root.read_verified(&reference)?, b"{}");
+    reference["sha256"] = "a".repeat(64).into();
+    let error = root.read_verified(&reference).unwrap_err().to_string();
+    assert!(
+        error.contains("hash mismatch")
+            && error.contains("expected")
+            && error.contains("actual")
+            && error.contains("resolved")
+            && error.contains("archive/tiny.json")
+    );
+    assert!(root
+        .verify_streamed(&reference)
+        .unwrap_err()
+        .to_string()
+        .contains("hash mismatch"));
+    reference["sha256"] = "bad".into();
+    assert!(root
+        .read_verified(&reference)
+        .unwrap_err()
+        .to_string()
+        .contains("malformed"));
+    Ok(())
+}
+
+#[test]
+fn evidence_reader_rejects_escaping_path() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let root = AuditEvidenceRoot {
+        root: dir.path().to_path_buf(),
+    };
+    for path in [
+        "../outside",
+        "archive/../../outside",
+        "/absolute",
+        "C:/absolute",
+        "C:relative",
+        "\\\\server\\share\\file",
+        "archive\\..\\outside",
+    ] {
+        let reference = serde_json::json!({"path":path,"sha256":"a".repeat(64)});
+        assert!(
+            root.read_verified(&reference)
+                .unwrap_err()
+                .to_string()
+                .contains("escaping evidence path"),
+            "{path}"
+        );
+    }
+    let reference = tiny_evidence_file(&root, "archive/nested/file", b"tiny")?;
+    let mut windows_reference = reference.clone();
+    windows_reference["path"] = "archive\\nested\\file".into();
+    assert_eq!(root.read_verified(&windows_reference)?, b"tiny");
+    assert!(root
+        .resolve("archive/nested/file")?
+        .starts_with(dir.path().canonicalize()?));
+    let outside = tempfile::tempdir()?;
+    std::fs::write(outside.path().join("file"), b"tiny")?;
+    let link = root.root.join("escape");
+    #[cfg(windows)]
+    let linked = std::os::windows::fs::symlink_dir(outside.path(), &link);
+    #[cfg(unix)]
+    let linked = std::os::unix::fs::symlink(outside.path(), &link);
+    match linked {
+        Ok(()) => assert!(root
+            .resolve("escape/file")
+            .unwrap_err()
+            .to_string()
+            .contains("escaping evidence path")),
+        #[cfg(windows)]
+        Err(error) if error.raw_os_error() == Some(1314) => eprintln!(
+            "symlink test unavailable: Windows privilege 1314; lexical escape checks passed"
+        ),
+        Err(error) => return Err(error.into()),
+    }
+    Ok(())
+}
+
+#[test]
+fn evidence_manifest_supports_archive_and_stage_formats() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let root = AuditEvidenceRoot {
+        root: dir.path().to_path_buf(),
+    };
+    for size_key in ["bytes", "size"] {
+        let file = tiny_evidence_file(&root, &format!("archive/{size_key}/tiny"), b"abc")?;
+        let mut entry = serde_json::json!({"path":"tiny","sha256":file["sha256"]});
+        entry[size_key] = 3.into();
+        let manifest = serde_json::json!({"source":"C:/descriptive/only", "destination":"Z:/not/read",
+            "files":[entry],"file_count":1,"total_bytes":3});
+        let reference = tiny_evidence_file(
+            &root,
+            &format!("archive/{size_key}/manifest.json"),
+            &serde_json::to_vec(&manifest)?,
+        )?;
+        assert_eq!(
+            authenticate_evidence_manifest(
+                &root,
+                &reference,
+                &serde_json::json!({"verified_files":1}),
+                &mut std::collections::BTreeMap::new()
+            )?,
+            (1, 3)
+        );
+    }
+    let one = tiny_evidence_file(&root, "archive/post-dedup/tiny", b"same bytes")?;
+    let two = tiny_evidence_file(&root, "archive/post-masks/tiny", b"same bytes")?;
+    assert_eq!(one["sha256"], two["sha256"]);
+    let stage = tiny_evidence_file(
+        &root,
+        "archive/stage/manifest.json",
+        &serde_json::to_vec(&serde_json::json!([one, two]))?,
+    )?;
+    assert_eq!(
+        authenticate_evidence_manifest(
+            &root,
+            &stage,
+            &serde_json::Value::Null,
+            &mut std::collections::BTreeMap::new()
+        )?,
+        (2, 20)
+    );
+    Ok(())
+}
+
+#[test]
+fn evidence_manifest_rejects_duplicate_or_mismatched_entries() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let root = AuditEvidenceRoot {
+        root: dir.path().to_path_buf(),
+    };
+    let entry = tiny_evidence_file(&root, "archive/unit/tiny", b"abc")?;
+    for (kind, expected) in [
+        ("duplicate", "duplicate"),
+        ("hash", "hash mismatch"),
+        ("size", "size differs"),
+        ("escape", "escaping"),
+        ("count", "file_count differs"),
+        ("total", "total_bytes differs"),
+    ] {
+        let mut entries = vec![entry.clone()];
+        let mut pinned = serde_json::Value::Null;
+        match kind {
+            "duplicate" => {
+                let mut same = entry.clone();
+                same["path"] = "archive\\unit\\tiny".into();
+                same["sha256"] = "b".repeat(64).into();
+                entries.push(same);
+            }
+            "hash" => entries[0]["sha256"] = "a".repeat(64).into(),
+            "size" => entries[0]["size"] = 4.into(),
+            "escape" => entries[0]["path"] = "../outside".into(),
+            "count" => pinned = serde_json::json!({"file_count":2}),
+            "total" => pinned = serde_json::json!({"total_bytes":4}),
+            _ => unreachable!(),
+        }
+        let reference = tiny_evidence_file(
+            &root,
+            "archive/unit/manifest.json",
+            &serde_json::to_vec(&entries)?,
+        )?;
+        let error = authenticate_evidence_manifest(
+            &root,
+            &reference,
+            &pinned,
+            &mut std::collections::BTreeMap::new(),
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(error.contains(expected), "{kind}: {error}");
+    }
+    Ok(())
+}
+
+#[test]
+fn audit_completion_rejects_wrong_unit_and_missing_report_line() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let evidence = portable_audit_evidence();
+    validate_tier_a_completion_data(&ledger, &evidence)?;
+    let event = evidence_array(&ledger, "events")?
+        .iter()
+        .find(|e| e["initial_tier"] == "A")
+        .unwrap();
+    let path = evidence_string(&event["passing_evidence"], "path")?;
+    for kind in ["unit", "line", "event"] {
+        let mut changed = evidence.clone();
+        let report = &mut changed["documents"][path]["value"];
+        let expected = match kind {
+            "unit" => {
+                report["unit_id"] = "wrong_unit".into();
+                "unit differs"
+            }
+            "line" => {
+                let line: ReviewedSourceLine =
+                    serde_json::from_value(event["diagnosis"]["reviewed_lines"][0].clone())?;
+                let line = serde_json::to_value(line)?;
+                report["reviewed_lines"]
+                    .as_array_mut()
+                    .unwrap()
+                    .retain(|r| *r != line);
+                "reviewed line absent"
+            }
+            "event" => {
+                report["events"]
+                    .as_array_mut()
+                    .unwrap()
+                    .retain(|id| *id != event["event_id"]);
+                "event absent"
+            }
+            _ => unreachable!(),
+        };
+        let error = validate_tier_a_completion_data(&ledger, &changed)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains(expected), "{kind}: {error}");
+    }
+    let extra = &ledger["additional_source_losses"][0];
+    let mut changed = evidence.clone();
+    let report =
+        &mut changed["documents"][evidence_string(&extra["passing_evidence"], "path")?]["value"];
+    report["reviewed_lines"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|r| *r != extra["reviewed_lines"][0]);
+    assert!(validate_tier_a_completion_data(&ledger, &changed)
+        .unwrap_err()
+        .to_string()
+        .contains("additional source glyph region absent"));
+    Ok(())
 }
 
 fn historical_audit_json_reference(
@@ -177,16 +703,20 @@ fn load_fixture_source_documents(
     ledger: &serde_json::Value,
     root: &std::path::Path,
 ) -> Result<serde_json::Value> {
-    let mut documents = serde_json::Map::new();
-    for (path, (reference, _)) in required_audit_references(ledger)? {
-        let bytes = read_verified_evidence_bytes(root, &reference)?;
-        documents.insert(
-            path,
-            serde_json::json!({"source_sha256": reference["sha256"],
-            "value": serde_json::from_slice::<serde_json::Value>(&bytes)?}),
-        );
-    }
-    Ok(serde_json::json!({"schema_version": 1, "documents": documents}))
+    authenticated_audit_documents(
+        &AuditEvidenceRoot {
+            root: root.to_path_buf(),
+        },
+        ledger,
+        &[
+            AuditDocumentKind::Candidates,
+            AuditDocumentKind::Reviews,
+            AuditDocumentKind::Baseline,
+            AuditDocumentKind::PostDedup,
+            AuditDocumentKind::PostMasks,
+            AuditDocumentKind::Restoration,
+        ],
+    )
 }
 
 fn portable_evidence_document<'a>(
@@ -350,18 +880,18 @@ fn export_portable_fixture() -> Result<()> {
     }
     let absolute = out
         .parent()
+        .filter(|p| !p.as_os_str().is_empty())
         .unwrap_or(std::path::Path::new("."))
         .canonicalize()?
         .join(out.file_name().unwrap());
     anyhow::ensure!(
-        absolute != tracked.canonicalize()?,
+        absolute != tracked.canonicalize()?
+            && out.canonicalize().ok().as_ref() != Some(&tracked.canonicalize()?),
         "export to a temporary review file, not the tracked fixture"
     );
-    let root = std::env::var_os("PLUTARCH_AUDIT_EVIDENCE_ROOT")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| env!("CARGO_MANIFEST_DIR").into());
+    let root = AuditEvidenceRoot::from_environment();
     let ledger = audit_repair_ledger();
-    let documents = load_fixture_source_documents(&ledger, &root)?;
+    let documents = load_fixture_source_documents(&ledger, &root.root)?;
     let projection = project_audit_evidence(&ledger, &documents)?;
     let mut bytes = serde_json::to_vec_pretty(&projection)?;
     bytes.push(b'\n');
@@ -373,23 +903,6 @@ fn export_portable_fixture() -> Result<()> {
         out.display()
     );
     Ok(())
-}
-
-fn archived_audit_documents() -> Result<serde_json::Value> {
-    load_fixture_source_documents(
-        &audit_repair_ledger(),
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")),
-    )
-}
-
-fn validate_audit_omission_inventory(fixture: &serde_json::Value) -> Result<()> {
-    let documents = archived_audit_documents()?;
-    let archive = &fixture["archive"];
-    read_verified_evidence_bytes(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")),
-        &serde_json::json!({"path":format!("{}/manifest.json",archive["path"].as_str().unwrap()), "sha256":archive["manifest_sha256"]}),
-    )?;
-    validate_omission_inventory_data(fixture, &documents)
 }
 
 fn validate_omission_inventory_data(
@@ -485,40 +998,22 @@ fn validate_omission_inventory_data(
 
 #[test]
 fn audit_omission_inventory_matches_frozen_review() {
-    validate_audit_omission_inventory(&audit_repair_ledger()).unwrap();
+    validate_omission_inventory_data(&audit_repair_ledger(), &portable_audit_evidence()).unwrap();
 }
 
 #[test]
 fn audit_omission_diagnosis_covers_all_source_lines() {
-    let ledger = audit_repair_ledger();
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    let archive = &ledger["diagnostic_archive"];
-    read_verified_evidence_bytes(root, &serde_json::json!({"path":format!("{}/manifest.json", archive["path"].as_str().unwrap()), "sha256":archive["manifest_sha256"]})).unwrap();
-    for event in ledger["events"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|e| e["initial_tier"] == "A")
-    {
-        read_verified_evidence_bytes(root, &event["diagnosis"]["reviewed_source_overlay"]).unwrap();
-    }
-    validate_omission_diagnosis_data(&audit_repair_ledger(), &archived_audit_documents().unwrap())
-        .unwrap();
+    validate_omission_diagnosis_data(&audit_repair_ledger(), &portable_audit_evidence()).unwrap();
 }
 
 #[test]
 fn audit_omission_post_dedup_covers_all_source_lines() {
-    validate_post_dedup_data(&audit_repair_ledger(), &archived_audit_documents().unwrap()).unwrap();
+    validate_post_dedup_data(&audit_repair_ledger(), &portable_audit_evidence()).unwrap();
 }
 
 #[test]
 fn audit_omission_source_signatures_match_proposed_repairs() {
-    validate_source_signature_data(&audit_repair_ledger(), &archived_audit_documents().unwrap())
-        .unwrap();
-}
-
-fn validate_tier_a_completion(fixture: &serde_json::Value) -> Result<()> {
-    validate_tier_a_completion_data(fixture, &archived_audit_documents()?)
+    validate_source_signature_data(&audit_repair_ledger(), &portable_audit_evidence()).unwrap();
 }
 
 fn validate_trace_metadata(trace: &serde_json::Value, unit: &serde_json::Value) -> Result<()> {
@@ -878,7 +1373,7 @@ fn validate_tier_a_completion_data(
 #[test]
 fn audit_tier_a_completion_requires_all_lines() {
     let fixture = audit_repair_ledger();
-    validate_tier_a_completion(&fixture).unwrap();
+    validate_tier_a_completion_data(&fixture, &portable_audit_evidence()).unwrap();
     for kind in ["unresolved", "missing_line", "missing_evidence"] {
         let mut changed = fixture.clone();
         let event = changed["events"]
@@ -899,7 +1394,7 @@ fn audit_tier_a_completion_requires_all_lines() {
             _ => unreachable!(),
         }
         assert!(
-            validate_tier_a_completion(&changed).is_err(),
+            validate_tier_a_completion_data(&changed, &portable_audit_evidence()).is_err(),
             "completion rejects {kind}"
         );
     }
@@ -908,7 +1403,7 @@ fn audit_tier_a_completion_requires_all_lines() {
 #[test]
 fn audit_omission_inventory_rejects_false_positive_and_duplicate_events() {
     let fixture = audit_repair_ledger();
-    validate_audit_omission_inventory(&fixture).unwrap();
+    validate_omission_inventory_data(&fixture, &portable_audit_evidence()).unwrap();
     for kind in [
         "duplicate",
         "false_positive",
@@ -929,7 +1424,7 @@ fn audit_omission_inventory_rejects_false_positive_and_duplicate_events() {
             _ => unreachable!(),
         }
         assert!(
-            validate_audit_omission_inventory(&invalid).is_err(),
+            validate_omission_inventory_data(&invalid, &portable_audit_evidence()).is_err(),
             "reject {kind}"
         );
     }
@@ -1411,7 +1906,7 @@ fn assert_tier_a_unit_lines_restored(id: &str) {
         geom: TrimGeom::default(),
     };
     let composition = assert_reviewed_source_lines_survive(&lines, &context, false);
-    let dir = std::path::Path::new("archive/inner_tomi_audit_repairs_2026_10_08/restoration")
+    let dir = std::path::Path::new("tmp/pdfs/inner_tomi_audit_repairs/restoration-current")
         .join(fixture["restoration_stage"].as_str().unwrap());
     std::fs::create_dir_all(&dir).unwrap();
     use sha2::Digest;
@@ -1685,7 +2180,7 @@ fn comparison_s2_line_is_whole() {
         geom: TrimGeom::default(),
     };
     let composition = assert_reviewed_source_lines_survive(&lines, &context, true);
-    let dir = std::path::Path::new("archive/inner_tomi_audit_repairs_2026_10_08/s2");
+    let dir = std::path::Path::new("tmp/pdfs/inner_tomi_audit_repairs/s2-current");
     std::fs::create_dir_all(dir).unwrap();
     use sha2::Digest;
     let hashes: Vec<_> = composition.canvases.iter().enumerate().map(|(i,c)| {
@@ -2347,7 +2842,7 @@ fn audit_watermark_and_head_source_trace() {
 #[ignore = "requires original PDFs and production-DPI raster evidence"]
 fn audit_omission_source_trace() {
     let fixture = audit_repair_ledger();
-    validate_audit_omission_inventory(&fixture).unwrap();
+    validate_omission_inventory_data(&fixture, &portable_audit_evidence()).unwrap();
     let mut units: std::collections::BTreeMap<&str, std::collections::BTreeSet<u32>> =
         std::collections::BTreeMap::new();
     let mut events = 0;
