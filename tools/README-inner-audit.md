@@ -60,6 +60,13 @@ cargo test --release --lib facsimile::reflow::tests::comparison_s2_line_is_whole
 
 Fresh restoration reports and their canvas images go to
 `tmp/pdfs/inner_tomi_audit_repairs/restoration-current/step-4.2/`.
+The Tier-B stage tests write separate `tier-b-head`, `tier-b-foot`,
+`tier-b-verse`, `tier-b-merged`, `tier-b-non-antonius`, `tier-b-antonius`, and
+`tier-b-delivery` directories under `restoration-current/`. Select a stage test
+explicitly with `--ignored`; it groups the selected events by unit, verifies
+previously restored regions and neighbors, and requires every newly measured
+line to remain whole on a returned canvas. A listed or ignored test is not a
+passing source check.
 The comparison check writes
 `tmp/pdfs/inner_tomi_audit_repairs/s2-current/verification.json` and canvas images.
 These tests do not require the historical audit archives and do not overwrite
@@ -67,9 +74,8 @@ frozen restoration reports.
 
 ### Historical archive authentication
 
-All seven tests have the ignore reason
-`requires frozen inner-tomi audit evidence archives`. They read and authenticate
-historical JSON and PNG bytes, reuse the ordinary semantic validators, and never
+The archive tests read and authenticate JSON and PNG bytes, reuse the ordinary
+semantic validators, and never
 invoke the generator, Poppler, LuaLaTeX, a network operation or a paid API call.
 They fail with the logical and resolved path when required evidence is missing,
 and show expected/actual digests on hash mismatch.
@@ -80,9 +86,10 @@ and show expected/actual digests on hash mismatch.
 | `audit_evidence_baseline_diagnosis_authenticated` | Baseline manifest, unique Tier-A traces and reviewed source-overlay PNGs; diagnosis validation |
 | `audit_evidence_post_dedup_traces_authenticated` | Post-dedup manifest and traces; line-region and metadata agreement |
 | `audit_evidence_post_mask_signatures_authenticated` | Post-mask manifest and traces; all 47 measured source signatures |
-| `audit_evidence_restoration_reports_authenticated` | Initial/promoted Tier-A and extra-source-item passing reports; completion validation |
+| `audit_evidence_restoration_reports_authenticated` | Historical initial Tier-A and extra-source-item passing reports; completion validation |
 | `audit_evidence_portable_fixture_matches_archives` | All original JSON inputs; exact semantic equality with the tracked projection, including its paths and source digests |
 | `audit_evidence_archive_manifests_authenticated` | Every entry in both historical manifests and both stage manifests; hashes, declared sizes and pinned counts/totals |
+| `audit_evidence_tier_b_state_and_baseline_authenticated` | Promoted state and evidence, disposition pairs, promotion/source overlays, and all 68 immutable baseline unit traces with ordered canvas digests |
 
 Set `PLUTARCH_AUDIT_EVIDENCE_ROOT` to a directory **containing** the
 repository-relative `archive/` tree. It defaults to `CARGO_MANIFEST_DIR`, so local
@@ -95,7 +102,7 @@ cargo test --lib audit_evidence_ -- --ignored --list
 cargo test --lib audit_evidence_ -- --ignored --nocapture --test-threads=1
 ```
 
-The list must contain exactly the seven names above. Select these checks
+The list must contain the eight names above. Select these checks
 explicitly: the crate also has ignored live API and unrelated expensive tests.
 
 The expected tree beneath that evidence root includes:
@@ -120,6 +127,12 @@ archive/
       manifest.json
       <unit>/trace.json
     restoration/step-4.2/<unit>.json
+  tier_b_omission_repairs_2026_10_09/
+    baseline/full-work/manifest.json
+    baseline/full-work/<unit>.json
+    baseline/measurements/tier_b_measurements.json
+    baseline/measurements/<unit>_p<page>_overlay.png
+    ... exact archived reports and overlays for each new repair stage
 ```
 
 Both stage manifests name 24 trace files. Passing reports cover all required
@@ -141,17 +154,39 @@ the ordinary suite from passing.
 ### Portable fixture maintenance and limits
 
 `src/facsimile/fixtures/inner_tomi_portable_audit_evidence.json` is a compact,
-tracked projection with provenance. Its 98 documents retain candidates (including
+tracked projection with provenance. Its documents retain candidates (including
 rejected unique-loss nominations), matching reviews, required trace measurements
-and complete restoration report lines, including neighbors and the Cato label.
-The initial exported file is 448,689 UTF-8 bytes. It supplements the full ledger
-and historical archives. It contains no image payloads or rendered canvases.
+and restoration evidence, including neighbors and the Cato label. Historical
+reports retain their original unit/event/region contract. Version-2 promoted
+reports additionally retain scale, line coverage, canvas ranges and hashes, and
+the retained source records needed by their reviewed regions. The full-work
+baseline manifest retains ordered unit summaries and authenticated trace
+references; large unit trace bodies stay in the archive. The projection stays
+below 1 MiB and contains no image payloads or rendered canvases. The exporter
+prints its current document count and byte size.
 
 Each `source_sha256` identifies the original historical file, not the projected
 JSON. The fields and digest metadata are copied historical expectations. A green
 ordinary suite confirms those contracts agree; authenticating original JSON/PNG
 bytes requires the historical tests. Ordinary results alone are not a new
 69-line source-preservation claim or human acceptance of the generated readers.
+
+Promoted events use `pending_repair`, `installed`, `restored`, or `unresolved`.
+Pending repairs have no passing report. Installed repairs require version-2
+machine coverage; restored repairs additionally identify a visual review of that
+accepted report. Unresolved repairs require authenticated disposition and trace
+references, a concrete reason, and the actual tested source/code configuration.
+Historical failed disposition pairs remain authenticated after a successful repair.
+
+`tier_b_delivery.state` is `in_progress` until a delivery is reviewed. A partial
+delivery requires 19 non-Antonius events / 21 lines restored and Antonius explicitly
+unresolved. A complete delivery requires all 20 events / 43 measured source lines
+restored. The historical inventory remains 20 events / 44 lines: the source has
+22 Antonius lines where the initial audit counted 23, as documented in the
+[approved count decision](../llm_artifacts/2026_10_09_16_23_TIER_B_SOURCE_LINE_COUNT_DECISION.md).
+Validators derive restored totals from the individual evidence-backed event
+records and reject missing events, duplicate coverage, split promoted glyph
+regions, false counts, and unresolved events declared complete.
 
 To refresh the projection deliberately, authenticate the supplied archives and
 export to an explicit temporary review file:

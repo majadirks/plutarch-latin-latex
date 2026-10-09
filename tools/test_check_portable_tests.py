@@ -11,6 +11,17 @@ import check_portable_tests as portable
 
 
 class PortableTests(unittest.TestCase):
+    def test_required_tests_include_staged_tier_b_evidence(self):
+        self.assertEqual(len(portable.REQUIRED_TESTS), len(set(portable.REQUIRED_TESTS)))
+        for name in (
+            "tier_b_baseline_manifest_rejects_missing_units_and_configuration_mismatch",
+            "tier_b_validation_preserves_historical_tier_a_evidence",
+            "tier_b_delivery_accepts_partial_and_complete",
+            "tier_b_coverage_rejects_duplicate_and_split_lines",
+            "tier_b_disposition_rejects_wrong_event_and_digest_mismatch",
+        ):
+            self.assertIn(name, portable.REQUIRED_TESTS)
+
     def write_file(self, repository, path, content=b"tracked"):
         file = repository / path
         file.parent.mkdir(parents=True, exist_ok=True)

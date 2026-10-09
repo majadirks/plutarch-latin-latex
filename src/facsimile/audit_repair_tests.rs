@@ -641,6 +641,9 @@ enum AuditDocumentKind {
     PostDedup,
     PostMasks,
     Restoration,
+    Disposition,
+    DispositionTrace,
+    FullWorkBaseline,
 }
 
 type AuditReferences = std::collections::BTreeMap<String, (serde_json::Value, AuditDocumentKind)>;
@@ -683,12 +686,56 @@ fn required_audit_references(ledger: &serde_json::Value) -> Result<AuditReferenc
                 AuditDocumentKind::PostMasks,
             )?;
         }
-        if event["initial_tier"] == "A" || event["promoted_tier"] == "A" {
+        if event["initial_tier"] == "B" && event["promoted_tier"] == "A" {
+            add(
+                event["diagnosis"]["baseline_trace"].clone(),
+                AuditDocumentKind::Baseline,
+            )?;
+            if event["status"] == "unresolved" {
+                add(
+                    event["disposition_evidence"].clone(),
+                    AuditDocumentKind::Disposition,
+                )?;
+                add(
+                    event["disposition_trace"].clone(),
+                    AuditDocumentKind::DispositionTrace,
+                )?;
+            }
+            for historical in event["historical_dispositions"]
+                .as_array()
+                .into_iter()
+                .flatten()
+            {
+                add(
+                    historical["disposition_evidence"].clone(),
+                    AuditDocumentKind::Disposition,
+                )?;
+                add(
+                    historical["disposition_trace"].clone(),
+                    AuditDocumentKind::DispositionTrace,
+                )?;
+            }
+        }
+        if event["initial_tier"] == "A"
+            || (event["promoted_tier"] == "A"
+                && (event["status"] == "installed" || event["status"] == "restored"))
+        {
             add(
                 event["passing_evidence"].clone(),
                 AuditDocumentKind::Restoration,
             )?;
         }
+    }
+    if ledger["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|e| e["promoted_tier"] == "A")
+    {
+        add(
+            ledger["tier_b_baseline"].clone(),
+            AuditDocumentKind::FullWorkBaseline,
+        )?;
     }
     for item in evidence_array(ledger, "additional_source_losses")? {
         add(
@@ -715,6 +762,9 @@ fn load_fixture_source_documents(
             AuditDocumentKind::PostDedup,
             AuditDocumentKind::PostMasks,
             AuditDocumentKind::Restoration,
+            AuditDocumentKind::Disposition,
+            AuditDocumentKind::DispositionTrace,
+            AuditDocumentKind::FullWorkBaseline,
         ],
     )
 }
@@ -855,8 +905,59 @@ fn project_audit_evidence(
                 v
             }
             AuditDocumentKind::Restoration => {
-                project_evidence_fields(value, &["unit_id", "events", "reviewed_lines"])?
+                let projected = project_restoration_report(value)?;
+                if evidence_array(ledger, "events")?.iter().any(|e| {
+                    e["initial_tier"] == "B"
+                        && e["promoted_tier"] == "A"
+                        && e["passing_evidence"]["path"] == reference["path"]
+                }) {
+                    anyhow::ensure!(
+                        projected["schema_version"] == 2
+                            && projected["verification_policy"] == "promoted_tier_b",
+                        "promoted restoration cannot downgrade to legacy projection"
+                    );
+                }
+                projected
             }
+            AuditDocumentKind::Disposition => {
+                let mut projected = project_evidence_fields(
+                    value,
+                    &[
+                        "schema_version",
+                        "event_id",
+                        "unit_id",
+                        "status",
+                        "reason",
+                        "tested_configuration",
+                        "failure_stage",
+                        "trace_evidence",
+                    ],
+                )?;
+                if value["failure_stage"] == "not_established" {
+                    projected["remaining_uncertainty"] = value["remaining_uncertainty"].clone();
+                }
+                projected
+            }
+            AuditDocumentKind::DispositionTrace => project_evidence_fields(
+                value,
+                &[
+                    "schema_version",
+                    "event_id",
+                    "unit_id",
+                    "tested_configuration",
+                    "stage_records",
+                ],
+            )?,
+            AuditDocumentKind::FullWorkBaseline => project_evidence_fields(
+                value,
+                &[
+                    "schema_version",
+                    "scale",
+                    "configuration",
+                    "units",
+                    "protection_record_count",
+                ],
+            )?,
         };
         projected.insert(
             path,
@@ -1041,6 +1142,10 @@ fn validate_omission_diagnosis_data(
     let mut counts = [0, 0];
     for event in evidence_array(fixture, "events")? {
         if event["initial_tier"] == "B" {
+            if event["promoted_tier"] == "A" {
+                validate_tier_b_promoted_diagnosis(event, documents)?;
+                continue;
+            }
             anyhow::ensure!(event["status"] == "deferred", "Tier-B disposition differs");
             evidence_string(event, "repair_read_status")?;
             continue;
@@ -1234,7 +1339,11 @@ fn portable_audit_evidence_has_every_required_document() -> Result<()> {
     validate_omission_diagnosis_data(&ledger, &evidence)?;
     validate_post_dedup_data(&ledger, &evidence)?;
     validate_source_signature_data(&ledger, &evidence)?;
-    validate_tier_a_completion_data(&ledger, &evidence)
+    validate_tier_a_completion_data(&ledger, &evidence)?;
+    if ledger.get("tier_b_delivery").is_some() {
+        validate_tier_b_repair_state_data(&ledger, &evidence)?;
+    }
+    Ok(())
 }
 
 #[test]
@@ -1308,41 +1417,21 @@ fn validate_tier_a_completion_data(
         .as_array()
         .unwrap()
         .iter()
-        .filter(|e| e["initial_tier"] == "A" || e["promoted_tier"] == "A")
+        .filter(|e| e["initial_tier"] == "A")
     {
         anyhow::ensure!(
             event["status"] == "restored",
             "unresolved Tier-A event: {}",
             event["event_id"]
         );
-        let reference = &event["passing_evidence"];
-        let report = portable_evidence_document(documents, reference)?;
-        anyhow::ensure!(
-            report["unit_id"] == event["unit_id"],
-            "passing report unit differs"
-        );
-        anyhow::ensure!(
-            report["events"]
-                .as_array()
-                .unwrap()
-                .contains(&event["event_id"]),
-            "event absent from passing evidence"
-        );
+        validate_restored_event_evidence(
+            event,
+            documents,
+            ReviewedEvidencePolicy::HistoricalTierA,
+            true,
+        )?;
         let lines: Vec<ReviewedSourceLine> =
             serde_json::from_value(event["diagnosis"]["reviewed_lines"].clone())?;
-        anyhow::ensure!(
-            lines.len() as u64 == event["missing_line_count"].as_u64().unwrap(),
-            "source line count differs"
-        );
-        for line in &lines {
-            anyhow::ensure!(
-                report["reviewed_lines"]
-                    .as_array()
-                    .unwrap()
-                    .contains(&serde_json::to_value(line)?),
-                "reviewed line absent from passing evidence"
-            );
-        }
         if event["initial_tier"] == "A" {
             counts[0] += 1;
             counts[1] += lines.len();
@@ -3208,7 +3297,9 @@ fn validate_tier_b_baseline_manifest(
         "baseline configuration mismatch"
     );
     anyhow::ensure!(
-        manifest["scale"] == serde_json::json!(scale),
+        manifest["scale"]
+            .as_f64()
+            .is_some_and(|v| v.is_finite() && v > 0.0 && (v as f32).to_bits() == scale.to_bits()),
         "baseline scale mismatch"
     );
     let units = manifest["units"]
@@ -3918,4 +4009,985 @@ fn tier_b_validation_preserves_historical_tier_a_evidence() {
         std::panic::catch_unwind(|| assert_reviewed_source_lines_survive(&lines, &context, true))
             .is_err()
     );
+}
+
+fn measured_event_line_count(event: &serde_json::Value) -> Result<usize> {
+    let historical = event["missing_line_count"]
+        .as_u64()
+        .ok_or_else(|| anyhow::anyhow!("missing historical line count"))?;
+    if let Some(measured) = event["measured_line_count"].as_u64() {
+        anyhow::ensure!(
+            event["event_id"] == "miss_antonius_562_20869" && historical == 23 && measured == 22,
+            "unapproved measured count correction"
+        );
+        evidence_string(&event["line_count_decision"], "path")?;
+        evidence_digest(&event["line_count_decision"], "sha256")?;
+        Ok(measured as usize)
+    } else {
+        Ok(historical as usize)
+    }
+}
+
+fn reviewed_region_key(value: &serde_json::Value) -> Result<ReviewedRegionKey> {
+    let source = value["source"]
+        .as_u64()
+        .filter(|s| *s < 2)
+        .ok_or_else(|| anyhow::anyhow!("invalid reviewed source"))? as usize;
+    let page = value["source_page"]
+        .as_u64()
+        .and_then(|p| u32::try_from(p).ok())
+        .filter(|p| *p > 0)
+        .ok_or_else(|| anyhow::anyhow!("invalid reviewed page"))?;
+    let region: [u32; 4] = serde_json::from_value(value["region"].clone())?;
+    anyhow::ensure!(
+        region[0] < region[2] && region[1] < region[3],
+        "empty reviewed region"
+    );
+    Ok((source, page, region))
+}
+
+fn project_restoration_report(value: &serde_json::Value) -> Result<serde_json::Value> {
+    if value.get("schema_version").is_none() && value.get("verification_policy").is_none() {
+        return project_evidence_fields(value, &["unit_id", "events", "reviewed_lines"]);
+    }
+    anyhow::ensure!(
+        value["schema_version"] == 2 && value["verification_policy"] == "promoted_tier_b",
+        "invalid modern restoration policy"
+    );
+    let mut projected = project_evidence_fields(
+        value,
+        &[
+            "schema_version",
+            "verification_policy",
+            "unit_id",
+            "events",
+            "reviewed_lines",
+            "scale",
+            "line_coverage",
+            "canvas_ranges",
+            "canvas_hashes",
+        ],
+    )?;
+    let pairs: std::collections::BTreeSet<_> = evidence_array(value, "reviewed_lines")?
+        .iter()
+        .map(|l| reviewed_region_key(l).map(|(s, p, _)| (s, p)))
+        .collect::<Result<_>>()?;
+    let pages: Vec<_> = evidence_array(value, "source_pages")?
+        .iter()
+        .filter(|p| {
+            p["source"]
+                .as_u64()
+                .zip(p["page"].as_u64())
+                .is_some_and(|(s, p)| pairs.contains(&(s as usize, p as u32)))
+        })
+        .map(|p| {
+            anyhow::ensure!(
+                p["retained_index"].as_u64().is_some(),
+                "reviewed source page not retained"
+            );
+            project_evidence_fields(
+                p,
+                &[
+                    "source",
+                    "page",
+                    "retained_index",
+                    "crop",
+                    "bands",
+                    "deleted_rows",
+                ],
+            )
+        })
+        .collect::<Result<_>>()?;
+    let found: std::collections::BTreeSet<_> = pages
+        .iter()
+        .map(|p| {
+            (
+                p["source"].as_u64().unwrap() as usize,
+                p["page"].as_u64().unwrap() as u32,
+            )
+        })
+        .collect();
+    anyhow::ensure!(
+        found == pairs && pages.len() == pairs.len(),
+        "missing or duplicate reviewed source record"
+    );
+    projected["source_pages"] = pages.into();
+    Ok(projected)
+}
+
+fn validate_promoted_line_coverage(
+    report: &serde_json::Value,
+    required: &[ReviewedSourceLine],
+) -> Result<()> {
+    anyhow::ensure!(
+        report["schema_version"] == 2 && report["verification_policy"] == "promoted_tier_b",
+        "promoted report requires versioned coverage policy"
+    );
+    anyhow::ensure!(
+        report["scale"]
+            .as_f64()
+            .is_some_and(|v| v.is_finite() && v > 0.0),
+        "invalid report scale"
+    );
+    let ranges: Vec<(usize, u32, u32)> = serde_json::from_value(report["canvas_ranges"].clone())?;
+    anyhow::ensure!(!ranges.is_empty(), "missing canvas ranges");
+    let hashes = evidence_array(report, "canvas_hashes")?;
+    let mut hash_map = std::collections::BTreeMap::new();
+    for hash in hashes {
+        let id = hash["canvas"]
+            .as_u64()
+            .filter(|v| *v > 0)
+            .ok_or_else(|| anyhow::anyhow!("invalid canvas id"))? as usize;
+        let width = hash["width"]
+            .as_u64()
+            .filter(|v| *v > 0)
+            .ok_or_else(|| anyhow::anyhow!("invalid canvas width"))?;
+        let height = hash["height"]
+            .as_u64()
+            .filter(|v| *v > 0)
+            .ok_or_else(|| anyhow::anyhow!("invalid canvas height"))?;
+        evidence_digest(hash, "sha256")?;
+        anyhow::ensure!(
+            hash_map.insert(id, (width, height)).is_none(),
+            "duplicate canvas hash record"
+        );
+    }
+    let mut seen = std::collections::BTreeSet::new();
+    let mut previous = None;
+    for &(id, start, end) in &ranges {
+        anyhow::ensure!(
+            id > 0 && start < end && seen.insert(id),
+            "invalid or duplicate canvas range"
+        );
+        if let Some((previous_id, previous_end)) = previous {
+            anyhow::ensure!(
+                id > previous_id && start >= previous_end,
+                "unordered or overlapping stream ranges"
+            );
+        }
+        let (_, height) = hash_map
+            .get(&id)
+            .ok_or_else(|| anyhow::anyhow!("range has no canvas hash"))?;
+        anyhow::ensure!(
+            *height >= u64::from(end - start),
+            "canvas dimensions differ from stream extent"
+        );
+        previous = Some((id, end));
+    }
+    anyhow::ensure!(
+        seen == hash_map.keys().copied().collect(),
+        "canvas/hash identity mismatch"
+    );
+    let reviewed = evidence_array(report, "reviewed_lines")?;
+    let coverage = evidence_array(report, "line_coverage")?;
+    let pages = evidence_array(report, "source_pages")?;
+    let mut source_identities = std::collections::BTreeSet::new();
+    let mut retained_indices = std::collections::BTreeSet::new();
+    let mut previous_page = None;
+    for page in pages {
+        let source = page["source"]
+            .as_u64()
+            .filter(|s| *s < 2)
+            .ok_or_else(|| anyhow::anyhow!("invalid retained source"))?;
+        let physical = page["page"]
+            .as_u64()
+            .filter(|p| *p > 0)
+            .ok_or_else(|| anyhow::anyhow!("invalid physical page"))?;
+        let index = page["retained_index"]
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("required source record excluded"))?;
+        anyhow::ensure!(
+            source_identities.insert((source, physical)) && retained_indices.insert(index),
+            "duplicate source identity or retained index"
+        );
+        anyhow::ensure!(
+            previous_page.is_none_or(|(s, p, i)| s == source && p < physical && i < index),
+            "retained source records out of order"
+        );
+        previous_page = Some((source, physical, index));
+    }
+    let mut required_keys = std::collections::BTreeSet::new();
+    for line in required {
+        let key = (line.source, line.source_page, line.region);
+        anyhow::ensure!(required_keys.insert(key), "duplicate required line");
+        let matching = |v: &&serde_json::Value| reviewed_region_key(v).is_ok_and(|k| k == key);
+        anyhow::ensure!(
+            reviewed.iter().filter(matching).count() == 1,
+            "missing or duplicate required reviewed line"
+        );
+        let matches: Vec<_> = coverage.iter().filter(matching).collect();
+        anyhow::ensure!(
+            matches.len() == 1,
+            "missing, wrong-region, or duplicate required coverage"
+        );
+        let entry = matches[0];
+        let interval: [u32; 2] = serde_json::from_value(entry["scaled_row_stream"].clone())?;
+        anyhow::ensure!(interval[0] < interval[1], "empty scaled interval");
+        let owners: Vec<usize> = serde_json::from_value(entry["canvas_owners"].clone())?;
+        anyhow::ensure!(
+            owners.len() == 1,
+            "promoted line must have exactly one owner"
+        );
+        let owner = ranges
+            .iter()
+            .find(|(id, _, _)| *id == owners[0])
+            .ok_or_else(|| anyhow::anyhow!("out-of-range canvas owner"))?;
+        anyhow::ensure!(
+            owner.1 <= interval[0] && owner.2 >= interval[1],
+            "line spans canvases or a stream gap"
+        );
+        anyhow::ensure!(
+            ranges
+                .iter()
+                .filter(|(_, start, end)| *start < interval[1] && *end > interval[0])
+                .count()
+                == 1,
+            "competing canvas ownership"
+        );
+        let matches: Vec<_> = pages
+            .iter()
+            .filter(|p| p["source"] == line.source && p["page"] == line.source_page)
+            .collect();
+        anyhow::ensure!(
+            matches.len() == 1,
+            "missing or duplicate retained source page"
+        );
+        let page = matches[0];
+        anyhow::ensure!(
+            page["retained_index"].as_u64().is_some(),
+            "required source page excluded"
+        );
+        let crop: [u32; 2] = serde_json::from_value(page["crop"].clone())?;
+        anyhow::ensure!(
+            crop[0] <= line.region[0] && crop[1] >= line.region[2],
+            "required glyphs outside production crop"
+        );
+        let bands: Vec<[u32; 2]> = serde_json::from_value(page["bands"].clone())?;
+        anyhow::ensure!(
+            bands.windows(2).all(|w| w[0][1] <= w[1][0]),
+            "overlapping source bands"
+        );
+        anyhow::ensure!(
+            bands
+                .iter()
+                .filter(|b| b[0] <= line.region[1] && b[1] >= line.region[3])
+                .count()
+                == 1,
+            "source band does not cover required glyphs once"
+        );
+        let deleted: Vec<[u32; 2]> = serde_json::from_value(page["deleted_rows"].clone())?;
+        anyhow::ensure!(
+            deleted
+                .iter()
+                .all(|b| b[0] >= line.region[3] || b[1] <= line.region[1]),
+            "required glyph rows deleted"
+        );
+    }
+    Ok(())
+}
+
+fn validate_restored_event_evidence(
+    event: &serde_json::Value,
+    documents: &serde_json::Value,
+    policy: ReviewedEvidencePolicy,
+    require_human: bool,
+) -> Result<()> {
+    let reference = &event["passing_evidence"];
+    let report = portable_evidence_document(documents, reference)?;
+    anyhow::ensure!(
+        report["unit_id"] == event["unit_id"],
+        "passing report unit differs"
+    );
+    anyhow::ensure!(
+        evidence_array(report, "events")?.contains(&event["event_id"]),
+        "event absent from passing evidence"
+    );
+    let lines: Vec<ReviewedSourceLine> =
+        serde_json::from_value(event["diagnosis"]["reviewed_lines"].clone())?;
+    anyhow::ensure!(
+        lines.len() == measured_event_line_count(event)?,
+        "source line count differs"
+    );
+    for line in &lines {
+        anyhow::ensure!(
+            evidence_array(event, "source_regions")?
+                .iter()
+                .any(|r| r["source_index"] == line.source && r["page"] == line.source_page),
+            "reviewed line outside event source identity"
+        );
+        anyhow::ensure!(
+            evidence_array(report, "reviewed_lines")?.contains(&serde_json::to_value(line)?),
+            "reviewed line absent from passing evidence"
+        );
+    }
+    if policy == ReviewedEvidencePolicy::PromotedTierB {
+        validate_promoted_line_coverage(report, &lines)?;
+        if require_human {
+            let review = &event["human_review"];
+            normalized_evidence_path(evidence_string(review, "path")?)?;
+            evidence_digest(review, "sha256")?;
+            evidence_string(review, "event_section")?;
+            anyhow::ensure!(
+                review["event_id"] == event["event_id"]
+                    && review["passing_report_sha256"] == reference["sha256"],
+                "human review differs from accepted event/report"
+            );
+        }
+    }
+    Ok(())
+}
+
+fn validate_tier_b_promoted_diagnosis(
+    event: &serde_json::Value,
+    documents: &serde_json::Value,
+) -> Result<()> {
+    let promotion = &event["promotion"];
+    normalized_evidence_path(evidence_string(promotion, "worksheet_path")?)?;
+    evidence_digest(promotion, "worksheet_sha256")?;
+    evidence_string(promotion, "event_section")?;
+    evidence_string(promotion, "sign_off")?;
+    evidence_string(event, "repair_read_status")?;
+    let diagnosis = &event["diagnosis"];
+    let trace = portable_evidence_document(documents, &diagnosis["baseline_trace"])?;
+    validate_trace_metadata(trace, &event["unit_id"])?;
+    let overlay = &diagnosis["reviewed_source_overlay"];
+    normalized_evidence_path(evidence_string(overlay, "path")?)?;
+    evidence_digest(overlay, "sha256")?;
+    let origin: [u32; 2] = serde_json::from_value(overlay["source_origin"].clone())?;
+    anyhow::ensure!(origin == [0, 0], "full-source overlay origin differs");
+    let lines = evidence_array(diagnosis, "reviewed_lines")?;
+    anyhow::ensure!(
+        lines.len() == measured_event_line_count(event)?,
+        "promoted diagnosis line count differs"
+    );
+    let mut seen = std::collections::BTreeSet::new();
+    let mut previous = None;
+    for line in lines {
+        let key = reviewed_region_key(line)?;
+        anyhow::ensure!(seen.insert(key), "duplicate promoted source line");
+        anyhow::ensure!(
+            previous.is_none_or(|p| p < (key.1, key.2[1])),
+            "promoted lines out of source order"
+        );
+        previous = Some((key.1, key.2[1]));
+        anyhow::ensure!(
+            evidence_array(event, "source_regions")?
+                .iter()
+                .any(|r| r["source_index"] == key.0 && r["page"] == key.1),
+            "promoted source identity differs"
+        );
+        evidence_string(&line["baseline"], "first_loss_stage")?;
+        evidence_string(line, "landmark")?;
+    }
+    anyhow::ensure!(
+        !evidence_array(diagnosis, "reviewed_neighbor_lines")?.is_empty(),
+        "missing neighboring anchors"
+    );
+    evidence_string(diagnosis, "regression_name")?;
+    Ok(())
+}
+
+fn validate_tier_b_disposition(
+    event: &serde_json::Value,
+    disposition: &serde_json::Value,
+    documents: &serde_json::Value,
+) -> Result<()> {
+    let report = portable_evidence_document(documents, &disposition["disposition_evidence"])?;
+    let trace = portable_evidence_document(documents, &disposition["disposition_trace"])?;
+    anyhow::ensure!(
+        report["schema_version"] == 1
+            && trace["schema_version"] == 1
+            && report["status"] == "unresolved",
+        "invalid disposition schema/status"
+    );
+    for value in [report, trace] {
+        anyhow::ensure!(
+            value["event_id"] == event["event_id"] && value["unit_id"] == event["unit_id"],
+            "disposition event/unit differs"
+        );
+        anyhow::ensure!(
+            value["tested_configuration"] == disposition["tested_configuration"],
+            "disposition configuration differs"
+        );
+        let configuration = &value["tested_configuration"];
+        anyhow::ensure!(
+            evidence_array(configuration, "sources")?.len() == 2
+                && !evidence_array(configuration, "production_files")?.is_empty(),
+            "missing disposition configuration identities"
+        );
+        evidence_digest(&configuration["unit_table"], "sha256")?;
+        for reference in evidence_array(configuration, "sources")?
+            .iter()
+            .chain(evidence_array(configuration, "production_files")?)
+        {
+            evidence_digest(reference, "sha256")?;
+            normalized_evidence_path(evidence_string(reference, "path")?)?;
+        }
+    }
+    anyhow::ensure!(
+        report["trace_evidence"] == disposition["disposition_trace"],
+        "disposition trace reference differs"
+    );
+    anyhow::ensure!(
+        report["reason"] == disposition["reason"],
+        "disposition reason differs"
+    );
+    evidence_string(report, "reason")?;
+    let stage = evidence_string(report, "failure_stage")?;
+    if stage == "not_established" {
+        evidence_string(report, "remaining_uncertainty")?;
+    }
+    anyhow::ensure!(
+        !evidence_array(trace, "stage_records")?.is_empty(),
+        "missing measured disposition stages"
+    );
+    Ok(())
+}
+
+fn validate_tier_b_repair_state_data(
+    ledger: &serde_json::Value,
+    documents: &serde_json::Value,
+) -> Result<()> {
+    validate_omission_inventory_data(ledger, documents)?;
+    let delivery = &ledger["tier_b_delivery"];
+    let state = evidence_string(delivery, "state")?;
+    anyhow::ensure!(
+        ["in_progress", "partial", "complete"].contains(&state),
+        "invalid delivery state"
+    );
+    let promoted: Vec<_> = evidence_array(ledger, "events")?
+        .iter()
+        .filter(|e| e["initial_tier"] == "B")
+        .collect();
+    anyhow::ensure!(
+        promoted.len() == 20
+            && promoted
+                .iter()
+                .map(|e| e["missing_line_count"].as_u64().unwrap_or(0))
+                .sum::<u64>()
+                == 44,
+        "initial Tier-B inventory differs"
+    );
+    let manifest = portable_evidence_document(documents, &ledger["tier_b_baseline"])?;
+    let units: Vec<crate::facsimile::units::Unit> =
+        serde_json::from_str(include_str!("../../facsimile_units.json"))?;
+    let ids: Vec<_> = units.iter().map(|u| u.id.clone()).collect();
+    let scale = manifest["scale"]
+        .as_f64()
+        .ok_or_else(|| anyhow::anyhow!("baseline scale missing"))? as f32;
+    validate_tier_b_baseline_manifest(manifest, &ids, &manifest["configuration"], scale)?;
+    anyhow::ensure!(
+        manifest["protection_record_count"] == 47,
+        "unsafe pre-installation baseline"
+    );
+    anyhow::ensure!(
+        manifest["configuration"]["unit_table"]["sha256"]
+            == tier_b_sha(include_bytes!("../../facsimile_units.json")),
+        "baseline unit-table configuration differs"
+    );
+    for (entry, unit) in evidence_array(manifest, "units")?.iter().zip(&units) {
+        anyhow::ensure!(
+            entry["source"] == unit.source,
+            "baseline source/unit mismatch"
+        );
+    }
+    let mut restored = [0, 0];
+    let mut unresolved = Vec::new();
+    let mut seen = std::collections::BTreeSet::new();
+    for event in promoted {
+        let id = evidence_string(event, "event_id")?;
+        anyhow::ensure!(seen.insert(id), "duplicate promoted event");
+        anyhow::ensure!(event["promoted_tier"] == "A", "missing promotion");
+        validate_tier_b_promoted_diagnosis(event, documents)?;
+        let status = evidence_string(event, "status")?;
+        match status {
+            "pending_repair" => {
+                anyhow::ensure!(
+                    event.get("passing_evidence").is_none(),
+                    "pending event claims passing evidence"
+                );
+            }
+            "installed" | "restored" => {
+                validate_restored_event_evidence(
+                    event,
+                    documents,
+                    ReviewedEvidencePolicy::PromotedTierB,
+                    status == "restored",
+                )?;
+                if status == "restored" {
+                    restored[0] += 1;
+                    restored[1] += measured_event_line_count(event)?;
+                }
+            }
+            "unresolved" => {
+                validate_tier_b_disposition(event, event, documents)?;
+                unresolved.push(id.to_string());
+                anyhow::ensure!(
+                    event.get("passing_evidence").is_none(),
+                    "unresolved event claims passing evidence"
+                );
+            }
+            _ => anyhow::bail!("invalid promoted event status {status}"),
+        }
+        for historical in event["historical_dispositions"]
+            .as_array()
+            .into_iter()
+            .flatten()
+        {
+            validate_tier_b_disposition(event, historical, documents)?;
+        }
+    }
+    unresolved.sort();
+    let mut declared: Vec<String> =
+        serde_json::from_value(delivery["unresolved_event_ids"].clone())?;
+    declared.sort();
+    anyhow::ensure!(
+        declared == unresolved,
+        "unresolved delivery inventory differs"
+    );
+    anyhow::ensure!(
+        delivery["restored_event_count"] == restored[0]
+            && delivery["restored_line_count"] == restored[1],
+        "false restored delivery counts"
+    );
+    match state {
+        "partial" => anyhow::ensure!(
+            restored == [19, 21] && unresolved == ["miss_antonius_562_20869"],
+            "partial delivery must restore 19/21 and authenticate unresolved Antonius"
+        ),
+        "complete" => anyhow::ensure!(
+            restored == [20, 43] && unresolved.is_empty(),
+            "complete delivery must restore 20/43 measured lines without unresolved events"
+        ),
+        _ => {}
+    }
+    Ok(())
+}
+
+#[test]
+#[ignore = "requires authenticated promoted evidence and every baseline unit trace"]
+fn audit_evidence_tier_b_state_and_baseline_authenticated() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let root = AuditEvidenceRoot::from_environment();
+    let documents = load_fixture_source_documents(&ledger, &root.root)?;
+    validate_tier_b_repair_state_data(&ledger, &documents)?;
+    let manifest = root.read_verified_json(&ledger["tier_b_baseline"])?;
+    for entry in evidence_array(&manifest, "units")? {
+        root.verify_streamed(&entry["trace"])?;
+        let trace = root.read_verified_json(&entry["trace"])?;
+        anyhow::ensure!(
+            trace["unit_id"] == entry["unit_id"]
+                && trace["source"] == entry["source"]
+                && trace["scale"] == manifest["scale"],
+            "baseline trace identity differs"
+        );
+        anyhow::ensure!(
+            tier_b_sha(&serde_json::to_vec(&trace["canvas_hashes"])?)
+                == entry["canvas_sequence_sha256"],
+            "baseline ordered canvas digest differs"
+        );
+        anyhow::ensure!(
+            trace["metrics"] == entry["metrics"] && trace["canvas_count"] == entry["canvas_count"],
+            "baseline trace summary differs"
+        );
+    }
+    for event in evidence_array(&ledger, "events")?
+        .iter()
+        .filter(|e| e["initial_tier"] == "B")
+    {
+        root.verify_streamed(&event["diagnosis"]["reviewed_source_overlay"])?;
+        root.verify_streamed(&event["promotion"]["worksheet_reference"])?;
+        if event["status"] == "restored" {
+            root.verify_streamed(&event["human_review"])?;
+        }
+        if event.get("line_count_decision").is_some() {
+            root.verify_streamed(&event["line_count_decision"])?;
+        }
+    }
+    println!("authenticated all baseline unit traces and staged Tier-B evidence");
+    Ok(())
+}
+
+fn synthetic_promoted_report(event: &serde_json::Value) -> serde_json::Value {
+    let lines: Vec<ReviewedSourceLine> =
+        serde_json::from_value(event["diagnosis"]["reviewed_lines"].clone()).unwrap();
+    let mut grouped = std::collections::BTreeMap::<(usize, u32), Vec<[u32; 4]>>::new();
+    for l in &lines {
+        grouped
+            .entry((l.source, l.source_page))
+            .or_default()
+            .push(l.region);
+    }
+    let pages: Vec<_>=grouped.into_iter().enumerate().map(|(i,((source,page),regions))| {
+        let left=regions.iter().map(|r|r[0]).min().unwrap();
+        let right=regions.iter().map(|r|r[2]).max().unwrap();
+        let bands=merge_source_body_bands(regions.iter().map(|r|Band {top:r[1],bottom:r[3]}).collect());
+        serde_json::json!({"source":source,"page":page,"retained_index":i,"crop":[left,right],"bands":bands.iter().map(|b|[b.top,b.bottom]).collect::<Vec<_>>(),"deleted_rows":[]})
+    }).collect();
+    let coverage: Vec<_>=lines.iter().enumerate().map(|(i,l)|serde_json::json!({"source":l.source,"source_page":l.source_page,"region":l.region,"scaled_row_stream":[i*100+10,i*100+90],"canvas_owners":[1]})).collect();
+    let extent = lines.len() * 100 + 100;
+    serde_json::json!({"schema_version":2,"verification_policy":"promoted_tier_b","unit_id":event["unit_id"],"events":[event["event_id"]],"reviewed_lines":lines,
+        "scale":1.0,"line_coverage":coverage,"canvas_ranges":[[1,0,extent]],"canvas_hashes":[{"canvas":1,"width":1100,"height":extent,"sha256":"a".repeat(64)}],"source_pages":pages})
+}
+
+fn synthetic_tier_b_delivery(state: &str) -> (serde_json::Value, serde_json::Value) {
+    let mut ledger = audit_repair_ledger();
+    let mut documents = portable_audit_evidence();
+    let mut restored = [0, 0];
+    for e in ledger["events"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .filter(|e| e["initial_tier"] == "B")
+    {
+        for key in [
+            "passing_evidence",
+            "human_review",
+            "disposition_evidence",
+            "disposition_trace",
+            "tested_configuration",
+        ] {
+            e.as_object_mut().unwrap().remove(key);
+        }
+        let id = e["event_id"].as_str().unwrap().to_string();
+        if state == "partial" && e["unit_id"] == "antonius" {
+            e["status"] = serde_json::json!("unresolved");
+            e["reason"] = serde_json::json!("candidate glyph-safe composition not established");
+            let configuration = serde_json::json!({"sources":[{"path":"source1.pdf","sha256":"b".repeat(64)},{"path":"source2.pdf","sha256":"c".repeat(64)}],"unit_table":{"path":"units.json","sha256":"d".repeat(64)},"production_files":[{"path":"code.rs","sha256":"e".repeat(64)}]});
+            e["tested_configuration"] = configuration.clone();
+            let trace_ref = serde_json::json!({"path":"archive/synthetic/antonius-trace.json","sha256":"f".repeat(64)});
+            let report_ref = serde_json::json!({"path":"archive/synthetic/antonius-disposition.json","sha256":"0".repeat(64)});
+            let trace = serde_json::json!({"schema_version":1,"event_id":id,"unit_id":"antonius","tested_configuration":configuration,"stage_records":[{"production_column":[906,1721],"first_failed_boundary":"not_established"}]});
+            let report = serde_json::json!({"schema_version":1,"event_id":id,"unit_id":"antonius","status":"unresolved","reason":e["reason"],"tested_configuration":configuration,"failure_stage":"not_established","remaining_uncertainty":"candidate reader check remains incomplete","trace_evidence":trace_ref});
+            documents["documents"][trace_ref["path"].as_str().unwrap()] =
+                serde_json::json!({"source_sha256":trace_ref["sha256"],"value":trace});
+            documents["documents"][report_ref["path"].as_str().unwrap()] =
+                serde_json::json!({"source_sha256":report_ref["sha256"],"value":report});
+            e["disposition_evidence"] = report_ref;
+            e["disposition_trace"] = trace_ref;
+        } else {
+            let report = synthetic_promoted_report(e);
+            let reference = serde_json::json!({"path":format!("archive/synthetic/{id}.json"),"sha256":tier_b_sha(&serde_json::to_vec(&report).unwrap())});
+            documents["documents"][reference["path"].as_str().unwrap()] =
+                serde_json::json!({"source_sha256":reference["sha256"],"value":report});
+            e["passing_evidence"] = reference.clone();
+            e["status"] = serde_json::json!("restored");
+            e["human_review"] = serde_json::json!({"path":"llm_artifacts/synthetic_review.md","sha256":"a".repeat(64),"event_id":id,"event_section":id,"passing_report_sha256":reference["sha256"]});
+            restored[0] += 1;
+            restored[1] += measured_event_line_count(e).unwrap();
+        }
+    }
+    ledger["tier_b_delivery"] = serde_json::json!({"state":state,"restored_event_count":restored[0],"restored_line_count":restored[1],"unresolved_event_ids":if state=="partial" {vec!["miss_antonius_562_20869"]} else {vec![]}});
+    (ledger, documents)
+}
+
+#[test]
+fn tier_b_promotions_preserve_initial_inventory() {
+    let ledger = audit_repair_ledger();
+    validate_omission_inventory_data(&ledger, &portable_audit_evidence()).unwrap();
+    let events: Vec<_> = ledger["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["initial_tier"] == "B")
+        .collect();
+    assert_eq!(events.len(), 20);
+    assert_eq!(
+        events
+            .iter()
+            .map(|e| e["missing_line_count"].as_u64().unwrap())
+            .sum::<u64>(),
+        44
+    );
+    assert_eq!(
+        events
+            .iter()
+            .map(|e| measured_event_line_count(e).unwrap())
+            .sum::<usize>(),
+        43
+    );
+    assert!(events.iter().all(|e| e["promoted_tier"] == "A"));
+}
+
+#[test]
+fn tier_b_delivery_fixture_is_consistent() {
+    validate_tier_b_repair_state_data(&audit_repair_ledger(), &portable_audit_evidence()).unwrap();
+}
+
+#[test]
+fn tier_b_restoration_projection_requires_coverage_fields() {
+    let event = audit_repair_ledger()["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["initial_tier"] == "B")
+        .unwrap()
+        .clone();
+    let good = synthetic_promoted_report(&event);
+    project_restoration_report(&good).unwrap();
+    for key in [
+        "schema_version",
+        "verification_policy",
+        "scale",
+        "line_coverage",
+        "canvas_ranges",
+        "canvas_hashes",
+        "source_pages",
+    ] {
+        let mut bad = good.clone();
+        bad.as_object_mut().unwrap().remove(key);
+        assert!(
+            project_restoration_report(&bad).is_err(),
+            "projection rejects missing {key}"
+        );
+    }
+    let mut bad = good.clone();
+    let duplicate = bad["source_pages"][0].clone();
+    bad["source_pages"].as_array_mut().unwrap().push(duplicate);
+    assert!(project_restoration_report(&bad).is_err());
+    let legacy = serde_json::json!({"unit_id":"legacy","events":[],"reviewed_lines":[]});
+    assert_eq!(project_restoration_report(&legacy).unwrap(), legacy);
+}
+
+#[test]
+fn tier_b_coverage_rejects_missing_wrong_region_and_invalid_owners() {
+    let event = audit_repair_ledger()["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["initial_tier"] == "B" && e["unit_id"] == "lysander")
+        .unwrap()
+        .clone();
+    let lines: Vec<ReviewedSourceLine> =
+        serde_json::from_value(event["diagnosis"]["reviewed_lines"].clone()).unwrap();
+    let good = synthetic_promoted_report(&event);
+    validate_promoted_line_coverage(&good, &lines).unwrap();
+    for kind in [
+        "missing",
+        "region",
+        "empty_owner",
+        "extra_owner",
+        "invalid_owner",
+        "gap",
+        "hash",
+        "crop",
+        "source",
+        "deleted",
+        "downgrade",
+        "dimensions",
+    ] {
+        let mut bad = good.clone();
+        match kind {
+            "missing" => {
+                bad["line_coverage"].as_array_mut().unwrap().remove(0);
+            }
+            "region" => bad["line_coverage"][0]["region"] = serde_json::json!([0, 0, 1, 1]),
+            "empty_owner" => bad["line_coverage"][0]["canvas_owners"] = serde_json::json!([]),
+            "extra_owner" => bad["line_coverage"][0]["canvas_owners"] = serde_json::json!([1, 2]),
+            "invalid_owner" => bad["line_coverage"][0]["canvas_owners"] = serde_json::json!([99]),
+            "gap" => bad["canvas_ranges"][0][1] = serde_json::json!(50),
+            "hash" => bad["canvas_hashes"][0]["sha256"] = serde_json::json!("invalid"),
+            "crop" => bad["source_pages"][0]["crop"] = serde_json::json!([0, 1]),
+            "source" => bad["source_pages"][0]["page"] = serde_json::json!(9999),
+            "deleted" => {
+                bad["source_pages"][0]["deleted_rows"] =
+                    serde_json::json!([[lines[0].region[1], lines[0].region[3]]])
+            }
+            "downgrade" => {
+                bad.as_object_mut().unwrap().remove("schema_version");
+            }
+            _ => bad["canvas_hashes"][0]["height"] = serde_json::json!(1),
+        }
+        assert!(
+            validate_promoted_line_coverage(&bad, &lines).is_err(),
+            "coverage rejects {kind}"
+        );
+    }
+}
+
+#[test]
+fn tier_b_coverage_rejects_duplicate_and_split_lines() {
+    let event = audit_repair_ledger()["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["initial_tier"] == "B")
+        .unwrap()
+        .clone();
+    let lines: Vec<ReviewedSourceLine> =
+        serde_json::from_value(event["diagnosis"]["reviewed_lines"].clone()).unwrap();
+    let good = synthetic_promoted_report(&event);
+    for kind in [
+        "duplicate_reviewed",
+        "duplicate_coverage",
+        "duplicate_required",
+        "split",
+        "overlap",
+    ] {
+        let mut bad = good.clone();
+        let mut required = lines.clone();
+        match kind {
+            "duplicate_reviewed" => {
+                let line = bad["reviewed_lines"][0].clone();
+                bad["reviewed_lines"].as_array_mut().unwrap().push(line);
+            }
+            "duplicate_coverage" => {
+                let line = bad["line_coverage"][0].clone();
+                bad["line_coverage"].as_array_mut().unwrap().push(line);
+            }
+            "duplicate_required" => required.push(lines[0].clone()),
+            "split" => {
+                bad["canvas_ranges"] = serde_json::json!([[1, 0, 50], [2, 50, 200]]);
+                let mut second = bad["canvas_hashes"][0].clone();
+                second["canvas"] = serde_json::json!(2);
+                bad["canvas_hashes"].as_array_mut().unwrap().push(second);
+                bad["line_coverage"][0]["canvas_owners"] = serde_json::json!([1, 2]);
+            }
+            _ => {
+                bad["canvas_ranges"] = serde_json::json!([[1, 0, 200], [2, 40, 100]]);
+            }
+        }
+        assert!(
+            validate_promoted_line_coverage(&bad, &required).is_err(),
+            "reject {kind}"
+        );
+    }
+}
+
+#[test]
+fn tier_b_delivery_accepts_partial_and_complete() {
+    for state in ["partial", "complete"] {
+        let (ledger, documents) = synthetic_tier_b_delivery(state);
+        validate_tier_b_repair_state_data(&ledger, &documents).unwrap();
+        let one = project_audit_evidence(&ledger, &documents).unwrap();
+        let two = project_audit_evidence(&ledger, &documents).unwrap();
+        assert_eq!(one, two);
+        validate_tier_b_repair_state_data(&ledger, &one).unwrap();
+    }
+    let (mut ledger, documents) = synthetic_tier_b_delivery("partial");
+    ledger["tier_b_delivery"]["state"] = serde_json::json!("in_progress");
+    let event = ledger["events"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|e| e["initial_tier"] == "B" && e["unit_id"] == "lysander")
+        .unwrap();
+    event["status"] = serde_json::json!("installed");
+    event.as_object_mut().unwrap().remove("human_review");
+    ledger["tier_b_delivery"]["restored_event_count"] = serde_json::json!(18);
+    ledger["tier_b_delivery"]["restored_line_count"] = serde_json::json!(19);
+    validate_tier_b_repair_state_data(&ledger, &documents).unwrap();
+    let event = ledger["events"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|e| e["initial_tier"] == "B" && e["unit_id"] == "aemilius_paulus")
+        .unwrap();
+    event["status"] = serde_json::json!("pending_repair");
+    event.as_object_mut().unwrap().remove("passing_evidence");
+    event.as_object_mut().unwrap().remove("human_review");
+    ledger["tier_b_delivery"]["restored_event_count"] = serde_json::json!(17);
+    ledger["tier_b_delivery"]["restored_line_count"] = serde_json::json!(18);
+    validate_tier_b_repair_state_data(&ledger, &documents).unwrap();
+    ledger["tier_b_delivery"]["restored_line_count"] = serde_json::json!(20);
+    assert!(validate_tier_b_repair_state_data(&ledger, &documents).is_err());
+}
+
+#[test]
+fn tier_b_delivery_rejects_missing_lines_and_evidence() {
+    let (good, documents) = synthetic_tier_b_delivery("complete");
+    for kind in ["line", "evidence", "human", "status", "event", "count"] {
+        let mut bad = good.clone();
+        let event = bad["events"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|e| e["initial_tier"] == "B")
+            .unwrap();
+        match kind {
+            "line" => {
+                event["diagnosis"]["reviewed_lines"]
+                    .as_array_mut()
+                    .unwrap()
+                    .pop();
+            }
+            "evidence" => {
+                event.as_object_mut().unwrap().remove("passing_evidence");
+            }
+            "human" => {
+                event.as_object_mut().unwrap().remove("human_review");
+            }
+            "status" => event["status"] = serde_json::json!("pending_repair"),
+            "event" => event["event_id"] = serde_json::json!("invented"),
+            _ => bad["tier_b_delivery"]["restored_event_count"] = serde_json::json!(99),
+        }
+        assert!(
+            validate_tier_b_repair_state_data(&bad, &documents).is_err(),
+            "delivery rejects {kind}"
+        );
+    }
+}
+
+#[test]
+fn tier_b_delivery_rejects_unresolved_complete_claim() {
+    let (mut ledger, documents) = synthetic_tier_b_delivery("partial");
+    ledger["tier_b_delivery"]["state"] = serde_json::json!("complete");
+    assert!(validate_tier_b_repair_state_data(&ledger, &documents).is_err());
+}
+
+#[test]
+fn tier_b_delivery_rejects_missing_unresolved_evidence() {
+    let (good, documents) = synthetic_tier_b_delivery("partial");
+    for key in [
+        "disposition_evidence",
+        "disposition_trace",
+        "reason",
+        "tested_configuration",
+    ] {
+        let mut bad = good.clone();
+        let event = bad["events"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|e| e["initial_tier"] == "B" && e["unit_id"] == "antonius")
+            .unwrap();
+        event.as_object_mut().unwrap().remove(key);
+        assert!(
+            validate_tier_b_repair_state_data(&bad, &documents).is_err(),
+            "unresolved rejects missing {key}"
+        );
+    }
+}
+
+#[test]
+fn tier_b_disposition_rejects_wrong_event_and_digest_mismatch() {
+    let (ledger, good) = synthetic_tier_b_delivery("partial");
+    let event = ledger["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["status"] == "unresolved")
+        .unwrap();
+    validate_tier_b_disposition(event, event, &good).unwrap();
+    for kind in ["event", "digest", "trace", "configuration", "reason"] {
+        let mut bad = good.clone();
+        let path = event["disposition_evidence"]["path"].as_str().unwrap();
+        match kind {
+            "event" => bad["documents"][path]["value"]["event_id"] = serde_json::json!("wrong"),
+            "digest" => bad["documents"][path]["source_sha256"] = serde_json::json!("b".repeat(64)),
+            "trace" => {
+                bad["documents"][path]["value"]["trace_evidence"]["sha256"] =
+                    serde_json::json!("b".repeat(64))
+            }
+            "configuration" => {
+                bad["documents"][path]["value"]["tested_configuration"]["unit_table"]["sha256"] =
+                    serde_json::json!("b".repeat(64))
+            }
+            _ => bad["documents"][path]["value"]["reason"] = serde_json::json!("different"),
+        }
+        assert!(
+            validate_tier_b_disposition(event, event, &bad).is_err(),
+            "disposition rejects {kind}"
+        );
+    }
 }

@@ -18049,6 +18049,1294 @@
         ],
         "unit_id": "tiberius_gracchus"
       }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/aemilius_paulus.json": {
+      "source_sha256": "5b96dcece20cb0eddc7059bc608c5d65c3a2db920241c0faa45702c1df61a795",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 32,
+          "width_med": 776
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "aemilius_paulus"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/agesilaus.json": {
+      "source_sha256": "e8fa924f65748d7fb542735d19d35fbbea9bbf30e95eec336266612e007738ba",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 32,
+          "width_med": 777
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "agesilaus"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/alcibiades.json": {
+      "source_sha256": "90aa3d765495a1722730827f84c9d2401fd9ea059e7cba9570e9f51dabd59324",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 32,
+          "width_med": 778
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "alcibiades"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/antonius.json": {
+      "source_sha256": "61d97805b84d19ca9143bd9e14edcc53ca69d54cf3db4a0f256794b4bd180173",
+      "value": {
+        "metrics": {
+          "height_mad": 2,
+          "height_med": 33,
+          "width_med": 777
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "antonius"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/artoxerxes.json": {
+      "source_sha256": "fa6fea8a832cc00550d0c75d85aceb68511afc8a2dbd8883e84df3a79e1ccad1",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 32,
+          "width_med": 776
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "artoxerxes"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/brutus.json": {
+      "source_sha256": "8b0ee8ea9579d9224968c0b20916b41dce840fb2b0150706c8beee9bdcf355c9",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 32,
+          "width_med": 777
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "brutus"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/caius_marius.json": {
+      "source_sha256": "bb6e96dd7806b75e61ee962ca8d71467d5ce290e095598f13e9b4ef685ae8062",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 33,
+          "width_med": 778
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "caius_marius"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/cato_minor.json": {
+      "source_sha256": "1590e064ab6df7d791f5bdc317b3c92d2f4d61ec8a0e92af78d3e6430be04338",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 32,
+          "width_med": 776
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "cato_minor"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/crassus.json": {
+      "source_sha256": "a981881c8f2323f9d517828f512053a7741b59fa5e26a8cef4e127600998ffc9",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 32,
+          "width_med": 777
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "crassus"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/demosthenes.json": {
+      "source_sha256": "52cba3e4647e33cb09831305525a7ed9548d512eeec464512509ddd688d94b5a",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 32,
+          "width_med": 777
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "demosthenes"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/dio.json": {
+      "source_sha256": "8265bfd128de21798d4a8f9a537301f1e6283b6accacb15431d5c3d73e58ddb8",
+      "value": {
+        "metrics": {
+          "height_mad": 2,
+          "height_med": 32,
+          "width_med": 778
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "dio"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/lucullus.json": {
+      "source_sha256": "6e3850acf633a63067e2fe7966d37a114f928ae8f766abf24094f59b2ab8a987",
+      "value": {
+        "metrics": {
+          "height_mad": 2,
+          "height_med": 33,
+          "width_med": 778
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "lucullus"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/lysander.json": {
+      "source_sha256": "0be86d72ea0f86dd3221fc28bb422aa8547e0d99cd1457c94fbff09cefc4bda1",
+      "value": {
+        "metrics": {
+          "height_mad": 2,
+          "height_med": 33,
+          "width_med": 779
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "lysander"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/manifest.json": {
+      "source_sha256": "15b54ed5071ea92004a2e4166f81175eedc7c3d6581737d677701546d107710d",
+      "value": {
+        "configuration": {
+          "production_files": [
+            {
+              "path": "src/facsimile/reflow.rs",
+              "sha256": "06fb0794b4eb848dc0fd6e1fd3bf524534c963f4b181b2417fe2d880e6085331"
+            },
+            {
+              "path": "src/facsimile/columns.rs",
+              "sha256": "8c2d925ff99c06b7a8afcbfb6e99af43cfd225844006520683e167d75029eb3e"
+            },
+            {
+              "path": "src/facsimile/lines.rs",
+              "sha256": "314f14609aab6a0af8219705153ce12630afbd177ee2481f9f7a3048e7c9067f"
+            },
+            {
+              "path": "src/facsimile/metrics.rs",
+              "sha256": "7d8bedb8a6286de1bca222739092a93ebcd08e345afdcb78060d619bdc41e071"
+            },
+            {
+              "path": "src/facsimile/mod.rs",
+              "sha256": "4f95b2ba732b8f75bf778eee58a9da0a61013771e79cf7bca355e191e74d3d4d"
+            },
+            {
+              "path": "src/facsimile/units.rs",
+              "sha256": "4c04c075d68e445123328a2253c6f0ad95d61da76489f58867884e90af7096f0"
+            }
+          ],
+          "sources": [
+            {
+              "path": "Ploutarchou_Bioi_v1.pdf",
+              "sha256": "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15"
+            },
+            {
+              "path": "Ploutarchou_Bioi_v2.pdf",
+              "sha256": "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684"
+            }
+          ],
+          "unit_table": {
+            "path": "facsimile_units.json",
+            "sha256": "7098d39e6c1a83c0de4333e17a09bbebed59c2bf19a33b0339d79cfe74e11949"
+          }
+        },
+        "protection_record_count": 47,
+        "scale": 1.20239520072937,
+        "schema_version": 1,
+        "units": [
+          {
+            "canvas_count": 41,
+            "canvas_sequence_sha256": "eca97ce551e153bc7de19d7e09bf04327d3b1b3012a5fe0f8ee4cb590cddf4b0",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 781
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/theseus.json",
+              "sha256": "c1420e0de5e49b596a18938fe336394d6391cf8864323639318802764bfeb333"
+            },
+            "unit_id": "theseus"
+          },
+          {
+            "canvas_count": 49,
+            "canvas_sequence_sha256": "c0238dfc61c659de369804ddde8658984be2291f9d61f3bd5f3c2b0764958f5b",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 33,
+              "width_med": 784
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/romulus.json",
+              "sha256": "8d3d8805f1539c05b04734b8e98814732567c65eda3e514b0bd4d24525bc0435"
+            },
+            "unit_id": "romulus"
+          },
+          {
+            "canvas_count": 7,
+            "canvas_sequence_sha256": "ecfa1c88862491d1d397bf8c5cc72b596e53ffdb12f7c91821d2b0b9f5fd3c43",
+            "metrics": {
+              "height_mad": 3,
+              "height_med": 34,
+              "width_med": 779
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_thesei_et_romuli.json",
+              "sha256": "d08f94f95c378322b86889d2229f67469b2b61ec9d9907141127ced0c0954b34"
+            },
+            "unit_id": "comparatio_thesei_et_romuli"
+          },
+          {
+            "canvas_count": 50,
+            "canvas_sequence_sha256": "a9d1fb80cd035da21826ac1285818f35d2985561dd1743dac15d028d14c2776d",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/lycurgus.json",
+              "sha256": "2dc0b8de601267623af70e73e15ae4ee4a407543dd3d2ac855827234032035df"
+            },
+            "unit_id": "lycurgus"
+          },
+          {
+            "canvas_count": 39,
+            "canvas_sequence_sha256": "93fbe971909b520949c39bee4c852ebaee151a54f165da7226a114a07bbe65b4",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/numa.json",
+              "sha256": "451ed6262171ceffbafeafc85290c3b91c2186f379504619dc41215a8aa636e8"
+            },
+            "unit_id": "numa"
+          },
+          {
+            "canvas_count": 9,
+            "canvas_sequence_sha256": "7916bce49dcde96d2c4888b973bd9132082244e91dd7d1e4bd11500cb8e00cde",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_lycurgi_et_numae.json",
+              "sha256": "cab73d7b3dabcbd47b8bf211653c921691ba744f8b0e70fd246f0aad462d3b9a"
+            },
+            "unit_id": "comparatio_lycurgi_et_numae"
+          },
+          {
+            "canvas_count": 46,
+            "canvas_sequence_sha256": "b19bd5922a4aac4e53cb493b7e010b19d799f9c4f4839249ac65141ba7b698f6",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 779
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/solon.json",
+              "sha256": "f7cb2651e495eff1b05799d3d9fa249db1ea6ba72d02a6c28b44e114bda1bb05"
+            },
+            "unit_id": "solon"
+          },
+          {
+            "canvas_count": 31,
+            "canvas_sequence_sha256": "17aef2743316908b3957c532d627dbbfc7bea8071e3f2e6e18364b2d03f7704b",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/poplicola.json",
+              "sha256": "d115b9e654d7d62cd9709c0a54822d20cbce325f33b90298075d831562de76c7"
+            },
+            "unit_id": "poplicola"
+          },
+          {
+            "canvas_count": 6,
+            "canvas_sequence_sha256": "2fceff8406cbb1d6f4399452f06ad63f5e57083f18c10ea9bb8c5257b37994a8",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_solonis_et_poplicolae.json",
+              "sha256": "c73dd8812621950dfa2f8e1ec4331c3146757163155ea0c975caf1cb581a5721"
+            },
+            "unit_id": "comparatio_solonis_et_poplicolae"
+          },
+          {
+            "canvas_count": 42,
+            "canvas_sequence_sha256": "688c052a21fe14399b3dab689405ddbf3fe64801b0205f2929b73eef6a971318",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/themistocles.json",
+              "sha256": "cfdb6bd946d6802310d288252572cb57479f3e18dd0fb932772535909a04d293"
+            },
+            "unit_id": "themistocles"
+          },
+          {
+            "canvas_count": 58,
+            "canvas_sequence_sha256": "f78a9499c6878ada7a1fb8c5da28c12040ba5b3a3590d39e88758517321fd986",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 781
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/camillus.json",
+              "sha256": "d00a8ab8f59f5216e07f07dac30490da1b8e4e886a549106dc74c1acdc534db1"
+            },
+            "unit_id": "camillus"
+          },
+          {
+            "canvas_count": 54,
+            "canvas_sequence_sha256": "fb3bb06cbb6a259b30f8119006df512661c9183bbbc1ffb0f67c04c01c9de99e",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 782
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/pericles.json",
+              "sha256": "880cdf180c55a017d000548127792885d91aba8d211c3953aeccd9a1d87a38dd"
+            },
+            "unit_id": "pericles"
+          },
+          {
+            "canvas_count": 40,
+            "canvas_sequence_sha256": "816f8bd65d6d41cd4991570545ff2844f75993b0a76559a9221313036c2cd5e6",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 780
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/fabius_maximus.json",
+              "sha256": "664c6e8c7d7c090a72a87ca50df39f7ad3dd540979ed2a16187189382850133d"
+            },
+            "unit_id": "fabius_maximus"
+          },
+          {
+            "canvas_count": 4,
+            "canvas_sequence_sha256": "0dcdcfffc5d873152e32cc69021aa5b82e5bfbcdef7c116c6fb2b053313f258a",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_periclis_et_fabii.json",
+              "sha256": "bf9fc76cb0d1a7a2aa6f2cb0d646a2c527f90f80c4d8360a1722e5841a3a7333"
+            },
+            "unit_id": "comparatio_periclis_et_fabii"
+          },
+          {
+            "canvas_count": 54,
+            "canvas_sequence_sha256": "4900bedaedd323eb9c1b726fd8584c1a5f2d1d995437208f6e2afc1f3ecf4b2f",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/alcibiades.json",
+              "sha256": "90aa3d765495a1722730827f84c9d2401fd9ea059e7cba9570e9f51dabd59324"
+            },
+            "unit_id": "alcibiades"
+          },
+          {
+            "canvas_count": 48,
+            "canvas_sequence_sha256": "447f271130412c308f37099f710a786b0e8b22ab375e04f7f002d1c79ed2533e",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 776
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/marcius_coriolanus.json",
+              "sha256": "52278db7e3e1ecc6bc0b6ed4a3af5690fdf46988c5f1ea3e52838178f029a004"
+            },
+            "unit_id": "marcius_coriolanus"
+          },
+          {
+            "canvas_count": 7,
+            "canvas_sequence_sha256": "e20aaeb8414c807f092865a012eefe702b4ef2076b91862fe42a36bdbbfda9fe",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 783
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_alcibiadis_et_coriolani.json",
+              "sha256": "cf19e1ffc03ac3d731dbb72b4580f8b99bf8aa2dafaa7fa0bb28750c357a1fb8"
+            },
+            "unit_id": "comparatio_alcibiadis_et_coriolani"
+          },
+          {
+            "canvas_count": 50,
+            "canvas_sequence_sha256": "f4c786a414e80fbba3685d1f36dca6cda4c10057e8faa4f175a227decc87da94",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 775
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/timoleon.json",
+              "sha256": "aaff0414ceaad5ed141baced4fe0093a06dd43ef895afaeb5c48d6f14df0670d"
+            },
+            "unit_id": "timoleon"
+          },
+          {
+            "canvas_count": 51,
+            "canvas_sequence_sha256": "f7e4095683188dd807134cb22518d72bc1999da7cd8769b7473e9eb8332bf0b7",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 776
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/aemilius_paulus.json",
+              "sha256": "5b96dcece20cb0eddc7059bc608c5d65c3a2db920241c0faa45702c1df61a795"
+            },
+            "unit_id": "aemilius_paulus"
+          },
+          {
+            "canvas_count": 3,
+            "canvas_sequence_sha256": "e250d98553b4887dd76b7f1caf45e24b6736e72ac1152399aa7aeb5e8f78f956",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 35,
+              "width_med": 780
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_timoleontis_et_aemilii.json",
+              "sha256": "c9e65b69be556dbf5e8d9a0939c0df3096f668dfd5697824e6474053b8cc3169"
+            },
+            "unit_id": "comparatio_timoleontis_et_aemilii"
+          },
+          {
+            "canvas_count": 50,
+            "canvas_sequence_sha256": "f957d5e9e424569e6e85fbf5d9cb8d9abc37b5d3a7641a122522231671283cfa",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/pelopidas.json",
+              "sha256": "3514bb05ffd25395426f78d65964c967720d2eb5b4e363cdc77d339d98dda33e"
+            },
+            "unit_id": "pelopidas"
+          },
+          {
+            "canvas_count": 45,
+            "canvas_sequence_sha256": "ee7605e2ab7593f8774c6425b1362065a0f4439f7c952c27c8d444e32b5753de",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 775
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/marcellus.json",
+              "sha256": "e477bf81729055ac16fdbb6156efcd4e08fb39725283d8933a30260ac5fb4697"
+            },
+            "unit_id": "marcellus"
+          },
+          {
+            "canvas_count": 5,
+            "canvas_sequence_sha256": "44e7dbd993a306b36849b62c07e8db11e7e3398448dbad28048a3466b1679eb9",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 33,
+              "width_med": 776
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_pelopidae_et_marcelli.json",
+              "sha256": "42798e358e77609c3252bef3220938a136b1c5edd9d24d13409a70bfbb53dc0e"
+            },
+            "unit_id": "comparatio_pelopidae_et_marcelli"
+          },
+          {
+            "canvas_count": 43,
+            "canvas_sequence_sha256": "ec677ea221bf4e04c14ef0fd316151d5bb9f87c92431b82a851fe611fe722aaa",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 776
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/aristides.json",
+              "sha256": "0a3ac05be4b00e52b89ca4c9d8ebf1499bcfed1e6c767b6fdbb8f09d6029eb50"
+            },
+            "unit_id": "aristides"
+          },
+          {
+            "canvas_count": 42,
+            "canvas_sequence_sha256": "795bf7658bba3b1914a242fc72d286a6ed15920dd26a5e4d72ef70485cc67a40",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/cato_major.json",
+              "sha256": "b30a39aee7c24e2b916556a3523e354d31b940507b0908be9cae339995687548"
+            },
+            "unit_id": "cato_major"
+          },
+          {
+            "canvas_count": 8,
+            "canvas_sequence_sha256": "769f80ff4a5b4236b0be19bb58f17351cd4f9e549f38af5d3fd290b964786437",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 34,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_aristidis_et_catonis.json",
+              "sha256": "73ee44afaf917f84ffbfdd44416c42a48579f555084863cad61325a2d47cdfa7"
+            },
+            "unit_id": "comparatio_aristidis_et_catonis"
+          },
+          {
+            "canvas_count": 31,
+            "canvas_sequence_sha256": "188729b44751f9cdc63e69f3e2b36e61917279c35d8359380ade528583d441fe",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 33,
+              "width_med": 779
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/philopoemen.json",
+              "sha256": "242eb1b187a98cbc371f17f52e713abb69d52e3f0a1332815c2673d93f4e1134"
+            },
+            "unit_id": "philopoemen"
+          },
+          {
+            "canvas_count": 31,
+            "canvas_sequence_sha256": "f797d323f2e392db7d169774af0563e9e7f970061d939cbd3decdb79cc5b12e5",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 776
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/flamininus.json",
+              "sha256": "6660ef6bc77efc4fe1557212cc6cd001f57e4afc6e0d53783c6f32ab43d11f16"
+            },
+            "unit_id": "flamininus"
+          },
+          {
+            "canvas_count": 3,
+            "canvas_sequence_sha256": "b097659017bfba03c57763c8be3c61883b159ddce2b4496872c5132a0d623b64",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 34,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_philopoemenis_et_flaminini.json",
+              "sha256": "3291cf7f28a4d18f438822a304ba4a479060f8551a49a3fd47c9c628061d8d6c"
+            },
+            "unit_id": "comparatio_philopoemenis_et_flaminini"
+          },
+          {
+            "canvas_count": 57,
+            "canvas_sequence_sha256": "9392df7b48db0d069cddf8c3c3b5e43584b2bb1a6a3b58cc10e614a5dc4d2f1d",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 33,
+              "width_med": 777
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/pyrrhus.json",
+              "sha256": "b65e0df61d30fd2087b9782fd3da63b1c6668af30fb8debf8b6048e549941ed8"
+            },
+            "unit_id": "pyrrhus"
+          },
+          {
+            "canvas_count": 67,
+            "canvas_sequence_sha256": "82befb9780811cf86b856ed137e319392815733000b2c934371d6860ef8c3857",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 33,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/caius_marius.json",
+              "sha256": "bb6e96dd7806b75e61ee962ca8d71467d5ce290e095598f13e9b4ef685ae8062"
+            },
+            "unit_id": "caius_marius"
+          },
+          {
+            "canvas_count": 44,
+            "canvas_sequence_sha256": "24230400d050b1ff86d0ee267d95535566aca0179494d714122c6e45556f8261",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 779
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/lysander.json",
+              "sha256": "0be86d72ea0f86dd3221fc28bb422aa8547e0d99cd1457c94fbff09cefc4bda1"
+            },
+            "unit_id": "lysander"
+          },
+          {
+            "canvas_count": 61,
+            "canvas_sequence_sha256": "b8fbb40acdff9fb1e08d69254fd112bd0b712d4ed173f50f2de7cc6d49b270c7",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 780
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/sylla.json",
+              "sha256": "598524d4ea014e05ca0b8f6b59a0bc6777cd677df289d992b2a3ff4c38b65c39"
+            },
+            "unit_id": "sylla"
+          },
+          {
+            "canvas_count": 7,
+            "canvas_sequence_sha256": "a799aa7986a5b7f61a3459bd52ed6659ed942c5d09f89788e9b9f562bc839630",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 779
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_lysandri_et_syllae.json",
+              "sha256": "206caffe38c542b909998842ff3da72b17ec316355665575bb366bdc46ca7364"
+            },
+            "unit_id": "comparatio_lysandri_et_syllae"
+          },
+          {
+            "canvas_count": 31,
+            "canvas_sequence_sha256": "4d270c4b2a016f3547de442f131bc6eb2c0baa83f22ca5ae7616022e90cd17b5",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 779
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/cimon.json",
+              "sha256": "3a6067069d63bc00e4fee8b153ce0cb73d4ec4a9dd18a258656cf77fde818364"
+            },
+            "unit_id": "cimon"
+          },
+          {
+            "canvas_count": 72,
+            "canvas_sequence_sha256": "10db9fa4010aee96fabb46a6c241ff93b20dd37369d074e9bf70d5c7ed22cc17",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 778
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/lucullus.json",
+              "sha256": "6e3850acf633a63067e2fe7966d37a114f928ae8f766abf24094f59b2ab8a987"
+            },
+            "unit_id": "lucullus"
+          },
+          {
+            "canvas_count": 6,
+            "canvas_sequence_sha256": "d86ec9aad14c5233e064ac9a827ec4ef1f03d833326a133053f8190ec8a03c17",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 781
+            },
+            "source": 0,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_cimonis_et_luculli.json",
+              "sha256": "c8d38908dccd0bc23debcb05168e646f9d7d735c9cb7057186a2e3bcd1634c1e"
+            },
+            "unit_id": "comparatio_cimonis_et_luculli"
+          },
+          {
+            "canvas_count": 48,
+            "canvas_sequence_sha256": "6ff75ee62cc38b1955120e37f8a9f2f1956e1c6346b0320fe8590b98f7373c8b",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/nicias.json",
+              "sha256": "59f5af150c5eac8aac0df3a5f267b57369ddda212202259c8664753ababd766d"
+            },
+            "unit_id": "nicias"
+          },
+          {
+            "canvas_count": 54,
+            "canvas_sequence_sha256": "94ca96331356a0eb7672a1e35f0f617432e3ebd6376db32813cf6d80222359ee",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/crassus.json",
+              "sha256": "a981881c8f2323f9d517828f512053a7741b59fa5e26a8cef4e127600998ffc9"
+            },
+            "unit_id": "crassus"
+          },
+          {
+            "canvas_count": 7,
+            "canvas_sequence_sha256": "1d6cd84471012af4272f6947841899e31f47b04193288ae1a22710cbc03f06ff",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 32,
+              "width_med": 775
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_niciae_et_crassi.json",
+              "sha256": "057c0535dd22a7b080a0e3a7d6b3c71273e0f09bd716a1823bbb5c4e93d6402c"
+            },
+            "unit_id": "comparatio_niciae_et_crassi"
+          },
+          {
+            "canvas_count": 36,
+            "canvas_sequence_sha256": "99a21604eaf229b6260fd9cb554d06b3c40c256209f8a9f8ef27518e10cc9b9c",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 776
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/sertorius.json",
+              "sha256": "9bf258b50be0f4a8f6bac99a3234719d1c1d7c63f163e21ef7d939b59894f7f3"
+            },
+            "unit_id": "sertorius"
+          },
+          {
+            "canvas_count": 30,
+            "canvas_sequence_sha256": "c92e00e5fd59237e08e30d49592f0768b1afb9452bdc567b8a81668fce56f484",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/eumenes.json",
+              "sha256": "22dde718431229aa66f1b436f797fa5f05e81ee040748c93a7387cc62706f5c4"
+            },
+            "unit_id": "eumenes"
+          },
+          {
+            "canvas_count": 3,
+            "canvas_sequence_sha256": "422bfbe1d0528a2870da59a9b477ecdcfb47e52cd868a8bfd9914c6b939dcff6",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_sertorii_et_eumenis.json",
+              "sha256": "389f66eda4e6b7ff4a1acc3a3471918a7f7e0a73d11158b7eeb934601aca3f1e"
+            },
+            "unit_id": "comparatio_sertorii_et_eumenis"
+          },
+          {
+            "canvas_count": 56,
+            "canvas_sequence_sha256": "163c645fa481b346c0671c0cbec025d1ea25251ed55f74429fa314fe72e1d1f4",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/agesilaus.json",
+              "sha256": "e8fa924f65748d7fb542735d19d35fbbea9bbf30e95eec336266612e007738ba"
+            },
+            "unit_id": "agesilaus"
+          },
+          {
+            "canvas_count": 106,
+            "canvas_sequence_sha256": "5397d1e10a59d7a6af1156761d85b8ae2cbc5e9b8c298cfe4210e436f4d9b017",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 779
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/pompeius.json",
+              "sha256": "1d101b1a329c7e97099a52a8aef9e5bf5fda46920bdc99b5aceb6f714d5e4446"
+            },
+            "unit_id": "pompeius"
+          },
+          {
+            "canvas_count": 6,
+            "canvas_sequence_sha256": "015a0bb063ce3d81afeda13612ca98c7435068594bcfb0218f92792bedc90630",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_agesilai_et_pompeii.json",
+              "sha256": "4b1d15a39a4998ac3476df7ec7b913d94670b1574c463dd69d81325338562040"
+            },
+            "unit_id": "comparatio_agesilai_et_pompeii"
+          },
+          {
+            "canvas_count": 105,
+            "canvas_sequence_sha256": "8352c1b3636733e37950d8e3f37e0665b659f478ccefd3e1e528b6e29c734717",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/alexander.json",
+              "sha256": "2c09fbb6f2f5de283130dd50c63f2c9e005730d98cb4667a4e26eb7e34128be3"
+            },
+            "unit_id": "alexander"
+          },
+          {
+            "canvas_count": 84,
+            "canvas_sequence_sha256": "b8a5da26b611ee17f05c7badd1b20dd5e318a4b466400991b9d031b93f728fbe",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/iulius_caesar.json",
+              "sha256": "cecb4642d765b45136c9847953dea1013f2fdd976a243e43bdc86359eaaf0975"
+            },
+            "unit_id": "iulius_caesar"
+          },
+          {
+            "canvas_count": 43,
+            "canvas_sequence_sha256": "dcb0ac09ce2dd3879b65dfe01e7e856b648f22d7523be1c3d4be858e39863ae7",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 775
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/phocion.json",
+              "sha256": "e1f2c2a70dc667ecbeb3ce2232525195bf9400f167bc31d64c5a62a6068d05c5"
+            },
+            "unit_id": "phocion"
+          },
+          {
+            "canvas_count": 87,
+            "canvas_sequence_sha256": "56f428feb6b380d224952ca0edb43c345218556ee7f03b6012bded58fc3df41e",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 776
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/cato_minor.json",
+              "sha256": "1590e064ab6df7d791f5bdc317b3c92d2f4d61ec8a0e92af78d3e6430be04338"
+            },
+            "unit_id": "cato_minor"
+          },
+          {
+            "canvas_count": 24,
+            "canvas_sequence_sha256": "90e7d053cf4aef6649b5f127c222508152cd98c1185034351abf5cd0b5626177",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 775
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/agis.json",
+              "sha256": "b8eab098122b8ba0dc336d2d84533e77104e205e76a9c9fffac1d1a6a52ecb14"
+            },
+            "unit_id": "agis"
+          },
+          {
+            "canvas_count": 48,
+            "canvas_sequence_sha256": "1608b9c3bad57bd6cae7b34a68728442598cdf6b78eb3ac6b5eb96f8bcdb7542",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 776
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/cleomenes.json",
+              "sha256": "fead6fcac5de4354f0384eaacb21b059d66a20bde0d59cfa8e59aa4b3239e8b4"
+            },
+            "unit_id": "cleomenes"
+          },
+          {
+            "canvas_count": 26,
+            "canvas_sequence_sha256": "b4d5f2b80412533b52ae023269b0a1564b9a57bef6c49789445aa9215da32473",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 32,
+              "width_med": 776
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/tiberius_gracchus.json",
+              "sha256": "7f3e7acbb5f9c6d67261e4d1a083218e8535e4858633c51e33db43f525ba58f6"
+            },
+            "unit_id": "tiberius_gracchus"
+          },
+          {
+            "canvas_count": 22,
+            "canvas_sequence_sha256": "9113c758806a824074b89247d00a887797645f0e4711e86e0ad20e46e4491f93",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 775
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/caius_gracchus.json",
+              "sha256": "f77aac69aee111960fdd766ccf2efe37d3e457dcb2144af0133c26e71892ae69"
+            },
+            "unit_id": "caius_gracchus"
+          },
+          {
+            "canvas_count": 6,
+            "canvas_sequence_sha256": "d8a9ca8de4a7f1341e9f27af0213636705b3f8661786fe9f800770f3dbe4a65d",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_agidis_cleomenis_et_gracchorum.json",
+              "sha256": "76a2494b7344fc3a2bdbcf5663431ad69410cb8bdf56cda626b006c6a8c0a462"
+            },
+            "unit_id": "comparatio_agidis_cleomenis_et_gracchorum"
+          },
+          {
+            "canvas_count": 36,
+            "canvas_sequence_sha256": "9f6cf638d46fd7fe5d30d7d16fad9f69add5a47d417cb8d06ca4d7bb3ffda216",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/demosthenes.json",
+              "sha256": "52cba3e4647e33cb09831305525a7ed9548d512eeec464512509ddd688d94b5a"
+            },
+            "unit_id": "demosthenes"
+          },
+          {
+            "canvas_count": 62,
+            "canvas_sequence_sha256": "d2217e7bdf7656f2a9ab044d4f3157532afb4f64b48b3c0080aa1c238fc7ad06",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/cicero.json",
+              "sha256": "8f90a514933d470e410d6658b52317e43155310e309298f695a98b9cc8f8d3ae"
+            },
+            "unit_id": "cicero"
+          },
+          {
+            "canvas_count": 6,
+            "canvas_sequence_sha256": "c6a9ee39eceb76e2c39b361af74d04d755a2533aa201e1388a6dbf44bfab5d33",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 31,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_demosthenis_et_ciceronis.json",
+              "sha256": "9234c0590c8feb2c5520cb54452f1e9aa2e86bfdd4b25d3e8a50cabad454c5ef"
+            },
+            "unit_id": "comparatio_demosthenis_et_ciceronis"
+          },
+          {
+            "canvas_count": 65,
+            "canvas_sequence_sha256": "27e2fcf4aae57208de083fdc042e8009ca8967b92f1d6b015001084441721bc7",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 779
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/demetrius.json",
+              "sha256": "1b14c347cc2705fca344e05873a46b07b161f1bdbae4e0337eae0e324b0a97f5"
+            },
+            "unit_id": "demetrius"
+          },
+          {
+            "canvas_count": 98,
+            "canvas_sequence_sha256": "71e12252376608bc85f90cdd020c3c916dfce155e83cacd0e624ba4b5b719bff",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 33,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/antonius.json",
+              "sha256": "61d97805b84d19ca9143bd9e14edcc53ca69d54cf3db4a0f256794b4bd180173"
+            },
+            "unit_id": "antonius"
+          },
+          {
+            "canvas_count": 5,
+            "canvas_sequence_sha256": "10450b4959e4ef9177622360c26c7d3a18d38b892a59e24cb862e4e2064dd56f",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 774
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_demetrii_et_antonii.json",
+              "sha256": "13847b7550b1dc05cc3f2aec35ad1fcaa18bbf2d2e785951d64de10ae34f30cb"
+            },
+            "unit_id": "comparatio_demetrii_et_antonii"
+          },
+          {
+            "canvas_count": 62,
+            "canvas_sequence_sha256": "439656d722d90411bd2fac005c85188332f08674012ade8be81e05892797b361",
+            "metrics": {
+              "height_mad": 2,
+              "height_med": 32,
+              "width_med": 778
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/dio.json",
+              "sha256": "8265bfd128de21798d4a8f9a537301f1e6283b6accacb15431d5c3d73e58ddb8"
+            },
+            "unit_id": "dio"
+          },
+          {
+            "canvas_count": 62,
+            "canvas_sequence_sha256": "001b4569dad8218c83561bd917ad5968e859165a5c9daf319d2e70bd7472593e",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/brutus.json",
+              "sha256": "8b0ee8ea9579d9224968c0b20916b41dce840fb2b0150706c8beee9bdcf355c9"
+            },
+            "unit_id": "brutus"
+          },
+          {
+            "canvas_count": 5,
+            "canvas_sequence_sha256": "cc96d0fb20699eeedadc8338717bc757a94412b9ca2be8c376a84e839f029827",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 31,
+              "width_med": 776
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/comparatio_dionis_et_bruti.json",
+              "sha256": "b893829443be17c8f0e561386a52c320465b890d9489ab640f2e9deba9d1c130"
+            },
+            "unit_id": "comparatio_dionis_et_bruti"
+          },
+          {
+            "canvas_count": 38,
+            "canvas_sequence_sha256": "31fd0c94f006200e04982f86b1ed364fcff67aa70589221b512d3fdc6f368311",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 776
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/artoxerxes.json",
+              "sha256": "fa6fea8a832cc00550d0c75d85aceb68511afc8a2dbd8883e84df3a79e1ccad1"
+            },
+            "unit_id": "artoxerxes"
+          },
+          {
+            "canvas_count": 62,
+            "canvas_sequence_sha256": "f73ef1642f9dde7809bd2ef67ad971ad35384ef40c02aafa349a9a64dd24e7d1",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/aratus.json",
+              "sha256": "fc7a6f6883b0e367008ec0cfe3fed428090e893b7e2661c01f920194dbcd676c"
+            },
+            "unit_id": "aratus"
+          },
+          {
+            "canvas_count": 33,
+            "canvas_sequence_sha256": "9d437ee1bdb7e187a73187bf0a9491c6e77c048df9750e052bf8bd427f132fd0",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 31,
+              "width_med": 776
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/galba.json",
+              "sha256": "7478fe4374e4e40e444e6f35138925019fac356d2714c590ab09121c2b90ca1c"
+            },
+            "unit_id": "galba"
+          },
+          {
+            "canvas_count": 22,
+            "canvas_sequence_sha256": "8e905edf9e3019d5ec5e71afffafa8cae72b9667cc5930f8ffb0a4ca862f419f",
+            "metrics": {
+              "height_mad": 1,
+              "height_med": 32,
+              "width_med": 777
+            },
+            "source": 1,
+            "trace": {
+              "path": "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/otho.json",
+              "sha256": "4df6ce4652e4ee05f5943035239ab3305b9cd1316eefc33795b4b7c74649227b"
+            },
+            "unit_id": "otho"
+          }
+        ]
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/marcellus.json": {
+      "source_sha256": "e477bf81729055ac16fdbb6156efcd4e08fb39725283d8933a30260ac5fb4697",
+      "value": {
+        "metrics": {
+          "height_mad": 2,
+          "height_med": 33,
+          "width_med": 775
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "marcellus"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/nicias.json": {
+      "source_sha256": "59f5af150c5eac8aac0df3a5f267b57369ddda212202259c8664753ababd766d",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 32,
+          "width_med": 778
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "nicias"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/pericles.json": {
+      "source_sha256": "880cdf180c55a017d000548127792885d91aba8d211c3953aeccd9a1d87a38dd",
+      "value": {
+        "metrics": {
+          "height_mad": 1,
+          "height_med": 32,
+          "width_med": 782
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "pericles"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/phocion.json": {
+      "source_sha256": "e1f2c2a70dc667ecbeb3ce2232525195bf9400f167bc31d64c5a62a6068d05c5",
+      "value": {
+        "metrics": {
+          "height_mad": 2,
+          "height_med": 33,
+          "width_med": 775
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "phocion"
+      }
+    },
+    "archive/tier_b_omission_repairs_2026_10_09/baseline/full-work/timoleon.json": {
+      "source_sha256": "aaff0414ceaad5ed141baced4fe0093a06dd43ef895afaeb5c48d6f14df0670d",
+      "value": {
+        "metrics": {
+          "height_mad": 2,
+          "height_med": 33,
+          "width_med": 775
+        },
+        "scale": 1.20239520072937,
+        "unit_id": "timoleon"
+      }
     }
   },
   "schema_version": 1

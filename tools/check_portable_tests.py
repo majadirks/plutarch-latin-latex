@@ -26,6 +26,21 @@ REQUIRED_TESTS = (
     "portable_audit_evidence_has_every_required_document",
     "portable_evidence_document_rejects_missing_or_mismatched_reference",
     "portable_audit_projection_is_deterministic",
+    "tier_b_baseline_manifest_rejects_missing_units_and_configuration_mismatch",
+    "tier_b_restoration_selection_rejects_missing_events_and_wrong_counts",
+    "reviewed_band_ledger_uses_production_crop_bounds",
+    "known_source_body_band_groups_preserve_subranges_and_parent_semantics",
+    "tier_b_validation_preserves_historical_tier_a_evidence",
+    "tier_b_restoration_projection_requires_coverage_fields",
+    "tier_b_coverage_rejects_missing_wrong_region_and_invalid_owners",
+    "tier_b_coverage_rejects_duplicate_and_split_lines",
+    "tier_b_delivery_rejects_missing_unresolved_evidence",
+    "tier_b_disposition_rejects_wrong_event_and_digest_mismatch",
+    "tier_b_promotions_preserve_initial_inventory",
+    "tier_b_delivery_fixture_is_consistent",
+    "tier_b_delivery_accepts_partial_and_complete",
+    "tier_b_delivery_rejects_missing_lines_and_evidence",
+    "tier_b_delivery_rejects_unresolved_complete_claim",
 )
 EVIDENCE_PROBE = TEST_PREFIX + "audit_evidence_historical_inventory_authenticated"
 EXCLUDED_ROOTS = {"tmp", "archive", "target", "debug", "build_facsimile", ".git", ".aws", ".ssh"}
