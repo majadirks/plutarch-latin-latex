@@ -7,37 +7,403 @@ fn audit_repair_ledger() -> serde_json::Value {
     .unwrap()
 }
 
-fn audit_file_bytes(fixture: &serde_json::Value, name: &str) -> Result<Vec<u8>> {
-    let original = std::path::Path::new(fixture["original_run"].as_str().unwrap()).join(name);
-    let archived = std::path::Path::new(fixture["archive"]["path"].as_str().unwrap())
-        .join("runs/step102-final-all-5")
-        .join(name);
-    std::fs::read(&original)
-        .or_else(|_| std::fs::read(&archived))
-        .map_err(|e| {
-            anyhow::anyhow!(
-                "missing historical evidence: neither {} nor {} is readable: {e}",
-                original.display(),
-                archived.display()
-            )
-        })
+fn portable_audit_evidence() -> serde_json::Value {
+    serde_json::from_str(include_str!(
+        "fixtures/inner_tomi_portable_audit_evidence.json"
+    ))
+    .unwrap()
+}
+
+fn evidence_string<'a>(value: &'a serde_json::Value, key: &str) -> Result<&'a str> {
+    value[key]
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| anyhow::anyhow!("missing or invalid evidence {key}: {value}"))
+}
+
+fn evidence_array<'a>(
+    value: &'a serde_json::Value,
+    key: &str,
+) -> Result<&'a Vec<serde_json::Value>> {
+    value[key]
+        .as_array()
+        .ok_or_else(|| anyhow::anyhow!("missing evidence array {key}"))
+}
+
+fn evidence_digest(reference: &serde_json::Value, key: &str) -> Result<String> {
+    let digest = evidence_string(reference, key)?;
+    anyhow::ensure!(
+        digest.len() == 64 && digest.bytes().all(|b| b.is_ascii_hexdigit()),
+        "malformed evidence digest {key}: {digest}"
+    );
+    Ok(digest.to_ascii_lowercase())
+}
+
+fn normalized_evidence_path(path: &str) -> Result<String> {
+    let path = path.replace('\\', "/");
+    anyhow::ensure!(
+        !path.is_empty() && !path.starts_with('/') && !path.contains(':'),
+        "escaping evidence path: {path}"
+    );
+    let parts: Vec<_> = path.split('/').collect();
+    anyhow::ensure!(
+        parts
+            .iter()
+            .all(|p| !p.is_empty() && *p != ".." && *p != "."),
+        "escaping evidence path: {path}"
+    );
+    Ok(path)
+}
+
+fn resolve_evidence_path(root: &std::path::Path, logical_path: &str) -> Result<std::path::PathBuf> {
+    let logical = normalized_evidence_path(logical_path)?;
+    let canonical_root = root
+        .canonicalize()
+        .map_err(|e| anyhow::anyhow!("missing evidence root {}: {e}", root.display()))?;
+    let path = canonical_root.join(&logical);
+    let resolved = path.canonicalize().map_err(|e| {
+        anyhow::anyhow!(
+            "missing historical evidence: logical {logical}, resolved {}: {e}",
+            path.display()
+        )
+    })?;
+    anyhow::ensure!(
+        resolved.starts_with(&canonical_root),
+        "escaping evidence path: logical {logical}, resolved {} outside {}",
+        resolved.display(),
+        canonical_root.display()
+    );
+    Ok(resolved)
+}
+
+fn read_verified_evidence_bytes(
+    root: &std::path::Path,
+    reference: &serde_json::Value,
+) -> Result<Vec<u8>> {
+    use sha2::Digest;
+    let logical = evidence_string(reference, "path")?;
+    let expected = evidence_digest(reference, "sha256")?;
+    let resolved = resolve_evidence_path(root, logical)?;
+    let bytes = std::fs::read(&resolved)?;
+    let actual = format!("{:x}", sha2::Sha256::digest(&bytes));
+    anyhow::ensure!(actual == expected,
+        "evidence hash mismatch: logical {logical}, resolved {}, expected {expected}, actual {actual}",
+        resolved.display());
+    Ok(bytes)
+}
+
+fn historical_audit_json_reference(
+    ledger: &serde_json::Value,
+    name: &str,
+) -> Result<serde_json::Value> {
+    let key = match name {
+        "candidates.json" => "candidates_sha256",
+        "reviews.json" => "reviews_sha256",
+        _ => anyhow::bail!("unknown historical audit JSON: {name}"),
+    };
+    Ok(
+        serde_json::json!({"path": format!("{}/runs/step102-final-all-5/{name}",
+        evidence_string(&ledger["archive"], "path")?), "sha256": evidence_digest(ledger, key)?}),
+    )
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum AuditDocumentKind {
+    Candidates,
+    Reviews,
+    Baseline,
+    PostDedup,
+    PostMasks,
+    Restoration,
+}
+
+type AuditReferences = std::collections::BTreeMap<String, (serde_json::Value, AuditDocumentKind)>;
+
+fn required_audit_references(ledger: &serde_json::Value) -> Result<AuditReferences> {
+    let mut references = AuditReferences::new();
+    let mut add = |reference: serde_json::Value, kind| -> Result<()> {
+        let path = normalized_evidence_path(evidence_string(&reference, "path")?)?;
+        let digest = evidence_digest(&reference, "sha256")?;
+        if let Some((previous, previous_kind)) = references.get(&path) {
+            anyhow::ensure!(
+                evidence_digest(previous, "sha256")? == digest && *previous_kind == kind,
+                "conflicting evidence identity: {path}"
+            );
+        } else {
+            references.insert(path, (reference, kind));
+        }
+        Ok(())
+    };
+    add(
+        historical_audit_json_reference(ledger, "candidates.json")?,
+        AuditDocumentKind::Candidates,
+    )?;
+    add(
+        historical_audit_json_reference(ledger, "reviews.json")?,
+        AuditDocumentKind::Reviews,
+    )?;
+    for event in evidence_array(ledger, "events")? {
+        if event["initial_tier"] == "A" {
+            add(
+                event["diagnosis"]["baseline_trace"].clone(),
+                AuditDocumentKind::Baseline,
+            )?;
+            add(
+                event["diagnosis"]["post_dedup"]["trace"].clone(),
+                AuditDocumentKind::PostDedup,
+            )?;
+            add(
+                event["diagnosis"]["post_masks"]["trace"].clone(),
+                AuditDocumentKind::PostMasks,
+            )?;
+        }
+        if event["initial_tier"] == "A" || event["promoted_tier"] == "A" {
+            add(
+                event["passing_evidence"].clone(),
+                AuditDocumentKind::Restoration,
+            )?;
+        }
+    }
+    for item in evidence_array(ledger, "additional_source_losses")? {
+        add(
+            item["passing_evidence"].clone(),
+            AuditDocumentKind::Restoration,
+        )?;
+    }
+    Ok(references)
+}
+
+fn load_fixture_source_documents(
+    ledger: &serde_json::Value,
+    root: &std::path::Path,
+) -> Result<serde_json::Value> {
+    let mut documents = serde_json::Map::new();
+    for (path, (reference, _)) in required_audit_references(ledger)? {
+        let bytes = read_verified_evidence_bytes(root, &reference)?;
+        documents.insert(
+            path,
+            serde_json::json!({"source_sha256": reference["sha256"],
+            "value": serde_json::from_slice::<serde_json::Value>(&bytes)?}),
+        );
+    }
+    Ok(serde_json::json!({"schema_version": 1, "documents": documents}))
+}
+
+fn portable_evidence_document<'a>(
+    evidence: &'a serde_json::Value,
+    reference: &serde_json::Value,
+) -> Result<&'a serde_json::Value> {
+    let path = normalized_evidence_path(evidence_string(reference, "path")?)?;
+    let record = evidence["documents"]
+        .get(&path)
+        .ok_or_else(|| anyhow::anyhow!("missing portable evidence document: {path}"))?;
+    anyhow::ensure!(
+        evidence_digest(record, "source_sha256")? == evidence_digest(reference, "sha256")?,
+        "portable evidence source digest differs: {path}"
+    );
+    let value = record
+        .get("value")
+        .filter(|v| v.is_object())
+        .ok_or_else(|| anyhow::anyhow!("missing portable evidence value: {path}"))?;
+    Ok(value)
+}
+
+fn project_evidence_fields(
+    value: &serde_json::Value,
+    fields: &[&str],
+) -> Result<serde_json::Value> {
+    let mut object = serde_json::Map::new();
+    for field in fields {
+        let v = value
+            .get(*field)
+            .filter(|v| !v.is_null())
+            .ok_or_else(|| anyhow::anyhow!("missing projection field {field}"))?;
+        object.insert((*field).to_owned(), v.clone());
+    }
+    Ok(object.into())
+}
+
+fn project_audit_evidence(
+    ledger: &serde_json::Value,
+    documents: &serde_json::Value,
+) -> Result<serde_json::Value> {
+    let candidate_reference = historical_audit_json_reference(ledger, "candidates.json")?;
+    let candidates = portable_evidence_document(documents, &candidate_reference)?;
+    let selected: Vec<_> = evidence_array(candidates, "candidates")?
+        .iter()
+        .filter(|c| c["type"] == "missing_occurrence" && c["unique_loss"] == true)
+        .collect();
+    let candidate_ids: std::collections::BTreeSet<_> = selected
+        .iter()
+        .map(|c| evidence_string(c, "event_id"))
+        .collect::<Result<_>>()?;
+    let mut projected = serde_json::Map::new();
+    for (path, (reference, kind)) in required_audit_references(ledger)? {
+        let value = portable_evidence_document(documents, &reference)?;
+        let projection = match kind {
+            AuditDocumentKind::Candidates => serde_json::json!({"candidates": selected.iter()
+                .map(|c| project_evidence_fields(c, &["event_id", "unit_id", "type", "unique_loss",
+                    "source_regions", "missing_line_count", "confidence", "crops"]))
+                .collect::<Result<Vec<_>>>()?}),
+            AuditDocumentKind::Reviews => {
+                serde_json::json!({"events": evidence_array(value, "events")?.iter()
+                .filter(|r| r["event_id"].as_str().is_some_and(|id| candidate_ids.contains(id)))
+                .map(|r| project_evidence_fields(r, &["event_id", "verdict", "evidence"]))
+                .collect::<Result<Vec<_>>>()?})
+            }
+            AuditDocumentKind::Baseline => {
+                project_evidence_fields(value, &["unit_id", "metrics", "scale"])?
+            }
+            AuditDocumentKind::PostDedup => {
+                let mut v = project_evidence_fields(value, &["unit_id", "metrics", "scale"])?;
+                v["source_pages"] = evidence_array(value, "source_pages")?
+                    .iter()
+                    .map(|p| {
+                        // A null retained index identifies a deliberately excluded source page.
+                        anyhow::ensure!(
+                            p.get("retained_index").is_some(),
+                            "missing retained_index"
+                        );
+                        let mut row = project_evidence_fields(p, &["page"])?;
+                        row["retained_index"] = p["retained_index"].clone();
+                        Ok(row)
+                    })
+                    .collect::<Result<Vec<_>>>()?
+                    .into();
+                v
+            }
+            AuditDocumentKind::PostMasks => {
+                let mut v = project_evidence_fields(value, &["unit_id"])?;
+                let required_pages: std::collections::BTreeSet<_> =
+                    evidence_array(ledger, "planned_body_band_repairs")?
+                        .iter()
+                        .filter(|r| r["unit_id"] == value["unit_id"])
+                        .map(|r| {
+                            (
+                                r["source"].clone().to_string(),
+                                r["source_page"].clone().to_string(),
+                            )
+                        })
+                        .collect();
+                let pages: Vec<_> = evidence_array(value, "pages")?
+                    .iter()
+                    .filter(|p| {
+                        required_pages
+                            .contains(&(p["source"].to_string(), p["source_page"].to_string()))
+                    })
+                    .map(|p| {
+                        let mut page = project_evidence_fields(
+                            p,
+                            &["source", "source_page", "raster", "crop_edges", "raw_bands"],
+                        )?;
+                        for key in ["candidate_crops", "candidate_results"] {
+                            let variants = match p.get(key) {
+                                None => Vec::new(),
+                                Some(a) => a
+                                    .as_array()
+                                    .ok_or_else(|| anyhow::anyhow!("malformed {key}"))?
+                                    .iter()
+                                    .map(|v| {
+                                        project_evidence_fields(v, &["crop_edges", "raw_bands"])
+                                    })
+                                    .collect::<Result<Vec<_>>>()?,
+                            };
+                            page[key] = variants.into();
+                        }
+                        Ok(page)
+                    })
+                    .collect::<Result<_>>()?;
+                let found: std::collections::BTreeSet<_> = pages
+                    .iter()
+                    .map(|p| (p["source"].to_string(), p["source_page"].to_string()))
+                    .collect();
+                anyhow::ensure!(
+                    found == required_pages && pages.len() == found.len(),
+                    "missing or duplicate signature page"
+                );
+                v["pages"] = pages.into();
+                v
+            }
+            AuditDocumentKind::Restoration => {
+                project_evidence_fields(value, &["unit_id", "events", "reviewed_lines"])?
+            }
+        };
+        projected.insert(
+            path,
+            serde_json::json!({"source_sha256": reference["sha256"], "value": projection}),
+        );
+    }
+    Ok(serde_json::json!({"schema_version": 1, "documents": projected}))
+}
+
+#[test]
+#[ignore = "requires frozen archives and explicit PLUTARCH_PORTABLE_FIXTURE_OUT"]
+fn export_portable_fixture() -> Result<()> {
+    let out = std::env::var_os("PLUTARCH_PORTABLE_FIXTURE_OUT").ok_or_else(|| {
+        anyhow::anyhow!("PLUTARCH_PORTABLE_FIXTURE_OUT must name an explicit review file")
+    })?;
+    let out = std::path::PathBuf::from(out);
+    let tracked = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("src/facsimile/fixtures/inner_tomi_portable_audit_evidence.json");
+    if let Some(parent) = out.parent().filter(|p| !p.as_os_str().is_empty()) {
+        std::fs::create_dir_all(parent)?;
+    }
+    let absolute = out
+        .parent()
+        .unwrap_or(std::path::Path::new("."))
+        .canonicalize()?
+        .join(out.file_name().unwrap());
+    anyhow::ensure!(
+        absolute != tracked.canonicalize()?,
+        "export to a temporary review file, not the tracked fixture"
+    );
+    let root = std::env::var_os("PLUTARCH_AUDIT_EVIDENCE_ROOT")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| env!("CARGO_MANIFEST_DIR").into());
+    let ledger = audit_repair_ledger();
+    let documents = load_fixture_source_documents(&ledger, &root)?;
+    let projection = project_audit_evidence(&ledger, &documents)?;
+    let mut bytes = serde_json::to_vec_pretty(&projection)?;
+    bytes.push(b'\n');
+    std::fs::write(&out, &bytes)?;
+    println!(
+        "authenticated portable projection: {} documents, {} bytes, {}",
+        projection["documents"].as_object().unwrap().len(),
+        bytes.len(),
+        out.display()
+    );
+    Ok(())
+}
+
+fn archived_audit_documents() -> Result<serde_json::Value> {
+    load_fixture_source_documents(
+        &audit_repair_ledger(),
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")),
+    )
 }
 
 fn validate_audit_omission_inventory(fixture: &serde_json::Value) -> Result<()> {
-    use sha2::Digest;
-    let candidates_bytes = audit_file_bytes(fixture, "candidates.json")?;
-    let reviews_bytes = audit_file_bytes(fixture, "reviews.json")?;
-    for (bytes, key) in [
-        (&candidates_bytes, "candidates_sha256"),
-        (&reviews_bytes, "reviews_sha256"),
-    ] {
-        anyhow::ensure!(
-            format!("{:x}", sha2::Sha256::digest(bytes)) == fixture[key].as_str().unwrap(),
-            "frozen audit hash mismatch: {key}"
-        );
-    }
-    let candidates: serde_json::Value = serde_json::from_slice(&candidates_bytes)?;
-    let reviews: serde_json::Value = serde_json::from_slice(&reviews_bytes)?;
+    let documents = archived_audit_documents()?;
+    let archive = &fixture["archive"];
+    read_verified_evidence_bytes(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")),
+        &serde_json::json!({"path":format!("{}/manifest.json",archive["path"].as_str().unwrap()), "sha256":archive["manifest_sha256"]}),
+    )?;
+    validate_omission_inventory_data(fixture, &documents)
+}
+
+fn validate_omission_inventory_data(
+    fixture: &serde_json::Value,
+    documents: &serde_json::Value,
+) -> Result<()> {
+    let candidates = portable_evidence_document(
+        documents,
+        &historical_audit_json_reference(fixture, "candidates.json")?,
+    )?;
+    let reviews = portable_evidence_document(
+        documents,
+        &historical_audit_json_reference(fixture, "reviews.json")?,
+    )?;
     let reviewed: std::collections::BTreeMap<_, _> = reviews["events"]
         .as_array()
         .unwrap()
@@ -114,12 +480,6 @@ fn validate_audit_omission_inventory(fixture: &serde_json::Value) -> Result<()> 
         counts == [[39, 69], [20, 44]],
         "initial tier partition differs: {counts:?}"
     );
-    let archive = std::path::Path::new(fixture["archive"]["path"].as_str().unwrap());
-    let manifest = std::fs::read(archive.join("manifest.json"))?;
-    anyhow::ensure!(
-        format!("{:x}", sha2::Sha256::digest(&manifest)) == fixture["archive"]["manifest_sha256"],
-        "archive manifest hash differs"
-    );
     Ok(())
 }
 
@@ -130,156 +490,324 @@ fn audit_omission_inventory_matches_frozen_review() {
 
 #[test]
 fn audit_omission_diagnosis_covers_all_source_lines() {
-    use sha2::Digest;
-    let fixture = audit_repair_ledger();
-    let archive = &fixture["diagnostic_archive"];
-    let manifest = std::fs::read(
-        std::path::Path::new(archive["path"].as_str().unwrap()).join("manifest.json"),
-    )
-    .unwrap();
-    assert_eq!(
-        format!("{:x}", sha2::Sha256::digest(&manifest)),
-        archive["manifest_sha256"]
-    );
-    let mut counts = [0, 0];
-    for event in fixture["events"].as_array().unwrap() {
-        if event["initial_tier"] == "B" {
-            assert_eq!(event["status"], "deferred");
-            assert!(!event["repair_read_status"].as_str().unwrap().is_empty());
-            continue;
-        }
-        let diagnosis = &event["diagnosis"];
-        for key in ["baseline_trace", "reviewed_source_overlay"] {
-            let evidence = &diagnosis[key];
-            let bytes = std::fs::read(evidence["path"].as_str().unwrap()).unwrap();
-            assert_eq!(
-                format!("{:x}", sha2::Sha256::digest(&bytes)),
-                evidence["sha256"],
-                "frozen {key} for {}",
-                event["event_id"]
-            );
-        }
-        let lines = diagnosis["reviewed_lines"].as_array().unwrap();
-        assert_eq!(
-            lines.len() as u64,
-            event["missing_line_count"].as_u64().unwrap()
-        );
-        let mut previous = None;
-        for line in lines {
-            let r = &line["region"];
-            assert!(r[0].as_u64().unwrap() < r[2].as_u64().unwrap());
-            assert!(r[1].as_u64().unwrap() < r[3].as_u64().unwrap());
-            assert!(previous.is_none_or(|top| top < r[1].as_u64().unwrap()));
-            previous = r[1].as_u64();
-            assert!(!line["baseline"]["first_loss_stage"]
-                .as_str()
-                .unwrap()
-                .is_empty());
-            assert!(!line["landmark"].as_str().unwrap().is_empty());
-        }
-        assert!(!diagnosis["regression_name"].as_str().unwrap().is_empty());
-        counts[0] += 1;
-        counts[1] += lines.len();
+    let ledger = audit_repair_ledger();
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let archive = &ledger["diagnostic_archive"];
+    read_verified_evidence_bytes(root, &serde_json::json!({"path":format!("{}/manifest.json", archive["path"].as_str().unwrap()), "sha256":archive["manifest_sha256"]})).unwrap();
+    for event in ledger["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["initial_tier"] == "A")
+    {
+        read_verified_evidence_bytes(root, &event["diagnosis"]["reviewed_source_overlay"]).unwrap();
     }
-    assert_eq!(counts, [39, 69]);
+    validate_omission_diagnosis_data(&audit_repair_ledger(), &archived_audit_documents().unwrap())
+        .unwrap();
 }
 
 #[test]
 fn audit_omission_post_dedup_covers_all_source_lines() {
-    use sha2::Digest;
-    let fixture = audit_repair_ledger();
-    let mut counts = [0, 0];
-    for event in fixture["events"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|e| e["initial_tier"] == "A")
-    {
-        let measured = &event["diagnosis"]["post_dedup"];
-        let lines = measured["lines"]
-            .as_array()
-            .expect("post-dedup source-line evidence");
-        assert_eq!(
-            lines.len() as u64,
-            event["missing_line_count"].as_u64().unwrap()
-        );
-        let bytes = std::fs::read(measured["trace"]["path"].as_str().unwrap()).unwrap();
-        assert_eq!(
-            format!("{:x}", sha2::Sha256::digest(bytes)),
-            measured["trace"]["sha256"]
-        );
-        for (line, reviewed) in lines
-            .iter()
-            .zip(event["diagnosis"]["reviewed_lines"].as_array().unwrap())
-        {
-            assert_eq!(line["region"], reviewed["region"]);
-            assert!(!line["measured"]["first_loss_stage"]
-                .as_str()
-                .unwrap()
-                .is_empty());
-        }
-        assert!(measured["scale"].as_f64().unwrap() > 0.0);
-        if !measured["complete"].as_bool().unwrap() {
-            assert!(!measured["proposed_body_bands"]
-                .as_array()
-                .unwrap()
-                .is_empty());
-        }
-        counts[0] += 1;
-        counts[1] += lines.len();
-    }
-    assert_eq!(counts, [39, 69]);
+    validate_post_dedup_data(&audit_repair_ledger(), &archived_audit_documents().unwrap()).unwrap();
 }
 
 #[test]
 fn audit_omission_source_signatures_match_proposed_repairs() {
-    let fixture = audit_repair_ledger();
-    let mut traces = std::collections::BTreeMap::new();
-    for event in fixture["events"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|e| e["initial_tier"] == "A")
-    {
-        let id = event["unit_id"].as_str().unwrap();
-        traces.entry(id).or_insert_with(|| {
-            let path = event["diagnosis"]["post_masks"]["trace"]["path"]
-                .as_str()
-                .unwrap();
-            serde_json::from_slice::<serde_json::Value>(&std::fs::read(path).unwrap()).unwrap()
-        });
-    }
-    for repair in fixture["planned_body_band_repairs"].as_array().unwrap() {
-        let trace = &traces[repair["unit_id"].as_str().unwrap()];
-        let page = trace["pages"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|p| p["source_page"] == repair["source_page"])
-            .unwrap();
-        let variants: Vec<_> = std::iter::once(page)
-            .chain(page["candidate_crops"].as_array().unwrap())
-            .chain(page["candidate_results"].as_array().unwrap())
-            .collect();
-        assert!(
-            variants.iter().any(|v| {
-                let width =
-                    v["crop_edges"][1].as_u64().unwrap() - v["crop_edges"][0].as_u64().unwrap();
-                repair["column_dimensions"][0].as_u64() == Some(width)
-                    && repair["column_dimensions"][1] == page["raster"][1]
-                    && v["raw_bands"]
-                        .as_array()
-                        .unwrap()
-                        .contains(&repair["observed_band"])
-            }),
-            "refreshed source signature for {repair}"
-        );
-    }
+    validate_source_signature_data(&audit_repair_ledger(), &archived_audit_documents().unwrap())
+        .unwrap();
 }
 
 fn validate_tier_a_completion(fixture: &serde_json::Value) -> Result<()> {
-    use sha2::Digest;
-    validate_audit_omission_inventory(fixture)?;
+    validate_tier_a_completion_data(fixture, &archived_audit_documents()?)
+}
+
+fn validate_trace_metadata(trace: &serde_json::Value, unit: &serde_json::Value) -> Result<()> {
+    anyhow::ensure!(trace["unit_id"] == *unit, "trace unit differs");
+    let metrics = &trace["metrics"];
+    anyhow::ensure!(
+        metrics["height_med"].as_u64().is_some_and(|v| v > 0)
+            && metrics["width_med"].as_u64().is_some_and(|v| v > 0)
+            && metrics["height_mad"].as_u64().is_some(),
+        "invalid trace metrics"
+    );
+    anyhow::ensure!(
+        trace["scale"]
+            .as_f64()
+            .is_some_and(|v| v.is_finite() && v > 0.0),
+        "invalid trace scale"
+    );
+    Ok(())
+}
+
+fn validate_omission_diagnosis_data(
+    fixture: &serde_json::Value,
+    documents: &serde_json::Value,
+) -> Result<()> {
+    let mut counts = [0, 0];
+    for event in evidence_array(fixture, "events")? {
+        if event["initial_tier"] == "B" {
+            anyhow::ensure!(event["status"] == "deferred", "Tier-B disposition differs");
+            evidence_string(event, "repair_read_status")?;
+            continue;
+        }
+        let diagnosis = &event["diagnosis"];
+        let trace = portable_evidence_document(documents, &diagnosis["baseline_trace"])?;
+        validate_trace_metadata(trace, &event["unit_id"])?;
+        let overlay = &diagnosis["reviewed_source_overlay"];
+        normalized_evidence_path(evidence_string(overlay, "path")?)?;
+        evidence_digest(overlay, "sha256")?;
+        let origin = evidence_array(overlay, "source_origin")?;
+        anyhow::ensure!(
+            origin.len() == 2 && origin.iter().all(|v| v.as_u64().is_some()),
+            "invalid recorded source origin"
+        );
+        let lines = evidence_array(diagnosis, "reviewed_lines")?;
+        anyhow::ensure!(
+            Some(lines.len() as u64) == event["missing_line_count"].as_u64(),
+            "reviewed source line count differs"
+        );
+        let mut previous = None;
+        for line in lines {
+            let region: [u32; 4] = serde_json::from_value(line["region"].clone())?;
+            anyhow::ensure!(
+                region[0] < region[2] && region[1] < region[3],
+                "empty reviewed source rectangle"
+            );
+            anyhow::ensure!(
+                previous.is_none_or(|top| top < region[1]),
+                "reviewed source lines out of order"
+            );
+            previous = Some(region[1]);
+            evidence_string(&line["baseline"], "first_loss_stage")?;
+            evidence_string(line, "landmark")?;
+        }
+        evidence_string(diagnosis, "regression_name")?;
+        counts[0] += 1;
+        counts[1] += lines.len();
+    }
+    anyhow::ensure!(
+        counts == [39, 69],
+        "diagnosis inventory differs: {counts:?}"
+    );
+    Ok(())
+}
+
+fn validate_post_dedup_data(
+    fixture: &serde_json::Value,
+    documents: &serde_json::Value,
+) -> Result<()> {
+    let mut counts = [0, 0];
+    for event in evidence_array(fixture, "events")?
+        .iter()
+        .filter(|e| e["initial_tier"] == "A")
+    {
+        let measured = &event["diagnosis"]["post_dedup"];
+        let trace = portable_evidence_document(documents, &measured["trace"])?;
+        validate_trace_metadata(trace, &event["unit_id"])?;
+        anyhow::ensure!(
+            trace["metrics"] == measured["metrics"] && trace["scale"] == measured["scale"],
+            "post-dedup metadata differs"
+        );
+        let retained: Vec<_> = evidence_array(trace, "source_pages")?
+            .iter()
+            .filter(|p| !p["retained_index"].is_null())
+            .map(|p| p["page"].clone())
+            .collect();
+        anyhow::ensure!(
+            serde_json::Value::from(retained) == measured["source_pages"],
+            "post-dedup retained source sequence differs"
+        );
+        let lines = evidence_array(measured, "lines")?;
+        let reviewed = evidence_array(&event["diagnosis"], "reviewed_lines")?;
+        anyhow::ensure!(
+            Some(lines.len() as u64) == event["missing_line_count"].as_u64()
+                && lines.len() == reviewed.len(),
+            "post-dedup line count differs"
+        );
+        for (line, reviewed) in lines.iter().zip(reviewed) {
+            anyhow::ensure!(
+                line["region"] == reviewed["region"],
+                "post-dedup source region differs"
+            );
+            evidence_string(&line["measured"], "first_loss_stage")?;
+        }
+        if !measured["complete"]
+            .as_bool()
+            .ok_or_else(|| anyhow::anyhow!("missing completion status"))?
+        {
+            anyhow::ensure!(
+                !evidence_array(measured, "proposed_body_bands")?.is_empty(),
+                "missing proposed body bands"
+            );
+        }
+        counts[0] += 1;
+        counts[1] += lines.len();
+    }
+    anyhow::ensure!(
+        counts == [39, 69],
+        "post-dedup inventory differs: {counts:?}"
+    );
+    Ok(())
+}
+
+fn measured_signature_matches(
+    page: &serde_json::Value,
+    repair: &serde_json::Value,
+) -> Result<bool> {
+    let mut variants = vec![page];
+    for key in ["candidate_crops", "candidate_results"] {
+        if let Some(array) = page.get(key) {
+            variants.extend(
+                array
+                    .as_array()
+                    .ok_or_else(|| anyhow::anyhow!("invalid {key}"))?,
+            );
+        }
+    }
+    for variant in variants {
+        let edges: [u32; 2] = serde_json::from_value(variant["crop_edges"].clone())?;
+        anyhow::ensure!(edges[0] < edges[1], "invalid measured crop edges");
+        if repair["column_dimensions"][0].as_u64() == Some((edges[1] - edges[0]) as u64)
+            && repair["column_dimensions"][1] == page["raster"][1]
+            && evidence_array(variant, "raw_bands")?.contains(&repair["observed_band"])
+        {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn validate_source_signature_data(
+    fixture: &serde_json::Value,
+    documents: &serde_json::Value,
+) -> Result<()> {
+    let mut traces = std::collections::BTreeMap::new();
+    for event in evidence_array(fixture, "events")?
+        .iter()
+        .filter(|e| e["initial_tier"] == "A")
+    {
+        let trace =
+            portable_evidence_document(documents, &event["diagnosis"]["post_masks"]["trace"])?;
+        anyhow::ensure!(
+            trace["unit_id"] == event["unit_id"],
+            "post-mask trace unit differs"
+        );
+        traces.insert(evidence_string(event, "unit_id")?, trace);
+    }
+    let repairs = evidence_array(fixture, "planned_body_band_repairs")?;
+    anyhow::ensure!(
+        repairs.len() == 47,
+        "finite repair signature inventory differs"
+    );
+    for repair in repairs {
+        let trace = traces
+            .get(evidence_string(repair, "unit_id")?)
+            .ok_or_else(|| anyhow::anyhow!("missing repair unit trace"))?;
+        let page = evidence_array(trace, "pages")?
+            .iter()
+            .find(|p| p["source_page"] == repair["source_page"] && p["source"] == repair["source"])
+            .ok_or_else(|| anyhow::anyhow!("missing repair signature page: {repair}"))?;
+        anyhow::ensure!(
+            measured_signature_matches(page, repair)?,
+            "refreshed source signature differs: {repair}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn portable_audit_evidence_schema_and_size_are_valid() {
+    let evidence = portable_audit_evidence();
+    assert_eq!(evidence["schema_version"], 1);
+    assert!(include_bytes!("fixtures/inner_tomi_portable_audit_evidence.json").len() < 1024 * 1024);
+    assert!(evidence["documents"].is_object());
+}
+
+#[test]
+fn portable_audit_evidence_has_every_required_document() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let evidence = portable_audit_evidence();
+    let references = required_audit_references(&ledger)?;
+    assert_eq!(
+        references.len(),
+        evidence["documents"].as_object().unwrap().len()
+    );
+    for (reference, _) in references.values() {
+        portable_evidence_document(&evidence, reference)?;
+    }
+    validate_omission_inventory_data(&ledger, &evidence)?;
+    validate_omission_diagnosis_data(&ledger, &evidence)?;
+    validate_post_dedup_data(&ledger, &evidence)?;
+    validate_source_signature_data(&ledger, &evidence)?;
+    validate_tier_a_completion_data(&ledger, &evidence)
+}
+
+#[test]
+fn portable_evidence_document_rejects_missing_or_mismatched_reference() {
+    let evidence = portable_audit_evidence();
+    let reference =
+        historical_audit_json_reference(&audit_repair_ledger(), "candidates.json").unwrap();
+    for key in ["path", "sha256"] {
+        let mut changed = reference.clone();
+        changed[key] = if key == "path" {
+            "archive/missing.json".into()
+        } else {
+            "0".repeat(64).into()
+        };
+        assert!(portable_evidence_document(&evidence, &changed).is_err());
+    }
+    let mut invalid = evidence.clone();
+    invalid["documents"][reference["path"].as_str().unwrap()]["source_sha256"] = "invalid".into();
+    assert!(portable_evidence_document(&invalid, &reference).is_err());
+    invalid["documents"][reference["path"].as_str().unwrap()]
+        .as_object_mut()
+        .unwrap()
+        .remove("source_sha256");
+    assert!(portable_evidence_document(&invalid, &reference).is_err());
+}
+
+#[test]
+fn portable_audit_projection_is_deterministic() -> Result<()> {
+    let digest = "a".repeat(64);
+    let ledger = serde_json::json!({"archive":{"path":"archive/test"},
+        "candidates_sha256":digest, "reviews_sha256":digest,
+        "events":[], "additional_source_losses":[], "planned_body_band_repairs":[]});
+    let refs = required_audit_references(&ledger)?;
+    let mut forward = serde_json::Map::new();
+    let mut reverse = serde_json::Map::new();
+    for (path, (reference, kind)) in &refs {
+        let value = if *kind == AuditDocumentKind::Candidates {
+            serde_json::json!({"candidates":[]})
+        } else {
+            serde_json::json!({"events":[]})
+        };
+        forward.insert(
+            path.clone(),
+            serde_json::json!({"source_sha256":reference["sha256"], "value":value}),
+        );
+    }
+    for (path, value) in forward.iter().rev() {
+        reverse.insert(path.clone(), value.clone());
+    }
+    let one = project_audit_evidence(&ledger, &serde_json::json!({"documents":forward}))?;
+    let two = project_audit_evidence(&ledger, &serde_json::json!({"documents":reverse}))?;
+    assert_eq!(one, two);
+    assert_eq!(
+        serde_json::to_vec_pretty(&one)?,
+        serde_json::to_vec_pretty(&two)?
+    );
+    let mut conflict = ledger.clone();
+    conflict["events"] = serde_json::json!([{"initial_tier":"B","promoted_tier":"A",
+        "passing_evidence":{"path":refs.keys().next().unwrap(),"sha256":"b".repeat(64)}}]);
+    assert!(required_audit_references(&conflict).is_err());
+    Ok(())
+}
+
+fn validate_tier_a_completion_data(
+    fixture: &serde_json::Value,
+    documents: &serde_json::Value,
+) -> Result<()> {
+    validate_omission_inventory_data(fixture, documents)?;
     let mut counts = [0, 0];
     for event in fixture["events"]
         .as_array()
@@ -293,15 +821,11 @@ fn validate_tier_a_completion(fixture: &serde_json::Value) -> Result<()> {
             event["event_id"]
         );
         let reference = &event["passing_evidence"];
-        let path = reference["path"]
-            .as_str()
-            .ok_or_else(|| anyhow::anyhow!("passing evidence missing"))?;
-        let bytes = std::fs::read(path)?;
+        let report = portable_evidence_document(documents, reference)?;
         anyhow::ensure!(
-            format!("{:x}", sha2::Sha256::digest(&bytes)) == reference["sha256"],
-            "passing evidence hash differs"
+            report["unit_id"] == event["unit_id"],
+            "passing report unit differs"
         );
-        let report: serde_json::Value = serde_json::from_slice(&bytes)?;
         anyhow::ensure!(
             report["events"]
                 .as_array()
@@ -336,12 +860,11 @@ fn validate_tier_a_completion(fixture: &serde_json::Value) -> Result<()> {
             "additional reviewed source item unresolved"
         );
         let reference = &extra["passing_evidence"];
-        let bytes = std::fs::read(reference["path"].as_str().unwrap())?;
+        let report = portable_evidence_document(documents, reference)?;
         anyhow::ensure!(
-            format!("{:x}", sha2::Sha256::digest(&bytes)) == reference["sha256"],
-            "additional source evidence hash differs"
+            report["unit_id"] == extra["unit_id"],
+            "additional report unit differs"
         );
-        let report: serde_json::Value = serde_json::from_slice(&bytes)?;
         for line in extra["reviewed_lines"].as_array().unwrap() {
             anyhow::ensure!(
                 report["reviewed_lines"].as_array().unwrap().contains(line),
@@ -1449,7 +1972,12 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
             let index = source_pages.iter().position(|&page| page == p);
             let mut raw = real_source_image(range.unit.source, p);
             mask_known_source_furniture(range.unit.source, p, &mut raw);
-            let crop = preserve_known_body_crop_edge(range.unit.source, p, &raw, detect_latin_column(&raw).unwrap());
+            let crop = preserve_known_body_crop_edge(
+                range.unit.source,
+                p,
+                &raw,
+                detect_latin_column(&raw).unwrap(),
+            );
             RetainedSourcePageTrace {
                 source: range.unit.source,
                 page: p,
@@ -1553,7 +2081,12 @@ fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, g
         let raw_crop = detect_latin_column(&raw).unwrap();
         let mut masked = raw.clone();
         mask_known_source_furniture(trace.source, trace.page, &mut masked);
-        let crop = preserve_known_body_crop_edge(trace.source, trace.page, &masked, detect_latin_column(&masked).unwrap());
+        let crop = preserve_known_body_crop_edge(
+            trace.source,
+            trace.page,
+            &masked,
+            detect_latin_column(&masked).unwrap(),
+        );
         let column = crop_column(&masked, &crop);
         let bands = line_bands(&column, LINE_MIN_INK);
         let zone = drop_furniture(&bands, column.height());
