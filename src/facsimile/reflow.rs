@@ -3703,7 +3703,12 @@ mod tests {
         let raw = real_source_image(source, page);
         let mut masked = raw.clone();
         mask_known_source_furniture(source, page, &mut masked);
-        let crop = detect_latin_column(&masked).unwrap();
+        let crop = preserve_known_body_crop_edge(
+            source,
+            page,
+            &masked,
+            detect_latin_column(&masked).unwrap(),
+        );
         for band in &retained.1 {
             for y in band.top..band.bottom {
                 for x in 0..retained.0.width() {
@@ -3771,7 +3776,7 @@ mod tests {
         (strips, canvas_ranges, canvases)
     }
 
-    /// W1/W2: the two confirmed body watermarks. The right-margin masks delete the
+    /// Reviewed body-watermark tails. The right-margin masks delete the
     /// scan-edge ink that previously merged into the footer and dragged the copied
     /// region far past the last Latin line. Both the pixels and that copied space must
     /// go, and the following page's first line must survive.
@@ -3781,12 +3786,31 @@ mod tests {
         let ledger = repair_ledger();
         let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/watermark_cleanup");
         std::fs::create_dir_all(dir).unwrap();
-        // The pre-margin-mask copied endpoints measured in the first rebuild.
+        let mut units = std::collections::BTreeMap::new();
+        let mut measurements = Vec::new();
+        // Frozen copied endpoints and line regions bind the source seams.
         for (unit_id, source, page, next, old_copied) in [
             ("marcius_coriolanus", 0usize, 287u32, 288u32, 2940u32),
             ("timoleon", 0, 299, 300, 2922),
+            ("aemilius_paulus", 0, 321, 322, 2881),
+            ("brutus", 1, 603, 604, 2735),
+            ("brutus", 1, 623, 624, 2735),
         ] {
-            let record = margin_repair_record(&ledger, source, page);
+            let record = if [321, 603, 623].contains(&page) {
+                ledger["repairs"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|r| {
+                        r["disposition"] == "mask"
+                            && r["source"].as_u64() == Some(source as u64)
+                            && r["source_page"].as_u64() == Some(page as u64)
+                    })
+                    .unwrap()
+                    .clone()
+            } else {
+                margin_repair_record(&ledger, source, page)
+            };
             let end = ledger_band(&record["expected_last_band"]).bottom;
 
             // Masked zone banding ends at the last Latin line, not the watermark tail.
@@ -3801,13 +3825,16 @@ mod tests {
             assert!(old_copied > end, "copied region shrinks past the watermark");
 
             // The full unit keeps the same endpoint and copies nothing below it.
-            let range = operational_range(unit_id);
-            let (pages, metrics) =
-                unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
-            let index = unit_retained_page(&pages, &range, page);
+            let (pages, metrics, traces) = units
+                .entry(unit_id)
+                .or_insert_with(|| audit_traced_unit(unit_id));
+            let index = retained_page(traces, source, page)
+                .unwrap()
+                .retained_index
+                .unwrap();
             let current = &pages[index];
             assert_eq!(current.1.last().unwrap().bottom, end, "full-unit endpoint");
-            let page_strips: Vec<_> = strips_in_reading_order(&pages, &metrics)
+            let page_strips: Vec<_> = strips_in_reading_order(pages, metrics)
                 .into_iter()
                 .filter(|s| s.page_img_index == index)
                 .collect();
@@ -3822,6 +3849,87 @@ mod tests {
             let following = &pages[index + 1];
             assert!(!following.1.is_empty(), "page {next} retains its Latin");
             assert_retained_bands_match_source(following, source, next);
+            if record["watermark_evidence"].is_object() {
+                let evidence = &record["watermark_evidence"];
+                let before: Vec<_> = evidence["baseline_strips"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(ledger_band)
+                    .collect();
+                let before_tail: u32 = before
+                    .iter()
+                    .map(|b| b.bottom.saturating_sub(b.top.max(end)))
+                    .sum();
+                let after_tail: u32 = page_strips
+                    .iter()
+                    .map(|s| s.band.bottom.saturating_sub(s.band.top.max(end)))
+                    .sum();
+                assert_eq!(
+                    before_tail as u64,
+                    evidence["copied_tail_height"]["before"].as_u64().unwrap()
+                );
+                assert_eq!(after_tail, 0, "zero copied furniture tail rows");
+                let copied: u32 = page_strips.iter().map(|s| s.band.bottom - s.band.top).sum();
+                let fragment_rows: u32 = evidence["fragment_preservation_copied_rows"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|r| {
+                        let band = ledger_band(r);
+                        assert!(band.bottom <= end);
+                        for row in band.top..band.bottom {
+                            assert_eq!(
+                                page_strips
+                                    .iter()
+                                    .filter(|s| s.band.top <= row && row < s.band.bottom)
+                                    .count(),
+                                1
+                            );
+                        }
+                        band.bottom - band.top
+                    })
+                    .sum();
+                assert_eq!(
+                    copied as u64,
+                    record["copied_height"]["after"].as_u64().unwrap() + fragment_rows as u64
+                );
+                let lines: Vec<ReviewedSourceLine> =
+                    serde_json::from_value(evidence["following_reviewed_lines"].clone()).unwrap();
+                if evidence["following_first_source_line_required"] == true {
+                    assert_eq!(lines[0].region[1], following.1[0].top);
+                } else {
+                    assert!(
+                        lines
+                            .iter()
+                            .all(|l| l.source_page != 624 || l.region[1] >= 246),
+                        "C5 remains independently pending"
+                    );
+                }
+                let originals = lines
+                    .iter()
+                    .map(|l| {
+                        (
+                            (l.source, l.source_page),
+                            real_source_image(l.source, l.source_page),
+                        )
+                    })
+                    .collect();
+                assert_reviewed_source_lines_survive(
+                    &lines,
+                    &ReviewedLineContext {
+                        traces,
+                        originals: &originals,
+                        pages,
+                        metrics,
+                        scale: production_body_scale(),
+                        geom: TrimGeom::default(),
+                    },
+                    false,
+                );
+                measurements.push(serde_json::json!({"source":source,"source_page":page,"copied_height_before":record["copied_height"]["before"],
+                    "copied_height_after":copied,"copied_tail_before":before_tail,"copied_tail_after":after_tail}));
+            }
 
             // The composed seam at production scale follows the stream with no footer
             // padding: the complete row stream equals the concatenated resized strips.
@@ -3838,7 +3946,7 @@ mod tests {
             let geom = TrimGeom::default();
             let seam = assert_scaled_stream(
                 &seam_pages,
-                &metrics,
+                metrics,
                 production_body_scale(),
                 &geom,
                 4000,
@@ -3852,6 +3960,11 @@ mod tests {
                 old_copied - end
             );
         }
+        std::fs::write(
+            dir.join("measurements.json"),
+            serde_json::to_vec_pretty(&measurements).unwrap(),
+        )
+        .unwrap();
     }
 
     /// G1/G2/G3/G6: pages where column detection had locked onto a narrow right-margin

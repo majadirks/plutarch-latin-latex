@@ -643,8 +643,8 @@ Tier-B dispositions. Post-dedup repair confirmation occurs in 2.1A.
 ### Measured repair decisions
 
 The diagnostic fixture owns measured source coordinates and frozen baseline traces.
-The D4?D12 production exclusions and their installed ledger records are in place;
-the existing D1?D3 records are preserved. The seven step-3.1 furniture cases are installed with original-pixel, crop-edge,
+The D4–D12 production exclusions and their installed ledger records are in place;
+the existing D1–D3 records are preserved. The seven step-3.1 furniture cases are installed with original-pixel, crop-edge,
 Pass-A-band and full-unit head-trim verification. Omission corrections remain
 proposed. Step 2.1 verifies the reviewed retained source-line regions
 through extracted strips and composed canvases.
@@ -684,7 +684,9 @@ cannot receive a correction without the required confirming human read.
 
 Watermark candidates measured copied endpoints W4: 2881→2572,
 W5: 2735→2556, and W6: 2735→2561. Summing actual extracted strip intervals
-gives page copied heights W4 2630→2314, W5 2512→2351, and W6 2321→2298.
+gives installed page copied heights W4 2630→2321, W5 2512→2351, and W6
+2321→2298. W4’s mask-only candidate copied 2314 rows; its finite fragment
+join restores the independently frozen seven-row interval [2526,2533].
 Actual copied furniture-tail rows beyond the reviewed last Latin are respectively
 309→0, 161→0 and 128→0. Endpoint subtraction would overstate W5/W6 tail
 removal because the strip floor already discards some intervening intervals.
