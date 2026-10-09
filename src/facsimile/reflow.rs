@@ -875,6 +875,22 @@ fn preserve_known_body_crop_edge(
             left: 891,
             right: 1722,
         },
+        (0, 326, (1966, 2982), 922, 1712) => Column {
+            left: 921,
+            right: 1712,
+        },
+        (0, 535, (1978, 2969), 1049, 1845) => Column {
+            left: 1045,
+            right: 1845,
+        },
+        (0, 377, (1952, 2957), 1048, 1856) => Column {
+            left: 1048,
+            right: 1857,
+        },
+        (0, 318, (1937, 2988), 900, 1691) => Column {
+            left: 899,
+            right: 1691,
+        },
         _ => column,
     }
 }
@@ -1545,6 +1561,132 @@ const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
         protected: Band {
             top: 247,
             bottom: 320,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 326,
+        unit_id: "aemilius_paulus",
+        dimensions: (791, 2982),
+        observed: Band {
+            top: 273,
+            bottom: 304,
+        },
+        protected: Band {
+            top: 273,
+            bottom: 304,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 519,
+        unit_id: "caius_marius",
+        dimensions: (818, 2973),
+        observed: Band {
+            top: 246,
+            bottom: 292,
+        },
+        protected: Band {
+            top: 246,
+            bottom: 292,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 44,
+        unit_id: "crassus",
+        dimensions: (789, 2822),
+        observed: Band {
+            top: 191,
+            bottom: 224,
+        },
+        protected: Band {
+            top: 191,
+            bottom: 224,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 631,
+        unit_id: "lucullus",
+        dimensions: (795, 2978),
+        observed: Band {
+            top: 252,
+            bottom: 287,
+        },
+        protected: Band {
+            top: 252,
+            bottom: 287,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 535,
+        unit_id: "lysander",
+        dimensions: (800, 2969),
+        observed: Band {
+            top: 245,
+            bottom: 278,
+        },
+        protected: Band {
+            top: 245,
+            bottom: 278,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 535,
+        unit_id: "lysander",
+        dimensions: (800, 2969),
+        observed: Band {
+            top: 306,
+            bottom: 339,
+        },
+        protected: Band {
+            top: 306,
+            bottom: 339,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 377,
+        unit_id: "marcellus",
+        dimensions: (809, 2957),
+        observed: Band {
+            top: 249,
+            bottom: 282,
+        },
+        protected: Band {
+            top: 249,
+            bottom: 282,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 25,
+        unit_id: "nicias",
+        dimensions: (812, 2832),
+        observed: Band {
+            top: 204,
+            bottom: 247,
+        },
+        protected: Band {
+            top: 204,
+            bottom: 247,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 318,
+        unit_id: "timoleon",
+        dimensions: (792, 2988),
+        observed: Band {
+            top: 263,
+            bottom: 295,
+        },
+        protected: Band {
+            top: 263,
+            bottom: 295,
         },
     },
 ];

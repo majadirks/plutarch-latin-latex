@@ -2058,9 +2058,21 @@ fn assert_unit_lines_restored_with(
     if !seam.is_empty() {
         assert!(sequence.windows(seam.len()).any(|w| w == seam));
     }
+    let ledger: Vec<ReviewedBands> =
+        serde_json::from_str(include_str!("fixtures/closing_body_bands.json")).unwrap();
     let originals = lines
         .iter()
         .map(|l| (l.source, l.source_page))
+        .chain(
+            ledger
+                .iter()
+                .filter(|r| {
+                    traces.iter().any(|t| {
+                        t.source == r.source && t.page == r.page && t.retained_index.is_some()
+                    })
+                })
+                .map(|r| (r.source, r.page)),
+        )
         .collect::<std::collections::BTreeSet<_>>()
         .into_iter()
         .map(|(s, p)| ((s, p), real_source_image(s, p)))
@@ -2073,8 +2085,6 @@ fn assert_unit_lines_restored_with(
         scale: production_body_scale(),
         geom: TrimGeom::default(),
     };
-    let ledger: Vec<ReviewedBands> =
-        serde_json::from_str(include_str!("fixtures/closing_body_bands.json")).unwrap();
     assert_reviewed_band_ledger(id, &ledger, &pages, &metrics, &traces, &originals);
     let composition = assert_reviewed_source_lines_survive_with_policies(
         &lines,
@@ -2437,6 +2447,24 @@ fn assert_reviewed_band_ledger(
             .any(|t| t.source == r.source && t.page == r.page && t.retained_index.is_some())
             && !(r.page == 434 && id != "cato_major")
     }) {
+        let owned_body: Vec<_> = record
+            .body
+            .iter()
+            .filter(|rows| {
+                let signatures: Vec<_> = SOURCE_BODY_BANDS
+                    .iter()
+                    .filter(|r| {
+                        r.source == record.source
+                            && r.page == record.page
+                            && [r.protected.top, r.protected.bottom] == **rows
+                    })
+                    .collect();
+                signatures.is_empty() || signatures.iter().any(|r| r.unit_id == id)
+            })
+            .collect();
+        if owned_body.is_empty() && !record.body.is_empty() {
+            continue;
+        }
         let trace = retained_page(traces, record.source, record.page).unwrap();
         let index = trace.retained_index.unwrap();
         let retained = &pages[index];
@@ -2449,7 +2477,7 @@ fn assert_reviewed_band_ledger(
             record.body.windows(2).all(|w| w[0][1] <= w[1][0]),
             "sorted non-overlapping body entries"
         );
-        for &[top, bottom] in &record.body {
+        for &&[top, bottom] in &owned_body {
             assert!(top < bottom);
             let mapped_top = trace.map_row(top).unwrap();
             let mapped_bottom = trace.map_row(bottom - 1).unwrap() + 1;
@@ -2461,7 +2489,7 @@ fn assert_reviewed_band_ledger(
                     .filter(|b| b.top == mapped_top && b.bottom == mapped_bottom)
                     .count(),
                 1,
-                "exact retained-band multiplicity"
+                "exact retained-band multiplicity: {id}, source {} page {}, expected {mapped_top}..{mapped_bottom}, retained {:?}",record.source,record.page,retained.1
             );
             assert_source_region_pixels_survive(
                 &originals[&(record.source, record.page)],
@@ -3429,7 +3457,7 @@ fn measured_glyph_region(column: &GrayImage, crop_left: u32, top: u32, bottom: u
     let mut bounds = [column.width(), bottom, 0, top];
     for y in top..bottom {
         for x in 0..column.width() {
-            if column.get_pixel(x, y)[0] <= INK_THRESHOLD {
+            if column.get_pixel(x, y)[0] <= 200 {
                 bounds[0] = bounds[0].min(x);
                 bounds[1] = bounds[1].min(y);
                 bounds[2] = bounds[2].max(x + 1);
@@ -3490,7 +3518,10 @@ fn measure_tier_b_source_bands() {
         let mut regions = Vec::new();
         let mut neighbors = Vec::new();
         for &&(_, _, _, dimensions, (top, bottom), (ptop, pbottom)) in &targets {
-            assert_eq!(column.dimensions(), dimensions);
+            assert_eq!(
+                crop_column(&masked, &masked_column).dimensions(),
+                dimensions
+            );
             assert!(
                 raw_bands.contains(&Band { top, bottom }),
                 "exact observed detector evidence"
@@ -3901,6 +3932,111 @@ fn reviewed_band_ledger_uses_production_crop_bounds() {
         "unit", &ledger, &pages, &metrics, &traces, &originals
     ))
     .is_err());
+}
+
+#[test]
+fn reviewed_band_ledger_respects_shared_page_ownership() {
+    let record = SOURCE_BODY_BANDS
+        .iter()
+        .find(|r| r.unit_id == "timoleon" && r.page == 318)
+        .unwrap();
+    let col = column(
+        record.dimensions.1,
+        record.dimensions.0,
+        &[(1953, 1986, 10, 700)],
+    );
+    let pages = vec![(
+        col.clone(),
+        vec![Band {
+            top: 1953,
+            bottom: 1986,
+        }],
+    )];
+    let metrics = line_metrics(&pages);
+    let crop = [0, col.width()];
+    let traces = vec![RetainedSourcePageTrace {
+        source: record.source,
+        page: record.page,
+        retained_index: Some(0),
+        crop,
+        bands: vec![[1953, 1986]],
+        deleted_rows: vec![],
+    }];
+    let originals = std::collections::BTreeMap::from([((record.source, record.page), col)]);
+    let ledger = vec![ReviewedBands {
+        source: record.source,
+        page: record.page,
+        dpi: BODY_DPI,
+        column: crop,
+        body: vec![[record.protected.top, record.protected.bottom]],
+        excluded: vec![],
+        noise: vec![],
+    }];
+    assert_reviewed_band_ledger(
+        "aemilius_paulus",
+        &ledger,
+        &pages,
+        &metrics,
+        &traces,
+        &originals,
+    );
+    assert!(std::panic::catch_unwind(|| assert_reviewed_band_ledger(
+        "timoleon", &ledger, &pages, &metrics, &traces, &originals
+    ))
+    .is_err());
+}
+
+#[test]
+fn tier_b_crop_edges_preserve_reviewed_head_glyphs() {
+    for (source, page, dimensions, raw_bounds, expected, glyph) in [
+        (0, 326, (1966, 2982), [922, 1712], [921, 1712], [921, 280]),
+        (
+            0,
+            535,
+            (1978, 2969),
+            [1049, 1845],
+            [1045, 1845],
+            [1045, 255],
+        ),
+        (
+            0,
+            377,
+            (1952, 2957),
+            [1048, 1856],
+            [1048, 1857],
+            [1856, 265],
+        ),
+        (0, 318, (1937, 2988), [900, 1691], [899, 1691], [899, 270]),
+    ] {
+        let mut raster = GrayImage::from_pixel(dimensions.0, dimensions.1, Luma([255]));
+        raster.put_pixel(glyph[0], glyph[1], Luma([100]));
+        let original = Column {
+            left: raw_bounds[0],
+            right: raw_bounds[1],
+        };
+        let preserved = preserve_known_body_crop_edge(source, page, &raster, original);
+        assert_eq!([preserved.left, preserved.right], expected);
+        let col = crop_column(&raster, &preserved);
+        assert_eq!(col.get_pixel(glyph[0] - preserved.left, glyph[1])[0], 100);
+        for (s, p, col) in [
+            (1, page, original),
+            (source, page + 1, original),
+            (
+                source,
+                page,
+                Column {
+                    left: original.left + 1,
+                    right: original.right,
+                },
+            ),
+        ] {
+            let result = preserve_known_body_crop_edge(s, p, &raster, col);
+            assert_eq!([result.left, result.right], [col.left, col.right]);
+        }
+        let other = GrayImage::from_pixel(dimensions.0 + 1, dimensions.1, Luma([255]));
+        let result = preserve_known_body_crop_edge(source, page, &other, original);
+        assert_eq!([result.left, result.right], raw_bounds);
+    }
 }
 
 #[test]
