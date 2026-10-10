@@ -135,15 +135,15 @@ Human decision: Pending.
 
 ## Event 6: miss_brutus_619_10158
 
-Historical locator: tomus_7_inner.pdf physical page 391 (folio 383). Verified: reader jumps `… præterito Cæsaris lævo cornu,` → `cissent, circumducto suo cornu castra Cæsaris adorti sunt.`; final split word `…d-`/`cissent` orphaned. Head line of v2 p619.
+Rebuilt reader locator: tomus 7, physical page 395, printed folio 387. Inspect physical pages 395–396 for the adjoining seam.
 
-Rebuilt locators: tomus 7, physical 395, folio 387.
+Pre-repair baseline locator: physical page 391, printed folio 383. At that location in the baseline reader, the text jumps `… præterito Cæsaris lævo cornu,` → `cissent, circumducto suo cornu castra Cæsaris adorti sunt.`; final split word `…d-`/`cissent` is orphaned. The omitted head line comes from v2 p619. These baseline page numbers do not locate the restored line in the rebuilt reader.
 
 - [ ] Complete printed source text and punctuation confirmed.
 - [ ] Source order, neighboring text, and every touched page break confirmed.
 - [ ] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: The user confirmed on 2026-10-10 that the missing text beginning `quum leviter…` is restored on physical page 395 / printed folio 387. Full text and punctuation, the adjoining seam, and layout acceptance remain pending.
 
 ## Event 7: miss_caius_marius_519_9217
 
