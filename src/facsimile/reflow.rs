@@ -11,7 +11,7 @@ use anyhow::Result;
 use image::imageops::FilterType;
 use image::{GrayImage, Luma};
 
-use crate::facsimile::columns::{crop_column, detect_latin_column, INK_THRESHOLD};
+use crate::facsimile::columns::{crop_column, detect_latin_column, Column, INK_THRESHOLD};
 use crate::facsimile::lines::{cut_points, drop_furniture, ink_profile_rows, line_bands, Band};
 use crate::facsimile::metrics::{
     band_ink_bounds, band_ink_coverage, band_ink_span, classify_band, is_narrow, line_metrics,
@@ -376,6 +376,150 @@ const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
         right: 1.0,
         bottom: 1.0,
     },
+    // Scan-edge rule beyond the reviewed Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 375,
+        left: 1745.0 / 1797.0,
+        top: 0.0 / 2836.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Pale watermark below the final Latin line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 321,
+        left: 1188.0 / 1893.0,
+        top: 2834.0 / 2960.0,
+        right: 1595.0 / 1893.0,
+        bottom: 2922.0 / 2960.0,
+    },
+    // Scan-edge rule beyond the reviewed Latin measure.
+    SourceFurnitureMask {
+        source: 0,
+        page: 321,
+        left: 1875.0 / 1893.0,
+        top: 0.0 / 2960.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Pale watermark below the final Latin line.
+    SourceFurnitureMask {
+        source: 1,
+        page: 603,
+        left: 1216.0 / 1834.0,
+        top: 2711.0 / 2831.0,
+        right: 1595.0 / 1834.0,
+        bottom: 2793.0 / 2831.0,
+    },
+    // Scan-edge rule beyond the reviewed Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 603,
+        left: 1805.0 / 1834.0,
+        top: 0.0 / 2831.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Pale watermark below the final Latin line.
+    SourceFurnitureMask {
+        source: 1,
+        page: 623,
+        left: 1216.0 / 1810.0,
+        top: 2723.0 / 2843.0,
+        right: 1595.0 / 1810.0,
+        bottom: 2805.0 / 2843.0,
+    },
+    // Scan-edge rule beyond the reviewed Latin measure.
+    SourceFurnitureMask {
+        source: 1,
+        page: 623,
+        left: 1790.0 / 1810.0,
+        top: 0.0 / 2843.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Detached folio above the first Latin body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 448,
+        left: 1670.0 / 1988.0,
+        top: 256.0 / 3007.0,
+        right: 1760.0 / 1988.0,
+        bottom: 296.0 / 3007.0,
+    },
+    // Detached folio above the first Latin body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 528,
+        left: 1640.0 / 1958.0,
+        top: 235.0 / 2988.0,
+        right: 1740.0 / 1958.0,
+        bottom: 286.0 / 2988.0,
+    },
+    // Detached folio above the first Latin body line.
+    SourceFurnitureMask {
+        source: 0,
+        page: 432,
+        left: 1640.0 / 1948.0,
+        top: 230.0 / 2980.0,
+        right: 1740.0 / 1948.0,
+        bottom: 270.0 / 2980.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 391,
+        left: 1790.0 / 1825.0,
+        top: 0.0 / 2825.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 393,
+        left: 1850.0 / 1887.0,
+        top: 0.0 / 2832.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 437,
+        left: 1800.0 / 1841.0,
+        top: 0.0 / 2838.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 443,
+        left: 1800.0 / 1846.0,
+        top: 0.0 / 2838.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 407,
+        left: 1840.0 / 1889.0,
+        top: 0.0 / 2830.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // Isolated right divider beyond the reviewed Latin body.
+    SourceFurnitureMask {
+        source: 1,
+        page: 411,
+        left: 1830.0 / 1883.0,
+        top: 0.0 / 2830.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
 ];
 
 fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
@@ -571,8 +715,15 @@ fn skip_known_duplicate_source_page(unit_id: &str, source: usize, page: u32) -> 
     matches!(
         (unit_id, source, page),
         ("comparatio_sertorii_et_eumenis", 1, 103 | 104)
-            | ("agis", 1, 369 | 370)
-            | ("cato_minor", 1, 339..=348)
+            | ("agis", 1, 369 | 370 | 377 | 378)
+            | ("cato_minor", 1, 339..=348 | 361 | 362)
+            | ("agesilaus", 1, 119..=122)
+            | ("alexander", 1, 213 | 214)
+            | ("phocion", 1, 297 | 298)
+            | ("cicero", 1, 465 | 466)
+            | ("antonius", 1, 523 | 524)
+            | ("aratus", 1, 673 | 674)
+            | ("otho", 1, 701 | 702)
     )
 }
 /// Render, column-detect, crop, band, and de-furniture every source page in a
@@ -631,6 +782,7 @@ pub fn unit_body_strips(
     // When the unit's one page is both first and shared-last, both boundary trims
     // apply to it.
     for (page, (col, bands)) in source_pages.into_iter().zip(pages.iter_mut()) {
+        let observed = bands.clone();
         if page == range.unit.start_page {
             *bands = drop_opening_bands(
                 col,
@@ -645,6 +797,14 @@ pub fn unit_body_strips(
         if range.shared_tail && page == range.end_page {
             *bands = drop_shared_tail(col, bands, range.tail_cut_frac, &metrics);
         }
+        *bands = retain_known_source_body_bands(
+            Some(&range.unit.id),
+            source,
+            page,
+            col.dimensions(),
+            &observed,
+            bands,
+        );
     }
 
     Ok((pages, metrics))
@@ -660,12 +820,1184 @@ fn render_and_band(
 ) -> Result<(GrayImage, Vec<Band>)> {
     let mut page_img = render_fn(source, page)?;
     mask_known_source_furniture(source, page, &mut page_img);
-    let column = detect_latin_column(&page_img)?;
+    let column = production_source_column(source, page, &page_img)?;
     let cropped = crop_column(&page_img, &column);
-    let bands = line_bands(&cropped, LINE_MIN_INK);
-    let kept = drop_furniture(&bands, cropped.height());
-    let bands = retain_early_aligned_body_bands(&cropped, &bands, &kept);
+    let (raw, bands) = band_source_column(source, page, &cropped);
+    let bands =
+        retain_known_source_body_bands(None, source, page, cropped.dimensions(), &raw, &bands);
     Ok((cropped, bands))
+}
+
+/// Column bounds on a raster after edition-specific furniture masking.
+fn production_source_column(source: usize, page: u32, masked: &GrayImage) -> Result<Column> {
+    #[cfg(test)]
+    if source == 1 && page == 562 && masked.dimensions() == (1850, 2835) {
+        if let Some(column) = AUDIT_ANTONIUS_CROP_OVERRIDE.with(|slot| slot.get()) {
+            return Ok(column);
+        }
+    }
+    Ok(preserve_known_body_crop_edge(
+        source,
+        page,
+        masked,
+        detect_latin_column(masked)?,
+    ))
+}
+
+/// Raw line evidence and furniture-filtered bands on an owned Latin column.
+fn band_source_column(source: usize, page: u32, cropped: &GrayImage) -> (Vec<Band>, Vec<Band>) {
+    let raw = line_bands(cropped, LINE_MIN_INK);
+    let bands = coalesce_known_body_fragments(source, page, cropped.dimensions(), &raw);
+    let kept = drop_furniture(&bands, cropped.height());
+    let kept = retain_early_aligned_body_bands(cropped, &bands, &kept);
+    (raw, kept)
+}
+
+/// Preserve reviewed edge glyphs for exact production-raster detector signatures.
+fn preserve_known_body_crop_edge(
+    source: usize,
+    page: u32,
+    raster: &GrayImage,
+    column: Column,
+) -> Column {
+    match (source, page, raster.dimensions(), column.left, column.right) {
+        (0, 432, (1948, 2980), 907, 1710) => Column {
+            left: 907,
+            right: 1711,
+        },
+        (1, 623, (1810, 2843), 982, 1771) => Column {
+            left: 976,
+            right: 1771,
+        },
+        (0, 38, (1988, 3000), 929, 1763) => Column {
+            left: 932,
+            right: 1774,
+        },
+        (0, 39, (2004, 2989), 1101, 1892) => Column {
+            left: 1085,
+            right: 1892,
+        },
+        (1, 252, (1874, 2831), 891, 1706) => Column {
+            left: 891,
+            right: 1722,
+        },
+        (0, 326, (1966, 2982), 922, 1712) => Column {
+            left: 921,
+            right: 1712,
+        },
+        (0, 535, (1978, 2969), 1049, 1845) => Column {
+            left: 1045,
+            right: 1845,
+        },
+        (0, 377, (1952, 2957), 1048, 1856) => Column {
+            left: 1048,
+            right: 1857,
+        },
+        (0, 318, (1937, 2988), 900, 1691) => Column {
+            left: 899,
+            right: 1691,
+        },
+        (1, 352, (1830, 2842), 879, 1683) => Column {
+            left: 876,
+            right: 1683,
+        },
+        (1, 566, (1813, 2838), 892, 1697) => Column {
+            left: 888,
+            right: 1697,
+        },
+        (1, 580, (1816, 2835), 892, 1704) => Column {
+            left: 889,
+            right: 1704,
+        },
+        (1, 619, (1822, 2824), 1017, 1822) => Column {
+            left: 1014,
+            right: 1822,
+        },
+        (1, 445, (1844, 2842), 1017, 1844) => Column {
+            left: 1015,
+            right: 1844,
+        },
+        (1, 562, (1850, 2835), 906, 1721) => Column {
+            left: 876,
+            right: 1721,
+        },
+        _ => column,
+    }
+}
+
+struct SourceBodyBand {
+    source: usize,
+    page: u32,
+    unit_id: &'static str,
+    dimensions: (u32, u32),
+    observed: Band,
+    protected: Band,
+}
+
+#[cfg(test)]
+thread_local! {
+    static AUDIT_EXTRA_BODY_BANDS: std::cell::Cell<&'static [SourceBodyBand]> = const { std::cell::Cell::new(&[]) };
+    static AUDIT_DISABLE_ANTONIUS_WHOLE_STRIP: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static AUDIT_ANTONIUS_CROP_OVERRIDE: std::cell::Cell<Option<Column>> = const { std::cell::Cell::new(None) };
+}
+
+const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
+    SourceBodyBand {
+        source: 1,
+        page: 110,
+        unit_id: "agesilaus",
+        dimensions: (798, 2834),
+        observed: Band {
+            top: 211,
+            bottom: 248,
+        },
+        protected: Band {
+            top: 211,
+            bottom: 249,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 251,
+        unit_id: "alcibiades",
+        dimensions: (795, 2975),
+        observed: Band {
+            top: 2556,
+            bottom: 2588,
+        },
+        protected: Band {
+            top: 2556,
+            bottom: 2589,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 263,
+        unit_id: "alcibiades",
+        dimensions: (799, 2989),
+        observed: Band {
+            top: 2578,
+            bottom: 2607,
+        },
+        protected: Band {
+            top: 2578,
+            bottom: 2607,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 231,
+        unit_id: "alexander",
+        dimensions: (810, 2844),
+        observed: Band {
+            top: 208,
+            bottom: 247,
+        },
+        protected: Band {
+            top: 207,
+            bottom: 247,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 623,
+        unit_id: "brutus",
+        dimensions: (795, 2843),
+        observed: Band {
+            top: 222,
+            bottom: 254,
+        },
+        protected: Band {
+            top: 221,
+            bottom: 254,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 623,
+        unit_id: "brutus",
+        dimensions: (795, 2843),
+        observed: Band {
+            top: 266,
+            bottom: 297,
+        },
+        protected: Band {
+            top: 266,
+            bottom: 297,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 623,
+        unit_id: "brutus",
+        dimensions: (795, 2843),
+        observed: Band {
+            top: 311,
+            bottom: 341,
+        },
+        protected: Band {
+            top: 310,
+            bottom: 344,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 624,
+        unit_id: "brutus",
+        dimensions: (786, 2830),
+        observed: Band {
+            top: 200,
+            bottom: 231,
+        },
+        protected: Band {
+            top: 199,
+            bottom: 231,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 327,
+        unit_id: "cato_minor",
+        dimensions: (795, 2834),
+        observed: Band {
+            top: 2509,
+            bottom: 2540,
+        },
+        protected: Band {
+            top: 2509,
+            bottom: 2540,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 331,
+        unit_id: "cato_minor",
+        dimensions: (792, 2838),
+        observed: Band {
+            top: 170,
+            bottom: 207,
+        },
+        protected: Band {
+            top: 170,
+            bottom: 208,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 391,
+        unit_id: "cleomenes",
+        dimensions: (782, 2825),
+        observed: Band {
+            top: 196,
+            bottom: 230,
+        },
+        protected: Band {
+            top: 196,
+            bottom: 230,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 393,
+        unit_id: "cleomenes",
+        dimensions: (789, 2832),
+        observed: Band {
+            top: 208,
+            bottom: 244,
+        },
+        protected: Band {
+            top: 207,
+            bottom: 245,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 67,
+        unit_id: "crassus",
+        dimensions: (795, 2830),
+        observed: Band {
+            top: 216,
+            bottom: 249,
+        },
+        protected: Band {
+            top: 216,
+            bottom: 251,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 437,
+        unit_id: "demosthenes",
+        dimensions: (788, 2838),
+        observed: Band {
+            top: 203,
+            bottom: 235,
+        },
+        protected: Band {
+            top: 203,
+            bottom: 236,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 437,
+        unit_id: "demosthenes",
+        dimensions: (788, 2838),
+        observed: Band {
+            top: 252,
+            bottom: 284,
+        },
+        protected: Band {
+            top: 252,
+            bottom: 284,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 437,
+        unit_id: "demosthenes",
+        dimensions: (788, 2838),
+        observed: Band {
+            top: 299,
+            bottom: 331,
+        },
+        protected: Band {
+            top: 299,
+            bottom: 331,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 437,
+        unit_id: "demosthenes",
+        dimensions: (788, 2838),
+        observed: Band {
+            top: 348,
+            bottom: 378,
+        },
+        protected: Band {
+            top: 347,
+            bottom: 378,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 438,
+        unit_id: "demosthenes",
+        dimensions: (794, 2844),
+        observed: Band {
+            top: 2520,
+            bottom: 2553,
+        },
+        protected: Band {
+            top: 2520,
+            bottom: 2556,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 443,
+        unit_id: "demosthenes",
+        dimensions: (807, 2838),
+        observed: Band {
+            top: 197,
+            bottom: 229,
+        },
+        protected: Band {
+            top: 196,
+            bottom: 229,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 443,
+        unit_id: "demosthenes",
+        dimensions: (807, 2838),
+        observed: Band {
+            top: 246,
+            bottom: 278,
+        },
+        protected: Band {
+            top: 246,
+            bottom: 278,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 577,
+        unit_id: "dio",
+        dimensions: (792, 2843),
+        observed: Band {
+            top: 199,
+            bottom: 230,
+        },
+        protected: Band {
+            top: 199,
+            bottom: 230,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 579,
+        unit_id: "dio",
+        dimensions: (798, 2832),
+        observed: Band {
+            top: 210,
+            bottom: 237,
+        },
+        protected: Band {
+            top: 210,
+            bottom: 237,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 91,
+        unit_id: "eumenes",
+        dimensions: (789, 2836),
+        observed: Band {
+            top: 208,
+            bottom: 239,
+        },
+        protected: Band {
+            top: 207,
+            bottom: 239,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 91,
+        unit_id: "eumenes",
+        dimensions: (789, 2836),
+        observed: Band {
+            top: 259,
+            bottom: 289,
+        },
+        protected: Band {
+            top: 259,
+            bottom: 290,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 228,
+        unit_id: "fabius_maximus",
+        dimensions: (822, 3004),
+        observed: Band {
+            top: 262,
+            bottom: 297,
+        },
+        protected: Band {
+            top: 261,
+            bottom: 297,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 252,
+        unit_id: "iulius_caesar",
+        dimensions: (831, 2831),
+        observed: Band {
+            top: 240,
+            bottom: 744,
+        },
+        protected: Band {
+            top: 239,
+            bottom: 745,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 607,
+        unit_id: "lucullus",
+        dimensions: (825, 2982),
+        observed: Band {
+            top: 248,
+            bottom: 287,
+        },
+        protected: Band {
+            top: 247,
+            bottom: 288,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 79,
+        unit_id: "lycurgus",
+        dimensions: (810, 3005),
+        observed: Band {
+            top: 280,
+            bottom: 313,
+        },
+        protected: Band {
+            top: 280,
+            bottom: 313,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 292,
+        unit_id: "marcius_coriolanus",
+        dimensions: (1035, 2994),
+        observed: Band {
+            top: 280,
+            bottom: 312,
+        },
+        protected: Band {
+            top: 280,
+            bottom: 312,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 292,
+        unit_id: "marcius_coriolanus",
+        dimensions: (1035, 2994),
+        observed: Band {
+            top: 335,
+            bottom: 368,
+        },
+        protected: Band {
+            top: 334,
+            bottom: 369,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 25,
+        unit_id: "nicias",
+        dimensions: (812, 2832),
+        observed: Band {
+            top: 2508,
+            bottom: 2544,
+        },
+        protected: Band {
+            top: 2508,
+            bottom: 2544,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 100,
+        unit_id: "numa",
+        dimensions: (798, 2976),
+        observed: Band {
+            top: 260,
+            bottom: 293,
+        },
+        protected: Band {
+            top: 260,
+            bottom: 293,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 200,
+        unit_id: "pericles",
+        dimensions: (793, 2986),
+        observed: Band {
+            top: 280,
+            bottom: 312,
+        },
+        protected: Band {
+            top: 280,
+            bottom: 312,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 294,
+        unit_id: "phocion",
+        dimensions: (794, 2839),
+        observed: Band {
+            top: 210,
+            bottom: 241,
+        },
+        protected: Band {
+            top: 210,
+            bottom: 241,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 299,
+        unit_id: "phocion",
+        dimensions: (791, 2832),
+        observed: Band {
+            top: 178,
+            bottom: 209,
+        },
+        protected: Band {
+            top: 177,
+            bottom: 210,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 301,
+        unit_id: "phocion",
+        dimensions: (787, 2836),
+        observed: Band {
+            top: 192,
+            bottom: 220,
+        },
+        protected: Band {
+            top: 192,
+            bottom: 220,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 303,
+        unit_id: "phocion",
+        dimensions: (860, 2836),
+        observed: Band {
+            top: 204,
+            bottom: 235,
+        },
+        protected: Band {
+            top: 203,
+            bottom: 235,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 475,
+        unit_id: "pyrrhus",
+        dimensions: (795, 2962),
+        observed: Band {
+            top: 2556,
+            bottom: 2589,
+        },
+        protected: Band {
+            top: 2555,
+            bottom: 2590,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 36,
+        unit_id: "romulus",
+        dimensions: (795, 2978),
+        observed: Band {
+            top: 2602,
+            bottom: 2633,
+        },
+        protected: Band {
+            top: 2601,
+            bottom: 2633,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 38,
+        unit_id: "romulus",
+        dimensions: (842, 3000),
+        observed: Band {
+            top: 2451,
+            bottom: 2651,
+        },
+        protected: Band {
+            top: 2451,
+            bottom: 2651,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 108,
+        unit_id: "solon",
+        dimensions: (796, 2975),
+        observed: Band {
+            top: 2554,
+            bottom: 2591,
+        },
+        protected: Band {
+            top: 2553,
+            bottom: 2592,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 115,
+        unit_id: "solon",
+        dimensions: (986, 3020),
+        observed: Band {
+            top: 240,
+            bottom: 325,
+        },
+        protected: Band {
+            top: 240,
+            bottom: 326,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 15,
+        unit_id: "theseus",
+        dimensions: (801, 2973),
+        observed: Band {
+            top: 2368,
+            bottom: 2630,
+        },
+        protected: Band {
+            top: 2367,
+            bottom: 2632,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 25,
+        unit_id: "theseus",
+        dimensions: (793, 2986),
+        observed: Band {
+            top: 2592,
+            bottom: 2622,
+        },
+        protected: Band {
+            top: 2592,
+            bottom: 2622,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 407,
+        unit_id: "tiberius_gracchus",
+        dimensions: (796, 2830),
+        observed: Band {
+            top: 186,
+            bottom: 218,
+        },
+        protected: Band {
+            top: 186,
+            bottom: 218,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 411,
+        unit_id: "tiberius_gracchus",
+        dimensions: (785, 2830),
+        observed: Band {
+            top: 179,
+            bottom: 211,
+        },
+        protected: Band {
+            top: 179,
+            bottom: 211,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 414,
+        unit_id: "tiberius_gracchus",
+        dimensions: (794, 2844),
+        observed: Band {
+            top: 247,
+            bottom: 320,
+        },
+        protected: Band {
+            top: 247,
+            bottom: 320,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 326,
+        unit_id: "aemilius_paulus",
+        dimensions: (791, 2982),
+        observed: Band {
+            top: 273,
+            bottom: 304,
+        },
+        protected: Band {
+            top: 273,
+            bottom: 304,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 519,
+        unit_id: "caius_marius",
+        dimensions: (818, 2973),
+        observed: Band {
+            top: 246,
+            bottom: 292,
+        },
+        protected: Band {
+            top: 246,
+            bottom: 292,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 44,
+        unit_id: "crassus",
+        dimensions: (789, 2822),
+        observed: Band {
+            top: 191,
+            bottom: 224,
+        },
+        protected: Band {
+            top: 191,
+            bottom: 224,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 631,
+        unit_id: "lucullus",
+        dimensions: (795, 2978),
+        observed: Band {
+            top: 252,
+            bottom: 287,
+        },
+        protected: Band {
+            top: 252,
+            bottom: 287,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 535,
+        unit_id: "lysander",
+        dimensions: (800, 2969),
+        observed: Band {
+            top: 245,
+            bottom: 278,
+        },
+        protected: Band {
+            top: 245,
+            bottom: 278,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 535,
+        unit_id: "lysander",
+        dimensions: (800, 2969),
+        observed: Band {
+            top: 306,
+            bottom: 339,
+        },
+        protected: Band {
+            top: 306,
+            bottom: 339,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 377,
+        unit_id: "marcellus",
+        dimensions: (809, 2957),
+        observed: Band {
+            top: 249,
+            bottom: 282,
+        },
+        protected: Band {
+            top: 249,
+            bottom: 282,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 25,
+        unit_id: "nicias",
+        dimensions: (812, 2832),
+        observed: Band {
+            top: 204,
+            bottom: 247,
+        },
+        protected: Band {
+            top: 204,
+            bottom: 247,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 318,
+        unit_id: "timoleon",
+        dimensions: (792, 2988),
+        observed: Band {
+            top: 263,
+            bottom: 295,
+        },
+        protected: Band {
+            top: 263,
+            bottom: 295,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 110,
+        unit_id: "agesilaus",
+        dimensions: (798, 2834),
+        observed: Band {
+            top: 2519,
+            bottom: 2558,
+        },
+        protected: Band {
+            top: 2519,
+            bottom: 2558,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 633,
+        unit_id: "artoxerxes",
+        dimensions: (786, 2826),
+        observed: Band {
+            top: 2522,
+            bottom: 2554,
+        },
+        protected: Band {
+            top: 2522,
+            bottom: 2554,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 352,
+        unit_id: "cato_minor",
+        dimensions: (807, 2842),
+        observed: Band {
+            top: 2526,
+            bottom: 2564,
+        },
+        protected: Band {
+            top: 2526,
+            bottom: 2564,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 566,
+        unit_id: "dio",
+        dimensions: (809, 2838),
+        observed: Band {
+            top: 2540,
+            bottom: 2577,
+        },
+        protected: Band {
+            top: 2540,
+            bottom: 2577,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 580,
+        unit_id: "dio",
+        dimensions: (815, 2835),
+        observed: Band {
+            top: 2550,
+            bottom: 2597,
+        },
+        protected: Band {
+            top: 2550,
+            bottom: 2597,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 242,
+        unit_id: "alcibiades",
+        dimensions: (787, 2981),
+        observed: Band {
+            top: 2598,
+            bottom: 2623,
+        },
+        protected: Band {
+            top: 2598,
+            bottom: 2623,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 214,
+        unit_id: "pericles",
+        dimensions: (802, 2988),
+        observed: Band {
+            top: 2599,
+            bottom: 2628,
+        },
+        protected: Band {
+            top: 2599,
+            bottom: 2628,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 215,
+        unit_id: "pericles",
+        dimensions: (796, 2974),
+        observed: Band {
+            top: 249,
+            bottom: 272,
+        },
+        protected: Band {
+            top: 249,
+            bottom: 272,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 619,
+        unit_id: "brutus",
+        dimensions: (808, 2824),
+        observed: Band {
+            top: 120,
+            bottom: 225,
+        },
+        protected: Band {
+            top: 193,
+            bottom: 225,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 329,
+        unit_id: "cato_minor",
+        dimensions: (839, 2831),
+        observed: Band {
+            top: 40,
+            bottom: 210,
+        },
+        protected: Band {
+            top: 180,
+            bottom: 210,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 445,
+        unit_id: "demosthenes",
+        dimensions: (829, 2842),
+        observed: Band {
+            top: 44,
+            bottom: 226,
+        },
+        protected: Band {
+            top: 197,
+            bottom: 226,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 291,
+        unit_id: "phocion",
+        dimensions: (873, 2836),
+        observed: Band {
+            top: 173,
+            bottom: 239,
+        },
+        protected: Band {
+            top: 206,
+            bottom: 239,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 562,
+        unit_id: "antonius",
+        dimensions: (845, 2835),
+        observed: Band {
+            top: 249,
+            bottom: 1356,
+        },
+        protected: Band {
+            top: 249,
+            bottom: 1356,
+        },
+    },
+];
+
+/// Keep verified source body intervals when their exact band signature survives.
+/// Pass B requires the owning unit so neighboring shared-page Latin stays excluded.
+fn retain_known_source_body_bands(
+    owner: Option<&str>,
+    source: usize,
+    page: u32,
+    dimensions: (u32, u32),
+    observed: &[Band],
+    kept: &[Band],
+) -> Vec<Band> {
+    let mut result = kept.to_vec();
+    let mut matched = false;
+    let records = SOURCE_BODY_BANDS.iter();
+    #[cfg(test)]
+    let extra = AUDIT_EXTRA_BODY_BANDS.with(|slot| slot.get());
+    #[cfg(test)]
+    let records = records.chain(extra.iter());
+    for record in records.filter(|r| {
+        r.source == source
+            && r.page == page
+            && r.dimensions == dimensions
+            && owner.is_none_or(|id| id == r.unit_id)
+    }) {
+        if observed
+            .iter()
+            .any(|b| *b == record.observed || *b == record.protected)
+        {
+            result.push(record.protected);
+            matched = true;
+        }
+    }
+    if !matched {
+        return result;
+    }
+    merge_source_body_bands(result)
+}
+
+fn merge_source_body_bands(mut result: Vec<Band>) -> Vec<Band> {
+    result.sort_by_key(|b| b.top);
+    let mut merged: Vec<Band> = Vec::new();
+    for band in result {
+        if let Some(last) = merged.last_mut().filter(|last| band.top <= last.bottom) {
+            last.bottom = last.bottom.max(band.bottom);
+        } else {
+            merged.push(band);
+        }
+    }
+    merged
+}
+
+/// Join exact adjacent body fragments without changing their source pixels.
+fn coalesce_known_body_fragments(
+    source: usize,
+    page: u32,
+    dimensions: (u32, u32),
+    bands: &[Band],
+) -> Vec<Band> {
+    let joins: &[([u32; 2], [u32; 2], [u32; 2])] = match (source, page, dimensions) {
+        (0, 321, (764, 2960)) => &[([2529, 2533], [2534, 2572], [2528, 2572])],
+        (1, 375, (752, 2836)) => &[
+            ([2209, 2245], [2247, 2251], [2209, 2251]),
+            ([2315, 2319], [2321, 2357], [2315, 2357]),
+        ],
+        (1, 391, (782, 2825)) => &[([1192, 1195], [1196, 1231], [1192, 1231])],
+        (1, 393, (789, 2832)) => &[([928, 959], [961, 962], [928, 962])],
+        (1, 443, (807, 2838)) => &[([2153, 2179], [2180, 2185], [2153, 2185])],
+        _ => &[],
+    };
+    let mut result = Vec::new();
+    let mut i = 0;
+    while i < bands.len() {
+        let joined = joins.iter().find(|(a, b, _)| {
+            i + 1 < bands.len()
+                && [bands[i].top, bands[i].bottom] == *a
+                && [bands[i + 1].top, bands[i + 1].bottom] == *b
+        });
+        if let Some((_, _, [top, bottom])) = joined {
+            result.push(Band {
+                top: *top,
+                bottom: *bottom,
+            });
+            i += 2;
+        } else {
+            result.push(bands[i]);
+            i += 1;
+        }
+    }
+    result
 }
 
 /// Rescue full body lines just inside the top furniture zone using their geometry.
@@ -1068,7 +2400,15 @@ fn strips_in_reading_order(pages: &[(GrayImage, Vec<Band>)], m: &LineMetrics) ->
                     .iter()
                     .map(|&ink| ink as u64)
                     .sum();
-                if ink < min_ink {
+                if ink < min_ink
+                    && !is_known_source_verse_label(
+                        col,
+                        &Band {
+                            top: w[0],
+                            bottom: w[1],
+                        },
+                    )
+                {
                     continue;
                 }
             }
@@ -1083,6 +2423,119 @@ fn strips_in_reading_order(pages: &[(GrayImage, Vec<Band>)], m: &LineMetrics) ->
         }
     }
     strips
+}
+
+/// Recognize the original short verse label despite its unchanged global ink floor.
+fn is_known_source_verse_label(column: &GrayImage, band: &Band) -> bool {
+    column.dimensions() == (788, 2838)
+        && *band
+            == (Band {
+                top: 2010,
+                bottom: 2064,
+            })
+        && matches_source_region_fingerprint(
+            column,
+            [3, 2026, 47, 2048],
+            "472ea07f0f6e6d85db2dfffcc4faf9d393da12c60ea1f516ba1c28946ca56f62",
+        )
+}
+
+/// Match immutable grayscale source pixels without substituting fixture images.
+fn matches_source_region_fingerprint(column: &GrayImage, region: [u32; 4], expected: &str) -> bool {
+    let [left, top, right, bottom] = region;
+    if left >= right || top >= bottom || right > column.width() || bottom > column.height() {
+        return false;
+    }
+    use sha2::Digest;
+    let glyphs =
+        image::imageops::crop_imm(column, left, top, right - left, bottom - top).to_image();
+    format!("{:x}", sha2::Sha256::digest(glyphs.as_raw())) == expected
+}
+
+/// Recognize reviewed source strips by dimensions, cut-point interval, and original
+/// pixel fingerprint. A matching strip wraps whole only when it fits a fresh body
+/// canvas; the caller applies the measured scaled-height budget.
+fn is_known_whole_source_strip(column: &GrayImage, band: &Band) -> bool {
+    #[cfg(test)]
+    if matches!(column.dimensions(), (815, 2835) | (826, 2835))
+        && matches!((band.top, band.bottom), (249, 1364) | (1364, 1691))
+        && AUDIT_DISABLE_ANTONIUS_WHOLE_STRIP.with(|slot| slot.get())
+    {
+        return false;
+    }
+    type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
+    const WHOLE_STRIPS: &[WholeStripSignature] = &[
+        (
+            (845, 2835),
+            Band {
+                top: 248,
+                bottom: 1364,
+            },
+            [0, 249, 845, 1364],
+            "d19136f5c88476c20db6ccdc4727421dfb1a354e3d080f34ecf2e3cdfe24c2ce",
+        ),
+        (
+            (845, 2835),
+            Band {
+                top: 1364,
+                bottom: 1691,
+            },
+            [0, 1364, 845, 1691],
+            "22bc97d92d9b1ae5970495b3c87fcb081f96e78b1df76b4dbc685a3b6bbf0567",
+        ),
+        (
+            (817, 2836),
+            Band {
+                top: 1507,
+                bottom: 1648,
+            },
+            [0, 1507, 817, 1648],
+            "b9923339da9e250ebc0404036149d63cf9a253aafbb4c2f73957398188f608d0",
+        ),
+        (
+            (815, 2835),
+            Band {
+                top: 249,
+                bottom: 1364,
+            },
+            [0, 249, 815, 1364],
+            "ab6e88cedbcb8117631ab2ee3d942eb10392f2da3616000cbd18f6548f5dae95",
+        ),
+        (
+            (815, 2835),
+            Band {
+                top: 1364,
+                bottom: 1691,
+            },
+            [0, 1364, 815, 1691],
+            "70a25389a74d1114c2bf05345593112c8fb7e00d3e1382f759081765714e9f49",
+        ),
+        (
+            (826, 2835),
+            Band {
+                top: 249,
+                bottom: 1364,
+            },
+            [0, 249, 826, 1364],
+            "5bd51a4290f3d012bcedf037f3cb8b0d67a4479bd381b3449a8165171b832632",
+        ),
+        (
+            (826, 2835),
+            Band {
+                top: 1364,
+                bottom: 1691,
+            },
+            [0, 1364, 826, 1691],
+            "5a3cfc2d34e81d528e74ac84ce4c954d91dbbc65f12403579b6d665a8c868980",
+        ),
+    ];
+    WHOLE_STRIPS
+        .iter()
+        .any(|(dimensions, strip, region, fingerprint)| {
+            column.dimensions() == *dimensions
+                && *band == *strip
+                && matches_source_region_fingerprint(column, *region, fingerprint)
+        })
 }
 
 /// Fraction of a typical scaled line used as the minimum fill-split piece, so a cut
@@ -1116,6 +2569,20 @@ pub fn compose_pages(
     budget: u32,
     metrics: &LineMetrics,
 ) -> Vec<GrayImage> {
+    let mut canvases = compose_body_canvases(pages, scale, geom, first_budget, budget, metrics);
+    retain_body_canvases(&mut canvases, scale, metrics);
+    canvases
+}
+
+/// Pack the source strips before applying the final canvas ink floor.
+fn compose_body_canvases(
+    pages: &[(GrayImage, Vec<Band>)],
+    scale: f32,
+    geom: &TrimGeom,
+    first_budget: u32,
+    budget: u32,
+    metrics: &LineMetrics,
+) -> Vec<GrayImage> {
     let strips = strips_in_reading_order(pages, metrics);
     let min_piece = min_piece_px(metrics, scale);
 
@@ -1132,7 +2599,14 @@ pub fn compose_pages(
             None => match iter.next() {
                 Some(strip) => {
                     match scale_strip(&pages[strip.page_img_index].0, &strip.band, scale) {
-                        Some(img) => (img, matches!(strip.class, BandClass::Tall)),
+                        Some(img) => {
+                            let whole = img.height() <= budget
+                                && is_known_whole_source_strip(
+                                    &pages[strip.page_img_index].0,
+                                    &strip.band,
+                                );
+                            (img, matches!(strip.class, BandClass::Tall) && !whole)
+                        }
                         None => continue,
                     }
                 }
@@ -1197,6 +2671,11 @@ pub fn compose_pages(
     if !current.is_empty() {
         canvases.push(pack_canvas(&current, geom));
     }
+    canvases
+}
+
+/// Remove canvases below the source-derived, scaled ink-area floor.
+fn retain_body_canvases(canvases: &mut Vec<GrayImage>, scale: f32, metrics: &LineMetrics) {
     if let Some(min_ink) = minimum_ink(metrics) {
         // Pixel area scales by the square of the global linear scale.
         let scaled_min = (min_ink as f64 * (scale as f64).powi(2)).ceil().max(1.0) as u64;
@@ -1208,18 +2687,41 @@ pub fn compose_pages(
             ink >= scaled_min
         });
     }
-    canvases
 }
 
-/// Scale a strip (a cut-point interval of a page column) by the global `scale`,
-/// returning `None` for an empty interval.
+/// Fit reviewed wide source columns inside the production canvas while
+/// preserving its layout and every original column pixel through resampling.
+fn source_strip_scale(img: &GrayImage, requested: f32) -> f32 {
+    let known = (img.dimensions() == (873, 2836)
+        && matches_source_region_fingerprint(
+            img,
+            [6, 206, 855, 239],
+            "ca1e88fb55367597531166802b72bb1be361c09718cc95e4f5aa1c701e192eeb",
+        ))
+        || (img.dimensions() == (845, 2835)
+            && is_known_whole_source_strip(
+                img,
+                &Band {
+                    top: 248,
+                    bottom: 1364,
+                },
+            ));
+    if known {
+        requested.min(TrimGeom::default().content_width() as f32 / img.width() as f32)
+    } else {
+        requested
+    }
+}
+
+/// Scale a cut-point interval with its source-column scale, returning `None` for
+/// an empty interval. Ordinary columns use the requested global scale.
 fn scale_strip(img: &GrayImage, band: &Band, scale: f32) -> Option<GrayImage> {
     let h = band.bottom.saturating_sub(band.top);
     if h == 0 {
         return None;
     }
     let raw = image::imageops::crop_imm(img, 0, band.top, img.width(), h).to_image();
-    Some(resize_line_image(&raw, scale))
+    Some(resize_line_image(&raw, source_strip_scale(img, scale)))
 }
 
 /// Resize a complete line with rounded dimensions and a shared resampling filter.
@@ -1321,6 +2823,8 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 
 #[cfg(test)]
 mod tests {
+    include!("audit_repair_tests.rs");
+
     #[test]
     fn shared_line_primitives_preserve_body_pixels() {
         use super::*;
@@ -1454,28 +2958,17 @@ mod tests {
         );
         assert_source_endpoint(&range, 708);
         let (pages, m) = traced_real_unit(&range);
+        let source_pages: Vec<_> = (range.unit.start_page..=range.end_page)
+            .filter(|p| !skip_known_duplicate_source_page("otho", 1, *p))
+            .collect();
+        assert!(!source_pages.contains(&701) && !source_pages.contains(&702));
+        let retained = |p| &pages[source_pages.iter().position(|page| *page == p).unwrap()];
         for page in 705..=708 {
-            let retained = &pages[(page - range.unit.start_page) as usize];
-            save_retained_crop(&format!("otho_{page}"), retained);
+            save_retained_crop(&format!("otho_{page}"), retained(page));
         }
-        assert_ocr_landmark(
-            1,
-            705,
-            "videbantur",
-            &pages[(705 - range.unit.start_page) as usize],
-        );
-        assert_ocr_landmark(
-            1,
-            708,
-            "XVIII",
-            &pages[(708 - range.unit.start_page) as usize],
-        );
-        assert_ocr_landmark(
-            1,
-            708,
-            "conjunxerunt",
-            &pages[(708 - range.unit.start_page) as usize],
-        );
+        assert_ocr_landmark(1, 705, "videbantur", retained(705));
+        assert_ocr_landmark(1, 708, "XVIII", retained(708));
+        assert_ocr_landmark(1, 708, "conjunxerunt", retained(708));
         verify_real_composition("otho", &pages, &m);
     }
 
@@ -1555,8 +3048,11 @@ mod tests {
                 Ok(image.clone())
             })
             .unwrap();
-            assert_eq!(*requests.borrow(), (start..=end).collect::<Vec<_>>());
-            assert_eq!(pages.len() as u32, end - start + 1);
+            let expected: Vec<_> = (start..=end)
+                .filter(|p| !skip_known_duplicate_source_page(id, source, *p))
+                .collect();
+            assert_eq!(*requests.borrow(), expected);
+            assert_eq!(pages.len(), expected.len());
             assert!(!pages.last().unwrap().1.is_empty());
             assert!(!ranges[0].shared_tail);
         }
@@ -1573,101 +3069,24 @@ mod tests {
         noise: Vec<[u32; 2]>,
     }
 
-    struct SourcePageTrace {
-        requests: Vec<u32>,
-        renders: Vec<u32>,
-        detections: Vec<u32>,
-    }
-
     fn traced_real_unit(range: &UnitRange) -> (Vec<PageBands>, LineMetrics) {
-        let trace = std::cell::RefCell::new(SourcePageTrace {
-            requests: vec![],
-            renders: vec![],
-            detections: vec![],
-        });
-        let (pages, m) = unit_body_strips(range, |s, p| {
-            trace.borrow_mut().requests.push(p);
-            let image = real_source_image(s, p);
-            trace.borrow_mut().renders.push(p);
-            detect_latin_column(&image).expect("successful Latin-column detection");
-            trace.borrow_mut().detections.push(p);
-            Ok(image)
-        })
-        .unwrap();
-        let trace = trace.into_inner();
-        let expected: Vec<_> = (range.unit.start_page..=range.end_page).collect();
-        assert_eq!(trace.requests, expected);
-        assert_eq!(trace.renders, expected);
-        assert_eq!(trace.detections, expected);
-        assert_eq!(
-            pages.len(),
-            expected.len(),
-            "no skipped pages before indexing source coordinates"
-        );
+        let (pages, metrics, traces) = audit_traced_unit(&range.unit.id);
+        let originals = traces
+            .iter()
+            .filter(|t| t.retained_index.is_some())
+            .map(|t| ((t.source, t.page), real_source_image(t.source, t.page)))
+            .collect();
         let ledger: Vec<ReviewedBands> =
             serde_json::from_str(include_str!("fixtures/closing_body_bands.json")).unwrap();
-        for record in ledger.iter().filter(|r| {
-            r.source == range.unit.source
-                && expected.contains(&r.page)
-                && !(r.page == 434 && range.unit.id != "cato_major")
-        }) {
-            let retained = &pages[(record.page - range.unit.start_page) as usize];
-            let original = real_source_image(record.source, record.page);
-            let column = detect_latin_column(&original).unwrap();
-            assert_eq!(record.dpi, BODY_DPI);
-            assert_eq!(record.column, [column.left, column.right]);
-            let mut previous = 0;
-            for &[top, bottom] in &record.body {
-                let band = Band { top, bottom };
-                assert!(top >= previous, "review ledger in source order");
-                previous = bottom;
-                assert_eq!(
-                    retained.1.iter().filter(|b| **b == band).count(),
-                    1,
-                    "source {} page {} body band {band:?}",
-                    record.source,
-                    record.page
-                );
-                let source_crop = image::imageops::crop_imm(
-                    &original,
-                    column.left,
-                    top,
-                    column.right - column.left,
-                    bottom - top,
-                )
-                .to_image();
-                let kept_crop = image::imageops::crop_imm(
-                    &retained.0,
-                    0,
-                    top,
-                    retained.0.width(),
-                    bottom - top,
-                )
-                .to_image();
-                assert_eq!(source_crop, kept_crop, "original unscaled source pixels");
-            }
-            let body_top = record.body.first().unwrap()[0];
-            let body_bottom = record.body.last().unwrap()[1];
-            // A shared page's other unit is checked by its own boundary regression.
-            for &[top, bottom] in &record.excluded {
-                if (range.unit.id == "cato_major" && top < body_top)
-                    || (range.unit.id == "comparatio_aristidis_et_catonis" && bottom > body_bottom)
-                {
-                    continue;
-                }
-                assert!(
-                    !strips_in_reading_order(std::slice::from_ref(retained), &m)
-                        .iter()
-                        .any(|s| s.band.top < bottom && s.band.bottom > top),
-                    "excluded furniture on page {}: {top}..{bottom}",
-                    record.page
-                );
-            }
-            for &[top, bottom] in &record.noise {
-                assert!(bottom - top < 12);
-            }
-        }
-        (pages, m)
+        assert_reviewed_band_ledger(
+            &range.unit.id,
+            &ledger,
+            &pages,
+            &metrics,
+            &traces,
+            &originals,
+        );
+        (pages, metrics)
     }
 
     /// Independently resize cut-point intervals and concatenate rows; no packing oracle.
@@ -1691,7 +3110,15 @@ mod tests {
                             .count() as u64
                     })
                     .sum();
-                if minimum_ink(m).is_some_and(|floor| ink < floor) {
+                if minimum_ink(m).is_some_and(|floor| ink < floor)
+                    && !is_known_source_verse_label(
+                        col,
+                        &Band {
+                            top: pair[0],
+                            bottom: pair[1],
+                        },
+                    )
+                {
                     continue;
                 }
                 let resized = scale_strip(
@@ -2233,6 +3660,20 @@ mod tests {
         let mut cleaned = img.clone();
         mask_known_source_furniture(0, 233, &mut cleaned);
         assert_ne!(cleaned, img);
+        let identities: std::collections::BTreeSet<_> = SOURCE_FURNITURE_MASKS
+            .iter()
+            .map(|m| (m.source, m.page))
+            .collect();
+        for (source, page) in identities {
+            let mut cleaned = img.clone();
+            mask_known_source_furniture(source, page, &mut cleaned);
+            assert_ne!(cleaned, img, "installed identity {source}/{page}");
+            for (other_source, other_page) in [(2, page), (source, 0)] {
+                let mut cleaned = img.clone();
+                mask_known_source_furniture(other_source, other_page, &mut cleaned);
+                assert_eq!(cleaned, img);
+            }
+        }
     }
     #[test]
     fn known_source_furniture_preserves_pixels_outside_rectangle() {
@@ -2514,7 +3955,10 @@ mod tests {
             },
         );
     }
-    fn masked_tail_fixture() -> (GrayImage, Vec<PageBands>, LineMetrics) {
+    fn masked_tail_fixture(
+        bridge_width: u32,
+        watermark_shade: u8,
+    ) -> (GrayImage, Vec<PageBands>, LineMetrics) {
         let mut raw = column(
             400,
             200,
@@ -2526,7 +3970,7 @@ mod tests {
             ],
         );
         for y in 220..400 {
-            for x in 196..200 {
+            for x in 200 - bridge_width..200 {
                 raw.put_pixel(x, y, Luma([0]));
             }
         }
@@ -2537,7 +3981,7 @@ mod tests {
         }
         for y in 280..300 {
             for x in 100..160 {
-                raw.put_pixel(x, y, Luma([220]));
+                raw.put_pixel(x, y, Luma([watermark_shade]));
             }
         }
         let mut cleaned = raw.clone();
@@ -2575,42 +4019,44 @@ mod tests {
     }
     #[test]
     fn masked_tail_cut_points_exclude_furniture_rows() {
-        let (raw, pages, m) = masked_tail_fixture();
-        assert_eq!(line_bands(&raw, LINE_MIN_INK).last().unwrap().bottom, 400);
-        assert_eq!(
-            pages[0].1,
-            vec![
-                Band {
-                    top: 60,
-                    bottom: 80
-                },
-                Band {
-                    top: 100,
-                    bottom: 120
-                },
-                Band {
-                    top: 170,
-                    bottom: 190
-                },
-                Band {
-                    top: 220,
-                    bottom: 240
-                }
-            ]
-        );
-        let strips = strips_in_reading_order(&pages, &m);
-        assert_eq!(strips.last().unwrap().band.bottom, 240);
-        assert_eq!(
-            strips
-                .iter()
-                .map(|s| s.band.bottom - s.band.top)
-                .sum::<u32>(),
-            180
-        );
+        for (bridge_width, shade) in [(4, 220), (2, 230), (3, 210)] {
+            let (raw, pages, m) = masked_tail_fixture(bridge_width, shade);
+            assert_eq!(line_bands(&raw, LINE_MIN_INK).last().unwrap().bottom, 400);
+            assert_eq!(
+                pages[0].1,
+                vec![
+                    Band {
+                        top: 60,
+                        bottom: 80
+                    },
+                    Band {
+                        top: 100,
+                        bottom: 120
+                    },
+                    Band {
+                        top: 170,
+                        bottom: 190
+                    },
+                    Band {
+                        top: 220,
+                        bottom: 240
+                    }
+                ]
+            );
+            let strips = strips_in_reading_order(&pages, &m);
+            assert_eq!(strips.last().unwrap().band.bottom, 240);
+            assert_eq!(
+                strips
+                    .iter()
+                    .map(|s| s.band.bottom - s.band.top)
+                    .sum::<u32>(),
+                180
+            );
+        }
     }
     #[test]
     fn watermark_cleanup_removes_pixels_and_space() {
-        let (raw, pages, m) = masked_tail_fixture();
+        let (raw, pages, m) = masked_tail_fixture(4, 220);
         let geom = TrimGeom {
             dpi: 300,
             tb_w: 200,
@@ -2631,7 +4077,7 @@ mod tests {
     }
     #[test]
     fn watermark_cleanup_preserves_unrelated_paragraph_gap() {
-        let (raw, pages, m) = masked_tail_fixture();
+        let (raw, pages, m) = masked_tail_fixture(4, 220);
         let geom = TrimGeom {
             dpi: 300,
             tb_w: 200,
@@ -2658,9 +4104,13 @@ mod tests {
     }
 
     fn real_source_image(source: usize, page: u32) -> GrayImage {
+        static POPPLER: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
         let pdf = std::path::PathBuf::from(format!("Ploutarchou_Bioi_v{}.pdf", source + 1));
         assert!(pdf.is_file(), "required source PDF {}", pdf.display());
-        assert!(crate::render::pdftotext_available(), "Poppler is required");
+        assert!(
+            *POPPLER.get_or_init(crate::render::pdftotext_available),
+            "Poppler is required"
+        );
         let cache = std::path::Path::new("build_facsimile/render_cache");
         let png = cache.join(format!(
             "Ploutarchou_Bioi_v{}-p{page:04}-{BODY_DPI}dpi.png",
@@ -2672,6 +4122,16 @@ mod tests {
             crate::render::render_page(&pdf, page, BODY_DPI, cache).expect("production-DPI render")
         };
         image::open(png).expect("decode source raster").to_luma8()
+    }
+
+    /// Diagnostic (not a regression): band every Tier-B dropped-line source page and
+    /// print the raw `line_bands` output near the audit box, with ink-span, survival
+    /// through `render_and_band`, and a saved crop per candidate band. Supplies the
+    /// `(dimensions, observed)` coordinates for `SOURCE_BODY_BANDS` repair entries.
+    #[test]
+    #[ignore]
+    fn extract_tier_b_source_bands() {
+        measure_tier_b_source_bands();
     }
 
     fn save_retained_crop(id: &str, page: &PageBands) {
@@ -2962,42 +4422,79 @@ mod tests {
 
     fn assert_reviewed_duplicate_sequence(id: &str) {
         let ledger = repair_ledger();
-        let repair = ledger["repairs"]
+        let repairs: Vec<_> = ledger["repairs"]
             .as_array()
             .unwrap()
             .iter()
-            .find(|r| r["unit_id"] == id && r["disposition"] == "duplicate_page")
-            .unwrap();
+            .filter(|r| r["unit_id"] == id && r["disposition"] == "duplicate_page")
+            .collect();
+        assert!(!repairs.is_empty());
+        let skipped: std::collections::BTreeSet<_> = repairs
+            .iter()
+            .flat_map(|r| r["skip_pages"].as_array().unwrap())
+            .map(|p| p.as_u64().unwrap() as u32)
+            .collect();
         let range = operational_range(id);
-        let requested = std::cell::RefCell::new(Vec::new());
-        let (pages, _) = unit_body_strips(&range, |source, page| {
-            requested.borrow_mut().push(page);
-            Ok(real_source_image(source, page))
-        })
-        .unwrap();
-        let sequence = requested.into_inner();
-        assert_eq!(
-            sequence.len(),
-            pages.len(),
-            "every retained page must render successfully"
-        );
+        let (pages, metrics, traces) = audit_traced_unit(id);
+        let sequence: Vec<_> = traces
+            .iter()
+            .filter(|t| t.retained_index.is_some())
+            .map(|t| t.page)
+            .collect();
         let expected: Vec<_> = (range.unit.start_page..=range.end_page)
-            .filter(|page| {
-                !repair["skip_pages"]
+            .filter(|p| !skipped.contains(p))
+            .collect();
+        assert_eq!(sequence, expected);
+        assert_eq!(pages.len(), sequence.len());
+        let diagnostic = audit_repair_ledger();
+        let mut reviewed = Vec::new();
+        for repair in &repairs {
+            let seam: Vec<_> = repair["retain_sequence"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| p.as_u64().unwrap() as u32)
+                .collect();
+            assert!(sequence.windows(seam.len()).any(|w| w == seam));
+            for p in repair["skip_pages"].as_array().unwrap() {
+                assert!(!sequence.contains(&(p.as_u64().unwrap() as u32)));
+            }
+            let evidence = if repair["reviewed_lines"].is_array() {
+                *repair
+            } else {
+                diagnostic["existing_duplicate_evidence"]
                     .as_array()
                     .unwrap()
                     .iter()
-                    .any(|p| p.as_u64() == Some(*page as u64))
-            })
-            .collect();
-        assert_eq!(sequence, expected);
-        let seam: Vec<_> = repair["retain_sequence"]
-            .as_array()
-            .unwrap()
+                    .find(|r| r["unit_id"] == id && r["finding_ids"] == repair["finding_ids"])
+                    .unwrap()
+            };
+            let lines: Vec<ReviewedSourceLine> =
+                serde_json::from_value(evidence["reviewed_lines"].clone()).unwrap();
+            assert!(!lines.is_empty());
+            reviewed.extend(lines);
+        }
+        reviewed.sort_by_key(|l| (l.source_page, l.region[1]));
+        reviewed.dedup_by_key(|l| (l.source_page, l.region));
+        let originals = reviewed
             .iter()
-            .map(|p| p.as_u64().unwrap() as u32)
+            .map(|l| (l.source, l.source_page))
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .map(|(source, page)| ((source, page), real_source_image(source, page)))
             .collect();
-        assert!(sequence.windows(seam.len()).any(|w| w == seam));
+        assert_reviewed_source_lines_survive(
+            &reviewed,
+            &ReviewedLineContext {
+                traces: &traces,
+                originals: &originals,
+                pages: &pages,
+                metrics: &metrics,
+                scale: production_body_scale(),
+                geom: TrimGeom::default(),
+            },
+            false,
+        );
         for (index, (&page, (column, bands))) in sequence.iter().zip(&pages).enumerate() {
             let raw = real_source_image(range.unit.source, page);
             // Detect the column on the masked image so the crop matches production on
@@ -3037,7 +4534,10 @@ mod tests {
         }
         println!(
             "{id}: reviewed retained sequence {sequence:?}; join {:?}",
-            repair["adjacent_prose"]
+            repairs
+                .iter()
+                .map(|r| &r["adjacent_prose"])
+                .collect::<Vec<_>>()
         );
     }
 
@@ -3057,6 +4557,48 @@ mod tests {
     #[ignore = "requires source PDFs and production-DPI renders"]
     fn cato_minor_repeated_folios_survive_once() {
         assert_reviewed_duplicate_sequence("cato_minor");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn agesilaus_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("agesilaus");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn alexander_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("alexander");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn phocion_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("phocion");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn cicero_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("cicero");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn antonius_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("antonius");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn aratus_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("aratus");
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn otho_second_scan_survives_once() {
+        assert_reviewed_duplicate_sequence("otho");
     }
 
     #[test]
@@ -3268,7 +4810,70 @@ mod tests {
             let raw_column = detect_latin_column(&original).unwrap();
             let raw_crop = crop_column(&original, &raw_column);
             let before = drop_furniture(&line_bands(&raw_crop, LINE_MIN_INK), original.height());
-            let crop = detect_latin_column(&cleaned).unwrap();
+            let crop = preserve_known_body_crop_edge(
+                source,
+                page,
+                &cleaned,
+                detect_latin_column(&cleaned).unwrap(),
+            );
+            if let Some(expected) = repair["expected_crop_edges"].as_array() {
+                assert_eq!(
+                    vec![crop.left as u64, crop.right as u64],
+                    expected
+                        .iter()
+                        .map(|v| v.as_u64().unwrap())
+                        .collect::<Vec<_>>()
+                );
+                let expected: Vec<_> = repair["expected_pass_a_bands"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(ledger_band)
+                    .collect();
+                assert_eq!(
+                    band_source_column(source, page, &crop_column(&cleaned, &crop)).1,
+                    expected,
+                    "source {source} page {page}: independently reviewed Pass A"
+                );
+                let trace = RetainedSourcePageTrace {
+                    source,
+                    page,
+                    retained_index: None,
+                    crop: [0, original.width()],
+                    bands: vec![],
+                    deleted_rows: vec![],
+                };
+                for region in repair["preserved_latin_regions"].as_array().unwrap() {
+                    assert_source_region_pixels_survive(
+                        &original,
+                        &cleaned,
+                        &trace,
+                        std::array::from_fn(|i| region[i].as_u64().unwrap() as u32),
+                    );
+                }
+                if repair["finding_ids"].as_array().unwrap().iter().any(|id| {
+                    ["H1", "H2", "MARIUS_HEAD", "CATO_MAJOR_FOLIO"]
+                        .iter()
+                        .any(|name| id == name)
+                }) {
+                    let (pages, metrics, traces) =
+                        audit_traced_unit(repair["unit_id"].as_str().unwrap());
+                    let index = retained_page(&traces, source, page)
+                        .unwrap()
+                        .retained_index
+                        .unwrap();
+                    let first = ledger_band(&repair["expected_first_band"]);
+                    assert_eq!(
+                        pages[index].1.first(),
+                        Some(&first),
+                        "cleaned head leaves the reviewed first body band"
+                    );
+                    assert!(strips_in_reading_order(&pages, &metrics)
+                        .iter()
+                        .filter(|s| s.page_img_index == index)
+                        .all(|s| s.band.top >= first.top));
+                }
+            }
             let copied_span = |bands: &[Band]| {
                 bands
                     .last()
@@ -3370,7 +4975,12 @@ mod tests {
         let raw = real_source_image(source, page);
         let mut masked = raw.clone();
         mask_known_source_furniture(source, page, &mut masked);
-        let crop = detect_latin_column(&masked).unwrap();
+        let crop = preserve_known_body_crop_edge(
+            source,
+            page,
+            &masked,
+            detect_latin_column(&masked).unwrap(),
+        );
         for band in &retained.1 {
             for y in band.top..band.bottom {
                 for x in 0..retained.0.width() {
@@ -3398,14 +5008,6 @@ mod tests {
         scale: f32,
         geom: &TrimGeom,
     ) -> (Vec<StripRange>, Vec<CanvasRange>, Vec<GrayImage>) {
-        let mut stream_top = 0;
-        let mut strips = Vec::new();
-        for strip in strips_in_reading_order(pages, metrics) {
-            let scaled = scale_strip(&pages[strip.page_img_index].0, &strip.band, scale).unwrap();
-            let stream_bottom = stream_top + scaled.height();
-            strips.push((strip, stream_top, stream_bottom));
-            stream_top = stream_bottom;
-        }
         let canvases = compose_pages(
             pages,
             scale,
@@ -3414,6 +5016,25 @@ mod tests {
             geom.body_budget(),
             metrics,
         );
+        ranges_for_composed_canvases(pages, metrics, scale, geom, canvases)
+    }
+
+    /// Map strips into an already verified set of composed canvases.
+    fn ranges_for_composed_canvases(
+        pages: &[PageBands],
+        metrics: &LineMetrics,
+        scale: f32,
+        geom: &TrimGeom,
+        canvases: Vec<GrayImage>,
+    ) -> (Vec<StripRange>, Vec<CanvasRange>, Vec<GrayImage>) {
+        let mut stream_top = 0;
+        let mut strips = Vec::new();
+        for strip in strips_in_reading_order(pages, metrics) {
+            let scaled = scale_strip(&pages[strip.page_img_index].0, &strip.band, scale).unwrap();
+            let stream_bottom = stream_top + scaled.height();
+            strips.push((strip, stream_top, stream_bottom));
+            stream_top = stream_bottom;
+        }
         let mut canvas_top = 0;
         let canvas_ranges = canvases
             .iter()
@@ -3427,7 +5048,7 @@ mod tests {
         (strips, canvas_ranges, canvases)
     }
 
-    /// W1/W2: the two confirmed body watermarks. The right-margin masks delete the
+    /// Reviewed body-watermark tails. The right-margin masks delete the
     /// scan-edge ink that previously merged into the footer and dragged the copied
     /// region far past the last Latin line. Both the pixels and that copied space must
     /// go, and the following page's first line must survive.
@@ -3437,12 +5058,31 @@ mod tests {
         let ledger = repair_ledger();
         let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/watermark_cleanup");
         std::fs::create_dir_all(dir).unwrap();
-        // The pre-margin-mask copied endpoints measured in the first rebuild.
+        let mut units = std::collections::BTreeMap::new();
+        let mut measurements = Vec::new();
+        // Frozen copied endpoints and line regions bind the source seams.
         for (unit_id, source, page, next, old_copied) in [
             ("marcius_coriolanus", 0usize, 287u32, 288u32, 2940u32),
             ("timoleon", 0, 299, 300, 2922),
+            ("aemilius_paulus", 0, 321, 322, 2881),
+            ("brutus", 1, 603, 604, 2735),
+            ("brutus", 1, 623, 624, 2735),
         ] {
-            let record = margin_repair_record(&ledger, source, page);
+            let record = if [321, 603, 623].contains(&page) {
+                ledger["repairs"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|r| {
+                        r["disposition"] == "mask"
+                            && r["source"].as_u64() == Some(source as u64)
+                            && r["source_page"].as_u64() == Some(page as u64)
+                    })
+                    .unwrap()
+                    .clone()
+            } else {
+                margin_repair_record(&ledger, source, page)
+            };
             let end = ledger_band(&record["expected_last_band"]).bottom;
 
             // Masked zone banding ends at the last Latin line, not the watermark tail.
@@ -3457,13 +5097,16 @@ mod tests {
             assert!(old_copied > end, "copied region shrinks past the watermark");
 
             // The full unit keeps the same endpoint and copies nothing below it.
-            let range = operational_range(unit_id);
-            let (pages, metrics) =
-                unit_body_strips(&range, |s, p| Ok(real_source_image(s, p))).unwrap();
-            let index = unit_retained_page(&pages, &range, page);
+            let (pages, metrics, traces) = units
+                .entry(unit_id)
+                .or_insert_with(|| audit_traced_unit(unit_id));
+            let index = retained_page(traces, source, page)
+                .unwrap()
+                .retained_index
+                .unwrap();
             let current = &pages[index];
             assert_eq!(current.1.last().unwrap().bottom, end, "full-unit endpoint");
-            let page_strips: Vec<_> = strips_in_reading_order(&pages, &metrics)
+            let page_strips: Vec<_> = strips_in_reading_order(pages, metrics)
                 .into_iter()
                 .filter(|s| s.page_img_index == index)
                 .collect();
@@ -3478,6 +5121,93 @@ mod tests {
             let following = &pages[index + 1];
             assert!(!following.1.is_empty(), "page {next} retains its Latin");
             assert_retained_bands_match_source(following, source, next);
+            if record["watermark_evidence"].is_object() {
+                let evidence = &record["watermark_evidence"];
+                let before: Vec<_> = evidence["baseline_strips"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(ledger_band)
+                    .collect();
+                let before_tail: u32 = before
+                    .iter()
+                    .map(|b| b.bottom.saturating_sub(b.top.max(end)))
+                    .sum();
+                let after_tail: u32 = page_strips
+                    .iter()
+                    .map(|s| s.band.bottom.saturating_sub(s.band.top.max(end)))
+                    .sum();
+                assert_eq!(
+                    before_tail as u64,
+                    evidence["copied_tail_height"]["before"].as_u64().unwrap()
+                );
+                assert_eq!(after_tail, 0, "zero copied furniture tail rows");
+                let copied: u32 = page_strips.iter().map(|s| s.band.bottom - s.band.top).sum();
+                let fragment_rows: u32 = evidence["fragment_preservation_copied_rows"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .chain(
+                        evidence["restoration_copied_rows"]
+                            .as_array()
+                            .into_iter()
+                            .flatten(),
+                    )
+                    .map(|r| {
+                        let band = ledger_band(r);
+                        assert!(band.bottom <= end);
+                        for row in band.top..band.bottom {
+                            assert_eq!(
+                                page_strips
+                                    .iter()
+                                    .filter(|s| s.band.top <= row && row < s.band.bottom)
+                                    .count(),
+                                1
+                            );
+                        }
+                        band.bottom - band.top
+                    })
+                    .sum();
+                assert_eq!(
+                    copied as u64,
+                    record["copied_height"]["after"].as_u64().unwrap() + fragment_rows as u64
+                );
+                let lines: Vec<ReviewedSourceLine> =
+                    serde_json::from_value(evidence["following_reviewed_lines"].clone()).unwrap();
+                if evidence["following_first_source_line_required"] == true {
+                    assert_eq!(lines[0].region[1], following.1[0].top);
+                } else {
+                    assert!(
+                        lines
+                            .iter()
+                            .all(|l| l.source_page != 624 || l.region[1] >= 246),
+                        "C5 remains independently pending"
+                    );
+                }
+                let originals = lines
+                    .iter()
+                    .map(|l| {
+                        (
+                            (l.source, l.source_page),
+                            real_source_image(l.source, l.source_page),
+                        )
+                    })
+                    .collect();
+                assert_reviewed_source_lines_survive(
+                    &lines,
+                    &ReviewedLineContext {
+                        traces,
+                        originals: &originals,
+                        pages,
+                        metrics,
+                        scale: production_body_scale(),
+                        geom: TrimGeom::default(),
+                    },
+                    false,
+                );
+                measurements.push(serde_json::json!({"source":source,"source_page":page,"copied_height_before":record["copied_height"]["before"],
+                    "copied_height_after":copied,"copied_tail_before":before_tail,"copied_tail_after":after_tail}));
+            }
 
             // The composed seam at production scale follows the stream with no footer
             // padding: the complete row stream equals the concatenated resized strips.
@@ -3494,7 +5224,7 @@ mod tests {
             let geom = TrimGeom::default();
             let seam = assert_scaled_stream(
                 &seam_pages,
-                &metrics,
+                metrics,
                 production_body_scale(),
                 &geom,
                 4000,
@@ -3508,6 +5238,11 @@ mod tests {
                 old_copied - end
             );
         }
+        std::fs::write(
+            dir.join("measurements.json"),
+            serde_json::to_vec_pretty(&measurements).unwrap(),
+        )
+        .unwrap();
     }
 
     /// G1/G2/G3/G6: pages where column detection had locked onto a narrow right-margin
