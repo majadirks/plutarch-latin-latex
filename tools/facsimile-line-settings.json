@@ -1,0 +1,227 @@
+{
+  "connectivity": 8,
+  "grouping": {
+    "baseline_glyphs": 0.25,
+    "horizontal_glyphs": 2.5,
+    "punctuation_horizontal_glyphs": 1.5,
+    "punctuation_vertical_glyphs": 0.75,
+    "vertical_glyphs": 0.5
+  },
+  "gutter": {
+    "minimum_width_glyphs": 0.75,
+    "profile_fraction": 0.15,
+    "search_x": [
+      0.4,
+      0.62
+    ],
+    "smoothing_pixels": 9
+  },
+  "ink": {
+    "halo_pixels": 1,
+    "minimum_deficit_pixels": 4,
+    "minimum_projected_pixels": 4,
+    "unsupported_fraction": 0.02
+  },
+  "inspection_roi": [
+    0.32,
+    0.0,
+    1.0,
+    1.0
+  ],
+  "ocr": {
+    "language": "eng",
+    "reader_psm": 3,
+    "retry_dpi": 300,
+    "retry_psm": [
+      6,
+      11
+    ],
+    "source_psm": 6
+  },
+  "reader_dpi": 180,
+  "registration": {
+    "features": 4000,
+    "max_iters": 2000,
+    "minimum_inlier_fraction": 0.6,
+    "minimum_inliers": 8,
+    "minimum_width_fraction": 0.5,
+    "placement_margin": 0.05,
+    "ratio": 0.7,
+    "residual_glyphs": 0.2,
+    "rotation_degrees": 3,
+    "scale_tolerance": 0.1,
+    "seed": 0,
+    "translation_glyphs": 2
+  },
+  "schema_version": 1,
+  "seam_context_lines": 3,
+  "source_dpi": 300,
+  "source_index": {
+    "localization_rule": {
+      "duplicate_endpoint_tolerance_line_heights": 1,
+      "maximum_extra_source_lines": 1,
+      "minimum_iou": 0.1,
+      "omission_source_coverage": 0.8,
+      "tiny_event": "iou"
+    },
+    "thresholds": {
+      "boundary": {
+        "coverage_min": 0.8,
+        "edge_tokens": 6,
+        "minimum_tokens": 8,
+        "ordered_min": 0.75,
+        "output_window": 96,
+        "source_window": 48
+      },
+      "chain": {
+        "backward_cap": 64,
+        "beam": 8,
+        "forward_output": 0.02,
+        "forward_source": 0.04,
+        "gap_cap": 400,
+        "restart_backward": 0.5,
+        "restart_base": 2.0
+      },
+      "clipping": {
+        "correlation_min": 0.65,
+        "high_correlation_min": 0.85,
+        "minimum_lateral_lines": 3,
+        "minimum_outside_ink": 4,
+        "minimum_slice_components": 2,
+        "outside_white_fraction": 0.95,
+        "source_word_padding_glyph_heights": 0.25
+      },
+      "duplicate_high": {
+        "cosine_min": 0.8,
+        "informative_min": 40,
+        "ordered_min": 0.9
+      },
+      "head": {
+        "faint_ink_fraction_min": 0.4,
+        "faint_min_gray": 0,
+        "high_min": 0.8,
+        "image_capital_height_min": 0.7,
+        "minimum_cues": 3,
+        "nomination_min": 0.8,
+        "padding_line_heights": 2,
+        "source_head_bottom": 0.12,
+        "suffix_min": 0.8
+      },
+      "matrix_cap": 400,
+      "omission": {
+        "context_min_informative": 8,
+        "context_window": 16,
+        "fuzzy_cover_min": 0.75,
+        "image_retention_min": 0.85,
+        "latin_line_fraction": 0.5,
+        "line_fraction": 0.8,
+        "min_missing_lines": 1,
+        "min_missing_tokens": 5,
+        "ordered_min": 0.8,
+        "placement_margin_min": 0.1,
+        "reader_recovery_min": 0.8,
+        "seam_line_span": 0,
+        "source_box_padding_line_heights": 0.25,
+        "source_raster_min": 0.8
+      },
+      "order_high": {
+        "backward_tokens_min": 64
+      },
+      "registration": {
+        "dpi": 150,
+        "features": 4000,
+        "minimum_inlier_fraction": 0.3,
+        "minimum_inliers": 24,
+        "ratio": 0.7,
+        "reprojection_px": 2.5
+      },
+      "repeat_min_tokens": 16,
+      "retrieval": {
+        "anchor_min_tokens": 8,
+        "cosine_min": 0.55,
+        "top_k": 8
+      },
+      "scraps": {
+        "correlation_min": 0.8,
+        "greek_characters_min": 2,
+        "margin_body_fraction": 0.15,
+        "minimum_components": 3,
+        "minimum_lines": 2
+      },
+      "source_duplicate": {
+        "cosine_min": 0.55,
+        "informative_min": 40,
+        "ordered_min": 0.75,
+        "short_unit_fraction": 0.6,
+        "top_k": 8
+      },
+      "spacing": {
+        "excess_gap_line_heights": 2,
+        "gap_min_line_pitches": 3,
+        "rule_max_width_line_heights": 0.3,
+        "rule_min_line_heights": 4,
+        "source_correspondence_min": 0.85,
+        "white_fraction_min": 0.9
+      },
+      "watermark": {
+        "dpi": 90,
+        "edge_strip_line_heights": 4,
+        "event_edge_line_heights": 3,
+        "faint_ink_fraction_min": 0.45,
+        "faint_min_gray": 110,
+        "fallback_max": 1.5,
+        "fallback_min": 0.3,
+        "glyph_support_min": 2,
+        "group_reader_glyph_support_min": 1,
+        "high_min": 0.8,
+        "ink_fraction_min": 0.005,
+        "nomination_glyph_support_min": 2,
+        "nomination_min": 0.6,
+        "partial_bands": [
+          [
+            0.0,
+            0.25
+          ],
+          [
+            0.25,
+            0.5
+          ],
+          [
+            0.5,
+            0.75
+          ],
+          [
+            0.75,
+            1.0
+          ]
+        ],
+        "rotation_max": 3,
+        "rotation_min": -3,
+        "scale_max": 1.3,
+        "scale_min": 0.75,
+        "scale_step": 0.05,
+        "source_footer_scale_step": 0.025,
+        "source_seam_context_tokens": 128,
+        "stable_distance_line_heights": 1.0,
+        "template_std_min": 2.0
+      }
+    },
+    "views": "strict-casefold-tolerant-ligature-longs-v1",
+    "windows": {
+      "local": [
+        16,
+        4
+      ],
+      "long": [
+        64,
+        16
+      ]
+    }
+  },
+  "task_longest_side": 1400,
+  "task_max_lines": 6,
+  "thresholds": [
+    170,
+    210
+  ]
+}

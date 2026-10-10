@@ -4441,13 +4441,15 @@ def parse_tesseract_tsv(tsv):
     return rows
 
 
-def run_tesseract_tsv(image_path, *, psm, lang, tesseract, timeout=240):
+def run_tesseract_tsv(image_path, *, psm, lang, tesseract, timeout=240, tessdata_dir=None):
     """Run Tesseract once in TSV mode, preserving per-word boxes and confidence."""
     with tempfile.TemporaryDirectory() as temporary:
         base = Path(temporary) / "ocr"
         with progress_heartbeat(f"OCR {Path(image_path).name} psm {psm}"):
-            run_external([tesseract, str(image_path), str(base), "--psm", str(psm),
-                          "-l", lang, "tsv"], timeout=timeout)
+            arguments = [tesseract, str(image_path), str(base), "--psm", str(psm), "-l", lang]
+            if tessdata_dir:
+                arguments.extend(["--tessdata-dir", str(tessdata_dir)])
+            run_external(arguments + ["tsv"], timeout=timeout)
         return parse_tesseract_tsv(base.with_suffix(".tsv").read_text(encoding="utf-8"))
 
 
@@ -4477,7 +4479,8 @@ def group_ocr_lines(words):
 
 
 def ocr_page_region(pdf, record, page_number, dpi, psm, lang, work, repo, *,
-                    box=None, tesseract=None, pdftoppm=None, timeout=240):
+                    box=None, tesseract=None, pdftoppm=None, timeout=240,
+                    tessdata_dir=None, policy=None):
     """Raster-OCR a full MediaBox page or a cropped region; boxes map to the full raster.
 
     Reuse is keyed on the rendered pixels plus OCR settings, never a bare filename. Blank
@@ -4487,14 +4490,17 @@ def ocr_page_region(pdf, record, page_number, dpi, psm, lang, work, repo, *,
     executable = tesseract or shutil.which("tesseract")
     if not executable:
         raise AuditError("Tesseract must be available; supply --tesseract PATH.")
-    raster, render_meta = render_page(pdf, record, page_number, dpi, work, repo, pdftoppm=pdftoppm)
+    raster, render_meta = render_page(pdf, record, page_number, dpi, work, repo, pdftoppm=pdftoppm, policy=policy)
     dimensions = render_meta["raster_dimensions"]
     version = tesseract_version(executable)
     metadata = {"adapter": OCR_ADAPTER, "raster_sha256": render_meta["raster_sha256"],
                 "dpi": dpi, "psm": psm, "lang": lang, "tesseract_version": version,
                 "crop": [round(value, 6) for value in box] if box else None}
+    if tessdata_dir:
+        metadata['language_sha256'] = hash_file(Path(tessdata_dir) / f'{lang}.traineddata')
+        metadata['adapter_sha256'] = hash_file(Path(__file__))
     path = Path(work) / "cache" / "ocr" / f"{json_hash(metadata)}.json"
-    cached = reusable_entry(path, metadata, work, repo)
+    cached = reusable_entry(path, metadata, work, repo, policy=policy)
     if cached:
         return cached
     clipped = False
@@ -4507,10 +4513,10 @@ def ocr_page_region(pdf, record, page_number, dpi, psm, lang, work, repo, *,
             with tempfile.TemporaryDirectory() as temporary:
                 region_path = Path(temporary) / "region.png"
                 crop.save(region_path)
-                rows = run_tesseract_tsv(region_path, psm=psm, lang=lang, tesseract=executable, timeout=timeout)
+                rows = run_tesseract_tsv(region_path, psm=psm, lang=lang, tesseract=executable, timeout=timeout, tessdata_dir=tessdata_dir)
     else:
         offset = (0, 0)
-        rows = run_tesseract_tsv(raster, psm=psm, lang=lang, tesseract=executable, timeout=timeout)
+        rows = run_tesseract_tsv(raster, psm=psm, lang=lang, tesseract=executable, timeout=timeout, tessdata_dir=tessdata_dir)
     words = []
     for row in rows:
         normalized = normalize_tsv_box(row["pixel_box"], offset, dimensions)
@@ -4524,7 +4530,7 @@ def ocr_page_region(pdf, record, page_number, dpi, psm, lang, work, repo, *,
             "raster_dimensions": dimensions, "box": box, "clipped": clipped,
             "word_count": len(words), "readable": bool(words),
             "words": words, "lines": group_ocr_lines(words)}
-    write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata, "data": data}, work, repo)
+    write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata, "data": data}, work, repo, policy=policy)
     progress(f"OCR {record['path']} page {page_number} ({'region' if box else 'full'}) "
              f"dpi {dpi} psm {psm}: {len(words)} words{' [unreadable]' if not words else ''}")
     return data
