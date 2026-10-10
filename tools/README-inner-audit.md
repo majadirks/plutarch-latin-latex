@@ -163,7 +163,8 @@ the retained source records needed by their reviewed regions. The full-work
 baseline manifest retains ordered unit summaries and authenticated trace
 references; large unit trace bodies stay in the archive. The projection stays
 below 1 MiB and contains no image payloads or rendered canvases. The exporter
-prints its current document count and byte size.
+uses compact JSON serialization, preserving every projected field and digest
+without indentation overhead, and prints its document count and byte size.
 
 Each `source_sha256` identifies the original historical file, not the projected
 JSON. The fields and digest metadata are copied historical expectations. A green

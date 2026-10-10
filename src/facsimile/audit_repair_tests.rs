@@ -994,7 +994,7 @@ fn export_portable_fixture() -> Result<()> {
     let ledger = audit_repair_ledger();
     let documents = load_fixture_source_documents(&ledger, &root.root)?;
     let projection = project_audit_evidence(&ledger, &documents)?;
-    let mut bytes = serde_json::to_vec_pretty(&projection)?;
+    let mut bytes = serde_json::to_vec(&projection)?;
     bytes.push(b'\n');
     std::fs::write(&out, &bytes)?;
     println!(
@@ -2739,7 +2739,16 @@ fn assert_reviewed_source_lines_survive_with_policies(
                     && s.band.bottom >= mapped_bottom
             })
             .collect();
-        assert_eq!(owners.len(), 1, "whole reviewed line extracted once");
+        assert_eq!(
+            owners.len(),
+            1,
+            "whole reviewed line extracted once: source {} page {} region {:?}, metrics {:?}, strips {:?}",
+            line.source,
+            line.source_page,
+            line.region,
+            metrics,
+            strips.iter().filter(|(s, _, _)| s.page_img_index == index).map(|(s, _, _)| s.band).collect::<Vec<_>>()
+        );
         let position = (index, top);
         assert!(
             previous.is_none_or(|p| p < position),
@@ -2766,7 +2775,10 @@ fn assert_reviewed_source_lines_survive_with_policies(
             "all reviewed glyph rows returned once on canvases"
         );
         assert!(
-            ((right - trace.crop[0]) as f32 * scale).ceil() as u32 + geom.pad_x <= geom.tb_w,
+            ((right - trace.crop[0]) as f32 * source_strip_scale(&pages[index].0, *scale)).ceil()
+                as u32
+                + geom.pad_x
+                <= geom.tb_w,
             "reviewed right glyphs fit output text width: source {} page {} region {:?}",
             line.source,
             line.source_page,
@@ -3306,6 +3318,16 @@ fn audit_candidate_source_trace() {
     }
 }
 
+#[test]
+#[ignore = "requires original PDFs and production-DPI raster evidence"]
+fn demosthenes_merged_line_composition_trace() {
+    audit_save_unit_trace(
+        "demosthenes",
+        &std::collections::BTreeSet::from([444, 445, 446]),
+        "merged-head-composition",
+    );
+}
+
 type TierBTarget = (&'static str, usize, u32, (u32, u32), (u32, u32), (u32, u32));
 const TIER_B_TARGETS: &[TierBTarget] = &[
     (
@@ -3573,6 +3595,87 @@ fn measured_glyph_region(column: &GrayImage, crop_left: u32, top: u32, bottom: u
     bounds
 }
 
+fn extracted_neighbor_bands<'a>(
+    traces: &'a [RetainedSourcePageTrace],
+    pages: &[PageBands],
+    metrics: &LineMetrics,
+) -> Vec<(&'a RetainedSourcePageTrace, &'a [u32; 2])> {
+    let strips = strips_in_reading_order(pages, metrics);
+    traces
+        .iter()
+        .filter(|t| t.retained_index.is_some())
+        .flat_map(|t| t.bands.iter().map(move |b| (t, b)))
+        .filter(|(t, b)| {
+            let Some(top) = t.map_row(b[0]) else {
+                return false;
+            };
+            let Some(bottom) = t.map_row(b[1] - 1).map(|row| row + 1) else {
+                return false;
+            };
+            strips.iter().any(|strip| {
+                Some(strip.page_img_index) == t.retained_index
+                    && strip.band.top <= top
+                    && strip.band.bottom >= bottom
+            })
+        })
+        .collect()
+}
+
+#[test]
+fn tier_b_neighbor_measurement_skips_uncomposed_furniture() {
+    let bands = vec![
+        Band {
+            top: 2545,
+            bottom: 2575,
+        },
+        Band {
+            top: 2592,
+            bottom: 2611,
+        },
+    ];
+    let col = column(2853, 794, &[(2545, 2575, 14, 791), (2592, 2611, 660, 685)]);
+    let trace = RetainedSourcePageTrace {
+        source: 1,
+        page: 444,
+        crop: [894, 1688],
+        retained_index: Some(0),
+        bands: vec![[2545, 2575], [2592, 2611]],
+        deleted_rows: vec![],
+    };
+    let metrics = LineMetrics {
+        height_med: 32,
+        height_mad: 1,
+        width_med: 777,
+    };
+    let mut traces = [trace];
+    let candidates = extracted_neighbor_bands(&traces, &[(col, bands)], &metrics);
+    assert_eq!(candidates.len(), 1);
+    assert_eq!(
+        *candidates[0].1,
+        [2545, 2575],
+        "preceding Latin is the anchor; the folio is below the production ink floor"
+    );
+    traces[0].deleted_rows = vec![[100, 110]];
+    let compacted = column(2843, 794, &[(2535, 2565, 14, 791), (2582, 2601, 660, 685)]);
+    let bands = vec![
+        Band {
+            top: 2535,
+            bottom: 2565,
+        },
+        Band {
+            top: 2582,
+            bottom: 2601,
+        },
+    ];
+    let candidates = extracted_neighbor_bands(&traces, &[(compacted, bands)], &metrics);
+    assert_eq!(candidates.len(), 1);
+    assert_eq!(
+        *candidates[0].1,
+        [2545, 2575],
+        "anchor keeps original-source coordinates after deleted rows"
+    );
+}
+
 fn measure_tier_b_source_bands() {
     let ledger = audit_repair_ledger();
     let dir = std::path::Path::new("tmp/pdfs/inner_tomi_audit_repairs/band_extract");
@@ -3584,7 +3687,8 @@ fn measure_tier_b_source_bands() {
         .collect();
     let mut units = std::collections::BTreeMap::new();
     for &(id, source, page) in &pages {
-        let (_, _, traces) = units.entry(id).or_insert_with(|| audit_traced_unit(id));
+        let (unit_pages, unit_metrics, traces) =
+            units.entry(id).or_insert_with(|| audit_traced_unit(id));
         let trace = retained_page(traces, source, page).unwrap();
         let raw = real_source_image(source, page);
         let raw_column = detect_latin_column(&raw).unwrap();
@@ -3674,11 +3778,7 @@ fn measure_tier_b_source_bands() {
                     role: "promoted_missing_line".into(),
                 }));
             }
-            let candidates: Vec<_> = traces
-                .iter()
-                .filter(|t| t.retained_index.is_some())
-                .flat_map(|t| t.bands.iter().map(move |b| (t, b)))
-                .collect();
+            let candidates = extracted_neighbor_bands(traces, unit_pages, unit_metrics);
             for (neighbor, b) in [
                 candidates
                     .iter()
@@ -4577,6 +4677,97 @@ fn tier_b_crop_edges_preserve_reviewed_foot_glyphs() {
         (1, 580, (1816, 2835), [892, 1704], [889, 1704], [889, 2560]),
     ] {
         assert_reviewed_crop_edge_signature(source, page, dimensions, raw_bounds, expected, glyph);
+    }
+}
+
+#[test]
+fn tier_b_crop_edges_preserve_reviewed_merged_glyphs() {
+    for (source, page, dimensions, raw_bounds, expected, glyph) in [
+        (
+            1,
+            619,
+            (1822, 2824),
+            [1017, 1822],
+            [1014, 1822],
+            [1014, 200],
+        ),
+        (
+            1,
+            445,
+            (1844, 2842),
+            [1017, 1844],
+            [1015, 1844],
+            [1015, 200],
+        ),
+    ] {
+        assert_reviewed_crop_edge_signature(source, page, dimensions, raw_bounds, expected, glyph);
+    }
+}
+
+#[test]
+fn phocion_wide_column_fits_without_clipping_source_glyphs() {
+    let fixture = audit_repair_ledger();
+    let sample = audit_fingerprint_image(&fixture["source_fingerprints"]["phocion_wide_body_line"]);
+    let mut col = GrayImage::from_pixel(873, 2836, Luma([255]));
+    image::imageops::replace(&mut col, &sample, 6, 206);
+    let requested = 1.2023952;
+    let fitted = source_strip_scale(&col, requested);
+    assert_eq!(fitted, 1004.0 / 873.0);
+    assert_eq!(
+        source_strip_scale(&col, 1.0),
+        1.0,
+        "smaller requested scales retain their size"
+    );
+    let band = Band {
+        top: 206,
+        bottom: 243,
+    };
+    let raw = image::imageops::crop_imm(&col, 0, 206, 873, 37).to_image();
+    let scaled = scale_strip(&col, &band, requested).unwrap();
+    assert_eq!(scaled.width(), 1004);
+    assert_eq!(
+        scaled,
+        resize_line_image(&raw, fitted),
+        "full column is resampled without a clipped edge"
+    );
+    let pages = vec![(
+        col.clone(),
+        vec![Band {
+            top: 206,
+            bottom: 239,
+        }],
+    )];
+    let metrics = LineMetrics {
+        height_med: 33,
+        height_mad: 1,
+        width_med: 849,
+    };
+    let geom = TrimGeom::default();
+    let canvases = assert_scaled_stream(
+        &pages,
+        &metrics,
+        requested,
+        &geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
+    );
+    assert_eq!(canvases.len(), 1);
+    assert_eq!(canvases[0].width(), geom.tb_w);
+    let shade = col.get_pixel(6, 206)[0];
+    col.put_pixel(6, 206, Luma([shade ^ 1]));
+    assert_eq!(
+        source_strip_scale(&col, requested),
+        requested,
+        "changed source pixels reject the exception"
+    );
+    for dimensions in [(874, 2836), (873, 2837)] {
+        let mut changed = GrayImage::from_pixel(dimensions.0, dimensions.1, Luma([255]));
+        image::imageops::replace(&mut changed, &sample, 6, 206);
+        assert_eq!(
+            source_strip_scale(&changed, requested),
+            requested,
+            "changed source dimensions reject the exception"
+        );
     }
 }
 

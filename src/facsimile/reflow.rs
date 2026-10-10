@@ -909,6 +909,14 @@ fn preserve_known_body_crop_edge(
             left: 889,
             right: 1704,
         },
+        (1, 619, (1822, 2824), 1017, 1822) => Column {
+            left: 1014,
+            right: 1822,
+        },
+        (1, 445, (1844, 2842), 1017, 1844) => Column {
+            left: 1015,
+            right: 1844,
+        },
         _ => column,
     }
 }
@@ -1826,6 +1834,62 @@ const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
             bottom: 272,
         },
     },
+    SourceBodyBand {
+        source: 1,
+        page: 619,
+        unit_id: "brutus",
+        dimensions: (808, 2824),
+        observed: Band {
+            top: 120,
+            bottom: 225,
+        },
+        protected: Band {
+            top: 193,
+            bottom: 225,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 329,
+        unit_id: "cato_minor",
+        dimensions: (839, 2831),
+        observed: Band {
+            top: 40,
+            bottom: 210,
+        },
+        protected: Band {
+            top: 180,
+            bottom: 210,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 445,
+        unit_id: "demosthenes",
+        dimensions: (829, 2842),
+        observed: Band {
+            top: 44,
+            bottom: 226,
+        },
+        protected: Band {
+            top: 197,
+            bottom: 226,
+        },
+    },
+    SourceBodyBand {
+        source: 1,
+        page: 291,
+        unit_id: "phocion",
+        dimensions: (873, 2836),
+        observed: Band {
+            top: 173,
+            bottom: 239,
+        },
+        protected: Band {
+            top: 206,
+            bottom: 239,
+        },
+    },
 ];
 
 /// Keep verified source body intervals when their exact band signature survives.
@@ -2589,15 +2653,31 @@ fn retain_body_canvases(canvases: &mut Vec<GrayImage>, scale: f32, metrics: &Lin
     }
 }
 
-/// Scale a strip (a cut-point interval of a page column) by the global `scale`,
-/// returning `None` for an empty interval.
+/// Fit the reviewed wide source column inside the production canvas while
+/// preserving its layout and every original column pixel through resampling.
+fn source_strip_scale(img: &GrayImage, requested: f32) -> f32 {
+    if img.dimensions() == (873, 2836)
+        && matches_source_region_fingerprint(
+            img,
+            [6, 206, 855, 239],
+            "ca1e88fb55367597531166802b72bb1be361c09718cc95e4f5aa1c701e192eeb",
+        )
+    {
+        requested.min(TrimGeom::default().content_width() as f32 / img.width() as f32)
+    } else {
+        requested
+    }
+}
+
+/// Scale a cut-point interval with its source-column scale, returning `None` for
+/// an empty interval. Ordinary columns use the requested global scale.
 fn scale_strip(img: &GrayImage, band: &Band, scale: f32) -> Option<GrayImage> {
     let h = band.bottom.saturating_sub(band.top);
     if h == 0 {
         return None;
     }
     let raw = image::imageops::crop_imm(img, 0, band.top, img.width(), h).to_image();
-    Some(resize_line_image(&raw, scale))
+    Some(resize_line_image(&raw, source_strip_scale(img, scale)))
 }
 
 /// Resize a complete line with rounded dimensions and a shared resampling filter.

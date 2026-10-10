@@ -60,6 +60,39 @@ protection records, without heuristic changes. Survival through `render_and_band
 is stage evidence, not proof of final composition. Antonius requires the downstream
 trace and method-specific checks in Phase 3 of the repair plan.
 
+Native-source review confirms the excluded running-head intervals Brutus p619
+[129,158), Cato Minor p329 [114,142), and Demosthenes p445 [127,156). Their source
+overlays and row-ink profiles are authenticated in
+`archive/tier_b_omission_repairs_2026_10_09/confirmed-merged-heads/measurements.json`
+(SHA-256 `f4e8dcdc09865a9dab3292c8522354dedd858ce4660e179c8bcf11da965a7292`).
+The Latin lies below each fragment. Phocion p291 has no body glyph in [173,206);
+the nonzero row ink there belongs to the page-edge rule. Its tightened protection
+preserves the complete first line. Brutus and Demosthenes use measured production
+crops [1014,1822) and [1015,1844), extending the detector's left edge by three and
+two pixels to preserve the initial glyphs. Their tuples below use the resulting
+widths; the original row-band measurements remain unchanged. Other measured crop
+exceptions are documented in
+[`the crop-edge measurements`](2026_10_09_16_58_TIER_B_CROP_EDGE_MEASUREMENTS.md);
+the immutable baseline retains the original detector-width measurements.
+
+Demosthenes's preceding anchor on p444 is the Latin rectangle
+[908,2545,1685,2575]. The earlier measurement [1554,2592,1579,2611] contains the
+printed folio `20`, which the production strip ink floor omits. The original
+failed candidate check, production trace, native source, and corrected anchor
+are retained under
+`archive/tier_b_omission_repairs_2026_10_09/merged-head-predecessor-failure/`.
+Neighbor measurement uses the production-extracted strips, so uncomposed folios
+cannot serve as body-line anchors. Original-source coordinates remain intact
+when retained images have deleted rows.
+
+Phocion p291 also requires a fingerprint-scoped column scale to preserve its
+complete line at the full-work output geometry. The 873-pixel source column
+would exceed the 1,004-pixel canvas at scale 1.2023952. Proportional resampling
+at 1004/873 fits the full column; the global-scale calculation is unchanged.
+The exact source fingerprint, width failure, selected method, passing tests,
+and installed evidence are recorded in
+[`the merged installation verification`](2026_10_09_20_49_TIER_B_MERGED_INSTALLATION_VERIFICATION.md).
+
 ## The extraction — 22 measurements for 20 events
 
 Lysander (2 lines, one page) and Pericles (2 lines across two pages) contribute two
@@ -77,12 +110,12 @@ Greek/head scrap stays dropped), measured from the band's row ink profile.
 | 3 | alcibiades | 0 | 242 | (787, 2981) | 2598..2623 | 2598..2623 | clean (verse) | `Tunc Alcibiades ad me ait balbutiens :` |
 | 4 | antonius | 1 | 562 | (815, 2835) | 249..1356 | 249..1356 | **block (23 lines)** | `vatam dicunt … a Cæsare redemit.` |
 | 5 | artoxerxes | 1 | 633 | (786, 2826) | 2522..2554 | 2522..2554 | clean (foot) | `ut quidam perhibent, ut alii, a Care quodam, cui præmii` |
-| 6 | brutus | 1 | 619 | (805, 2824) | 120..225 | 193..225 | **merged** (Greek `ΟΣ.` above) | `quum leviter extremas partes attigissent paucosque dije-` |
+| 6 | brutus | 1 | 619 | (808, 2824) | 120..225 | 193..225 | **merged** (Greek `ΟΣ.` above) | `quum leviter extremas partes attigissent paucosque dije-` |
 | 7 | caius_marius | 0 | 519 | (818, 2973) | 246..292 | 246..292 | clean | `quominus ea contentio plane erumperet, sociali bello,` |
 | 8 | cato_minor | 1 | 329 | (839, 2831) | 40..210 | 180..210 | **merged** (head above) | `rum. Interim Rhodi ad negotium tractandum se com-` |
 | 9 | cato_minor | 1 | 352 | (804, 2842) | 2526..2564 | 2526..2564 | clean (foot) | `ducum considerata; quodsi tamen bona quadam fortuna` |
 | 10 | crassus | 1 | 44 | (789, 2822) | 191..224 | 191..224 | clean (incl. ch. `V.`) | `V. Ibi tum delitescenti Crasso quotidie alimenta affere-` |
-| 11 | demosthenes | 1 | 445 | (827, 2842) | 44..226 | 197..226 | **merged** (Greek `ΕΝΗΣ.` above) | `nunc promissis me movebis. Archia autem irato et mi-` |
+| 11 | demosthenes | 1 | 445 | (829, 2842) | 44..226 | 197..226 | **merged** (Greek `ΕΝΗΣ.` above) | `nunc promissis me movebis. Archia autem irato et mi-` |
 | 12 | dio | 1 | 566 | (805, 2838) | 2540..2577 | 2540..2577 | clean (foot) | `satis confirmata tyrannide deficientes Syracusani arripue-` |
 | 13 | dio | 1 | 580 | (812, 2835) | 2550..2597 | 2550..2597 | clean (foot; skew → verify, pad bottom if clipped) | `cem navibus advectus est Dionysius, Dionique arma quæ` |
 | 14 | lucullus | 0 | 631 | (795, 2978) | 252..287 | 252..287 | clean | `cum gerendum Pompeio dederat, et quam in ærarium` |
@@ -153,7 +186,7 @@ SourceBodyBand { source: 0, page: 242, unit_id: "alcibiades", dimensions: (787, 
 SourceBodyBand { source: 1, page: 633, unit_id: "artoxerxes", dimensions: (786, 2826),
     observed: Band { top: 2522, bottom: 2554 }, protected: Band { top: 2522, bottom: 2554 } },
 // brutus — Latin sub-range below Greek "ΟΣ."
-SourceBodyBand { source: 1, page: 619, unit_id: "brutus", dimensions: (805, 2824),
+SourceBodyBand { source: 1, page: 619, unit_id: "brutus", dimensions: (808, 2824),
     observed: Band { top: 120, bottom: 225 }, protected: Band { top: 193, bottom: 225 } },
 // caius_marius
 SourceBodyBand { source: 0, page: 519, unit_id: "caius_marius", dimensions: (818, 2973),
@@ -168,7 +201,7 @@ SourceBodyBand { source: 1, page: 352, unit_id: "cato_minor", dimensions: (804, 
 SourceBodyBand { source: 1, page: 44, unit_id: "crassus", dimensions: (789, 2822),
     observed: Band { top: 191, bottom: 224 }, protected: Band { top: 191, bottom: 224 } },
 // demosthenes — Latin sub-range below Greek "ΕΝΗΣ."
-SourceBodyBand { source: 1, page: 445, unit_id: "demosthenes", dimensions: (827, 2842),
+SourceBodyBand { source: 1, page: 445, unit_id: "demosthenes", dimensions: (829, 2842),
     observed: Band { top: 44, bottom: 226 }, protected: Band { top: 197, bottom: 226 } },
 // dio p566 — foot
 SourceBodyBand { source: 1, page: 566, unit_id: "dio", dimensions: (805, 2838),
