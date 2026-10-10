@@ -917,6 +917,10 @@ fn preserve_known_body_crop_edge(
             left: 1015,
             right: 1844,
         },
+        (1, 562, (1850, 2835), 906, 1721) => Column {
+            left: 876,
+            right: 1721,
+        },
         _ => column,
     }
 }
@@ -1890,6 +1894,20 @@ const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
             bottom: 239,
         },
     },
+    SourceBodyBand {
+        source: 1,
+        page: 562,
+        unit_id: "antonius",
+        dimensions: (845, 2835),
+        observed: Band {
+            top: 249,
+            bottom: 1356,
+        },
+        protected: Band {
+            top: 249,
+            bottom: 1356,
+        },
+    },
 ];
 
 /// Keep verified source body intervals when their exact band signature survives.
@@ -2448,6 +2466,24 @@ fn is_known_whole_source_strip(column: &GrayImage, band: &Band) -> bool {
     type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
     const WHOLE_STRIPS: &[WholeStripSignature] = &[
         (
+            (845, 2835),
+            Band {
+                top: 248,
+                bottom: 1364,
+            },
+            [0, 249, 845, 1364],
+            "d19136f5c88476c20db6ccdc4727421dfb1a354e3d080f34ecf2e3cdfe24c2ce",
+        ),
+        (
+            (845, 2835),
+            Band {
+                top: 1364,
+                bottom: 1691,
+            },
+            [0, 1364, 845, 1691],
+            "22bc97d92d9b1ae5970495b3c87fcb081f96e78b1df76b4dbc685a3b6bbf0567",
+        ),
+        (
             (817, 2836),
             Band {
                 top: 1507,
@@ -2653,16 +2689,24 @@ fn retain_body_canvases(canvases: &mut Vec<GrayImage>, scale: f32, metrics: &Lin
     }
 }
 
-/// Fit the reviewed wide source column inside the production canvas while
+/// Fit reviewed wide source columns inside the production canvas while
 /// preserving its layout and every original column pixel through resampling.
 fn source_strip_scale(img: &GrayImage, requested: f32) -> f32 {
-    if img.dimensions() == (873, 2836)
+    let known = (img.dimensions() == (873, 2836)
         && matches_source_region_fingerprint(
             img,
             [6, 206, 855, 239],
             "ca1e88fb55367597531166802b72bb1be361c09718cc95e4f5aa1c701e192eeb",
-        )
-    {
+        ))
+        || (img.dimensions() == (845, 2835)
+            && is_known_whole_source_strip(
+                img,
+                &Band {
+                    top: 248,
+                    bottom: 1364,
+                },
+            ));
+    if known {
         requested.min(TrimGeom::default().content_width() as f32 / img.width() as f32)
     } else {
         requested

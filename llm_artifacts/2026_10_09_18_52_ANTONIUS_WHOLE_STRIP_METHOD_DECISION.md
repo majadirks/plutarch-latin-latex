@@ -1,35 +1,40 @@
 # Context
 
-The Antonius omission remains `pending_repair`. The historical inventory records
-23 missing lines; the approved source measurement records 22. This note selects
-a source-preserving candidate for permanent installation after the remaining
-non-Antonius repairs. It does not declare reader restoration.
+Antonius protection is installed; rebuilt-reader acceptance remains pending. The
+historical inventory records 23 missing lines; the approved source measurement
+records 22. This note selects the source-preserving method used for permanent
+installation. Full-page edge measurements and installation evidence are in
+[`the installation verification`](2026_10_09_22_00_ANTONIUS_INSTALLATION_VERIFICATION.md).
+This note does not declare reader restoration.
 
 The initial handoff's whole-block method preserved the missing prose but did not
 fully preserve the approved marginal `c`, and its existing trial split the
 following chapter LXXXVII between physical PDF pages 275 and 276. Those trials
-are retained. The selected candidate includes the full annotations and prevents
-that neighboring split.
+are retained. The selected method includes the full annotations, prevents that
+neighboring split, and preserves initial letters in the skewed ending lines.
 
 # Measured configuration
 
 - Source: volume 2, physical page 562, original raster 1850 × 2835 at 300 dpi.
-- Raw detector bounds: [906,1721). Selected production bounds: [895,1721), giving
-  a column of 826 × 2835. The 11-pixel extension preserves the complete approved
-  `c` annotation; the `b` annotation and all Latin remain source pixels.
+- Raw detector bounds: [906,1721). Selected production bounds: [876,1721), giving
+  a column of 845 × 2835. The extension preserves both annotations and the ending
+  glyphs, whose native left edges reach x876. Small Greek edge fragments are
+  accepted source content. Source pixels are never retyped or normalized.
 - One protection record: source 1, page 562, owner `antonius`, dimensions
-  (826,2835), observed [249,1356), protected [249,1356).
-- Actual block strip: [249,1364), including the surrounding half-gap. At the
-  full-work scale 1.2023952, its dimensions are 993 × 1341.
+  (845,2835), observed [249,1356), protected [249,1356).
+- Actual block strip: [248,1364), including its native half-gap. Its fingerprint
+  region is [0,249,845,1364]. The full-work scale remains 1.2023952; the recognized
+  wide column uses proportional scale 1004/845 (approximately 1.1881657),
+  producing a block of 1004 × 1326.
 - Fresh body budget: 1394 pixels. First body budget: 1252 pixels. This is an
   interior source page, so the block can wrap onto a fresh regular body canvas.
-- Following chapter cluster: strip [1364,1691), scaled height 393. It also wraps
+- Following chapter cluster: strip [1364,1691), scaled height 389. It also wraps
   whole, preventing its first glyphs from filling the small space below the block.
 
 | Recognition | Column dimensions | Fingerprint region | SHA-256 of original grayscale pixels |
 | --- | --- | --- | --- |
-| Restored block | (826,2835) | [0,249,826,1364] | `5bd51a4290f3d012bcedf037f3cb8b0d67a4479bd381b3449a8165171b832632` |
-| Following chapter | (826,2835) | [0,1364,826,1691] | `5a3cfc2d34e81d528e74ac84ce4c954d91dbbc65f12403579b6d665a8c868980` |
+| Protected block | (845,2835) | [0,249,845,1364] | `d19136f5c88476c20db6ccdc4727421dfb1a354e3d080f34ecf2e3cdfe24c2ce` |
+| Following chapter | (845,2835) | [0,1364,845,1691] | `22bc97d92d9b1ae5970495b3c87fcb081f96e78b1df76b4dbc685a3b6bbf0567` |
 
 The historical narrow-column block fingerprint is
 `ab6e88cedbcb8117631ab2ee3d942eb10392f2da3616000cbd18f6548f5dae95` for
@@ -38,10 +43,11 @@ configuration.
 
 # Loss stage and method choice
 
-The raw detector emits [249,1356). The production furniture gap filter removes
-that interval before Pass A protection. This is the first loss stage of the
-missing prose. The original horizontal crop additionally clips the approved
-`c` marker before furniture filtering.
+The original detector crop emits [249,1356), which its furniture gap filter
+removes before protection. That is the baseline's first loss stage. The original
+crop also clips the `c` marker and ending glyphs. The selected wider crop changes
+neighboring ink and leaves the block furniture-kept; explicit protection remains
+idempotent through both passes.
 
 The plain-protection configuration uses the original 815-pixel column and
 disables Antonius whole-strip recognition. It restores the band through both
@@ -49,10 +55,12 @@ protection passes, but its Tall strip is fill-split across canvases 96 and 97.
 The first bisected reviewed rectangle is [948,347,1721,404], with scaled stream
 interval [130693,130763). Row retention alone therefore does not prove legibility.
 
-Whole-block recognition is selected because 1341 fits the fresh 1394-pixel
+Whole-block recognition is selected because 1326 fits the fresh 1394-pixel
 budget. The measured crop extension preserves approved source content; it does
 not remove annotations or manufacture whitespace. Recognition of the following
-393-pixel chapter cluster prevents the adjacent page break from cutting its glyphs.
+389-pixel chapter cluster prevents the adjacent page break from cutting its glyphs.
+The fingerprint-scoped column scale fits the full original column inside the
+canvas. All 12 remaining body regions on p562 are also required to survive whole.
 
 Explicit disjoint horizontal line bands are rejected. Consecutive measured
 rectangles overlap vertically, with minimum vertical gap −11 pixels. The saved
@@ -75,7 +83,7 @@ An unwind-safe guard restores every override. The diagnostic records actual Pass
 and Pass B bands and metrics, strip sizes, packed and returned hashes, source
 identities/crops, coverage, and source overlays.
 
-The selected run proves original-pixel preservation, unique ordered strip retention,
+The initial 826-pixel run proves original-pixel preservation, unique ordered strip retention,
 and complete single-canvas coverage for all 22 missing lines, both annotations, and
 the following chapter cluster. Historical neighboring regions keep their historical
 policy. The ordinary regressions are
@@ -109,9 +117,9 @@ Its physical pages 274–277 (folios 266–269) embed candidate canvases 96–99
 byte-identical grayscale pixels. Page 274 ends at `asser-`; page 275 contains
 `vatam dicunt` through `a Cæsare redemit.` with complete `b` and `c` markers;
 page 276 begins chapter LXXXVII intact; page 277 preserves the Life's ending.
-The wider crop includes small neighboring Greek edge fragments, which remain
-explicit source-artifact content for human acceptance before installation.
-The candidate PDF is a trial artifact. Permanent protection, the
-production crop exception, installed-state evidence, and rebuilt-reader human
-acceptance belong to the subsequent installation step. The original immutable
-full-work baseline remains unchanged.
+The 826-pixel candidate remains a trial artifact: its block and annotations
+passed, but native full-page inspection found clipped initial letters in the
+ending. The user accepted small Greek edge fragments as source content. Permanent
+protection and the complete 845-pixel crop are installed with authenticated
+source/PDF evidence; rebuilt-reader human acceptance remains pending. The original
+immutable full-work baseline remains unchanged.

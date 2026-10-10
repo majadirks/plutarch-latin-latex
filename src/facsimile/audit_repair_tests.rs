@@ -1964,6 +1964,18 @@ fn assert_unit_lines_restored(id: &str) {
     assert_unit_lines_restored_with(id, &[], None, false);
 }
 
+fn event_whole_source_regions(event: &serde_json::Value) -> Result<Vec<ReviewedSourceLine>> {
+    let mut lines: Vec<ReviewedSourceLine> =
+        serde_json::from_value(event["diagnosis"]["reviewed_lines"].clone())?;
+    if let Some(regions) = event["diagnosis"].get("reviewed_whole_regions") {
+        lines.extend(serde_json::from_value::<Vec<ReviewedSourceLine>>(
+            regions.clone(),
+        )?);
+    }
+    lines.sort_by_key(|line| (line.source, line.source_page, line.region[1]));
+    Ok(lines)
+}
+
 fn assert_unit_lines_restored_with(
     id: &str,
     selected: &[String],
@@ -1986,12 +1998,7 @@ fn assert_unit_lines_restored_with(
     assert!(!events.is_empty());
     let mut lines: Vec<ReviewedSourceLine> = events
         .iter()
-        .flat_map(|e| {
-            serde_json::from_value::<Vec<ReviewedSourceLine>>(
-                e["diagnosis"]["reviewed_lines"].clone(),
-            )
-            .unwrap()
-        })
+        .flat_map(|e| event_whole_source_regions(e).unwrap())
         .collect();
     for event in &events {
         if event["diagnosis"]["reviewed_neighbor_lines"].is_array() {
@@ -2030,12 +2037,7 @@ fn assert_unit_lines_restored_with(
     let policies: std::collections::BTreeMap<_, _> = events
         .iter()
         .filter(|e| e["initial_tier"] == "B")
-        .flat_map(|e| {
-            serde_json::from_value::<Vec<ReviewedSourceLine>>(
-                e["diagnosis"]["reviewed_lines"].clone(),
-            )
-            .unwrap()
-        })
+        .flat_map(|e| event_whole_source_regions(e).unwrap())
         .map(|l| {
             (
                 (l.source, l.source_page, l.region),
@@ -2092,6 +2094,45 @@ fn assert_unit_lines_restored_with(
         &policies,
         ReviewedEvidencePolicy::HistoricalTierA,
     );
+    if id == "antonius" && events.iter().any(|e| e["initial_tier"] == "B") {
+        let trace = retained_page(&traces, 1, 562).unwrap();
+        let index = trace.retained_index.unwrap();
+        let block = strips_in_reading_order(&pages, &metrics)
+            .into_iter()
+            .find(|strip| {
+                strip.page_img_index == index && strip.band.top <= 249 && strip.band.bottom >= 1356
+            })
+            .unwrap()
+            .band;
+        assert!(is_known_whole_source_strip(&pages[index].0, &block));
+        let event = events.iter().find(|e| e["initial_tier"] == "B").unwrap();
+        let required = event_whole_source_regions(event).unwrap();
+        let owners: std::collections::BTreeSet<_> = composition
+            .line_coverage
+            .iter()
+            .filter(|row| {
+                required.iter().any(|line| {
+                    matches!(
+                        line.role.as_str(),
+                        "promoted_missing_line" | "approved_annotation"
+                    ) && row["source_page"] == line.source_page
+                        && row["region"] == serde_json::json!(line.region)
+                })
+            })
+            .flat_map(|row| {
+                row["canvas_owners"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|owner| owner.as_u64().unwrap())
+            })
+            .collect();
+        assert_eq!(
+            owners.len(),
+            1,
+            "the entire missing block and both approved annotations wrap together"
+        );
+    }
     let dir = std::path::Path::new("tmp/pdfs/inner_tomi_audit_repairs/restoration-current")
         .join(stage.unwrap_or_else(|| fixture["restoration_stage"].as_str().unwrap()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -4433,7 +4474,7 @@ fn antonius_annotation_crop_measurement() {
     let col = crop_column(
         &masked,
         &Column {
-            left: 895,
+            left: 876,
             right: 1721,
         },
     );
@@ -4705,24 +4746,126 @@ fn tier_b_crop_edges_preserve_reviewed_merged_glyphs() {
 }
 
 #[test]
+fn antonius_crop_preserves_approved_annotations() {
+    assert_reviewed_crop_edge_signature(1, 562, (1850, 2835), [906, 1721], [876, 1721], [895, 947]);
+}
+
+#[test]
+fn antonius_approved_regions_have_required_whole_coverage() {
+    let ledger = audit_repair_ledger();
+    let event = ledger["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["event_id"] == "miss_antonius_562_20869")
+        .unwrap();
+    let lines = event_whole_source_regions(event).unwrap();
+    assert_eq!(
+        lines.len(),
+        37,
+        "22 measured lines, both annotations, the following chapter, and 12 remaining body regions"
+    );
+    assert_eq!(
+        lines
+            .iter()
+            .filter(|line| line.role == "approved_annotation")
+            .count(),
+        2
+    );
+    let report = synthetic_promoted_report(event);
+    validate_promoted_line_coverage(&report, &lines).unwrap();
+    for role in ["approved_annotation", "neighbor"] {
+        let line = lines.iter().find(|line| line.role == role).unwrap();
+        let mut missing = report.clone();
+        missing["line_coverage"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|row| row["region"] != serde_json::json!(line.region));
+        assert!(
+            validate_promoted_line_coverage(&missing, &lines).is_err(),
+            "required {role} coverage cannot be dropped"
+        );
+        let mut split = report.clone();
+        let row = split["line_coverage"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|row| row["region"] == serde_json::json!(line.region))
+            .unwrap();
+        row["canvas_owners"] = serde_json::json!([1, 2]);
+        assert!(
+            validate_promoted_line_coverage(&split, &lines).is_err(),
+            "required {role} must stay whole"
+        );
+    }
+}
+
+#[test]
 fn phocion_wide_column_fits_without_clipping_source_glyphs() {
+    assert_reviewed_column_fit(
+        "phocion_wide_body_line",
+        Band {
+            top: 206,
+            bottom: 239,
+        },
+        Band {
+            top: 206,
+            bottom: 243,
+        },
+        LineMetrics {
+            height_med: 33,
+            height_mad: 1,
+            width_med: 849,
+        },
+    );
+}
+
+#[test]
+fn antonius_complete_column_fits_without_clipping_ending_glyphs() {
+    assert_reviewed_column_fit(
+        "antonius_complete_column_whole_strip",
+        Band {
+            top: 249,
+            bottom: 1356,
+        },
+        Band {
+            top: 248,
+            bottom: 1364,
+        },
+        LineMetrics {
+            height_med: 48,
+            height_mad: 2,
+            width_med: 790,
+        },
+    );
+    assert_reviewed_crop_edge_signature(
+        1,
+        562,
+        (1850, 2835),
+        [906, 1721],
+        [876, 1721],
+        [876, 2550],
+    );
+}
+
+fn assert_reviewed_column_fit(key: &str, body: Band, band: Band, metrics: LineMetrics) {
     let fixture = audit_repair_ledger();
-    let sample = audit_fingerprint_image(&fixture["source_fingerprints"]["phocion_wide_body_line"]);
-    let mut col = GrayImage::from_pixel(873, 2836, Luma([255]));
-    image::imageops::replace(&mut col, &sample, 6, 206);
+    let record = &fixture["source_fingerprints"][key];
+    let sample = audit_fingerprint_image(record);
+    let dimensions: [u32; 2] = serde_json::from_value(record["column_dimensions"].clone()).unwrap();
+    let origin: [u32; 4] = serde_json::from_value(record["glyph_region"].clone()).unwrap();
+    let mut col = GrayImage::from_pixel(dimensions[0], dimensions[1], Luma([255]));
+    image::imageops::replace(&mut col, &sample, origin[0] as i64, origin[1] as i64);
     let requested = 1.2023952;
     let fitted = source_strip_scale(&col, requested);
-    assert_eq!(fitted, 1004.0 / 873.0);
+    assert_eq!(fitted, 1004.0 / dimensions[0] as f32);
     assert_eq!(
         source_strip_scale(&col, 1.0),
         1.0,
         "smaller requested scales retain their size"
     );
-    let band = Band {
-        top: 206,
-        bottom: 243,
-    };
-    let raw = image::imageops::crop_imm(&col, 0, 206, 873, 37).to_image();
+    let raw = image::imageops::crop_imm(&col, 0, band.top, dimensions[0], band.bottom - band.top)
+        .to_image();
     let scaled = scale_strip(&col, &band, requested).unwrap();
     assert_eq!(scaled.width(), 1004);
     assert_eq!(
@@ -4730,39 +4873,32 @@ fn phocion_wide_column_fits_without_clipping_source_glyphs() {
         resize_line_image(&raw, fitted),
         "full column is resampled without a clipped edge"
     );
-    let pages = vec![(
-        col.clone(),
-        vec![Band {
-            top: 206,
-            bottom: 239,
-        }],
-    )];
-    let metrics = LineMetrics {
-        height_med: 33,
-        height_mad: 1,
-        width_med: 849,
-    };
+    let pages = vec![(col.clone(), vec![body])];
     let geom = TrimGeom::default();
     let canvases = assert_scaled_stream(
         &pages,
         &metrics,
         requested,
         &geom,
-        geom.first_body_budget(),
+        geom.body_budget(),
         geom.body_budget(),
     );
     assert_eq!(canvases.len(), 1);
     assert_eq!(canvases[0].width(), geom.tb_w);
-    let shade = col.get_pixel(6, 206)[0];
-    col.put_pixel(6, 206, Luma([shade ^ 1]));
+    let shade = col.get_pixel(origin[0], origin[1])[0];
+    col.put_pixel(origin[0], origin[1], Luma([shade ^ 1]));
     assert_eq!(
         source_strip_scale(&col, requested),
         requested,
         "changed source pixels reject the exception"
     );
-    for dimensions in [(874, 2836), (873, 2837)] {
-        let mut changed = GrayImage::from_pixel(dimensions.0, dimensions.1, Luma([255]));
-        image::imageops::replace(&mut changed, &sample, 6, 206);
+    for changed_dimensions in [
+        (dimensions[0] + 1, dimensions[1]),
+        (dimensions[0], dimensions[1] + 1),
+    ] {
+        let mut changed =
+            GrayImage::from_pixel(changed_dimensions.0, changed_dimensions.1, Luma([255]));
+        image::imageops::replace(&mut changed, &sample, origin[0] as i64, origin[1] as i64);
         assert_eq!(
             source_strip_scale(&changed, requested),
             requested,
@@ -5201,6 +5337,7 @@ fn validate_restored_event_evidence(
         lines.len() == measured_event_line_count(event)?,
         "source line count differs"
     );
+    let lines = event_whole_source_regions(event)?;
     for line in &lines {
         anyhow::ensure!(
             evidence_array(event, "source_regions")?
@@ -5502,8 +5639,7 @@ fn audit_evidence_tier_b_state_and_baseline_authenticated() -> Result<()> {
 }
 
 fn synthetic_promoted_report(event: &serde_json::Value) -> serde_json::Value {
-    let lines: Vec<ReviewedSourceLine> =
-        serde_json::from_value(event["diagnosis"]["reviewed_lines"].clone()).unwrap();
+    let lines = event_whole_source_regions(event).unwrap();
     let mut grouped = std::collections::BTreeMap::<(usize, u32), Vec<[u32; 4]>>::new();
     for l in &lines {
         grouped

@@ -858,6 +858,23 @@
   },
   {
     "source": 1,
+    "page": 562,
+    "dpi": 300,
+    "column": [
+      876,
+      1721
+    ],
+    "body": [
+      [
+        249,
+        1356
+      ]
+    ],
+    "excluded": [],
+    "noise": []
+  },
+  {
+    "source": 1,
     "page": 566,
     "dpi": 300,
     "column": [
