@@ -220,6 +220,62 @@ loss confirmations without reader evidence. Outputs are separately versioned;
 machine verdicts and source policy remain immutable. `report` requires executed
 code to match the capture and reproduces derived views for the same ledger.
 
+The optional reviewer uses the separately pinned official Python SDK:
+
+```powershell
+python -m pip install -r tools/requirements-facsimile-seam-review.txt
+python tools/facsimile_seam_review.py --tasks <run>/review-tasks.json --out <run>/haiku-observations --max-calls 10 --dry-run
+python tools/facsimile_seam_review.py --tasks <run>/review-tasks.json --out <run>/haiku-observations --offline --resume
+```
+
+SDK 0.84.0, the `claude-haiku-4-5` default, zero SDK retries, a 120-second timeout
+and 2,000 output tokens are explicit. SDK loading and repository-root
+`secrets.json` access occur when the first live submission is authorized by a
+positive `--max-calls`. Credentials use the existing `anthropic_api_key` field;
+they are never recorded or hashed. Dry-run/offline modes load neither the SDK
+client nor the key and submit nothing. Live calls require a positive cap and use
+the same command without `--dry-run`/`--offline`. `--model` selects another model
+explicitly. API, SDK and vision support were checked against the
+[official Python SDK guide](https://platform.claude.com/docs/en/api/sdks/python),
+[vision guide](https://platform.claude.com/docs/en/build-with-claude/vision) and
+[model lifecycle table](https://platform.claude.com/docs/en/about-claude/model-deprecations).
+
+The cap counts uncached task submissions. Completed observations retain the raw
+response, requested/returned model, usage and validated line/crop identities.
+`--resume` authenticates them and processes eligible pending tasks within the cap.
+Fully unlocalized tasks remain inconclusive. Neutral requests show immutable
+region IDs, source references/alternates and visible-reader images; machine
+coverage verdicts and repair labels are excluded. Client/model results cannot
+modify source policy, machine coverage or human decisions.
+
+Request state is atomically recorded as `in_flight` before submission. An orphaned
+request without a durable response becomes `delivery_unknown` and is never
+silently resubmitted. A preserved valid response can be recovered locally; an
+invalid delivered response remains `response_invalid`. Explicit unknown retry
+requires all three flags and an unused attempt ID:
+
+```powershell
+python tools/facsimile_seam_review.py --tasks <run>/review-tasks.json --out <run>/haiku-observations --resume --max-calls 1 --task-ids <task-id> --retry-unknown --attempt-id retry-1
+```
+
+The prior attempt and its state remain archived. Retry selections are checked
+before live delivery, and inspection of retry arguments submits nothing. SDK
+errors record their type/status without credentials or sensitive exception text.
+Saved JSON can exercise the response validator without a live request:
+
+```powershell
+python tools/facsimile_seam_review.py --tasks <run>/review-tasks.json --out <run>/offline-replay --offline --task-ids <single-task-id> --replay-response <saved-response.json>
+```
+
+Replay output is labeled `replay` and never becomes a live completed observation.
+The response must contain the exact `task_id` and one entry per requested ID in
+`lines`, each with `line_id`, `verdict`, `object_type`, `reader_crop_ids` and
+`reason`. Missing/unknown IDs and unrelated support are rejected. Regions without
+localized reader extent require `unclear`. Reviewer exits are 0 for completed
+requested inspection/capped work, 2 for invalid inputs, and 3 for interrupted or
+failed delivery/response validation. `review-summary.json` keeps pending, cached,
+unknown and inconclusive counts separate from submitted requests.
+
 Tool resolution uses the command option, `PLUTARCH_PDFTOPPM` or
 `PLUTARCH_TESSERACT`, then PATH. English language data uses `--tessdata-dir`,
 `PLUTARCH_TESSDATA_DIR`, or the directory reported by Tesseract. Missing usable
@@ -234,5 +290,5 @@ directory beneath `runs/verification`; ordinary processing cannot create PDFs.
 
 Exit codes are 0 for completed requested processing (including findings and
 uncertainty), 2 for invalid inputs/configuration, 3 for interrupted/incomplete
-processing, and 4 for failed explicitly requested calibration. Commands for later
-model submission and optional trace stages report unavailability until implemented.
+processing, and 4 for failed explicitly requested calibration. Optional trace
+stages report unavailability until implemented.

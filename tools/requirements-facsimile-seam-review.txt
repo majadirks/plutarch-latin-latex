@@ -1,0 +1,2 @@
+# Optional live reviewer; the offline audit does not import this SDK.
+anthropic==0.84.0

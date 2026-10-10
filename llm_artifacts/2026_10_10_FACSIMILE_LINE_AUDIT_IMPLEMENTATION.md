@@ -149,12 +149,34 @@ commits. Each completed required step receives its own commit and push.
   `runs/verification/cases_5_1a/results/cbec0c382eca4d39127d573a0677ea2ffd660a63b51444df0f08133b0a0ec790/verification-results.json`.
   Early report-order diagnostics remain preserved. Python compilation,
   formatting, strict all-target Clippy and the full existing Rust suite pass.
+- 6.2: Added the separately pinned Anthropic 0.84.0 reviewer with neutral
+  source-reference/alternate and visible-reader prompts, exact response IDs,
+  supporting crop validation and explicit incomplete-localization handling.
+  Live submission requires a positive cap; SDK/key loading is lazy, retries are
+  disabled, timeout is 120 seconds and output is capped at 2,000 tokens. Model,
+  prompt/schema, helper code, task and crop identities bind caches. Atomic
+  in-flight state, durable responses, local recovery, unknown delivery, archived
+  attempts and the explicit new-attempt retry triple preserve delivery evidence.
+  Completed observations are checked against the preserved raw response. Model
+  output never changes machine/human/source records. Official SDK/vision and
+  model lifecycle documentation confirms the constructor options and active
+  Haiku 4.5 support; the default remains `claude-haiku-4-5`.
+  Dry-run/offline processing of 11 real tasks submits zero requests (nine pending,
+  two wholly inconclusive). Saved JSON replay is labeled `replay`; public CLI
+  checks accept the valid example and reject missing/unknown IDs. Disposable
+  delivery metadata verifies orphaned in-flight recovery to unknown, inspection
+  without resubmission, retry-triple/reused-ID/path rejection and required live
+  caps. Python audit hooks prohibit credential/network access during these
+  checks, and the SDK is not imported. No paid pilot or completed live response
+  cache is claimed. Evidence resides in `runs/verification/reviewer_6_2_final`,
+  `reviewer_delivery_probe` and `reviewer_cli_replay`. Compilation, formatting,
+  strict Clippy and the full 419-library/9-CLI test suite pass.
 - Repository regression gates: formatting and strict all-target Clippy pass;
   `cargo test` passes 419 library tests and 9 CLI tests with 76 existing ignored
   tests. Rust remains unchanged.
 
-Continue at 6.2 with the optional capped SDK reviewer and explicit delivery-state
-recovery. Complete seam calibration, the fixed real-source panel, full-corpus
+Continue at 7.1 with complete seam calibration and the fixed real-source panel.
+Full-corpus
 coverage and durable archival delivery remain pending. Phase 2 remains optional
 and deferred. Successful synthetic coverage/seam cases do not certify the corpus's
 Latin coverage or substitute for source ownership/geometry review.
