@@ -318,8 +318,10 @@ def inventory_run(args, *, configuration=None):
         inventory, errors = coverage.inventory_source_units(root, manifest, read_json(unit_path), units,
                                                             settings, run, args, prerequisites, source_policy=policy)
         inventory['runtime_id'] = runtime['runtime_id']
-        inventory = coverage.apply_source_policy(inventory, policy, run=run, args=args)
-        duplicates = coverage.resolve_duplicate_groups(inventory, policy)
+        inventory, effective_policy = coverage.apply_verification_source_geometry(inventory, policy, run, args,
+                                                                                  target_kind=manifest['target_kind'])
+        inventory = coverage.apply_source_policy(inventory, effective_policy, run=run, args=args)
+        duplicates = coverage.resolve_duplicate_groups(inventory, effective_policy)
         logical = coverage.build_logical_lines(inventory, duplicates)
         write(run / 'source-inventory.json', inventory, args)
         write(run / 'duplicate-groups.json', duplicates, args)
@@ -346,11 +348,60 @@ def raw_mapper_identity(path):
     return common.json_hash(ast.dump(module, include_attributes=False))
 
 
+def capture_verification_runtime(builder_snapshot, args):
+    """Copy authenticated builder inputs into a fresh current-code capture."""
+    original, builder = load_snapshot(builder_snapshot)
+    if builder['target_kind'] != 'verification':
+        raise AuditError('Verification requires an authenticated builder snapshot')
+    repo, work = paths(args)
+    settings_path,_ = snapshot_input(original,builder,'settings')
+    policy_path,_ = snapshot_input(original,builder,'source_policy')
+    if args.settings and Path(args.settings).resolve() == (repo/'secrets.json').resolve():
+        raise AuditError('Credentials cannot be audit inputs')
+    settings = read_json(args.settings or settings_path)
+    policy = read_json(policy_path)
+    validate_source_policy(policy,target_kind='verification')
+    runtime,prerequisites = compute_runtime_identity(args,settings=settings,policy=policy)
+    identity = common.json_hash([builder['snapshot_id'],runtime])
+    root = work/'snapshots'/('verification_'+builder['case_id']+'_'+identity[:16])
+    if root.exists():
+        return load_snapshot(root)
+    common.safe_write_path(root/'snapshot-manifest.json',work,repo,capture_root=root)
+    root.mkdir(parents=True)
+    inputs = []
+    for record in builder['inputs']:
+        if record['role'] == 'code':
+            continue
+        path = original/record['snapshot_path']
+        if record['role'] == 'settings' and args.settings:
+            path = Path(args.settings).resolve()
+        revised = dict(record,sha256=common.hash_file(path))
+        destination = common.safe_write_path(root/revised['snapshot_path'],work,repo,capture_root=root)
+        destination.parent.mkdir(parents=True,exist_ok=True)
+        with path.open('rb') as source,destination.open('xb') as output:
+            shutil.copyfileobj(source,output,1024*1024)
+        if common.hash_file(destination) != revised['sha256']:
+            raise AuditError('Verification input copy digest mismatch')
+        inputs.append(revised)
+    for relative,digest in runtime['code'].items():
+        destination = common.safe_write_path(root/'inputs'/relative,work,repo,capture_root=root)
+        destination.parent.mkdir(parents=True,exist_ok=True)
+        destination.write_bytes((repo/relative).read_bytes())
+        if common.hash_file(destination) != digest:
+            raise AuditError('Verification code changed during capture')
+        inputs.append({'path':relative,'snapshot_path':'inputs/'+relative,'role':'code','sha256':digest})
+    manifest = {key:value for key,value in builder.items() if key not in ('snapshot_id','inputs','runtime','operational_tools')}
+    manifest.update(inputs=sorted(inputs,key=lambda r:r['path']),runtime=runtime,builder_snapshot_id=builder['snapshot_id'])
+    manifest['snapshot_id'] = common.json_hash(manifest)
+    write(root/'snapshot-manifest.json',manifest,args,capture_root=root)
+    return root,manifest
+
+
 def pipeline_run(args):
     import facsimile_line_coverage as coverage
     import audit_inner_tomi as historical
-    if not args.snapshot or not args.run_dir or args.stop_after != 'locate':
-        raise AuditError('Available run stage requires --snapshot, --run-dir and --stop-after locate')
+    if not args.snapshot or not args.run_dir or args.stop_after not in ('locate','coverage'):
+        raise AuditError('Run requires --snapshot, --run-dir and --stop-after locate or coverage')
     configuration = run_configuration(args)
     root, manifest, settings, policy, units, runtime, prerequisites = configuration
     repo, work = paths(args)
@@ -413,10 +464,16 @@ def pipeline_run(args):
                            ('errors.json', {'schema_version':1,'errors':errors})):
             data.update(snapshot_id=manifest['snapshot_id'],runtime_id=runtime['runtime_id'])
             write(run / name, data, args)
-        names = ('source-inventory.json','duplicate-groups.json','logical-lines.json','source-token-bundle.json',
+        names = ['source-inventory.json','duplicate-groups.json','logical-lines.json','source-token-bundle.json',
                  'source-index.json','reader-map.json','reader-observations.json','reader-tokens.json',
-                 'locations.json','correspondences.json','errors.json')
-        record.update(processing_complete=not errors, completed_stage='locate',
+                 'locations.json','correspondences.json','errors.json']
+        if args.stop_after == 'coverage':
+            ledger = coverage.measure_coverage_run(logical, correspondences, reader_map, bundle, root, manifest, settings, run, args, prerequisites)
+            write(run / 'coverage-ledger.json',ledger,args)
+            names.append('coverage-ledger.json')
+        if executed_code(repo) != runtime['code']:
+            raise AuditError('Executed code changed during processing; create a fresh capture/run')
+        record.update(processing_complete=not errors, completed_stage=args.stop_after,
                       requested_reader_occurrences=len(reader_map['body_pages']), processed_reader_pages=len(observations),
                       record_sha256={name:common.hash_file(run/name) for name in names})
         write(run / 'run-manifest.json', record, args)
@@ -476,6 +533,9 @@ def main():
         elif args.command == 'verify' and args.prepare:
             import facsimile_line_coverage as coverage
             coverage.create_verification_inputs(args)
+        elif args.command == 'verify':
+            import facsimile_line_coverage as coverage
+            return coverage.run_verification_cases(args)
         elif args.command == 'adjudicate':
             import facsimile_line_coverage as coverage
             if args.source_reviews and args.inventory_dir and args.policy_out and not args.duplicate_reviews and not args.loss_reviews:

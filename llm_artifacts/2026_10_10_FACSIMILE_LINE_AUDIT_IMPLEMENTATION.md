@@ -90,6 +90,47 @@ commits. Each completed required step receives its own commit and push.
   No expected OCR is fabricated. Builder inputs remain under
   `runs/verification/cases_5_1a`; later code stages adopt fresh runtime captures
   of these authenticated inputs without changing the builder snapshots.
+- 5.2: Added required-component coverage at both thresholds, visible PDF CropBox
+  and owned body bounds, supplementary decoded-image observations, ordered
+  canonical support unions and endpoint-specific bounded-gap candidates. Geometry,
+  ownership, resolution and localization uncertainty prevent completeness.
+  Partial scans retain the full required reference; aggregate similarity cannot
+  clear component deficits. Gap retries use 300-DPI OCR, measured glyph/word
+  scales and bounded grayscale/contrast scale/rotation searches. Strong ordered
+  OCR context can supply scale observations without a valid missing-line image
+  fit. Shared continuous strips preserve source/reader spacing restrictions.
+  Verification adopts fresh executed-code captures of the immutable builder
+  inputs, including source-only synthetic geometry and reviewed duplicate maps;
+  it never substitutes expected OCR or expected reader transforms.
+  All seven final coverage cases pass: 98 complete body lines, 13 absence
+  candidates, 17 partial candidates and the explicit sparse-line uncertainty.
+  All 30 known omitted/clipped target lines are localized; retained/redundant
+  controls have no unique-loss candidate. Raw parent uncertainty remains separate.
+  The terminal clip retains about 98.4% of aggregate ink but fails four-pixel
+  final-letter/punctuation checks at both thresholds. A probe using actual
+  retained pixels verifies two incomplete pieces form a complete ordered union
+  and rejects the reversed reader path. Case records and 1,371 record/crop digests
+  authenticate. Final case report:
+  `runs/verification/cases_5_1a/results/5062bc442991d97858d13c58f9b065505587024dfa3d917e86fec2b69a51f678/verification-results.json`.
+  The final accepted-reader snapshot is
+  `197bfac999362f7baaeee0e3a4b100c2c99e872b67ab2bbcc4fe478141995619`,
+  stored at `snapshots/step_5_2_final_checkpoint`. Scoped coverage at
+  `runs/step_5_2_final_checkpoint_coverage` processes all five requested comparison
+  source pages and three reader occurrences, with zero errors, 205 ordered token
+  pairs and 59 registrations. All 1,385 source regions remain unresolved because
+  required geometry/ownership is unreviewed; 975 tokenless objects and 539 ambiguous
+  words remain explicit. Two actual-pixel diagnostics preserve that status and
+  expose Greek residue in unresolved gutter geometry rather than labeling it
+  Latin loss. Source/mask pairs and terminal detail were inspected. Exact-identity
+  scoped resume, credential-settings rejection and Python compilation pass.
+  Earlier successful, failed and interrupted diagnostic runs remain intact.
 - Repository regression gates: formatting and strict all-target Clippy pass;
   `cargo test` passes 419 library tests and 9 CLI tests with 76 existing ignored
   tests. Rust remains unchanged.
+
+Implementation pauses after committing and pushing 5.2 at the user's request.
+Continue at 6.1 with systematic seams, neutral evidence tasks, reports and bound
+human-loss reviews. Model review, complete seam calibration, the fixed real-source
+panel, full-corpus coverage and durable archival delivery remain pending. Phase 2
+remains optional and deferred. Coverage-case success does not certify the corpus's
+Latin coverage or complete the later seam checks.

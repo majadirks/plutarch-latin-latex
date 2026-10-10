@@ -139,6 +139,47 @@ complete copy removed, unique shared-page tail loss and visible PDF overpainting
 of a whole line and terminal glyph. Sparse and verse subcases remain explicit.
 Prepared inputs are immutable; subsequent verification writes fresh result sets.
 
+Run component coverage against an authenticated capture, or the prepared cases:
+
+```powershell
+python tools/facsimile_line_audit.py run --snapshot <snapshot> --run-dir <fresh-run> --units <unit-ids> --stop-after coverage
+python tools/facsimile_line_audit.py verify --out tmp/pdfs/facsimile_line_audit/runs/verification/cases_5_1a --stop-after coverage
+```
+
+Coverage writes `coverage-ledger.json` and hashed source/visible-reader/missing-ink
+images in `coverage-evidence`. Measured references retain every original component
+at both grayscale thresholds; unreviewed geometry remains unresolved. Four-pixel deficits and glyph extremity loss prevent
+completeness even when almost all aggregate ink survives. Threshold disagreement
+and insufficient projected resolution stay explicit. Actual PDF CropBox and
+owned body-image extents bound visible support. Authenticated decoded images are
+supplementary: their completeness cannot clear a visible PDF deficit.
+
+Reviewed geometry, ownership, ordered localization and valid continuous strip
+registration are prerequisites for machine completeness. Separate visible pieces
+may satisfy the full reference through an ordered component union; overlapping
+support is counted once and insufficient resolution cannot certify the union.
+Threshold support is measured across the complete union, including piece boundaries. A complete
+logical reference permits redundant source occurrences to be waived. Partial
+duplicates preserve the required canonical extent.
+
+An omitted interior gap requires strong owned context on both sides. A reviewed
+unit opening/ending uses its mapped reader boundary and one following/preceding
+strong context; missing prefixes/suffixes inherit that reviewed boundary. Physical
+page edges inside a unit remain interior. Focused OCR at 300 DPI and bounded
+grayscale/contrast image searches inspect each implicated extent. Scale and
+rotation search bounds are recorded. An ambiguous recovery remains unresolved.
+Sparse passages without adequate anchors also remain unresolved. `partial` and
+`absent` are candidates with a separate, initially empty human verdict and an
+unknown loss stage.
+
+Verification copies the immutable builder inputs into fresh captures bound to
+current executed code/settings, then runs ordinary OCR, localization and coverage.
+Each case writes `case-result.json` in its new `results/<snapshot-id-prefix>`
+directory. Aggregate records live in `results/<report-hash>/verification-results.json`
+under the prepared root. Known losses that remain unresolved and incomplete
+retained controls fail verification with exit 4. The coverage stage does not yet
+score seams or model/human review delivery.
+
 Tool resolution uses the command option, `PLUTARCH_PDFTOPPM` or
 `PLUTARCH_TESSERACT`, then PATH. English language data uses `--tessdata-dir`,
 `PLUTARCH_TESSDATA_DIR`, or the directory reported by Tesseract. Missing usable

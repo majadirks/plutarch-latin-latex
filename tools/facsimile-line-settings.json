@@ -42,6 +42,8 @@
   "registration": {
     "features": 4000,
     "gap_tolerance_glyphs": 0.5,
+    "gap_scale_samples": 9,
+    "gap_rotation_samples": 7,
     "max_iters": 2000,
     "minimum_inlier_fraction": 0.6,
     "minimum_inliers": 8,

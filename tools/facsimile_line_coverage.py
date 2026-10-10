@@ -393,6 +393,68 @@ def apply_source_policy(inventory, policy, *, run=None, args=None, render_childr
     return result
 
 
+def apply_verification_source_geometry(inventory, policy, run, args, *, target_kind):
+    """Bind builder-known source regions solely inside authenticated verification runs."""
+    import copy
+    from PIL import Image
+    if not policy.get('synthetic_regions'):
+        return inventory, policy
+    if target_kind != 'verification':
+        raise common.AuditError('Builder source geometry cannot approve corpus material')
+    result, revised = copy.deepcopy(inventory), copy.deepcopy(policy)
+    known = {}
+    for page in result['pages']:
+        regions = [r for r in policy['synthetic_regions'] if r['source_index'] == page['source_index'] and r['source_page'] == page['page']]
+        originals = list(page['occurrences'])
+        with Image.open(Path(run) / page['full_context']['path']) as source:
+            for region in regions:
+                if region['source_sha256'] != page['source_sha256'] or region['provenance'] != 'synthetic_ground_truth':
+                    raise common.AuditError('Builder region/source identity mismatch')
+                box = region['source_box_px']
+                validate_pixel_box(box,list(source.size))
+                identifier = common.json_hash([page['source_sha256'],page['page'],box,region['owner'],'builder_source_region_v1'])
+                parents = [o for o in originals if box_intersection(o['box'],box)>0]
+                item = {'occurrence_id':identifier,'source_sha256':page['source_sha256'],'source_index':page['source_index'],
+                        'page':page['page'],'box':box,'crop':save_crop(source,box,Path(run),args,identifier),
+                        'dpi':regions[0].get('dpi',300),'raster_dimensions':list(source.size),
+                        'possible_owners':[region['owner']],'owner':region['owner'],'classification':'body',
+                        'required_geometry_reviewed':True,'source_partial':region.get('source_partial',False),
+                        'kind':'reviewed_child','segmentation_status':'builder_known_geometry','components':[],'faint_components':[],
+                        'parent_ids':[p['occurrence_id'] for p in parents],'child_ids':[],'ocr_observations':[],
+                        'unit_start':region.get('unit_start',False),'unit_end':region.get('unit_end',False),
+                        'review_provenance':'synthetic_ground_truth','review_reason':'Builder-known source pixels; no reader outcome is used',
+                        'builder_source_line':region['line']}
+                for parent in parents:
+                    parent['child_ids'].append(identifier)
+                page['occurrences'].append(item)
+                known[(page['page'],tuple(box))] = item
+        for original in originals:
+            original['classification'] = 'uncertain' if original['child_ids'] else 'furniture'
+            original['required_geometry_reviewed'] = False
+            original['review_provenance'] = 'synthetic_ground_truth'
+    for number, relation in enumerate(policy.get('synthetic_duplicate_regions',[])):
+        reference, other = relation['canonical'], relation['other']
+        canonical = known[(reference['source_page'],tuple(reference['source_box_px']))]
+        alternate = known[(other['source_page'],tuple(other['source_box_px']))]
+        cx,cy,cx1,cy1 = canonical['box']
+        maps = []
+        for obj in (canonical,alternate):
+            x0,y0,x1,y1 = obj['box']
+            maps.append({'occurrence_id':obj['occurrence_id'],'source_index':obj['source_index'],'page':obj['page'],
+                         'source_box_px':obj['box'],'crop_sha256':obj['crop']['sha256'],
+                         'evidence_sha256':obj['crop']['sha256'],'max_residual_px':0,
+                         'to_canonical':[[1,0,-cx],[0,1,-cy]],
+                         'covered_polygon':[[x0-cx,y0-cy],[x1-cx,y0-cy],[x1-cx,y1-cy],[x0-cx,y1-cy]],
+                         'complete':not obj.get('source_partial',False)})
+        revised['duplicate_groups'].append({'owner':canonical['owner'],'logical_sequence':number,
+            'canonical_occurrence_id':canonical['occurrence_id'],'canonical_crop_sha256':canonical['crop']['sha256'],
+            'source_sha256':canonical['source_sha256'],'evidence_sha256':canonical['crop']['sha256'],
+            'region_maps':maps,'reason':relation['reason'],'reviewer':'fixture_builder','provenance':'synthetic_ground_truth',
+            'complete':True})
+    validate_source_inventory(result)
+    return result,revised
+
+
 def measured_page_settings(settings, policy, record, page, image):
     import copy
     import hashlib
@@ -1046,8 +1108,9 @@ def build_line_correspondences(logical_lines, locations, reader_map, settings):
     for pair in all_pairs:
         direct.setdefault(pair['source']['logical_line_id'], []).append(pair)
     lines = logical_lines['lines']
-    by_owner = {}
+    by_owner, owned_lines = {}, {}
     for line in lines:
+        owned_lines.setdefault(line['owner'], []).append(line)
         if direct.get(line['logical_line_id']):
             by_owner.setdefault(line['owner'], []).append(line)
     rows_by_owner = {}
@@ -1061,8 +1124,12 @@ def build_line_correspondences(logical_lines, locations, reader_map, settings):
         positions = positions_by_owner.get(line['owner'], [])
         low = bisect.bisect_left(positions, line['sequence_position'])
         high = bisect.bisect_right(positions, line['sequence_position'])
-        before = candidates[max(0,low-3):low]
-        after = candidates[high:high+3]
+        context_count = settings['seam_context_lines']
+        before = candidates[max(0,low-context_count):low]
+        after = candidates[high:high+context_count]
+        owned = owned_lines[line['owner']]
+        opening = not before and any(member['reviewed_unit_start'] and member['sequence_position'] <= line['sequence_position'] for member in owned)
+        ending = not after and any(member['reviewed_unit_end'] and member['sequence_position'] >= line['sequence_position'] for member in owned)
         context = own + [p for l in before + after for p in direct[l['logical_line_id']]]
         reader_pages = sorted({(p['reader']['tomus'], p['reader']['page']) for p in context})
         unit_rows = rows_by_owner.get(line['owner'], [])
@@ -1072,7 +1139,7 @@ def build_line_correspondences(logical_lines, locations, reader_map, settings):
             reason = 'neighborhood_exceeds_two_adjacent_reader_pages'
         else:
             reason = None if context else 'no_ordered_anchors'
-        if not own and not (before and after) and not line.get('reviewed_unit_start') and not line.get('reviewed_unit_end'):
+        if not own and not (before and after) and not opening and not ending:
             reason = 'interior_requires_two_sided_ordered_anchors'
             reader_pages = []
         if context:
@@ -1081,8 +1148,7 @@ def build_line_correspondences(logical_lines, locations, reader_map, settings):
             if reader_positions != sorted(reader_positions):
                 reason = 'nonmonotonic_local_reader_path'
                 reader_pages = []
-        endpoint = ('opening' if line.get('reviewed_unit_start') else
-                    'ending' if line.get('reviewed_unit_end') else 'interior')
+        endpoint = ('opening' if opening else 'ending' if ending else 'interior')
         if endpoint != 'interior' and unit_rows:
             expected_edge = unit_rows[0] if endpoint == 'opening' else unit_rows[-1]
             if expected_edge not in reader_pages:
@@ -1477,3 +1543,553 @@ def create_verification_inputs(args):
     cli.write(root / 'builder-manifest.json', {'schema_version': 1, 'target_kind': 'verification',
                                               'cases': expected_cases, 'font_size': font.size}, args)
     return root
+def measure_required_ink(source_gray, reader_gray, matrix, settings, *, visible_box=None):
+    """Measure each original reference component against independently visible pixels."""
+    import cv2
+    import numpy as np
+    matrix = np.asarray(matrix, dtype=float)
+    if matrix.shape != (2, 3) or not np.isfinite(matrix).all():
+        raise common.AuditError('Required ink needs an authenticated affine transform')
+    height, width = source_gray.shape
+    corners = np.asarray([[0, 0, 1], [width, 0, 1], [width, height, 1], [0, height, 1]]) @ matrix.T
+    x0, y0 = np.floor(corners.min(axis=0)).astype(int) - 2
+    x1, y1 = np.ceil(corners.max(axis=0)).astype(int) + 2
+    if (x1 - x0) * (y1 - y0) > 10000000:
+        raise common.AuditError('Projected line region exceeds safe measured extent')
+    local = matrix.copy()
+    local[:, 2] -= [x0, y0]
+    shape = (int(x1 - x0), int(y1 - y0))
+    observed = np.full((shape[1], shape[0]), 255, dtype=np.uint8)
+    domain = np.zeros_like(observed,dtype=np.uint8)
+    rx0, ry0, rx1, ry1 = max(0, x0), max(0, y0), min(reader_gray.shape[1], x1), min(reader_gray.shape[0], y1)
+    if rx1 > rx0 and ry1 > ry0:
+        observed[ry0 - y0:ry1 - y0, rx0 - x0:rx1 - x0] = reader_gray[ry0:ry1, rx0:rx1]
+        domain[ry0-y0:ry1-y0,rx0-x0:rx1-x0] = 1
+    if visible_box:
+        xx, yy = np.meshgrid(np.arange(x0, x1), np.arange(y0, y1))
+        observed[(xx < visible_box[0]) | (xx >= visible_box[2]) | (yy < visible_box[1]) | (yy >= visible_box[3])] = 255
+        domain[(xx < visible_box[0]) | (xx >= visible_box[2]) | (yy < visible_box[1]) | (yy >= visible_box[3])] = 0
+    warped = cv2.warpAffine(source_gray, local, shape, flags=cv2.INTER_LINEAR, borderValue=255)
+    observations = []
+    canonical_support = []
+    inverse = cv2.invertAffineTransform(local)
+    source_domain = cv2.warpAffine(domain,inverse,(width,height),flags=cv2.INTER_NEAREST).astype(bool)
+    all_unsupported = np.zeros_like(observed, dtype=bool)
+    for threshold in settings['thresholds']:
+        number, labels, stats, _ = cv2.connectedComponentsWithStats((source_gray < threshold).astype(np.uint8), connectivity=settings['connectivity'])
+        halo = settings['ink']['halo_pixels']
+        support = cv2.dilate((observed < threshold).astype(np.uint8), np.ones((2*halo+1,2*halo+1), dtype=np.uint8)).astype(bool)
+        components = []
+        supported = np.zeros_like(source_gray,dtype=bool)
+        for index in range(1, number):
+            expected = cv2.warpAffine((labels == index).astype(np.uint8), local, shape, flags=cv2.INTER_NEAREST).astype(bool) & (warped < threshold)
+            area = int(expected.sum())
+            missing = expected & ~support
+            source_missing = cv2.warpAffine(missing.astype(np.uint8),inverse,(width,height),flags=cv2.INTER_NEAREST).astype(bool)
+            supported |= (labels==index) & source_domain & ~source_missing
+            all_unsupported |= missing
+            missing_count, _, missing_stats, _ = cv2.connectedComponentsWithStats(missing.astype(np.uint8), connectivity=settings['connectivity'])
+            largest = int(max(missing_stats[1:, 4], default=0))
+            sy, sx = np.where(expected)
+            my, mx = np.where(missing)
+            touches = bool(len(mx) and len(sx) and
+                           (mx.min() == sx.min() or mx.max() == sx.max() or my.min() == sy.min() or my.max() == sy.max()))
+            deficit = int(missing.sum())
+            resolution_uncertain = area < settings['ink']['minimum_projected_pixels']
+            accepted = (not resolution_uncertain and deficit <= max(1, settings['ink']['unsupported_fraction'] * area)
+                        and largest < settings['ink']['minimum_deficit_pixels'] and not touches)
+            box = [int(stats[index, 0]), int(stats[index, 1]), int(stats[index, 0] + stats[index, 2]), int(stats[index, 1] + stats[index, 3])]
+            components.append({'component': index, 'source_box_px': box, 'expected_area': area,
+                'unsupported_area': deficit, 'largest_unsupported_component': largest,
+                'touches_glyph_extremity': touches, 'resolution_uncertain': resolution_uncertain,
+                'complete': accepted,
+                'unsupported_reader_box_px': [int(mx.min() + x0), int(my.min() + y0), int(mx.max() + x0 + 1), int(my.max() + y0 + 1)] if len(mx) else None})
+        observations.append({'threshold': threshold, 'components': components,
+            'complete': bool(components) and all(c['complete'] for c in components),
+            'resolution_uncertain': any(c['resolution_uncertain'] for c in components),
+            'deficit': any(c['largest_unsupported_component'] >= settings['ink']['minimum_deficit_pixels'] for c in components),
+            'retained_area': sum(c['expected_area'] - c['unsupported_area'] for c in components)})
+        canonical_support.append(supported)
+    deficits = [[component for component in observation['components'] if component['largest_unsupported_component'] >= settings['ink']['minimum_deficit_pixels']]
+                for observation in observations]
+    persistent = bool(deficits[0]) and any(all(any(box_intersection(first['source_box_px'],other['source_box_px'])>0 for other in candidates)
+                                                for candidates in deficits[1:]) for first in deficits[0])
+    threshold_uncertain = any(first['complete']!=other['complete']
+                              for first in observations[0]['components'] for observation in observations[1:]
+                              for other in observation['components']
+                              if box_intersection(first['source_box_px'],other['source_box_px'])>0)
+    return {'observations': observations, 'complete': all(o['complete'] for o in observations) and not threshold_uncertain,
+            'persistent_deficit': persistent,
+            'resolution_uncertain': any(o['resolution_uncertain'] for o in observations) or threshold_uncertain,
+            'threshold_support_uncertain':threshold_uncertain,
+            'retained_area': min(o['retained_area'] for o in observations),
+            'projected_reader_box_px': [int(x0), int(y0), int(x1), int(y1)],
+            'unsupported_mask': all_unsupported, 'observed_gray': observed, 'warped_source_gray': warped,
+            'canonical_support_masks':canonical_support}
+
+
+def evaluate_occurrence_coverage(line, correspondence, registration, measurement):
+    reasons = []
+    if not line['geometry_reviewed']:
+        reasons.append('unreviewed_required_geometry')
+    if correspondence['localization_status'] != 'bounded':
+        reasons.append('unbounded_reader_neighborhood')
+    if not registration.get('matched'):
+        reasons.append('invalid_local_transform')
+    if measurement is None:
+        reasons.append('no_visible_pixel_measurement')
+    status = 'unresolved'
+    if not reasons and measurement['complete'] and not measurement['resolution_uncertain']:
+        status = 'complete'
+    elif not reasons and measurement['persistent_deficit']:
+        before, after = correspondence['before_lines'], correspondence['after_lines']
+        kind = correspondence['context_kind']
+        strong_context = ((before and after) if kind == 'interior' else after if kind == 'opening' else before)
+        if measurement['retained_area']:
+            status = 'partial'
+        elif strong_context and registration.get('context_authenticated') and registration.get('focused_retries_complete'):
+            status = 'absent'
+        else:
+            reasons.append('missing_strong_context_or_focused_retry')
+    if measurement and measurement['resolution_uncertain']:
+        reasons.append('resolution_uncertain')
+    return {'logical_line_id': line['logical_line_id'], 'status': status,
+            'evidence_status': 'candidate' if status in {'partial', 'absent'} else 'observed',
+            'human_verdict': None, 'reasons': reasons, 'context_kind': correspondence['context_kind'],
+            'evidence_strength': 'one_sided' if correspondence['context_kind'] != 'interior' else 'two_sided',
+            'source_partial': line['source_partial'], 'loss_stage': 'unknown'}
+
+
+def evaluate_logical_coverage(line, occurrence_results):
+    complete = [r for r in occurrence_results if r['status'] == 'complete']
+    if complete:
+        chosen = sorted(complete, key=lambda r: (r.get('reader_page', 0), r.get('reader_box_px', [0, 0])[1], r.get('occurrence_id', '')))[0]
+        return dict(chosen, logical_line_id=line['logical_line_id'],
+                    waived_redundant_occurrences=[r.get('occurrence_id') for r in occurrence_results if r is not chosen],
+                    repeat_observations=max(0, len(complete) - 1))
+    # Partial physical copies cannot waive required reference components.
+    partial = [r for r in occurrence_results if r['status'] == 'partial']
+    absent = [r for r in occurrence_results if r['status'] == 'absent']
+    if partial:
+        return dict(partial[0], logical_line_id=line['logical_line_id'], waived_redundant_occurrences=[])
+    if absent and len(absent) == len(occurrence_results):
+        return dict(absent[0], logical_line_id=line['logical_line_id'], waived_redundant_occurrences=[])
+    return {'logical_line_id': line['logical_line_id'], 'status': 'unresolved', 'evidence_status': 'observed',
+            'human_verdict': None, 'reasons': ['no_complete_authorized_ordered_union'], 'loss_stage': 'unknown',
+            'waived_redundant_occurrences': [], 'source_partial': line['source_partial']}
+
+
+def verify_reader_visibility(visible_measurement, embedded_measurement=None):
+    return {'visible_pass': visible_measurement['complete'],
+            'embedded_pass': embedded_measurement['complete'] if embedded_measurement else None,
+            'complete': visible_measurement['complete'], 'embedded_is_supplementary': True}
+
+
+def search_bounded_reader_gap(source,reader,box,initial_scale,settings):
+    """Nominate placements within one observed gap using bounded scale/rotation views."""
+    import cv2
+    import numpy as np
+    gap = reader[box[1]:box[3],box[0]:box[2]]
+    observed_views = common.image_views(gap)
+    config = settings['registration']
+    scales = np.linspace(initial_scale*(1-config['scale_tolerance']),initial_scale*(1+config['scale_tolerance']),config.get('gap_scale_samples',9))
+    rotations = np.linspace(-config['rotation_degrees'],config['rotation_degrees'],config.get('gap_rotation_samples',7))
+    candidates = []
+    corners = np.asarray([[0,0,1],[source.shape[1],0,1],[source.shape[1],source.shape[0],1],[0,source.shape[0],1]])
+    for scale in scales:
+        for rotation in rotations:
+            angle = math.radians(rotation)
+            matrix = np.asarray([[scale*math.cos(angle),-scale*math.sin(angle),0],
+                                 [scale*math.sin(angle),scale*math.cos(angle),0]])
+            projected = corners @ matrix.T
+            origin = np.floor(projected.min(axis=0))
+            width,height = np.ceil(projected.max(axis=0)-origin).astype(int)
+            if gap.shape[1]<width or gap.shape[0]<height:
+                continue
+            local = matrix.copy()
+            local[:,2] = -origin
+            template = cv2.warpAffine(source,local,(int(width),int(height)),flags=cv2.INTER_LINEAR,borderValue=255)
+            reference_views = common.image_views(template)
+            for view,observed in observed_views.items():
+                reference = reference_views[view]
+                if reference.std()==0:
+                    continue
+                scores = cv2.matchTemplate(observed,reference,cv2.TM_CCOEFF_NORMED)
+                _,score,_,position = cv2.minMaxLoc(scores)
+                transform = local.copy()
+                transform[:,2] += [position[0]+box[0],position[1]+box[1]]
+                candidates.append({'matrix':transform.tolist(),'correlation':float(score),'scale':float(scale),
+                                   'rotation_degrees':float(rotation),'view':view,'reader_position_px':[position[0]+box[0],position[1]+box[1]]})
+    return sorted(candidates,key=lambda candidate:(-candidate['correlation'],candidate['reader_position_px'][1],candidate['reader_position_px'][0],candidate['scale'],candidate['rotation_degrees'],candidate['view']))
+
+
+def measure_ordered_component_union(source_gray, pieces, settings):
+    """Measure canonical component support once across an ordered visible-piece union."""
+    import cv2
+    import numpy as np
+    if not pieces:
+        return None
+    ordered = sorted(pieces,key=lambda p:(p['canonical_extent'][0],p['canonical_extent'][1],p['tomus'],p['reader_page'],p['reader_box_px'][1],p['reader_box_px'][0]))
+    reading = [(p['tomus'],p['reader_page'],p['reader_box_px'][1],p['reader_box_px'][0]) for p in ordered]
+    if reading != sorted(reading) or any(not p.get('transform_reviewed') for p in ordered):
+        return {'complete':False,'persistent_deficit':False,'resolution_uncertain':True,'retained_area':0,
+                'observations':[],'union_reasons':['unreviewed_or_nonmonotonic_piece_path']}
+    observations = []
+    masks = []
+    area_scale = min(abs(float(np.linalg.det(np.asarray(p['matrix'])[:,:2]))) for p in ordered)
+    for observation,threshold in enumerate(settings['thresholds']):
+        support = np.zeros_like(source_gray,dtype=bool)
+        for piece in ordered:
+            support |= piece['measurement']['canonical_support_masks'][observation]
+        count,labels,stats,_ = cv2.connectedComponentsWithStats((source_gray<threshold).astype(np.uint8),connectivity=settings['connectivity'])
+        components = []
+        missing_union = np.zeros_like(source_gray,dtype=bool)
+        for identifier in range(1,count):
+            expected = labels==identifier
+            missing = expected & ~support
+            missing_union |= missing
+            _,_,deficit_stats,_ = cv2.connectedComponentsWithStats(missing.astype(np.uint8),connectivity=settings['connectivity'])
+            area = float(expected.sum()*area_scale)
+            deficit = float(missing.sum()*area_scale)
+            largest = float(max(deficit_stats[1:,4],default=0)*area_scale)
+            yy,xx = np.where(expected)
+            my,mx = np.where(missing)
+            extremity = bool(len(mx) and (mx.min()==xx.min() or mx.max()==xx.max() or my.min()==yy.min() or my.max()==yy.max()))
+            uncertain = area<settings['ink']['minimum_projected_pixels']
+            complete = not uncertain and deficit<=max(1,area*settings['ink']['unsupported_fraction']) and largest<settings['ink']['minimum_deficit_pixels'] and not extremity
+            components.append({'component':identifier,'expected_area':area,'unsupported_area':deficit,
+                               'largest_unsupported_component':largest,'touches_glyph_extremity':extremity,
+                               'resolution_uncertain':uncertain,'complete':complete,
+                               'source_box_px':[int(stats[identifier,0]),int(stats[identifier,1]),
+                                                int(stats[identifier,0]+stats[identifier,2]),int(stats[identifier,1]+stats[identifier,3])]})
+        observations.append({'threshold':threshold,'components':components,'complete':bool(components) and all(c['complete'] for c in components),
+                             'deficit':any(c['largest_unsupported_component']>=settings['ink']['minimum_deficit_pixels'] for c in components),
+                             'resolution_uncertain':any(c['resolution_uncertain'] for c in components),
+                             'retained_area':sum(c['expected_area']-c['unsupported_area'] for c in components)})
+        masks.append(missing_union)
+    piece_uncertain = any(observation['resolution_uncertain'] for piece in ordered for observation in piece['measurement']['observations'])
+    return {'observations':observations,'complete':all(o['complete'] for o in observations) and not piece_uncertain,
+            'persistent_deficit':all(o['deficit'] for o in observations),'resolution_uncertain':any(o['resolution_uncertain'] for o in observations) or piece_uncertain,
+            'retained_area':min(o['retained_area'] for o in observations),'canonical_unsupported_masks':masks,
+            'ordered_piece_ids':[p['registration_id'] for p in ordered],
+            'union_reasons':['uncertain_piece_support'] if piece_uncertain else []}
+
+
+def measure_coverage_run(logical, correspondences, reader_map, bundle, root, manifest, settings, run, args, prerequisites):
+    """Keep required source pixels fixed while measuring bounded visible reader pieces."""
+    import cv2
+    import numpy as np
+    import pymupdf
+    from PIL import Image
+    from collections import Counter, OrderedDict
+    import facsimile_line_audit as cli
+    repo,work = cli.paths(args)
+    images, embedded_images, source_heights = OrderedDict(), OrderedDict(), {}
+    correspondence_lookup = {item['logical_line_id']:item for item in correspondences['lines']}
+    rows = reader_map['body_pages']
+    evidence,results = {},[]
+
+    def render(tomus,page):
+        key = (tomus,page)
+        if key not in images:
+            pdf,record = cli.snapshot_input(root,manifest,'reader_pdf',tomus=tomus)
+            raster,meta = common.render_page(pdf,record,page,settings['reader_dpi'],work,repo,
+                pdftoppm=prerequisites['tools']['pdftoppm']['path'],policy=common.AuditOutputPolicy('audit'))
+            with Image.open(raster) as image:
+                gray = np.asarray(image.convert('L')).copy()
+            # A MediaBox render includes pixels outside the PDF's visible CropBox.
+            with pymupdf.open(pdf) as document:
+                leaf = document[page-1]
+                if leaf.rotation:
+                    raise common.AuditError('Rotated reader visibility requires an explicit coordinate mapping')
+                crop,media = leaf.cropbox,leaf.mediabox
+                visible = [int(round((crop[i]-media[i%2])*settings['reader_dpi']/72)) for i in range(4)]
+            xx,yy = np.meshgrid(np.arange(gray.shape[1]),np.arange(gray.shape[0]))
+            gray[(xx<visible[0]) | (xx>=visible[2]) | (yy<visible[1]) | (yy>=visible[3])] = 255
+            images[key] = (gray,meta,visible)
+            if len(images)>4:
+                images.popitem(last=False)
+        images.move_to_end(key)
+        return images[key]
+
+    def embedded(tomus,row,shape):
+        identity = row.get('image_occurrence',{})
+        xref = identity.get('xref')
+        if not xref or identity.get('identity_status')!='authenticated_asset':
+            return None
+        key = (tomus,xref,tuple(shape),tuple(row['body_box']))
+        if key not in embedded_images:
+            pdf,_ = cli.snapshot_input(root,manifest,'reader_pdf',tomus=tomus)
+            with pymupdf.open(pdf) as document:
+                pixmap = pymupdf.Pixmap(document,xref)
+                if common.decoded_image_identity(pixmap)!=identity['decoded_identity']:
+                    raise common.AuditError('Supplementary decoded image identity changed')
+                from io import BytesIO
+                with Image.open(BytesIO(pixmap.tobytes('png'))) as image:
+                    gray = np.asarray(image.convert('L'))
+            box = [int(round(row['body_box'][i]*shape[1 if i%2==0 else 0])) for i in range(4)]
+            canvas = np.full(shape,255,dtype=np.uint8)
+            canvas[box[1]:box[3],box[0]:box[2]] = cv2.resize(gray,(box[2]-box[0],box[3]-box[1]),interpolation=cv2.INTER_LINEAR)
+            embedded_images[key] = canvas
+            if len(embedded_images)>2:
+                embedded_images.popitem(last=False)
+        return embedded_images[key]
+
+    def persist(measurement,identifier):
+        metadata = {key:value for key,value in measurement.items() if key not in
+                    ('unsupported_mask','observed_gray','warped_source_gray','canonical_support_masks','canonical_unsupported_masks')}
+        crops = {}
+        for field in ('observed_gray','warped_source_gray','unsupported_mask'):
+            if field not in measurement:
+                continue
+            array = measurement[field]
+            if field == 'unsupported_mask':
+                array = np.where(array,0,255).astype(np.uint8)
+            path = common.safe_write_path(Path(run)/'coverage-evidence'/(identifier+'_'+field+'.png'),work,repo,policy=common.AuditOutputPolicy('audit'))
+            path.parent.mkdir(parents=True,exist_ok=True)
+            Image.fromarray(array).save(path)
+            crops[field] = {'path':path.relative_to(run).as_posix(),'sha256':common.hash_file(path)}
+        metadata['crops'] = crops
+        for threshold,mask in zip(settings['thresholds'],measurement.get('canonical_unsupported_masks',[])):
+            path = common.safe_write_path(Path(run)/'coverage-evidence'/(identifier+'_canonical_'+str(threshold)+'.png'),work,repo,policy=common.AuditOutputPolicy('audit'))
+            path.parent.mkdir(parents=True,exist_ok=True)
+            Image.fromarray(np.where(mask,0,255).astype(np.uint8)).save(path)
+            crops['canonical_unsupported_'+str(threshold)] = {'path':path.relative_to(run).as_posix(),'sha256':common.hash_file(path)}
+        evidence[identifier] = metadata
+        return identifier
+
+    def context_strength(item,side):
+        identifiers = set(item[side+'_lines'])
+        tokens = [p for p in item['context_tokens'] if p['source']['logical_line_id'] in identifiers]
+        informative = {p['source'].get('strict',p['source'].get('raw','')) for p in tokens}
+        informative.discard('')
+        strips = [fit for identifier in identifiers for fit in
+                  expand_correspondence_line(correspondences,correspondence_lookup[identifier])['registrations']
+                  if fit.get('matched') and len(set(fit.get('anchor_line_ids',[])) & identifiers)>=2]
+        return len(informative)>=settings['source_index']['thresholds']['omission']['context_min_informative'] or bool(strips)
+
+    def focused_gap(line,item,source):
+        kind = item['context_kind']
+        strong = (context_strength(item,'before') and context_strength(item,'after') if kind=='interior' else
+                  context_strength(item,'after' if kind=='opening' else 'before'))
+        if not strong or not line['geometry_reviewed'] or not line['owner_reviewed'] or not item['reader_pages']:
+            return None
+        before = [p['reader'] for p in item['context_tokens'] if p['source']['logical_line_id'] in item['before_lines']]
+        after = [p['reader'] for p in item['context_tokens'] if p['source']['logical_line_id'] in item['after_lines']]
+        preceding = max(before,key=lambda r:(r['tomus'],r['page'],r['pixel_box'][3])) if before else None
+        following = min(after,key=lambda r:(r['tomus'],r['page'],r['pixel_box'][1])) if after else None
+        retries,searches = [],[]
+        for tomus,page in item['reader_pages']:
+            reader,meta,visible = render(tomus,page)
+            owned = [row for row in rows if row['unit_id']==line['owner'] and (row['tomus'],row['page'])==(tomus,page)]
+            if not owned:
+                return None
+            body = union_boxes([row['body_box'] for row in owned])
+            box = [int(body[i]*reader.shape[1 if i%2==0 else 0]) for i in range(4)]
+            if preceding and (preceding['tomus'],preceding['page'])==(tomus,page):
+                box[1] = max(box[1],int(math.ceil(preceding['pixel_box'][3])))
+            if following and (following['tomus'],following['page'])==(tomus,page):
+                box[3] = min(box[3],int(math.floor(following['pixel_box'][1])))
+            if box[3]<=box[1]:
+                return None
+            pdf,pdf_record = cli.snapshot_input(root,manifest,'reader_pdf',tomus=tomus)
+            if 'ocr_unavailable' in prerequisites['tools']:
+                return None
+            normalized = [box[i]/reader.shape[1 if i%2==0 else 0] for i in range(4)]
+            expected = bundle['canonical_tokens'].get(line['logical_line_id'],[])
+            retry_recovery = []
+            for psm in settings['ocr']['retry_psm']:
+                obs = historical.ocr_page_region(pdf,pdf_record,page,settings['ocr']['retry_dpi'],psm,settings['ocr']['language'],work,repo,
+                    box=normalized,tesseract=prerequisites['tools']['tesseract']['path'],
+                    tessdata_dir=prerequisites['tools']['tesseract'].get('tessdata_dir'),pdftoppm=prerequisites['tools']['pdftoppm']['path'],
+                    policy=common.AuditOutputPolicy('audit'))
+                expected_words = expected
+                observed_words = [historical.comparison_views([word['text']])[0] for word in obs['words']]
+                recovered = historical.align_tokens(expected_words,observed_words,mode='local') if expected_words and observed_words else None
+                fraction = len(recovered.get('covered_source',[]))/len(expected_words) if recovered and expected_words else 0
+                retry_recovery.append(fraction)
+                retries.append({'tomus':tomus,'reader_page':page,'box_px':box,'dpi':settings['ocr']['retry_dpi'],'psm':psm,'word_count':obs['word_count'],'recovery_fraction':fraction})
+            if max(retry_recovery,default=0)>=settings['source_index']['thresholds']['omission']['reader_recovery_min']:
+                return {'status':'unresolved','reasons':['focused_ocr_recovered_unregistered_line'],'retries':retries}
+            # The search is confined to the actual gap, rather than a projected neighbor.
+            contextual = list(item['registrations'])
+            for identifier in item['before_lines']+item['after_lines']:
+                contextual.extend(expand_correspondence_line(correspondences,correspondence_lookup[identifier])['registrations'])
+            context_fits = [fit for fit in contextual if fit.get('matched') and fit.get('reader_page')==page and fit.get('tomus')==tomus]
+            source_key = (line['source_index'],line['page'])
+            if source_key not in source_heights:
+                source_pdf,source_record = cli.snapshot_input(root,manifest,'source_pdf',source_index=line['source_index'])
+                source_raster,_ = common.render_page(source_pdf,source_record,line['page'],settings['source_dpi'],work,repo,
+                    pdftoppm=prerequisites['tools']['pdftoppm']['path'],policy=common.AuditOutputPolicy('audit'))
+                with Image.open(source_raster) as full_source:
+                    source_heights[source_key] = common.ink_line_height(np.asarray(full_source.convert('L')))
+            reference_height = source_heights[source_key]
+            if reference_height is None:
+                return {'status':'unresolved','reasons':['required_line_glyph_scale_unresolved'],'retries':retries}
+            if context_fits:
+                reader_height = float(np.median([fit['reader_glyph_height'] for fit in context_fits]))
+                word_scales = [fit['word_box_scale'] for fit in context_fits]
+                scale_evidence = 'registered_owned_context'
+            else:
+                reader_height = common.ink_line_height(reader)
+                word_scales = [(pair['reader']['pixel_box'][3]-pair['reader']['pixel_box'][1]) /
+                               max(1,pair['source']['source_box_px'][3]-pair['source']['source_box_px'][1])
+                               for pair in item['context_tokens'] if (pair['reader']['tomus'],pair['reader']['page'])==(tomus,page)]
+                scale_evidence = 'screened_glyphs_and_ordered_owned_word_boxes'
+            if reader_height is None or not word_scales:
+                return {'status':'unresolved','reasons':['bounded_gap_scale_unresolved'],'retries':retries}
+            scale = reader_height/reference_height
+            word_scale = float(np.median(word_scales))
+            if abs(word_scale/scale-1)>settings['registration']['scale_tolerance']:
+                return {'status':'unresolved','reasons':['bounded_gap_scale_observations_disagree'],'retries':retries}
+            candidates = search_bounded_reader_gap(source,reader,box,scale,settings)
+            search = {'tomus':tomus,'reader_page':page,'box_px':box,'scale':scale,'best_correlation':None,'complete_match':False,
+                      'scale_evidence':scale_evidence,'source_glyph_height':reference_height,'reader_glyph_height':reader_height,'word_box_scale':word_scale,
+                      'search_bounds':{'scale_tolerance':settings['registration']['scale_tolerance'],'rotation_degrees':settings['registration']['rotation_degrees'],
+                                       'scale_samples':settings['registration'].get('gap_scale_samples',9),'rotation_samples':settings['registration'].get('gap_rotation_samples',7)},
+                      'placements':candidates,'placement_count':len(candidates)}
+            if candidates:
+                best = candidates[0]
+                candidate = measure_required_ink(source,reader,best['matrix'],settings,visible_box=box)
+                search.update(best_correlation=best['correlation'],complete_match=candidate['complete'])
+                search['measurement_id'] = persist(candidate,common.json_hash([line['logical_line_id'],tomus,page,box,'bounded_gap_search']))
+            searches.append(search)
+            if search['complete_match'] or (search['best_correlation'] is not None and search['best_correlation']>=settings['source_index']['thresholds']['clipping']['correlation_min']):
+                return {'status':'unresolved','reasons':['bounded_image_match_needs_valid_registration'],'retries':retries,'searches':searches}
+        return {'status':'absent','evidence_status':'candidate','human_verdict':None,'reasons':[],
+                'context_kind':kind,'evidence_strength':'two_sided' if kind=='interior' else 'one_sided',
+                'evidence_type':'bounded_gap_inspection','reader_extents':searches,'focused_retries':retries,
+                'source_partial':line['source_partial'],'loss_stage':'unknown'}
+
+    for count,line in enumerate(logical['lines']):
+        item = expand_correspondence_line(correspondences,correspondence_lookup[line['logical_line_id']])
+        occurrences,pieces = [],[]
+        with Image.open(Path(run)/line['canonical_crop']['path']) as image:
+            source = np.asarray(image.convert('L'))
+        fits = list(item['registrations'])
+        if line['geometry_reviewed'] and item['localization_status']=='bounded':
+            context_ids = set(item['before_lines']+item['after_lines']+[line['logical_line_id']])
+            known = {fit.get('registration_id') for fit in fits}
+            for fit in correspondences.get('registrations',{}).values():
+                if (fit.get('matched') and fit.get('source_index')==line['source_index'] and fit.get('source_page')==line['page'] and
+                    [fit['tomus'],fit['reader_page']] in item['reader_pages'] and fit.get('registration_id') not in known and
+                    set(fit.get('anchor_line_ids',[])) & context_ids and
+                    fit['source_box_px'][1]<=line['source_box_px'][1] and line['source_box_px'][3]<=fit['source_box_px'][3]):
+                    fits.append(dict(fit,projection_valid_for_line=True,evidence_type='shared_continuous_anchor_strip'))
+        fit_rows = [(fit,row) for fit in fits if line['geometry_reviewed'] for row in rows
+                    if row['unit_id']==line['owner'] and (row['tomus'],row['page'])==(fit['tomus'],fit['reader_page'])]
+        measured_occurrences = set()
+        fit_rows.sort(key=lambda pair:-pair[0].get('inliers',0))
+        for fit,row in fit_rows:
+            if not fit.get('matched') or not fit.get('projection_valid_for_line'):
+                continue
+            occurrence_key = (row['tomus'],row['page'],row['ordinal'])
+            if occurrence_key in measured_occurrences:
+                continue
+            measured_occurrences.add(occurrence_key)
+            reader,meta,visible = render(fit['tomus'],fit['reader_page'])
+            body = [int(round(row['body_box'][i]*reader.shape[1 if i%2==0 else 0])) for i in range(4)]
+            visible = [max(body[0],visible[0]),max(body[1],visible[1]),min(body[2],visible[2]),min(body[3],visible[3])]
+            affine = np.asarray(fit['matrix'],dtype=float).copy()
+            affine[:,2] += affine[:,:2] @ np.asarray(line['source_box_px'][:2])
+            measurement = measure_required_ink(source,reader,affine,settings,visible_box=visible)
+            identifier = common.json_hash([line['logical_line_id'],fit['registration_id'],occurrence_key,visible,'visible_ink'])
+            persist(measurement,identifier)
+            supplementary = embedded(fit['tomus'],row,reader.shape)
+            supplementary = measure_required_ink(source,supplementary,affine,settings,visible_box=body) if supplementary is not None else None
+            if supplementary:
+                persist(supplementary,identifier+'_embedded')
+            result = evaluate_occurrence_coverage(line,item,fit,measurement)
+            result.update(occurrence_id=':'.join(map(str,occurrence_key)),reader_page=fit['reader_page'],tomus=fit['tomus'],
+                          reader_box_px=measurement['projected_reader_box_px'],measurement_id=identifier,
+                          visibility=verify_reader_visibility(measurement,supplementary),registration_id=fit['registration_id'])
+            occurrences.append(result)
+            inverse = cv2.invertAffineTransform(affine)
+            extent_points = np.asarray([[visible[0],visible[1],1],[visible[2],visible[1],1],
+                                        [visible[2],visible[3],1],[visible[0],visible[3],1]]) @ inverse.T
+            extent = [max(0,float(extent_points[:,0].min())),max(0,float(extent_points[:,1].min())),
+                      min(source.shape[1],float(extent_points[:,0].max())),min(source.shape[0],float(extent_points[:,1].max()))]
+            pieces.append({'measurement':measurement,'matrix':affine,'tomus':fit['tomus'],'reader_page':fit['reader_page'],
+                           'reader_box_px':measurement['projected_reader_box_px'],'canonical_extent':extent,
+                           'transform_reviewed':line['geometry_reviewed'] and fit['matched'],'registration_id':fit['registration_id']})
+        result = evaluate_logical_coverage(line,occurrences)
+        if result['status']!='complete' and len(pieces)>1:
+            union = measure_ordered_component_union(source,pieces,settings)
+            if union:
+                result['union_measurement_id'] = persist(union,common.json_hash([line['logical_line_id'],'ordered_union',[piece['registration_id'] for piece in pieces]]))
+                result['ordered_union'] = {key:value for key,value in union.items() if key!='canonical_unsupported_masks'}
+                if union['complete']:
+                    result.update(status='complete',evidence_status='observed',reasons=[],sliced_line=True)
+        if result['status']=='complete':
+            result['waived_source_occurrences'] = [span['occurrence_id'] for span in line['source_region_coverage']
+                                                   if span['occurrence_id']!=line['canonical_occurrence_id']]
+        if result['status']=='unresolved' and not item['direct_tokens']:
+            gap = focused_gap(line,item,source)
+            if gap:
+                result.update(gap)
+        result.update(logical_line_id=line['logical_line_id'],owner=line['owner'],source_index=line['source_index'],
+                      source_page=line['page'],source_box_px=line['source_box_px'],source_crop=line['canonical_crop'],
+                      context_kind=result.get('context_kind',item['context_kind']),occurrences=occurrences,
+                      required_geometry_reviewed=line['geometry_reviewed'],owner_reviewed=line['owner_reviewed'])
+        results.append(result)
+        if count%100==0:
+            common.progress(f'Visible ink observations: {count+1}/{len(logical["lines"])}')
+    counts = dict(Counter(result['status'] for result in results))
+    return {'schema_version':1,'snapshot_id':manifest['snapshot_id'],'runtime_id':logical['runtime_id'],
+            'logical_map_id':logical['logical_map_id'],'lines':results,'measurements':evidence,'counts':counts,
+            'source_denominators':logical['counts'],'ocr_denominators':{'tokenless_objects':len(bundle['tokenless_objects']),
+                'ambiguous_words':len(bundle['ambiguous_words'])},'human_verdicts_are_separate':True,
+            'interpretation':'Conservative observed ink predicates; unreviewed source geometry cannot certify completeness'}
+
+
+def run_verification_cases(args):
+    """Score independent builder geometry after running the ordinary audit stages."""
+    import copy
+    import facsimile_line_audit as cli
+    repo,work = cli.paths(args)
+    root = common.safe_write_path(args.out,work,repo,policy=common.AuditOutputPolicy('audit'))
+    builder = cli.read_json(root/'builder-manifest.json')
+    if tuple(case['case_id'] for case in builder['cases']) != CASE_IDS:
+        raise common.CalibrationError('Verification requires the seven named builder cases')
+    summaries = []
+    for case in builder['cases']:
+        expected_path = root/case['case_id']/'case-expectations.json'
+        if common.hash_file(expected_path)!=case['expectations_sha256']:
+            raise common.AuditError('Builder expectation geometry changed')
+        expectation = cli.read_json(expected_path)
+        selected = copy.copy(args)
+        snapshot,manifest = cli.capture_verification_runtime(root/case['snapshot'],selected)
+        selected.snapshot = str(snapshot)
+        selected.units = None
+        selected.stop_after = args.stop_after or 'coverage'
+        selected.run_dir = str(root/case['case_id']/'results'/manifest['snapshot_id'][:16])
+        selected.resume = True
+        code = cli.pipeline_run(selected)
+        run = Path(selected.run_dir)
+        ledger = cli.read_json(run/'coverage-ledger.json') if (run/'coverage-ledger.json').exists() else {'lines':[]}
+        body = [line for line in ledger['lines'] if line['required_geometry_reviewed']]
+        misses,controls = [],[]
+        for target in expectation['omitted_source_lines']+expectation['partial_source_lines']:
+            region = next(r for r in expectation['source_regions'] if r['source_page']==target['source_page'] and r['line']==target['source_line'])
+            findings = [line for line in body if line['source_page']==target['source_page'] and
+                        box_intersection(line['source_box_px'],region['source_box_px'])>0]
+            found = [line for line in findings if line['status'] in ('partial','absent') and
+                     (line.get('reader_box_px') or line.get('reader_extents'))]
+            if not found:
+                misses.append(dict(target,statuses=[line['status'] for line in findings]))
+        if expectation['expected_no_unique_loss']:
+            controls = [line['logical_line_id'] for line in body if line['status'] in ('partial','absent')]
+        retained_failures = []
+        if case['case_id'] in ('retained_control','redundant_copy_removed'):
+            retained_failures = [line['logical_line_id'] for line in body if line['owner']=='fixture' and line['status']!='complete']
+        summary = {'case_id':case['case_id'],'run':str(run.relative_to(root)),'completed_stage':selected.stop_after,
+                   'processing_exit':code,'misses':misses,'false_losses':controls,'retained_failures':retained_failures,
+                   'counts':ledger.get('counts',{}),'passed':not(code or misses or controls or retained_failures)}
+        summaries.append(summary)
+        cli.write(run/'case-result.json',summary,args)
+        common.progress(str(summary))
+    report = {'schema_version':1,'cases':summaries,'passed':all(case['passed'] for case in summaries),
+              'completed_stage':args.stop_after or 'coverage','expectations_sha256':common.hash_file(root/'builder-manifest.json')}
+    identity = common.json_hash(report)
+    cli.write(root/'results'/identity/'verification-results.json',report,args)
+    return 0 if report['passed'] else 4
