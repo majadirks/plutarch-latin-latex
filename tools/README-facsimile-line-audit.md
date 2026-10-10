@@ -18,6 +18,21 @@ assets are optional, but available assets must match decoded PDF pixels. Capture
 refuse overwrite and authenticate every copied file. Later processing requires
 the same code/tool/language identity; code or policy changes require a fresh capture.
 
+`capture --reuse-snapshot <authenticated-snapshot>` may reuse raw reader geometry
+and decoded image identities when the reader/asset bytes and mapper code agree.
+It does not reuse logical maps, correspondence or coverage verdicts.
+
+```powershell
+python tools/facsimile_line_audit.py inventory --snapshot <snapshot> --run-dir tmp/pdfs/facsimile_line_audit/runs/source_inventory --units theseus,pericles,cato_minor,antonius
+```
+
+Inventory renders every inclusive physical source page in the selected units,
+including skipped duplicate scans. Per-page checkpoints support interrupted
+processing under the exact run identity. Source overlays and untouched crops
+remain under the run directory. A measured gutter is a source hypothesis;
+unresolved gutters, threshold disagreements and residual objects remain visible.
+Selected-ink accounting is distinct from reviewed source ownership and coverage.
+
 Tool resolution uses the command option, `PLUTARCH_PDFTOPPM` or
 `PLUTARCH_TESSERACT`, then PATH. English language data uses `--tessdata-dir`,
 `PLUTARCH_TESSDATA_DIR`, or the directory reported by Tesseract. Missing usable

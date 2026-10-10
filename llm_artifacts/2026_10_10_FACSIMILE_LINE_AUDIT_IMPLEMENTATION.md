@@ -22,3 +22,17 @@ commits. Each completed required step receives its own commit and push.
   `7dc8cbbd7c33b47883d050b383ec55cf10876010de16faf25d9f6260f5190cd2`.
   Prerequisites, compilation, help, changed-byte rejection, completed-destination
   refusal and missing-reader refusal pass. No credential path is captured.
+- 3.1: Added unmasked component/line inventory, threshold-specific gutter
+  hypotheses, repeated left-edge estimates, residual accounting, source crops,
+  overlays, explicit ROI-edge and tall-component child observations, and
+  separately authenticated page checkpoints. The four-unit verification completes
+  153/153 physical pages with 38,519 objects, 58 measured gutters, zero unassigned
+  selected pixels and zero processing errors. Other gutter/grouping observations
+  remain unresolved; complete component accounting does not certify complete Latin.
+  Snapshot: `eca7a25b3eee6ddb18f3e588da999910026853d25ace01a23406686b4c0cbdd0`.
+  Exact-identity resume, Python compilation and disposable production-fraction
+  mutation checks pass. Source overlays were inspected for Theseus, Pericles
+  and Antonius v2/562. Interrupted diagnostic runs remain preserved.
+- Repository regression gates: formatting and strict all-target Clippy pass;
+  `cargo test` passes 419 library tests and 9 CLI tests with 76 existing ignored
+  tests. Rust remains unchanged.

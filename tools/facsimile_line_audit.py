@@ -149,6 +149,12 @@ def capture_snapshot(args):
     policy_path = Path(args.source_policy) if args.source_policy else repo / 'tools/facsimile-source-policy.json'
     settings, policy = read_json(settings_path), read_json(policy_path)
     runtime, prerequisites = compute_runtime_identity(args, settings=settings, policy=policy)
+    reuse = None
+    if getattr(args, 'reuse_snapshot', None):
+        _, reuse = load_snapshot(args.reuse_snapshot)
+        if reuse['runtime']['code'].get('tools/inner_audit_common.py') != runtime['code']['tools/inner_audit_common.py']:
+            raise AuditError('Raw reader-map reuse requires identical executed mapper code')
+    reused_inputs = {r['path']: r for r in reuse['inputs']} if reuse else {}
     records = []
 
     def add(path, role, **metadata):
@@ -191,13 +197,22 @@ def capture_snapshot(args):
             if not common.contained(asset, readers):
                 raise AuditError('Escaping image reference')
             if asset.exists():
-                assets[reference] = common.decoded_image_identity(pymupdf.Pixmap(str(asset)))
+                cached = reused_inputs.get(asset.relative_to(repo).as_posix())
+                assets[reference] = (cached['decoded_identity'] if cached and cached.get('decoded_identity')
+                                     and common.hash_file(asset) == cached['sha256'] else
+                                     common.decoded_image_identity(pymupdf.Pixmap(str(asset))))
                 if asset not in assets_seen:
                     add(asset, 'reader_asset', decoded_identity=assets[reference])
                     assets_seen.add(asset)
         reader_inputs.append(dict(tomus=tomus, pdf_path=pdf, tex_path=tex,
                                   pdf_sha256=pdf_record['sha256'], tex_sha256=tex_record['sha256'], body_assets=assets))
-    reader_map = common.map_reader_occurrences(reader_inputs)
+    mapping_inputs = [r for r in records if r['role'] in {'reader_pdf', 'reader_tex', 'reader_asset'}]
+    can_reuse = reuse and all(r['path'] in reused_inputs and r['sha256'] == reused_inputs[r['path']]['sha256'] for r in mapping_inputs)
+    if can_reuse:
+        reader_map = reuse['reader_map']
+        common.progress('Reused authenticated raw reader geometry and decoded pixels; no logical maps or verdicts reused')
+    else:
+        reader_map = common.map_reader_occurrences(reader_inputs)
     if len(reader_map['units']) != 68 or {u['unit_id'] for u in reader_map['units']} != {u['id'] for u in units}:
         raise AuditError('Reader/table unit identities differ')
     root.parent.mkdir(parents=True, exist_ok=True)
@@ -267,6 +282,43 @@ def run_configuration(args):
     return root, manifest, settings, policy, units, runtime, prerequisites
 
 
+def inventory_run(args):
+    import facsimile_line_coverage as coverage
+    if not args.snapshot or not args.run_dir:
+        raise AuditError('inventory requires --snapshot and --run-dir')
+    root, manifest, settings, policy, units, runtime, prerequisites = run_configuration(args)
+    repo, work = paths(args)
+    run = common.safe_write_path(args.run_dir, work, repo, policy=common.AuditOutputPolicy('audit'))
+    existing = run / 'run-manifest.json'
+    if existing.exists():
+        old = read_json(existing)
+        if not args.resume or old['runtime_id'] != runtime['runtime_id']:
+            raise AuditError('Existing run requires --resume with exact identity')
+        if old.get('processing_complete'):
+            for filename, digest in old['record_sha256'].items():
+                if common.hash_file(run / common.relative_path(filename)) != digest:
+                    raise AuditError('Completed run record digest changed')
+            return 0
+    elif run.exists() and not args.resume:
+        raise AuditError('New run directory must be fresh')
+    with common.run_directory(run, work, repo, policy=common.AuditOutputPolicy('audit')):
+        run_record = dict(runtime, processing_complete=False, completed_stage='inventory', record_sha256={})
+        write(existing, run_record, args)
+        unit_path, _ = snapshot_input(root, manifest, 'unit_table')
+        inventory, errors = coverage.inventory_source_units(root, manifest, read_json(unit_path), units,
+                                                            settings, run, args, prerequisites)
+        inventory['runtime_id'] = runtime['runtime_id']
+        write(run / 'source-inventory.json', inventory, args)
+        write(run / 'errors.json', {'schema_version': 1, 'snapshot_id': manifest['snapshot_id'],
+                                  'runtime_id': runtime['runtime_id'], 'errors': errors}, args)
+        run_record.update(processing_complete=not errors, requested_pages=inventory['requested_pages'],
+                          completed_pages=inventory['completed_pages'],
+                          record_sha256={name: common.hash_file(run / name)
+                                         for name in ('source-inventory.json', 'errors.json')})
+        write(existing, run_record, args)
+    return 3 if errors else 0
+
+
 def make_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     subs = parser.add_subparsers(dest='command', required=True)
@@ -280,6 +332,7 @@ def make_parser():
         if command == 'capture':
             sub.add_argument('--reader-dir', default='build_facsimile')
             sub.add_argument('--snapshot-dir', required=True)
+            sub.add_argument('--reuse-snapshot', help='Reuse authenticated raw reader geometry when mapper and input bytes agree')
         if command in ('run', 'verify'):
             sub.add_argument('--stop-after', choices=('locate', 'coverage'))
         if command == 'verify':
@@ -298,6 +351,8 @@ def main():
             common.progress(json.dumps(check_audit_prerequisites(args), indent=2))
         elif args.command == 'capture':
             capture_snapshot(args)
+        elif args.command == 'inventory':
+            return inventory_run(args)
         else:
             raise AuditError(f'{args.command}: this stage is not implemented yet')
         return 0
