@@ -1784,6 +1784,48 @@ const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
             bottom: 2597,
         },
     },
+    SourceBodyBand {
+        source: 0,
+        page: 242,
+        unit_id: "alcibiades",
+        dimensions: (787, 2981),
+        observed: Band {
+            top: 2598,
+            bottom: 2623,
+        },
+        protected: Band {
+            top: 2598,
+            bottom: 2623,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 214,
+        unit_id: "pericles",
+        dimensions: (802, 2988),
+        observed: Band {
+            top: 2599,
+            bottom: 2628,
+        },
+        protected: Band {
+            top: 2599,
+            bottom: 2628,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 215,
+        unit_id: "pericles",
+        dimensions: (796, 2974),
+        observed: Band {
+            top: 249,
+            bottom: 272,
+        },
+        protected: Band {
+            top: 249,
+            bottom: 272,
+        },
+    },
 ];
 
 /// Keep verified source body intervals when their exact band signature survives.

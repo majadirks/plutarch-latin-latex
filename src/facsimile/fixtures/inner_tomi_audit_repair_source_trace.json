@@ -1389,10 +1389,10 @@
           "sha256": "e4f00893d744cab2db15d26172e1888165b6f85bba57de7b6756ebc2c7ed82c3"
         }
       ],
-      "status": "pending_repair",
+      "status": "installed",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Confirming read authorizes repair investigation; production restoration and rebuilt-reader review remain pending.",
+      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -1765,6 +1765,10 @@
         ],
         "regression_name": "tier_b_non_antonius_source_lines_restored",
         "downstream_trial_loss_stage": "pending candidate composition verification"
+      },
+      "passing_evidence": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-verse/alcibiades/alcibiades.json",
+        "sha256": "25a60de3d94db5db539c3f4e8227e966f02aa2211955d1bfb72d5e5e4645dab7"
       }
     },
     {
@@ -26282,10 +26286,10 @@
           "sha256": "caf1d13c2ded8a02178be6314e21624ca97f6251b4071d42ca50572fff88c3f4"
         }
       ],
-      "status": "pending_repair",
+      "status": "installed",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Confirming read authorizes repair investigation; production restoration and rebuilt-reader review remain pending.",
+      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -27197,6 +27201,10 @@
         ],
         "regression_name": "tier_b_non_antonius_source_lines_restored",
         "downstream_trial_loss_stage": "pending candidate composition verification"
+      },
+      "passing_evidence": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-verse/pericles/pericles.json",
+        "sha256": "abea45c0491a500986d1486bba3f8673cb1ed7373d5b7918a4a1625c88e45a08"
       }
     },
     {
