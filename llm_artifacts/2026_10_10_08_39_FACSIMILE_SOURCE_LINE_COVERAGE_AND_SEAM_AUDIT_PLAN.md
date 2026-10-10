@@ -32,7 +32,8 @@ findings. Preserve the existing repository test suites.
 The branch is `plan/facsimile-line-coverage-seams`, created from
 `plan/inner-tomi-audit-repairs` on 2026-10-10. The existing modification to
 `llm_artifacts/2026_10_09_22_36_TIER_B_DELIVERY_REVIEW.md` belongs to earlier work;
-preserve it and exclude it from this work's commits.
+preserve its contents. The user authorized committing all current edits together,
+including that document, when this plan revision is complete.
 
 Relevant implementation and evidence:
 
@@ -109,7 +110,9 @@ No production output, source PDF, transcription cache, unit table, or existing
 repair decision changes. New output lives under
 `tmp/pdfs/facsimile_line_audit/` and is preserved in a dated archive after delivery.
 The work adds no unit-test suite; its verification evidence is retained with the
-run. Existing Rust tests remain available as the repository regression check.
+run. Each required step has local verification using features available at that
+step, with realistic disposable cases prepared before coverage implementation.
+Existing Rust tests remain available as the repository regression check.
 
 # Tech Learnings
 
@@ -131,599 +134,961 @@ on the visible page. Inspect displayed regions as well as embedded image content
 
 # Design contract
 
-## A. Python files, reuse, and commands
+## A. Python files and explicit reuse boundary
 
-Add `tools/facsimile_line_audit.py` for CLI orchestration and
-`tools/facsimile_line_coverage.py` for source inventory, duplicate-aware coverage,
-seams, and report data. Add `tools/facsimile_seam_review.py` for optional Haiku
-requests. Use one coverage implementation and one evidence renderer for ordinary
-line findings and seam findings.
+Add `tools/facsimile_line_audit.py` for CLI orchestration,
+`tools/facsimile_line_coverage.py` for inventory/coverage/seams, and
+`tools/facsimile_seam_review.py` for optional Haiku requests. Add
+`tools/inner_audit_common.py` for shared low-level infrastructure. Add source
+policy/settings JSON and `tools/README-facsimile-line-audit.md`. Reuse
+`requirements-inner-audit.txt`; pin a working official `anthropic` SDK version in
+an optional `requirements-facsimile-haiku.txt`. Core offline imports must work
+without that SDK. No Rust modules, tracing flags, or new unit tests are added.
 
-Extract reusable PDF/render/path/hash functions into
-`tools/inner_audit_common.py` only where sharing is needed. Re-export their old
-names from `audit_inner_tomi.py` so existing callers keep working. Leave
-historical detector algorithms and capture/freeze policy in the old script.
-Avoid a wholesale reorganization of the historical audit.
+The common module owns `AuditError`, `CalibrationError`, `progress`,
+`progress_heartbeat`, `hash_file`, `json_hash`, `validate_box`, `page_geometry`,
+`normalized_pdf_box`, `pixel_bounds`, `relative_path`, `contained`,
+`safe_write_path`, `write_json`, `run_external`, `reusable_entry`, `run_directory`,
+`render_page`, `parse_tex_refs`, `enumerate_image_occurrences`,
+`read_footer_folio`, and the body-asset filename regex. Move these definitions
+and their standard-library dependencies once, then import/re-export their names
+from `audit_inner_tomi.py`. The common module must not import that script.
+Keep optional image/PDF imports lazy. Preserve historical behavior by default;
+new callers pass explicit policy/settings through optional keyword arguments.
 
-Add `tools/facsimile-line-source-policy.json`,
-`tools/facsimile-line-audit-settings.json`, and
-`tools/README-facsimile-line-audit.md`. Reuse core dependency pins. Add
-`tools/requirements-facsimile-haiku.txt` for the optional official `anthropic`
-Python SDK; during implementation choose and record the installed working version
-and pin it there. Offline audit imports must not require this SDK.
+Extract `map_reader_occurrences(reader_inputs, expected_counts=None)` from the
+reader-map loop; the historical adapter supplies its pinned expectations. The
+new adapter supplies reader inputs shaped as `{tomus, pdf_path, tex_path,
+pdf_sha256, tex_sha256, body_assets}`; `body_assets` maps available relative asset
+names to decoded pixel hashes/dimensions. Count occurrences, not
+unique xrefs; check decoded pixels where asset files exist and retain ambiguous
+identity. Equal image bytes legitimately can appear multiple times. No `zip`
+operation may silently truncate unequal reference/occurrence lists.
 
-The audit CLI has `capture`, `inventory`, `run`, `report`, `adjudicate`, and
-`verify` commands. `verify` runs a few disposable end-to-end audit cases and emits
-verification evidence; it is not a unit-test framework. Optional flags are
-`--units`, `--resume`, and `--trace-dir`. A trace is supplemental and never required.
-Changed inputs/settings require a new run directory. Do not reuse a historical
-baseline identity for new readers.
+Keep historical indexing/alignment orchestration in `audit_inner_tomi.py`.
+Import its reusable pure helpers under one module alias: `comparison_views`,
+`passage_windows`, `anchor_information`, `fit_source_index`, `load_source_index`,
+`find_reader_occurrences`, `chain_matches`, and `align_tokens`. Do not copy these
+algorithms. The new adapter must not call `cached_source_index`,
+`cached_source_regions`, `extract_source_regions`, `unit_source_tokens`, or
+`read_approved_exclusions` to create expected Latin. Their production cuts/skips
+are incompatible with the independent inventory.
 
-## B. Input snapshots and output identity
+Share `image_views` and `ink_line_height` by moving them into the common module.
+Extend `ink_line_height` with optional settings preserving its current defaults:
+threshold 120, 8-connectivity, screened component heights/widths/area, at least
+eight components, upper-quartile height. The new inventory uses this same screened
+estimator at both source thresholds; it does not add a competing median-height
+algorithm. At step 5.1 extract the existing SIFT/matching/RANSAC kernel into
+`register_pixel_regions`; the historical registration wrapper keeps its original
+ROI, 24-inlier threshold and results. New strip callers pass different regions
+and settings explicitly. Cache keys distinguish the callers and settings.
+
+Use one source inventory, one correspondence/coverage evaluator, one reader map,
+and one evidence renderer for ordinary line findings and seams. Human/model
+observations are imports into reports, never parallel matching implementations.
+
+## B. CLI, runtime identity, prerequisites, and output policy
+
+The audit CLI has `check`, `capture`, `inventory`, `run`, `report`, `adjudicate`,
+`verify`, and optional `inspect-trace`. Common arguments are `--repo-root`
+(default script parent-of-tools), `--work-dir` (default repository-relative
+`tmp/pdfs/facsimile_line_audit`), and explicit `--snapshot`, `--run-dir`, `--units`,
+`--resume`, `--settings`, `--source-policy`, `--pdftoppm`, `--tesseract`,
+`--tessdata-dir`, and `--trace-dir` where applicable. `--units` is a comma-separated
+list of exact table IDs; unknown/duplicate IDs are errors. Selection is recorded.
+An omitted settings/policy argument reads the captured version during a run,
+not the mutable file in `tools/`. A supplied differing version requires a new
+capture/run identity; it cannot be applied to an old run with `--resume`.
+
+`check_audit_prerequisites` reuses the existing package/tool inspection pattern.
+Resolve tools in CLI, corresponding `PLUTARCH_...` override, then PATH order.
+Require Python 3.10+, the pinned core packages, Poppler and Tesseract `eng` for
+OCR-backed runs. Source/reader raw inventory can continue without usable OCR,
+with `ocr_unavailable` recorded; OCR-dependent alignment cannot claim completion.
+Record resolved executables, versions, language data path/digest and OpenCV/NumPy/
+PyMuPDF versions. Resolve `eng.traineddata` from the explicit directory or the
+installed directory reported by Tesseract; inability to authenticate it blocks
+OCR-backed calibration. Pass `--tessdata-dir` through the shared OCR adapter;
+add the optional keyword and digest to historical OCR cache metadata without
+changing its default segmentation behavior.
+
+Initial OCR profile is `eng`: source 300 DPI/PSM 6, reader 180 DPI/PSM 3, focused
+300-DPI retries with PSM 6 and 11. Preserve raw OCR and orthography; existing
+`comparison_views` are temporary matching aids. Do not update source Latin from
+OCR or a model. Source ink inventory remains authoritative even with no tokens.
+
+`compute_runtime_identity` hashes actual executed files before comparison-cache
+access: the three new audit/reviewer modules when used, `inner_audit_common.py`,
+`audit_inner_tomi.py`, and any further repository-local imported audit module.
+Record settings/policy digests, tool/package/language identities, deterministic
+registration seed, selected scope, and snapshot identity. A mismatch with captured
+code requires a new snapshot/run. New policy versions can reuse raw renders keyed
+solely by source hash/page/render settings, but never old logical maps, matches,
+or verdicts. Raw OCR cache includes rendered-byte, model/language, DPI/PSM and
+adapter identity. Comparison caches include runtime/policy identities.
+
+`AuditOutputPolicy` has profiles `historical`, `audit`, and `fixture`. Existing
+callers default to `historical`, preserving their current roots and `.pdf` ban.
+New `audit` callers can write beneath resolved `work/cache` and `work/runs` and
+capture into a fresh direct child of `work/snapshots`; captured snapshots are
+read-only after `snapshot-manifest.json` is atomically committed. All profiles
+protect source PDFs, accepted `build_facsimile`, `src`, unit/repair ledgers,
+credentials and historical archives. Propagate the optional policy to
+`write_json`, `reusable_entry`, `run_directory`, and `render_page` so cache/lock
+writes use the same resolved-path checks. Include the common error/progress/lock
+helpers in extraction rather than leaving circular dependencies.
+
+Verification output is a fresh owned directory beneath `work/runs/verification`.
+Only `create_verification_inputs`, using a `fixture` policy bound to that exact
+root and a builder-generated filename allowlist, can create its source/reader
+PDFs. It cannot overwrite an existing PDF, write outside that root, or write a
+PDF through ordinary audit/report commands. Common capture copying retains its
+separate input-copy permission. The fixture manifest identifies `target_kind:
+verification`; full captures identify `target_kind: corpus` and require both
+sources, eight readers, and 68 units. New verification cases may have fewer inputs
+but use the same schema and pipeline with their explicit requested counts.
+
+Exit codes: 0 requested processing finished (findings/unresolved observations
+allowed), 2 invalid inputs/configuration/prerequisites, 3 interrupted or incomplete
+requested processing, and 4 failed explicitly requested verification/calibration
+cases. `run-manifest.processing_complete` is separate from coverage/review status.
+Persist partial progress and errors, then exit 3 if any requested page could not
+be processed. `--resume` requires an exact run identity and reuses only completed,
+hash-verified entries. An unexplained registration failure is a completed
+observation with an unresolved verdict, not a tool-processing failure.
+
+## C. Immutable captures and stable records
 
 `capture --reader-dir build_facsimile --snapshot-dir <new-directory>` copies the
-two source PDFs, eight inner PDFs and TeX files, unit table, two repair ledgers,
-source policy, settings, and audit code. Record SHA-256, role, relative path,
-software versions, actual source page counts, and observed reader counts in
-`snapshot-manifest.json`. Do not reuse historical counts as expected current
-counts. Copy referenced body PNGs when present and always record decoded body
-image identities from the PDFs. Missing standalone PNGs must not prevent auditing
-a complete reader.
+two original PDFs, eight inner PDFs/TeX files, unit table, two repair ledgers,
+source policy, settings, and transitively executed audit code. Record role,
+relative paths, SHA-256, observed counts, tool identities and decoded body-image
+identities. Verify original/copy hashes before and after capture; refuse overwrite.
+Copy body PNGs when available, but missing standalone PNGs do not prevent auditing
+a complete reader. Reject escaping references, missing required corpus inputs,
+or ambiguous reference counts. Image identity ambiguity is retained explicitly.
+Source page ranges use table endpoints (v1 final body page 637, v2 708) as reviewed
+scope, not an assertion about all pages of the PDFs; report excluded front/back
+matter. Shared boundary pages are rendered once but inspected for both owners.
 
-Count displayed occurrences, including two uses of the same PDF image object.
-Check each against ordered TeX references and available decoded PNG pixels.
-Repeated equal images can legitimately have indistinguishable pixel identities;
-record their ordered occurrences rather than pretending the hashes are unique.
-An ambiguous asset correspondence remains unresolved. Missing PDFs, escaping
-references, truncated reference/occurrence counts, or input changes during capture
-are errors. Exclude secrets, outer imposed PDFs, and prior archives.
-
-A run writes `source-inventory.json`, `logical-lines.json`,
+A run writes `source-inventory.json`, `source-index.json`, `logical-lines.json`,
 `coverage-ledger.json`, `seams.json`, `reader-map.json`, `errors.json`,
-`review-tasks.json`, `run-manifest.json`, `index.html`, and `crops/`.
-Optional model observations and human decisions live in separate files. Stable
-records have sorted keys/lists and no timestamps, absolute paths, or timings;
-operational metadata goes in the manifest. Hash crop bytes and record sets.
-Cache original renders, OCR, and image comparisons by input/settings/tool identity.
+`review-tasks.json`, `run-manifest.json`, `index.html`, and `crops/`. All records
+carry schema version 1 and snapshot/runtime IDs. Sort keys/lists with deterministic
+ties. Stable evidence excludes timestamps, absolute paths and runtime timings;
+operational metadata stays in the manifest. Hash crop bytes and saved record sets.
+Snapshot IDs hash canonical manifest content excluding capture timestamps and
+self-digest. Human/model review cannot mutate machine evidence.
 
-## C. Independent expected lines and source policy
+## D. Independent source column and line inventory
 
-`SourceOccurrence` contains `occurrence_id`, source digest/index, one-based
-physical page, DPI/raster size, full-source box, crop hash, classification,
-possible owners, segmentation certainty, and optional raw OCR. Classification is
-`body`, `heading`, `annotation`, `furniture`, or `uncertain`. IDs derive from
-source digest/page/box/detector settings and do not change with a review verdict.
-Merged regions have measured children or stay unresolved; do not equate a merged
-production band with one printed line.
+`SourceOccurrence` contains occurrence ID, source digest/index/physical page,
+DPI/raster size, full-source box, crop hash, classification, possible owners,
+segmentation status, parent/child IDs, and raw OCR observations when present.
+Classification is `body`, `heading`, `annotation`, `furniture`, or `uncertain`.
+IDs hash source/page/box/detector identity and do not change with adjudication.
+Record every component or uncertainty region. A merged region is not one line
+unless separate baseline evidence supports that interpretation.
 
-Inventory uses unmasked full-page source renders at 300 DPI. Initial inspection
-ROI is `[0.40, 0.00, 1.00, 1.00]` in fractions, preserving page heads/feet. Flag
-components intersecting its left boundary and permit a reviewed source-only
-widening. Estimate the Latin gutter from original-source geometry; do not use
-production column crops or retained bands to define expected content. Full-page
-context remains available. Fixed top/bottom percentages cannot exclude prose.
-Missing OCR cannot remove visible source ink.
+`inventory_source_page` reads an unmasked full page at 300 DPI, retaining a
+full-page context image. Initial inspection ROI is `[0.40,0.00,1.00,1.00]`; record
+components touching its left edge and permit a source-only reviewed widening.
+No fixed top/bottom trim or production retained-band input is permitted.
+Perform column separation before row grouping:
 
-`SourcePolicy` is versioned and source-digest bound. It stores reviewed ownership,
-furniture classifications, segmentation overrides, and duplicate maps. Production
-title/body fractions and original OCR are locator suggestions; exclusions require
-source-only evidence and a recorded decision. Unreviewed classifications remain
-hypotheses, and uncertainties stay visible in denominators. Source labels and
-annotations receive separate coverage categories rather than default exclusion.
+1. At threshold 170 form 8-connected components, retaining all of them. Identify
+   likely rules by height greater than eight estimated glyph heights and width
+   below 0.3 glyph heights. Use them as gutter hypotheses, never erase their ink.
+   A rule touching glyph-like components remains an unresolved object.
+2. Smooth the full-height per-column ink profile over nine pixels. Find low-ink
+   runs in normalized x `[0.40,0.62]` at most 15% of the profile's local 90th
+   percentile, at least 0.75 glyph heights wide. Rank first by separation of two
+   text-dense sides, then by width, then smaller x. A valid candidate has repeated
+   text-like components on both sides and agrees within one glyph height with the
+   threshold-210 estimate. Estimate the Latin body left edge from the repeated
+   leftmost text-component starts to the right of the candidate, rather than
+   assuming all gutter/reference components belong to the prose column.
+3. If no distinct gutter candidate exists, retain the broad ROI as uncertain.
+   A boundary-crossing component is never divided or dropped automatically.
+   Components confidently left of a measured gutter are separate neighbor-column
+   observations; glyph-like material near the proposed Latin left edge remains
+   ambiguous until source-only ownership/classification review.
 
-## D. Logical passages and duplicate scans
+Use shared screened `ink_line_height` for glyph scale at both thresholds. If its
+inputs are insufficient, retain grouping uncertainty. On the measured Latin side,
+form provisional baselines from glyph-sized component centers, grouping only
+within 0.5 glyph heights vertically and 2.5 glyph heights horizontally. Lines may
+have separate word clusters; join them only when their fitted baselines agree
+within 0.25 glyph heights and no second baseline intervenes. Fit each baseline
+against its original member components, not a transitive graph that can bridge
+several printed lines. Wider word components are allowed with consistent height.
+Attach punctuation/diacritics to a unique nearest baseline within 0.75 glyph
+heights and horizontal distance 1.5 glyph heights; multiple possible parents stay
+uncertain. Tall/rule-connected components with multiple baselines become an
+unresolved group with measured child candidates. Retain verse indentation.
 
-`DuplicateGroup` records logical owner, physical source occurrences, reviewed
-passage boundaries, canonical sequence, occurrence-to-logical-region mappings,
-and evidence. Seed from existing approved records without parsing narrative text
-or deriving source pairs solely from page arithmetic. New equivalence decisions
-require source-only review. Divide shared duplicate pages by actual passage owner
-before equivalence, especially Eumenes/comparison material around v2/101–105.
-Keep incomplete second openings of Alexander, Phocion, and Otho explicit.
+Thresholds 170/210 are separate observations; disagreements are uncertain regions.
+Create a residual-ink mask: every pixel selected at either threshold in the
+inspection ROI must belong to a line, furniture/annotation hypothesis,
+neighbor-column observation, or uncertainty object. Unassigned components become
+uncertainty objects rather than disappear. Preserve raw grayscale overlays so
+fainter ink outside these masks can be noticed during source review. A source
+page cannot be marked fully inventoried if its gutter or residual assignments
+remain unresolved. This is an observed-ink accounting check, not a claim to detect
+all arbitrarily faint source glyphs.
 
-`LogicalLine` records a stable ID, unit/sequence position, required source regions,
-equivalent physical mappings, classification, and source/segmentation uncertainty.
-Use a complete reviewed occurrence as the reference where available. A partial
-occurrence maps solely to its surviving span. Different wrapping or complementary
-fragments require explicit region mappings; otherwise equivalence stays unresolved.
-No reconstruction of source glyphs from Latin grammar is permitted.
+`SourcePolicy` is source-digest bound and versioned. It contains reviewed ownership,
+furniture classifications, measured gutter/child-box overrides and duplicate maps.
+Source OCR and production title/body fractions may suggest locators; they cannot
+exclude expected prose. Imported decisions bind crop hashes and source regions.
+Keep original source labels/annotations as separate coverage categories. Missing
+OCR never deletes an occurrence. Source-partial scans remain distinguishable from
+additional reader loss.
 
-Require a complete ordered occurrence or an explicitly mapped union of contiguous
-pieces covering the required line in the proper reader position. Do not assemble
-coverage from arbitrary occurrences elsewhere in the work. Natural repeated
-language keeps distinct logical positions. Additional full copies satisfy coverage
-and receive a separate repeat observation. They are not a repair instruction.
-Source-partial lines are distinguished from newly lost reader material.
+## E. Duplicate equivalence and canonical logical coordinates
 
-## E. Python correspondence and evidence strength
+`DuplicateGroup` stores logical owner, reviewed physical passage regions,
+canonical source occurrence, logical sequence, region maps and source-only evidence.
+Seed existing approved numeric pairs/regions; a skip list, page arithmetic, or
+similar words does not establish equivalence. Split mixed/shared pages by actual
+owner before equivalence, especially Eumenes/comparison v2/101–105. Keep incomplete
+second openings in Alexander, Phocion and Otho explicit. New equivalence requires
+source-only review; no new production skip decision is installed.
 
-Reuse the existing source-only OCR passage index and ordered alignment to propose
-reader neighborhoods, respecting approved logical duplicate maps. Adapt call
-sites to explicit captured inputs; do not copy the aligner or let reader OCR train
-the source index. Preserve alternative placements and ambiguity. Add source-line
-image registration inside bounded reader neighborhoods, including adjacent pages.
-Registration may operate on overlapping strips and multiple anchors because a
-source page is reflowed across several reader pages. A whole-page affine transform
-is not assumed to exist.
+`LogicalLine` stores ID, owner/sequence position, canonical required box, required
+ink components, physical occurrence maps, classification and source/segmentation
+uncertainty. Canonical coordinates are pixels relative to the reviewed complete
+reference line crop at source DPI; its width/height and grayscale hash are fixed.
+Each `OccurrenceRegionMap` specifies original full-source fragment box, 2x3 affine
+transform to canonical coordinates, reviewed covered canonical polygon, evidence
+hash, and maximum registration residual. Different wraps use multiple maps for
+one physical occurrence. Do not assume identical line ordinals or pixel dimensions.
+If no complete reference exists, explicitly reviewed complementary source regions
+may define separate canonical parts; boundaries with no trustworthy common
+reference stay unresolved. Illegible/source-absent glyphs cannot be invented.
 
-`LineCorrespondence` records source occurrence/region, reader image occurrence,
-reader physical page/folio provenance, source-to-reader transform, measured scale,
-matched anchors, visible region, pixel differences, and limitations. Derive scale
-from matched source/reader ink, not a fixed assumed generator scale. Inspect left
-and right ends plus ascenders/descenders. Split/merged lines and skew can require
-piecewise correspondences. Registration failure is unresolved, never absence.
+Only actual visible reader pieces mapped into this canonical frame contribute to
+coverage. Their union must cover every required reference ink component and lie
+on one monotonic reader path for that logical position. Order pieces by canonical
+part/left-to-right extent and reader page/y/x. Reject gaps, conflicting overlap,
+backwards placement, unresolved transforms or arbitrary repeated wording elsewhere.
+An overlap may corroborate retention but does not double-count coverage. One full
+authorized occurrence is enough; a redundant incomplete occurrence can be waived
+only after full logical coverage is established. Extra full copies are repeat
+observations. Keep physical, logical, redundant, source-partial, annotation and
+unresolved denominators separate.
 
-Each physical occurrence receives `complete`, `partial`, `absent`, or
-`unresolved`. `complete` requires whole required line coverage in its expected
-position, corroborated by ordered context and source/visible-reader image
-agreement. Partial/absent findings require bounded before/after anchors and crop
-review; OCR disagreement or a failed image search alone produces a candidate or
-unresolved result. Retain raw measurements; scores are not probabilities.
+## F. Inventory-to-token adapters and ordered neighborhoods
 
-Inspect actual rendered reader pages at 300 DPI in addition to decoded embedded
-images. A complete embedded image does not clear clipping or overpainting. Use
-shared PDF transforms and rendered crops to inspect the actual visible endpoints.
-Overpainting, ambiguous transforms, and registration uncertainty stay visible.
+`source_inventory_to_tokens(inventory, logical_lines, ocr_observations)` returns
+`SourceTokenBundle`: per-physical-occurrence tokens plus explicit tokenless objects,
+logical maps, canonical token sequences, and source-only passage windows. Each
+token preserves raw text/provider, occurrence ID, logical-line ID when resolved,
+source page/box, physical line ID, logical position, `strict`/`tolerant` temporary
+views, and any observed hyphen-join hypothesis. Bind fresh source raster OCR words
+to inventory objects by box overlap; ambiguous words stay unassigned observations.
+Production cuts/skips are not consulted. A tokenless source object remains in the
+expected line ledger and image-comparison queue with `ocr_missing: true`.
 
-Store `loss_stage` as `unknown` unless authenticated existing trace evidence
-establishes a particular operation and binds to the captured reader pixels. Do not
-infer an executed mask/trim solely from a source-code table or line position.
-No new production tracing or rebuild is a prerequisite of this audit.
+For a reviewed equivalent group, choose canonical text from the reference/source
+maps. Map other occurrences to canonical token intervals only when bounded local
+alignment supports the reviewed region relation; unequal or uncertain token
+mappings stay geometric maps, not forced equal-length aliases. Keep all physical
+OCR. `source_bundle_to_index_unit` produces the existing index shape
+`{unit_id, source_index, tokens, strict, tolerant, anchors}` plus a reverse
+canonical-token-to-occurrence lookup. Use `comparison_views`, `passage_windows`,
+`anchor_information`, and `fit_source_index` to build a source-only vocabulary/IDF.
+If there are no valid source windows, skip fitting and record `no_source_anchors`;
+do not call TF-IDF with an empty vocabulary or substitute invented tokens.
 
-## F. Seams and Haiku review
+`reader_observations_to_tokens(reader_map, ocr_observations)` preserves raw views,
+physical reader image/page, body box, pixel/normalized word boxes, PDF folio
+provenance, observed line identity and hyphen joins. Run
+`find_reader_occurrences` then `chain_matches` against canonical source sequences.
+Pass empty old-style aliases because the new source sequence is already canonical;
+explicit region maps drive physical duplicate coverage. Reuse `align_tokens` in
+local mode for token refinement. Existing index/retrieval/window defaults seed
+settings, but old omission thresholds never determine new line completeness.
+Do not refit the index on reader text.
 
-Derive every seam from the source/logical inventory and reader placements:
-source-page transitions, unit openings/closings and shared boundaries, duplicate
-bypass joins, and adjacent body-reader pages. Include apparently complete seams.
-Physical duplicate edges remain inventory entries, marked redundant only after
-logical coverage is established. Task deduplication preserves all seam reasons.
+A candidate neighborhood is bracketed by ordered anchors at the expected logical
+position. Use up to three nearest matched lines on each side and at most two
+adjacent reader body pages per local comparison; larger gaps become overlapping
+local tasks with explicit uncertainty. Interior source-page edges are not unit
+endpoints. Tokenless lines use neighboring registered image anchors; a unit with
+no source/reader anchors stays unresolved until image/manual localization provides
+a bounded reader extent. Do not search arbitrary repeated prose to clear a loss.
 
-Include the last three owned body lines before a seam and the first three after
-it, uncertain objects between anchors, and relevant headings/annotations. Extend
-sparse context within its unit, without borrowing another unit's prose. Include
-original source edges that a production crop may have omitted. Save all requested,
-inspected, and unresolved seams.
+## G. Shared local registration and whole-ink decision rules
 
-Haiku receives labeled source context and corresponding visible-reader crops with
-numbered immutable line IDs. Hide machine loss verdicts and historical repair
-labels. Ask whether each line is complete, partial, absent, or unclear, plus
-object type, matching reader crop IDs, and a brief reason. It must see both sides
-of reader-page breaks and relevant equivalent scans for duplicate questions.
-Without a located reader neighborhood, the task is inconclusive rather than an
-invitation to infer absence. Limit each task to six body lines with overlapping
-context for longer spans.
+`register_pixel_regions(source_gray, reader_gray, source_box_px, reader_box_px,
+settings, initial_scale)` returns original-array-coordinate affine transform,
+inlier pairs/extent, reprojection residual, measured scale/rotation, alternate
+placements, and validity reasons. Extract the existing SIFT/BF/RANSAC kernel once;
+historical `match_source_image` retains its current source ROI/settings through
+this primitive. New callers include the source head/foot region and local anchor
+strips explicitly. Cache identity includes actual region boxes, caller profile,
+pixel hashes and thresholds.
 
-Haiku observations cannot change machine coverage, source policy, or production
-settings. Human adjudication is separate and bound to exact evidence. A model
-finding requires a source/reader read before becoming a confirmed loss.
+Build local strips from consecutive matched lines with consistent source/reader
+spacing. A source page may need many independent strips. Do not extrapolate one
+transform across a changed gap, source page, reader page, or scale fit. Estimate
+initial scale as reader/source glyph height; use matched word-box heights as a
+second observation. If these disagree by more than 10%, retain ambiguity. Search
+scale within +/-10% of the estimate, rotation +/-3 degrees, and translation within
+two glyph heights of the projected anchor box. Require at least eight inliers,
+60% of ratio-filtered matches, reprojection residual at most 0.2 reader glyph
+heights, two distinct glyph groups spanning at least half the comparison width,
+and a runner-up placement margin of at least 0.05 normalized correlation.
+Use SIFT `nfeatures=4000`, BFMatcher L2, ratio cutoff 0.70, and RANSAC
+`maxIters=2000` with the glyph-relative reprojection bound above. Seed RANSAC
+at 0; break score ties by reader page/y/x then source position.
+These initial bounds are calibratable and saved; invalid fits stay unresolved.
 
-## G. Settings and review interchange
+For a short line lacking features, register its adjacent retained anchor lines
+first, then restrict translation search to its bounded gap. Nominate image matches
+using normalized correlation on source grayscale and `image_views` contrast,
+but never declare complete from correlation alone. No valid inherited/local
+transform means unresolved. For omitted lines, the expected gap/search region can
+still produce an omission candidate even though the missing line cannot itself
+supply registration features. Record this distinct evidence type.
 
-Initial settings: `source_dpi: 300`, `reader_dpi: 300`,
-`source_roi: [0.40, 0.00, 1.00, 1.00]`, `ink_thresholds: [170, 210]`,
-`component_connectivity: 8`, `seam_context_lines: 3`, and
-`task_max_body_lines: 6`. Estimate glyph height from median component heights
-between 8 and 80 source pixels; fewer than ten suitable components makes grouping
-uncertain. Propose line groups when vertical overlap is at least half the smaller
-component height or centers differ by at most half typical glyph height. Preserve
-cross-threshold disagreements and unresolved merged baselines for review.
+`measure_required_ink` evaluates expected reference ink after the measured
+transform against actual **visible** reader ink at both 170 and 210 thresholds.
+Warp grayscale once with linear interpolation; retain original reference
+components, expected transformed masks and a one-reader-pixel tolerance halo.
+For each required component compute expected transformed area, unsupported ink
+inside that halo, largest unsupported connected component, bounding box and
+whether it touches an end/ascender/descender. Components whose projected area is
+below four reader pixels or whose support changes materially between threshold/
+resampling observations are `resolution_uncertain`, never silently ignored.
+Compare to the decoded body image as supplementary evidence; visible PDF pixels
+must pass independently so clipping or overpainting is not cleared by embedding.
 
-Start registration with source/reader scale estimates from contextual matches,
-refine inside a bounded neighborhood, and retain measured transformation residuals.
-Put search bounds and tolerances in settings. Their final values require the
-Phase 7 calibration; do not hard-code a universal pixel or similarity threshold
-as proof of complete glyph retention. Deterministic registration seeds and tie
-breaking must be recorded. Changed settings invalidate cached comparisons.
+Machine `complete` requires: reviewed body ownership/required geometry; a unique
+ordered neighborhood; valid per-piece transforms; every required component covered
+with unsupported area at most max(1 pixel, 2% of that component's area); no
+unsupported component of at least four pixels; no unsupported component touching
+a line end or upper/lower glyph extremity; no resolution uncertainty; and the
+canonical union rule for any split/duplicate pieces. Both threshold observations
+must agree. Small tolerated differences are recorded. These are conservative
+initial observed-ink predicates, not probability or character-perfect proof;
+source grayscale uncertainty and calibration limits remain in the report.
 
-Source-review documents contain schema version, snapshot/inventory digest,
-reviewer, and decisions. Each decision binds occurrence ID, crop hash,
-classification, owner or explicit uncertainty, reason, and any measured child
-boxes. Duplicate reviews add source-only evidence and explicit logical-region
-maps. Human loss reviews also bind run/ledger identities and source/reader crop
-hashes, with `confirmed_loss`, `retained`, or `uncertain`. Reject stale IDs or
-hashes. Model observations bind their task identity and are stored separately.
+Machine `partial` is a candidate when retained context/part of the line is located
+but a supported endpoint/glyph-region deficit of at least four projected pixels
+persists across both threshold observations. `absent` is a candidate when the
+required bounded reader extent is inspected, contextual placement is valid, no
+complete source-line match survives focused OCR/image retries, and none of the
+required line regions has established visible retention. Otherwise use
+`unresolved` with reasons. An aggregate high match can never override a failing
+required-component check. `evidence_status` is `observed` or `candidate`;
+`human_verdict` is a separate field. Source damage uses `source_partial` and never
+waives additional loss. A sliced line with complete ordered union may be complete
+with a separate `sliced_line` warning when the break crosses required ink.
+
+Endpoint-specific evidence replaces impossible two-sided anchors. Interior gaps
+need strong matching contexts on both sides. A unit opening uses its independently
+reviewed source start, first mapped reader body extent, and a strong following
+body anchor; a unit ending uses its reviewed source end, final reader body extent,
+and a strong preceding anchor. A strong anchor initially means eight informative
+ordered OCR tokens or a valid image strip covering two distinct retained lines.
+Mark one-sided candidates with `context_kind: opening` or `ending` and reduced
+evidence strength. Do not borrow prose from another unit. A wholly missing sparse
+passage with no body anchor needs independently established unit ownership and
+reader boundary mapping; it remains unresolved unless a reviewer locates the
+complete bounded extent and confirms the loss. Source-page head/foot losses
+inside a unit still use the interior rule.
+
+Existing traces can attach a cause only when source/build identities and decoded
+reader pixels authenticate their declared scope. Store `loss_stage: unknown`
+otherwise, with hypotheses separate. Traces cannot change matching verdicts.
+No production rebuild or new tracer is required.
+
+## H. Seams, review interchange, and Haiku delivery
+
+Build all source-page, unit/shared-page, duplicate-bypass and adjacent-reader-body
+seams from the ledger, including apparently complete seams. Include three owned
+body lines on either side, uncertain regions between anchors, and relevant
+headings/annotations. Extend sparse context within the unit. Distinguish endpoint
+seams from interior page edges. Physical duplicate edges remain visible; waive a
+redundant copy only after logical complete coverage. Deduplicate tasks without
+losing seam reasons. One renderer creates untouched hashed crops plus separately
+annotated display copies.
+
+Human source reviews bind snapshot/inventory IDs, occurrence ID, source crop hash,
+classification, owner/uncertainty, reason and measured overrides. Duplicate reviews
+add canonical-region transforms, polygons, source-only evidence and reviewer.
+Loss reviews bind run/ledger and source/reader hashes with `confirmed_loss`,
+`retained` or `uncertain`. Reject stale identities. Write a new policy version for
+source/duplicate decisions; never edit a captured run. Source and duplicate modes
+of `adjudicate` are implemented when their respective steps need them; human loss
+mode comes with report generation.
+
+Haiku receives neutral labeled source and visible-reader images, immutable line
+IDs, and no machine verdict/repair label. Ask for complete/partial/absent/unclear,
+object type, supporting reader crop IDs and reason. Show both reader-page sides
+and relevant equivalent scans. Limit six body lines per overlapping task. A task
+without localized reader extent is inconclusive, not a request to infer Latin.
+Validate JSON locally, preserve raw responses, and keep model observations
+separate from the machine ledger and human adjudication.
+
+The Python SDK client/key are loaded lazily only for live review, from existing
+repository-root `secrets.json`. SDK defaults are `max_retries=0`, timeout 120
+seconds, `max_tokens=2000`, model `claude-haiku-4-5`. Live calls require positive
+`--max-calls`; cap counts uncached task submissions. Cache by model/prompt/schema/
+task/crop identity. `--resume` reuses valid completed observations and may submit
+pending tasks within the explicit cap; it never resubmits unknown delivery.
+Persist `in_flight` atomically before submission. Interrupted/ambiguous delivery
+becomes `delivery_unknown`. An explicit retry is
+`--task-ids <comma-separated-ids> --retry-unknown --attempt-id <new-id>`; archive
+the old attempt, require all three flags together, and reject reused attempt IDs.
+Dry-run/offline submit nothing and inspect pending/cached/unknown states without
+loading the key. Record requested/returned model and token usage. Never snapshot,
+hash, print, or serialize credentials.
+
+## I. Settings and calibration criteria
+
+Settings JSON contains the ROI, component/gutter/grouping values in Design D,
+OCR profiles in Design B, source-index windows/retrieval/chain defaults imported
+from `detector_settings`, and registration/ink predicates in Design G. Store all
+numeric values explicitly, including threshold pair `[170,210]`, connectivity 8,
+three-line seam context, six-line task limit, deterministic seed 0, and task image
+longest side 1,400 pixels. Record calibration changes under new identities.
+
+Before changing tolerances, inspect saved transform residuals, missing-ink masks,
+threshold disagreements and endpoint deficits. Calibration acceptance requires
+all seven named end-to-end cases produce expected localized candidate/retention
+results, including the small-glyph clipping subcase, with no redundant-copy loss.
+Unresolved known-loss cases are misses, not successes. Real source controls must
+not show confirmed loss on accepted restored lines. Report fixed-panel false
+alarms, misses and uncertainties separately with denominators. Threshold revisions
+may reduce nuisance differences but cannot remove endpoint predicates, silently
+ignore small required glyphs, or waive unresolved logical maps to achieve a green
+report. Preserve earlier predictions when revising settings.
 
 # Implementation sequence
 
-Retain phase/step numbers when revising this plan. Every step has commands and
-human verification, but no step requires adding unit tests. The small `verify`
-command exercises the complete audit on disposable evidence and writes a case
-report. Existing source-PDF archives supply optional controls, not prerequisites
-for running these checks. Avoid changing Rust or the historical audit algorithms.
+Retain the existing phase/step identifiers. Phase 2 is optional diagnostic work and
+may be deferred until a finding needs trace provenance; skip it without blocking
+Phases 3–7. Each required step has executable verification available at that step.
+The `verify` command develops incrementally: fixture preparation in 5.1a, coverage
+checks in 5.2, and complete coverage/seam calibration in 7.1. No new unit-test suite
+or mock framework is added. Existing repository tests remain intact.
 
 ## Phase 1 — Shared Python infrastructure and immutable inputs — Suggested implementer: Sonnet
 
-### 1.1 Reuse PDF and evidence helpers with minimal extraction
+### 1.1 Extract shared infrastructure with historical adapters intact
 
-Create `inner_audit_common.py` and extract the needed implementations of
-`hash_file`, `json_hash`, `validate_box`, `page_geometry`, `normalized_pdf_box`,
-`pixel_bounds`, `parse_tex_refs`, `enumerate_image_occurrences`,
-`read_footer_folio`, path/write guards, and render/cache helpers from the old
-audit. Preserve old signatures and re-export names. Keep optional imports lazy.
-Extract the snapshot-independent reader-map loop as
-`map_reader_occurrences(reader_inputs, expected_counts=None)`; the historical
-adapter supplies its existing pinned counts. The new adapter supplies actual
-captured inputs. Require matching occurrence/reference counts and explicitly
-record ambiguous image identity rather than silently truncating `zip` inputs.
+Create `inner_audit_common.py` and move exactly the infrastructure definitions
+listed in Design A, including errors, progress, context managers, locks, path
+policy, cache reuse and the body-asset regex. Import/re-export them from the old
+script; avoid imports back from the common module. Add `AuditOutputPolicy` and
+optional policy propagation from Design B while preserving historical defaults.
+Extract `map_reader_occurrences(reader_inputs, expected_counts=None)`, keeping
+historical count/folio/body-ordinal checks in the old adapter. Extract/share
+`image_views` and parameterizable `ink_line_height` with unchanged defaults.
+Do not move the old index/omission orchestrators or write a second reader mapper.
 
-**LLM verification:** Run `python tools/audit_inner_tomi.py check` when its tools
-are installed. In a separate temporary directory, compare the adapted reader map
-for one current tomus with PDF image counts and ordered TeX references. If local
-historical evidence exists, compare the old adapter's semantic map with its saved
-map without writing into the archive. Record unavailable optional replay evidence.
+**LLM verification:** Run `python -m py_compile tools/inner_audit_common.py
+ tools/audit_inner_tomi.py` and `python tools/audit_inner_tomi.py check` when its
+prerequisites exist. From a small Python invocation, call the shared reader mapper
+for one current tomus and inspect reference/occurrence counts, kinds and folios.
+Compare the historical adapter's semantic output with an existing saved reader map
+in a new run directory when available; never regenerate it inside the archive.
+Inspect ordinary `.pdf` write refusal and fixture-policy refusal outside its bound
+root through a disposable script invocation. Record unavailable optional evidence.
 
-**Human verification:** Inspect representative body, repeated-image, separator,
-front-matter, and padding map entries, including folio provenance.
+**Human verification:** Inspect mapped body/separator/padding and repeated-image
+occurrences. Read the new path-profile rules, confirming historical defaults
+still reject writes to production inputs.
 
-### 1.2 Add schemas, capture, and safe output identity
+### 1.2 Implement capture, runtime configuration and prerequisite checks
 
-Create the core CLI/module and policy/settings files. Implement
-`capture_snapshot`, `load_snapshot`, `validate_source_policy`, and the `capture`
-command. Copy to a fresh snapshot, compare pre/post-copy digests, record actual
-counts, and refuse overwrite. Decode embedded body images even without PNG files.
-Keep caches outside the immutable snapshot and never capture `secrets.json`.
-Initialize known duplicate seeds without claiming their missing region maps exist.
+Create the core CLI/module, settings and source-policy files. Implement
+`capture_snapshot`, `load_snapshot`, `compute_runtime_identity`,
+`check_audit_prerequisites`, and `validate_source_policy`. Expose `check` and
+`capture`; parse later commands with clear unavailable-stage errors until their
+steps exist. Apply Design B/C runtime/tool/language/code identity and path rules.
+Capture actual counts and decoded assets without requiring standalone PNGs.
+Use corpus manifests with two sources, eight readers and 68 units; do not reuse
+historical page counts. Verify copies atomically and refuse completed overwrite.
+Seed known duplicate records without claiming complete region equivalence.
 
-**LLM verification:** Run `python tools/facsimile_line_audit.py --help`,
-`python -m py_compile tools/facsimile_line_audit.py
- tools/facsimile_line_coverage.py tools/inner_audit_common.py`, and a current-build
-capture into a new directory. Inspect source/copy hashes, actual reader counts,
-and the captured path list. Retry capture into the same directory and require a
-clear refusal. Check a disposable missing-PDF input fails without changing originals.
+**LLM verification:** Run `python tools/facsimile_line_audit.py check`, `--help`,
+and Python compilation of the three existing audit/common files. Capture current
+readers to a fresh snapshot. Inspect copied paths, hashes, runtime identity and
+observed counts; retry the same destination and require exit 2. In a disposable
+input directory, omit a required PDF and require a clear failure. Change a copied
+settings/code byte and ensure `load_snapshot` or comparison preflight refuses
+using the old identity. Confirm no captured path is a secret.
 
-**Human verification:** Read the manifest, confirming accepted current inner PDFs,
-correct source scans, no credentials, and visible duplicate-policy uncertainties.
+**Human verification:** Confirm the snapshot targets the accepted current readers,
+source scans and reviewed body endpoints. Inspect unresolved duplicate seeds and
+OCR prerequisites; absence of OCR must never label a page clean.
 
-## Phase 2 — Read existing provenance without generator changes — Suggested implementer: Sonnet
+## Phase 2 — Optional existing-provenance diagnostics — Suggested implementer: Sonnet
 
-### 2.1 Implement an optional source-trace adapter
+### 2.1 Add a scope-aware trace inspection command when needed
 
-Implement `load_optional_traces` in `facsimile_line_coverage.py`, enabled solely
-by explicit `--trace-dir`. Read existing trace JSON through schema-aware adapters;
-keep unit/source/page identities, original boxes, retained indices, and declared
-scope. Never infer retained index as page minus unit start. A trace that lacks
-source/build bindings is a diagnostic locator, not authoritative coverage evidence.
-Do not run ignored Rust tests to generate new expected inventory or add production
-tracing. A missing trace directory must not block a normal offline audit.
+Implement `load_optional_traces` and `inspect-trace --snapshot <path> --trace-dir
+<path> --out <new-run-directory>`. This command reads existing trace JSON and
+emits diagnostic metadata without needing inventory, coverage or seams. Keep
+unit/source/physical-page identity, retained indices, raw boxes, declared scope,
+input digests and uncertain historical/current build relationships. Never derive
+retained index as page minus start. Do not generate new expected inventory through
+ignored Rust tests or modify the generator. If this optional phase is deferred,
+normal audit runs report `trace_diagnostics: not_requested` and need no adapter.
 
-**LLM verification:** Inspect one existing trace when available. Run an inventory
-command with no trace directory and confirm normal progress. With a deliberately
-mismatched trace in a disposable folder, require an explicit stale/inconclusive
-record rather than replacing snapshot identity.
+**LLM verification:** Run `inspect-trace` against one available trace, or a minimal
+disposable schema-shaped record, into an approved run directory. Inspect source
+identity/scope and a stale-input diagnostic. Run the core `check` command without
+any trace directory, confirming no trace prerequisite. No future inventory/coverage
+command is required for this step.
 
-**Human verification:** Read the trace scope label and one mapped physical source
-page. Confirm historical coordinates are not displayed as current reader locators.
+**Human verification:** Confirm historical trace boxes are labeled with their actual
+scope and cannot appear as asserted current-reader locators.
 
-### 2.2 Separate coverage evidence from causal diagnosis
+### 2.2 Add authenticated causal attachment without altering coverage
 
-Implement `attach_trace_diagnostics`. Leave coverage based on source/reader images.
-Populate loss-stage metadata only where provenance and decoded reader pixels bind
-the existing trace to the inspected build. Otherwise report `unknown` and preserve
-any suggested stage in a clearly labeled hypothesis field. Do not port the Rust
-cropper, packer, mask logic, or resampling rules into Python. This step remains
-small even when no authenticated trace is available.
+Implement `attach_trace_diagnostics` and
+`inspect-trace ... --bind-reader-assets`, reusing the reader mapper from Phase 1.
+Bind declared trace canvas/pixel identities to captured reader assets where supplied.
+Only authenticated executed operations can populate `loss_stage`; other records
+retain `unknown` with separate hypotheses. Missing pixel/build evidence is a normal
+diagnostic limitation. Integration into coverage is a callback used in Phase 5,
+not a second matcher. Do not port the cropper/packer/masks into Python.
 
-**LLM verification:** Compare the same source/reader result with and without the
-optional trace adapter; line coverage and seam counts must agree. Inspect a stale
-trace case and require `loss_stage: unknown`. Run Python compilation checks.
+**LLM verification:** Inspect a bound trace if available and a disposable stale
+trace. Require unknown cause on the latter and inspect the returned diagnostic
+record locally. Compile the module. The with/without-coverage comparison is a
+Phase 7 check after coverage and seams exist.
 
-**Human verification:** Inspect a finding whose missing line is clear while its
-cause remains unknown. Confirm the report does not demand a fresh rebuild to
-establish that finding.
+**Human verification:** Read a candidate cause with its build/pixel evidence and
+an unknown cause without that evidence. Confirm neither forces a rebuild.
 
 ## Phase 3 — Independent source-line inventory — Suggested implementer: Opus
 
-### 3.1 Inventory unmasked source ink on every owned source page
+### 3.1 Detect source columns, lines and residual uncertain ink
 
-Implement `inventory_source_page`, `inventory_source_units`, and `inventory`.
-Render all inclusive source ranges, including skipped scans; share rendering of
-physical pages shared by units. Use the full-height ROI and two-threshold component
-analysis in the Design contract. Preserve page-edge ink, short verse, faint
-fragments, and ambiguous merged lines. Keep classification separate from detection.
-Source OCR is optional annotation; absent OCR does not remove ink. Do not call
-production band/furniture routines or use `extract_source_regions` as expectations.
-Save full-source overlays and every detected/uncertain object.
+Implement `inventory_source_page`, `inventory_source_units`,
+`separate_source_columns`, `assemble_source_lines`, and `account_residual_ink`.
+Expose `inventory --snapshot <path> --run-dir <new-path> [--units ...]`.
+Render every inclusive physical source page, including duplicate skips; deduplicate
+shared-page renders. Execute source-only gutter separation before baseline grouping
+exactly as Design D. Reuse the shared screened glyph-scale helper. Retain original
+components, rule-connected/neighbor-column objects, threshold disagreements, page
+edges, short verse and residual ink. Source OCR adds observations but cannot remove
+objects. Do not call production crop/band routines or historical expected-region
+wrappers. Save untouched source crops and full-page component/line/gutter overlays.
 
-**LLM verification:** Compile the Python files, then inventory
-`--units theseus,pericles,cato_minor,antonius` into a fresh run. Inspect counts
-of represented source regions and uncertainty records at each source-page edge.
-Change a disposable copy of production crop metadata and confirm the independent
-inventory is identical. Retain the real-source overlays for review.
+**LLM verification:** Compile changed Python files. Inventory Theseus, Pericles,
+Cato Minor and Antonius in a fresh run. Inspect raw component accounting, gutter
+confidence, parent/child assignments, residual mask and head/foot uncertainty counts.
+Change a disposable copy of production trim metadata while preserving source and
+inventory settings; raw inventory IDs/boxes and expected raw objects must agree.
+The mutation must not alter or overwrite the accepted unit table.
 
-**Human verification:** Inspect source heads/feet in these units, including verse,
-Antonius v2/562, and clipped/Greek-gutter uncertainties. Confirm each visible Latin
-line is represented by a line or unresolved region.
+**Human verification:** Inspect full-source overlays, particularly Pericles verse,
+Antonius v2/562, Greek/gutter fragments and touching divider/glyph objects. Every
+visible Latin line must have a line or explicit uncertainty object; unresolved
+gutters cannot be presented as completely inventoried pages.
 
-### 3.2 Review source ownership and classifications independently
+### 3.2 Resolve source-only ownership and implement source adjudication
 
-Implement `apply_source_policy`, `validate_source_inventory`, and source-only
-review sheets. `adjudicate --source-reviews <file>` imports source-digest/crop-bound
-ownership, classification, and child-box decisions into a new policy version.
-Production boundary fractions are locator hypotheses rather than exclusions.
-Require a unique logical owner for reviewed body regions; unresolved boundaries
-retain possible owners and cannot count as complete. Detect visible ink between
-or outside reviewed line boxes. Keep headings/annotations distinct from furniture.
+Implement `apply_source_policy`, `validate_source_inventory`, source-only review
+sheets, and the **source mode** of `adjudicate` now. Command:
+`adjudicate --inventory-dir <path> --source-reviews <file> --policy-out <new-file>`.
+The destination must be a fresh file under an approved run directory. Validate
+snapshot/raw-inventory/crop identities, review classifications, unique logical
+owners, gutter/child-box overrides and residual ink. Keep unresolved owners and
+source-partial regions. Production fractions remain candidate locators, never
+exclusion authority. Imported policy records retain decision provenance; a new
+snapshot can adopt the new source-bound policy without mutating the old run.
 
-**LLM verification:** Import a small reviewed source-only boundary file and inspect
-its resulting policy. Change a crop hash in a disposable review and require
-refusal. Inspect ownership coverage on a shared page, an indented verse region,
-and a sparse ending. Do not overwrite the prior snapshot.
+**LLM verification:** Import a small reviewed boundary file with the new source-mode
+command. Inspect resulting policy decisions, one shared page, indented verse and a
+sparse ending. Mutate a review crop hash in a disposable copy and require exit 2.
+Confirm source/neighbor/furniture/annotation/uncertain assignments account for all
+observed ROI ink and prior snapshots remain unchanged.
 
-**Human verification:** Review boundaries before viewing reader outcomes. Confirm
-source body starts/ends around display titles and that uncertain regions have
-not been removed merely to simplify matching.
+**Human verification:** Review source-only boundaries before reader outcomes,
+including source starts/ends, labels and uncertain gutter objects. Do not exclude
+an object merely to simplify matching.
 
 ## Phase 4 — Logical passages and reviewed duplicates — Suggested implementer: Opus
 
-### 4.1 Resolve existing duplicate groups at passage level
+### 4.1 Resolve passage equivalence and implement duplicate adjudication
 
-Implement `seed_duplicate_groups` and `resolve_duplicate_groups`, with source-only
-comparison sheets. Import numeric approved pairs/regions where supplied; records
-without explicit region equivalence stay incomplete until reviewed. Never derive
-complete equivalence solely from `skip_pages`, similar OCR, or page arithmetic.
-`adjudicate --duplicate-reviews <file>` writes source-bound mappings in a new
-policy version. Split shared duplicate pages by passage owner before collapsing
-logical material. Preserve partially scanned openings and unique continuations.
+Implement `seed_duplicate_groups`, `resolve_duplicate_groups`, source-only paired
+review sheets, and the **duplicate mode** of `adjudicate` now. Command:
+`adjudicate --inventory-dir <path> --duplicate-reviews <file> --policy-out
+<new-file>`. Seed existing numeric evidence, including records without universal
+`occurrences` fields. Validate source-bound canonical-reference IDs, original
+fragment boxes, affine maps, covered polygons, evidence hashes and reviewed residuals
+from Design E. Do not infer equivalence from skip lists or forced equal token
+counts. Split Eumenes/comparison shared-page material by its true owner; retain
+partial Alexander/Phocion/Otho copies and unique continuations. No production
+skip decision is installed.
 
-**LLM verification:** Export all 12 known duplicate records and compare their seeds
-with the numeric ledgers. Inspect Eumenes/comparison v2/101–105, Alexander,
-Phocion, and Otho source pairs. Reject a disposable map that leaves a unique span
-uncovered or claims a clipped occurrence covers a complete line.
+**LLM verification:** Export all 12 known duplicate seed records and inspect numeric
+provenance. Import a small measured group, then inspect its canonical-region maps.
+Reject disposable mappings with escaping boxes, uncovered required spans,
+conflicting owners or partial coverage claimed complete. Source-only region maps
+may remain unresolved rather than be guessed from reader behavior.
 
-**Human verification:** Confirm source equivalence and preservation boundaries for
-each group. No new production skip decision is installed by this step.
+**Human verification:** View each relevant original scan pair and the canonical
+reference overlay. Confirm a complete passage exists in its source group and each
+partial occurrence maps solely to its actually visible span.
 
-### 4.2 Construct the ordered logical inventory and denominators
+### 4.2 Build ordered logical regions and stable denominators
 
-Implement `build_logical_lines` and `validate_logical_sequence`. Link equivalent
-physical occurrences to one logical line position, including explicit partial
-span mappings. Reject cyclic/contradictory relationships. Keep physical source
-copies, unique logical lines, source-partial regions, headings/annotations,
-uncertain objects, and waived redundant occurrences as distinct counts.
-Source-partial status never excuses additional loss from the reader.
+Implement `build_logical_lines`, `validate_logical_sequence`, and canonical-region
+coverage metadata. Preserve physical occurrences while assigning logical positions,
+reference ink components and ordered part mappings. Reject cycles/contradictions,
+unreviewed owners and incomplete required spans as complete logical maps. Keep
+physical/logical/redundant/source-partial/annotation/uncertain counts separate.
+Build source index adapter contracts so text and geometry map to the same logical
+IDs; actual index fitting is introduced in step 5.1. Tokenless lines remain required.
 
-**LLM verification:** Print logical sequences across a reviewed duplicate block and
-shared unit boundary. Confirm all required regions are mapped and each physical
-copy remains in evidence. Inspect a disposable partial-only map: the missing
-complete portion must remain required or unresolved, not waived.
+**LLM verification:** Export and inspect ordered logical sequences through a shared
+boundary and a duplicate block. Validate fragment maps in canonical pixels and
+required-component unions independent of detector-generated verdicts. A disposable
+partial-only group must leave the missing complete portion required/unresolved.
+Compile the modules and check stable IDs survive a review-verdict-only change.
 
-**Human verification:** Read the canonical passage sequence and source pairs,
-checking that logical collapse loses neither a unique continuation nor a line
-missing from the surviving partial scan.
+**Human verification:** Read source/logical sequence overlays, checking unique
+continuations, full reference geometry and legitimate copy waivers. Confirm source
+scan damage remains distinct from later reader loss.
 
-## Phase 5 — Coverage against accepted visible readers — Suggested implementer: Opus
+## Phase 5 — Accepted-reader localization and visible-ink coverage — Suggested implementer: Opus
 
-### 5.1 Locate ordered reader neighborhoods using existing alignment
+### 5.1 Adapt independent observations and share local registration
 
-Implement `locate_reader_neighborhoods` and `build_line_correspondences`. Reuse
-source-only OCR indexing, ordered anchor alignment, and existing registration
-primitives from the audit, adapting explicit snapshot inputs. Source inventory
-still includes lines OCR misses. Apply reviewed duplicate logical maps before
-alignment. Locate overlapping strips/lines rather than requiring one transform
-for an entire reflowed source page. Keep alternative placements and registration
-residuals. When source/reader OCR is poor, use image anchors and adjacent established
-matches; otherwise leave correspondence unresolved. No Rust rebuild is required.
+Implement `source_inventory_to_tokens`, `source_bundle_to_index_unit`,
+`reader_observations_to_tokens`, `locate_reader_neighborhoods`, and
+`build_line_correspondences`. Build the source-only index using the exact pure
+helpers listed in Design A/F, never the historical cut/skip orchestrators.
+Preserve physical/region reverse lookup, canonical logical sequences, ambiguous
+OCR assignments and tokenless expected objects. Fit no empty vocabulary. Pass
+empty old-style aliases to `chain_matches` on already canonical source sequences;
+geometric duplicate maps remain separate coverage authority.
 
-**LLM verification:** Run scoped alignment for the four inventory units and one
-reviewed duplicate unit against captured current PDFs. Inspect raw matches,
-ambiguous alternatives, measured scales, and physical reader locators. Confirm
-that a reference/occurrence mismatch cannot silently drop a reader page.
+Extract `register_pixel_regions` from the existing registration kernel and adapt
+historical `match_source_image` with identical historical arguments/settings.
+Implement piecewise `register_local_strips` using explicit anchor regions and
+bounds from Design G. A registration strip cannot span changed source/reader gaps
+or scale fits. Keep short-line inherited-transform and tokenless-anchor fallbacks
+conservative. Share one kernel, not the production ROI wrapper or a duplicate
+matching implementation.
 
-**Human verification:** Read source/reader correspondence cards around known
-restored lines, checking that the expected neighborhood is correctly located and
-that the source line is not being matched to similar prose elsewhere.
+Expose `run --snapshot <path> --run-dir <new-path> --stop-after locate` for this
+step. It writes inventory/logical/index/reader/correspondence artifacts and marks
+that declared stage complete; it does not claim coverage/seam processing exists.
+Default full `run` remains unavailable until Phase 6. Include the new stop stage
+in run identity. Preserve historical source/index/window definitions for old runs.
 
-### 5.2 Evaluate whole-line visible coverage and uncertain omissions
+**LLM verification:** Compile changed Python files, inspect source-adapter/index
+payloads and OCR-free objects, then run scoped localization for the four inventory
+units and one duplicate unit. Compare a disposable production-trim mutation:
+independent raw expected objects and tokenless queue must agree. Inspect measured
+scales, anchor strips, invalid fits and alternative placements at source heads/
+feet. Compare the historical registration wrapper on saved unchanged examples
+in a new diagnostic run if evidence is available.
 
-Implement `evaluate_occurrence_coverage`, `evaluate_logical_coverage`, and
-`verify_reader_visibility`. Compare original source-line regions to corresponding
-visible reader pixels, with piecewise transforms where reflow demands them. Inspect
-both line ends and vertical glyph extent. For split lines, evaluate the union of
-adjacent ordered pieces and flag slicing through ink separately. Compare embedded
-body pixels and visible PDF rendering so clipping/overpainting cannot be cleared
-merely by image-object presence.
+**Human verification:** View source/reader anchor overlays near restored lines,
+short verse, gaps and duplicate joins. Confirm full-height source boundaries were
+not hidden and image transforms apply to the actual local pieces.
 
-Complete logical coverage requires the proper ordered occurrence or an approved
-contiguous complete union. Partial/absent candidates carry before/after context and
-source/reader crops. Failed registration, bad OCR, missing source glyphs, and
-uncertain ownership stay explicit. Keep machine candidates separate from human
-confirmed losses; the script never reconstructs or corrects Latin.
+### 5.1a Prepare seven small verification cases before coverage implementation — Suggested implementer: Sonnet
 
-**LLM verification:** Run scoped coverage and inspect complete/partial/absent/
-unresolved counts. Use the disposable cases introduced in Phase 7 to check a
-removed edge line, clipped glyph, and overpainted PDF region when available.
-Keep differences and source/reader images as run evidence.
+Implement `create_verification_inputs` and `verify --prepare --out <fresh-root>`
+using the narrow fixture policy in Design B. This suffixed step preserves existing
+identifiers. Create source and reader PDFs/TeX/PNG assets and same-schema fixture
+snapshots for the seven named cases listed in 7.1. Use legible text rendered with
+Pillow's packaged scalable default font at 300-DPI-equivalent size, with at least
+three lines of twelve distinct words around interior loss regions. Synthetic
+sentences are fixture content, never transcription or replacement source Latin.
+Embed source text as pixels and provide no fabricated expected OCR observations.
+The normal Tesseract/index/image path must process these fixtures.
 
-**Human verification:** Inspect source/reader triplets for known restored head/foot
-lines, verse, the Antonius block, and any proposed new loss. Complete means whole
-visible glyphs at the right position, not readable Latin inferred by OCR.
+Use full-width source pages with separate readable left/right text columns and a
+clear measured gutter. The Latin-like right-column fixture preserves line boxes,
+punctuation, short verse and sparse passage objects. Build reader images from the
+same known source pixels with independently recorded crop/placement boxes. Store
+expected source/reader geometry in `case-expectations.json` written by the fixture
+builder; never derive it from the audit's detected lines. Fixture source/duplicate
+policy decisions carry `provenance: synthetic_ground_truth` and may substitute
+for human source decisions solely when `target_kind: verification`; reject that
+provenance in corpus policies. Thus the cases do not require a human to approve
+builder-known ownership, and they cannot confer production repair eligibility. Each ordinary case has
+enough distinct retained text for the configured anchor requirements. Keep a
+source-partial duplicate map explicit. The retained control includes a one-line
+sparse passage whose correct outcome may require documented manual localization;
+that subcase must not masquerade as an automatically detected omission.
+
+The visible-clipping case includes an embedded complete image with a visibly
+clipped/overpainted whole-line region **and** a small terminal-glyph fragment
+removed while the rest of its line remains. The latter deficit must retain at
+least eight unsupported projected pixels after the one-pixel halo, so it tests
+the declared detectable small-component predicate rather than an invisible
+subpixel change. Head/foot loss includes actual unit
+opening/ending variants plus source-page seams inside a unit. Keep seven top-level
+case IDs, with these variants as subcases. There is no separate test framework.
+
+**LLM verification:** Run `verify --prepare` and inspect permitted created paths,
+PDF/reference counts, fixture manifests, independently specified boxes, and
+source OCR word counts. Require sufficient real OCR/image anchors rather than
+all-unresolved nontext patterns. Retry the same fixture root and require refusal;
+try a disposable output outside `work/runs/verification` and require exit 2.
+Preparation does not require the future coverage implementation to pass.
+
+**Human verification:** View all source/reader fixture pairs, confirm text legibility,
+known edge/interior/duplicate losses, and the small clipped glyph. Verify the
+case expectations describe the deliberately created geometry.
+
+### 5.2 Implement component coverage and endpoint-specific candidates
+
+Implement `measure_required_ink`, `evaluate_occurrence_coverage`,
+`evaluate_logical_coverage`, and `verify_reader_visibility` following Design E/G.
+Compare required canonical ink components against actual visible reader regions,
+retaining threshold/resampling uncertainty and deficits at endpoints/upper/lower
+extents. Use embedded image bytes only as supplementary evidence. Required
+per-component deficits override aggregate correlation. Apply explicit interior,
+opening, ending and sparse-passage rules; do not require unavailable two-sided
+body anchors at unit endpoints. Separate evidence status from human verdict.
+
+For split/duplicate pieces require reviewed transforms, monotonic order and full
+required-component union; overlap does not double-count. A redundant partial scan
+is waived only after complete logical coverage. Unresolved maps/fits/ownership
+stay unresolved. If optional Phase 2 exists, attach scope-authenticated diagnoses
+without changing these verdicts; otherwise leave cause unknown.
+
+Expose `run ... --stop-after coverage` and
+`verify --out <prepared-root> --stop-after coverage`. In the prepared fixture root,
+write new result directories without overwriting builder inputs. At this point
+verify the coverage/localization part of all seven cases; seam-specific checks
+are added in Phase 6/7, and records state the actual completed stage.
+
+**LLM verification:** Run the prepared seven cases through normal source/reader
+OCR, localization and coverage; inspect localized deficits, endpoint variants,
+small-glyph clipping, accepted complete/redundant controls and sparse uncertainty.
+Known detectable omissions unresolved at this stage are failures to investigate,
+not successful detections. Run one scoped current-reader coverage command and
+inspect component masks/differences. Confirm a high overall match cannot clear the
+small-glyph deficit. Compile changed Python files.
+
+**Human verification:** Inspect source/visible-reader pairs for accepted head/foot
+restorations, Pericles verse, Antonius and proposed losses. Read endpoint evidence
+and required-component masks rather than inferred Latin. Confirm no production
+output or Latin changed.
 
 ## Phase 6 — Systematic seams and Python Haiku reviewer — Suggested implementer: Sonnet
 
-### 6.1 Report all seams and support evidence-bound adjudication
+### 6.1 Complete seam/report and human-loss adjudication modes
 
 Implement `build_seam_inventory`, `build_review_tasks`, `write_coverage_report`,
-and `report`/`adjudicate`. Build every source/unit/duplicate/reader seam with
-three lines per side and all intervening uncertain objects. Use one ledger,
-reader mapper, and evidence renderer. Untouched crop bytes remain hashed;
-annotations appear on display copies. Apparently complete seams remain browsable.
-Separate machine coverage, model observation, and human verdict columns. Reject
-stale review identities; import decisions without changing machine records or
-production policies.
+and `report`. Enable default full `run` now. Add **human-loss mode** of `adjudicate`:
+`adjudicate --run-dir <path> --loss-reviews <file> --reviews-out <new-file>`.
+Source/duplicate modes from earlier steps remain unchanged. Source policy changes
+always start a new snapshot/run; loss adjudications produce separately versioned
+reviews for the same immutable machine ledger. Check exact source/reader crop and
+record hashes, and reject stale decisions.
 
-**LLM verification:** Compare seam totals against source/logical transitions and
-adjacent reader body pages. Browse a source page with fewer than three body lines
-and confirm context stays within its unit. Import a disposable stale review and
-require refusal. Check HTML evidence links and escaping.
+Build every source/unit/shared/duplicate-bypass/reader-body seam with Design H
+context. Use one evidence renderer and the same ledger/matching verdicts. Annotate
+copies while preserving untouched crop hashes. Show complete and unresolved seams
+and all uncertainty denominators. Compare the optional Phase 2 callback's results
+with and without diagnostic attachment only once full coverage/seams exist.
 
-**Human verification:** Inspect complete and unresolved seam cards, shared-page
-boundaries, skipped-duplicate joins, and reader page breaks. Both original edges
-and adjacent visible-reader context must be legible.
+**LLM verification:** Run the prepared cases through full coverage/seams and inspect
+requested/completed seam counts, source/reader endpoint context and duplicate
+joins. Compare totals against explicit source/logical transitions and adjacent
+reader body occurrences. Inspect HTML escaping/evidence links. Import one bound
+human-loss review and reject a mutated crop-hash copy. If optional trace adapters
+exist, confirm they do not change line coverage/seam counts.
 
-### 6.2 Call Haiku from Python with the existing key
+**Human verification:** Browse clean and uncertain seams, shared boundaries and
+skip joins. Check reader endpoints are labeled as one-sided evidence and sparse
+context never borrows another unit's prose.
 
-Implement `review_seam_tasks` in `facsimile_seam_review.py`, using the official
-Anthropic Python SDK. Add CLI flags `--tasks`, `--out`, `--max-calls`, `--model`,
-`--offline`, `--resume`, and `--dry-run`. Default model is `claude-haiku-4-5`,
-matching the repository's current Haiku setting; record the requested and returned
-model identities. Default key file is the repository root resolved from the script
-path, followed by `secrets.json`; read its `anthropic_api_key` only for live calls.
-Do not print, snapshot, or hash credential contents. SDK import and client creation
-are lazy so core audit/dry-run/offline work without a key or SDK.
+### 6.2 Implement explicit Python Haiku submissions and resume semantics
 
-Use a neutral versioned prompt and PNG image blocks. Require JSON with precisely
-the requested line IDs and allowed verdicts; validate locally regardless of
-structured-output support. Focused crops have a longest side of at most 1,400
-pixels; tile larger context with overlap rather than making glyphs illegible.
-Record image transforms. Save raw response, token usage, parsed observations,
-errors, model/prompt/task/crop identities after each call.
+Implement `review_seam_tasks` using the official Anthropic SDK and existing
+repository-root `secrets.json`. CLI includes `--tasks`, `--out`, `--max-calls`,
+`--model`, `--offline`, `--resume`, `--dry-run`, `--task-ids`, `--retry-unknown`,
+and `--attempt-id`, with exact behavior from Design H. Core audit imports never
+load the SDK/key. Pin a working installed SDK version separately and record it.
+Use neutral versioned PNG/image prompts with six line IDs, preserve transforms,
+and validate complete response IDs/verdicts locally. Focused image tiles have at
+most a 1,400-pixel longest side and enough overlapping context for glyph legibility.
 
-Require a positive explicit `--max-calls` for live review. The cap counts uncached
-logical tasks, not an exact currency budget. Use SDK `max_retries=0` and an explicit
-120-second request timeout for simple submission accounting; retain request errors
-without automatic retry. Set `max_tokens=2000`. Cache successful observations by
-model/prompt/schema/task/crop identity. Persist `in_flight` before submission;
-interruption or ambiguous network delivery becomes `delivery_unknown` and is not
-silently resubmitted on resume. A new explicit attempt can select that task.
-Dry-run and offline submit nothing and show pending/cached task counts.
+Persist attempts, raw responses, usage/errors and parsed observations atomically.
+Default live transport has no SDK retries and a 120-second timeout. A failed/
+interrupted ambiguous request cannot be silently resubmitted; the explicit unknown
+retry triple creates a distinct attempt and preserves old evidence. Dry-run/offline
+inspect cached/pending/unknown tasks without accessing credentials. Neither model
+results nor SDK errors modify source policy, unit table or machine coverage.
 
-Official SDK usage reference:
-[Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python).
-Image request/legibility reference:
+Official implementation references:
+[Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python) and
 [Claude vision documentation](https://platform.claude.com/docs/en/build-with-claude/vision).
-Verify working SDK/model support during implementation; no price assumption is
-part of this plan.
+Verify SDK/model support when implementing. No price assumption or paid pilot is
+required to complete offline delivery.
 
-**LLM verification:** Compile the reviewer, then dry-run real tasks and inspect
-line IDs, crop sizes, cap, and neutral prompt. Run offline replay with a saved
-sample response and inspect strict parsing of missing/unknown line IDs. Check that
-no model observation changes the ledger or unit table. An explicitly invoked small
-live pilot may use the existing key; implementation completion requires no paid
-calls. No unit-test mocks are added.
+**LLM verification:** Compile the reviewer and dry-run real tasks, inspecting neutral
+prompt, line IDs, crop dimensions and task cap. Use an explicitly saved example
+JSON response in an offline replay command to inspect valid/missing/unknown line
+ID rejection; add `--replay-response <file> --task-ids <single-id> --offline` for
+this local validation path, which labels its result `replay` rather than a live
+observation. Inspect cached/unknown resume counts and explicit retry argument
+validation with disposable metadata. No unit-test mocks are added. A small live
+pilot is optional when explicitly invoked with the cap and existing key.
 
-**Human verification:** Read one prompt/crop pair and cached observation. If a
-pilot is run, compare its complete/absent judgments with a human source/reader read.
-Disagreements remain visible and do not become automatic repair decisions.
+**Human verification:** Read a prompt/source-reader pair and replay/cached result,
+checking model observations remain supplemental. Compare any live pilot result
+with a human image read and retain disagreements.
 
-## Phase 7 — End-to-end calibration and full-corpus delivery — Suggested implementer: Opus
+## Phase 7 — Calibration, full-corpus execution and durable delivery — Suggested implementer: Opus
 
-### 7.1 Verify the audit on a few known omissions and controls
+### 7.1 Run the seven complete cases and calibrate measured evidence
 
-Implement `run_verification_cases` behind the CLI `verify`. Create small disposable
-source/reader images and PDFs with distinct known ink regions and independently
-specified expected boxes. Exercise the normal inventory/alignment/coverage/seam
-path rather than individual helpers. Retain input images, outputs, and a JSON
-case report in the selected verification directory. No `unittest`, `pytest`,
-new Rust tests, or large per-function case inventory is needed.
+Complete `run_verification_cases` behind `verify --out <prepared-root>` using the
+already prepared assets and the normal inventory/index/correspondence/coverage/
+seam pipeline. Require these seven case IDs with independently saved geometry:
 
-Use these named end-to-end cases as the checklist:
+- `retained_control`: complete lines and short verse survive in order; sparse
+  one-line subcase is explicitly complete after bounded localization or remains
+  reported uncertainty, never an invented anchor or false loss.
+- `head_and_foot_loss`: flag actual unit-first/unit-last lines using one-sided
+  evidence, and source-page edge losses inside a unit using interior evidence.
+- `interior_block_loss`: localize a distinctive missing multi-line passage.
+- `redundant_copy_removed`: one complete authorized copy survives; no unique loss.
+- `sole_complete_copy_removed`: a clipped remaining copy does not waive the
+  required missing canonical regions.
+- `shared_page_unique_tail`: duplicate prose survives but its unique omitted
+  continuation remains a loss candidate.
+- `visible_pdf_clipping`: detect the hidden complete embedded-image line and the
+  small terminal-glyph deficit despite high whole-line similarity.
 
-- `retained_control`: complete lines, including short verse, survive in order.
-- `head_and_foot_loss`: remove the first and last required body line.
-- `interior_block_loss`: remove a distinctive interior multi-line passage.
-- `redundant_copy_removed`: retain one complete duplicate; no unique loss.
-- `sole_complete_copy_removed`: retain a clipped duplicate; required missing
-  portions are flagged rather than waived.
-- `shared_page_unique_tail`: preserve duplicate prose but omit its unique
-  continuation; the continuation remains a loss candidate.
-- `visible_pdf_clipping`: embed a complete image but visibly clip/overpaint a line.
+Each known loss must be a correctly localized candidate/partial finding at the
+required source/reader boxes; unresolved known losses are misses. Use source box
+intersection/required-line membership plus expected reader seam from builder
+geometry; a whole-page generic warning is insufficient. Retained/redundant
+controls must have no unique-loss candidate. Save case report, masks, transforms
+and images, including processing failures. `verify` exits 4 on failed cases. It
+can additionally read the known sparse manual-localization decision as separately
+labeled review evidence; that subcase cannot improve automatic recall counts.
+No `unittest`, `pytest`, new Rust tests or extensive per-function assertions.
 
-Require correctly located omission candidates or partial findings for known losses
-and no unique-loss warning on the retained/redundant controls. An unresolved case
-is reported as such and does not count as successful detection. These cases
-establish sensitivity to specific examples, not corpus-wide recall. Keep scenario
-definitions small and independent of detector-generated expectations.
+Calibrate source grouping and Design G predicates on source overlays and real
+restored controls. Before scoring, fix a 25-body-page-per-tomus panel by sorting
+SHA-256(reader-input identity, tomus, page). Reader-input identity hashes the
+source PDFs, reader PDFs/TeX and unit table, excluding evolving code/settings/
+source-policy versions. Save the selected list in `panel.json` before detector
+scoring and reuse it for those same reader inputs across calibration revisions. Add targeted Romulus v1/38, Pericles
+v1/214–215, Lysander v1/535, Dio v2/580, Antonius v2/562 and partial duplicate
+openings, counted separately. Inspect missing-ink masks and transform/threshold
+uncertainties before adjusting parameters. Freeze settings/policy/runtime IDs
+when all case criteria and reviewed retained controls pass. Keep raw earlier
+predictions on parameter revision; post-revision results are regression, not a
+new independent validation. Report every panel miss/false alarm/uncertainty with
+its actual denominator.
 
-Calibrate on reviewed real-source controls and a fixed independent panel selected
-before scores: 25 body-reader pages per tomus ordered by hash of snapshot/tomus/
-page. Add targeted Romulus v1/38, Pericles v1/214–215, Lysander v1/535, Dio v2/580,
-Antonius v2/562, and partial-duplicate openings. Record targeted cases separately
-from the hash-selected panel. Freeze source policy, settings, code and identities
-after calibration. If later review changes parameters, retain earlier predictions
-and rerun under a new identity; do not describe the rerun as independent validation.
+**LLM verification:** Run `verify --out <prepared-root>` and inspect all seven case
+results/variants and exact geometry. Confirm no omitted glyph passes through an
+aggregate score and no redundant copy becomes a unique loss. Inspect real panel
+results, policy/settings/code freeze IDs and stable output records. Compile
+changed Python files. If Phase 2 exists, compare coverage and seams with/without
+trace diagnostics; this is the deferred integration comparison.
 
-**LLM verification:** Run `python tools/facsimile_line_audit.py verify --out
- tmp/pdfs/facsimile_line_audit/verification/cases-1`. Inspect each named case's
-input/output crops and verdict/localization. Compile changed Python files. Inspect
-real-source control results and report the number of unresolved panel regions,
-missed known losses, and false alarms with their denominators.
+**Human verification:** View all disposable pairs and targeted real-source controls,
+then the fixed panel. Confirm source damage and weak observations remain visible.
+Do not change tolerances to suppress genuine endpoint deficits or unresolved maps.
 
-**Human verification:** Read the seven disposable case comparisons and the real
-page/seam panel. Confirm the harmless duplicate case is accepted, the partial-only
-case is flagged, and actual source damage is distinguished from reader loss.
-
-### 7.2 Run all tomi, verify reproducibility, and archive evidence
+### 7.2 Execute all eight readers, verify identities and archive findings
 
 Finish the setup guide and update the existing README audit section in place.
-Run a full offline audit of the accepted snapshot with the frozen policy/settings.
-Account for all 68 body units, requested physical source pages including
-duplicates, mapped reader body occurrences, and derived seams. Keep requested,
-completed, failed, unreviewed and unresolved counts separate. Input/output identity
-and processing completion are not proof of complete Latin.
+Run a full offline audit against a fresh accepted-reader snapshot containing
+frozen policy/settings/runtime identities. Account for both source scans, all
+68 units, physical pages including skipped scans, mapped reader occurrences,
+and all derived seams. Separate requested/processed/failed/uncertain/unreviewed
+counts and body/front-matter exclusions. A processing exit 0 is not complete
+Latin coverage; report all unresolved source regions and localizations.
 
-Example commands after implementation (PowerShell, repository root; choose fresh
-folders if these names exist):
+Example operation order (PowerShell, repository root; fresh names as needed):
 
 ```powershell
+python tools/facsimile_line_audit.py check
 python tools/facsimile_line_audit.py capture --reader-dir build_facsimile --snapshot-dir tmp/pdfs/facsimile_line_audit/snapshots/accepted_2026_10_10
 python tools/facsimile_line_audit.py inventory --snapshot tmp/pdfs/facsimile_line_audit/snapshots/accepted_2026_10_10 --run-dir tmp/pdfs/facsimile_line_audit/runs/source-review-1
-python tools/facsimile_line_audit.py verify --out tmp/pdfs/facsimile_line_audit/verification/cases-1
+python tools/facsimile_line_audit.py verify --prepare --out tmp/pdfs/facsimile_line_audit/runs/verification/cases-1
+python tools/facsimile_line_audit.py verify --out tmp/pdfs/facsimile_line_audit/runs/verification/cases-1
 python tools/facsimile_line_audit.py run --snapshot tmp/pdfs/facsimile_line_audit/snapshots/accepted_2026_10_10 --run-dir tmp/pdfs/facsimile_line_audit/runs/all-1
 python tools/facsimile_line_audit.py report --run-dir tmp/pdfs/facsimile_line_audit/runs/all-1
 python tools/facsimile_seam_review.py --tasks tmp/pdfs/facsimile_line_audit/runs/all-1/review-tasks.json --out tmp/pdfs/facsimile_line_audit/runs/all-1/haiku-observations --max-calls 10 --dry-run
 ```
 
-Source/duplicate adjudication produces a new policy identity; capture a new
-snapshot/run with that policy before final execution. Document exact adjudication,
-SDK installation, optional trace, dry-run/live-review, and resume commands. Core
-commands need no key, SDK, production rebuild, or LuaLaTeX compilation.
+Document exact source/duplicate/loss adjudication commands, adopting reviewed
+policy through `capture --source-policy <new-policy>` and settings through
+`--settings <file>`. Updated captures/runs reuse raw renders but not stale verdicts.
+Document tool/language paths, SDK install, optional trace inspection, stop stages,
+live caps, unknown-delivery retry, replay and exit meanings. No production rebuild
+or LuaLaTeX compilation is required.
 
-Repeat the exact run with `--resume`; require byte-identical stable inventories,
-logical lines, ledger, seams, and tasks, excluding operational timings and model
-responses. Verify accepted source/reader/unit/repair-policy hashes before and after.
-Archive the snapshot, settings/policy, verification case reports, source review,
-crops, ledger, seams, HTML, optional model/human observations, and manifest in a
-new dated `archive/` directory. Verify digests without modifying older archives.
-Write a dated completion note under `llm_artifacts/` with identities, findings,
-uncertainties and limits. New losses become a separate reviewed repair worklist.
+Repeat the exact full invocation with `--resume`; stable inventory, logical/index,
+ledger, seams and tasks must be byte-identical. Exclude timing/model-response
+variability. Rehash accepted source/reader/unit/repair files before/after. Check
+executed helper-code identity before cache access, including a disposable changed
+code preflight that must fail for the old run. Verify every report/crop link and
+actual scope count. Archive snapshot, settings/policy, case inputs/outputs/reports,
+source reviews, crops, ledger/seams/report and model/human observations to a new
+dated archive; authenticate all digests without altering older evidence. Write a
+dated completion note with findings, limitations and identities. Confirm new
+losses are a reviewed worklist rather than activated repairs.
 
-**LLM verification:** Run Python compilation and the seven end-to-end cases,
-inspect full requested/completed counts and evidence links, and compare resume
-record hashes. Run existing repository checks at completion:
-`cargo fmt --all --check`, `cargo clippy --all-targets -- -D warnings`, and
-`cargo test`; no Rust formatting changes should be necessary because Rust is
-untouched. Run the existing portable snapshot check if shared Python changes could
-affect it, staging intended new files first. Confirm the Git diff contains solely
-intended audit/document files and no production/source changes.
+**LLM verification:** Compile Python files, run the seven complete cases and full
+resume comparison, inspect manifest/error counts and archive digests. Run existing
+repository gates: `cargo fmt --all --check`, `cargo clippy --all-targets -- -D
+warnings`, and `cargo test`; Rust remains unchanged. Run the existing portable
+snapshot check if shared Python changes affect it, staging intended implementation
+files first. Inspect Git scope for audit/document changes and any explicitly
+user-authorized preexisting document edit; production/source files must be unchanged.
 
 **Human verification:** Open representative complete seams from every tomus and
-read every proposed new loss plus unresolved ownership/equivalence cases. Inspect
-the completion note's denominators. Accepting the finite verification cases does
-not establish exhaustive character-by-character corpus completeness.
+inspect every proposed new loss and unresolved ownership/equivalence case. Read
+completion denominators and limits. Seven successful scenarios establish their
+specific sensitivity, not exhaustive character-by-character corpus completeness.
 
 # Acceptance checklist and continuation instructions
 
-- The audit, reporting, and optional Haiku client are Python; production Rust,
-  accepted reader outputs, and source Latin remain unchanged.
-- Expected inventory uses unmasked source pixels including page edges and duplicate
-  scans; production exclusions cannot define expected content.
-- Duplicate handling requires complete unique passage coverage and correct order,
-  preserving shared-page continuations and partial-copy limitations.
-- Source/reader registration and visible-pixel evidence drive the ledger; failed
-  matching stays unresolved and causal diagnosis may remain unknown.
-- All source/unit/duplicate/reader seams are inventoried, including apparently
-  complete seams, using the same ledger and evidence renderer.
-- Haiku uses the existing key via a lazy Python SDK client; calls are explicit,
-  capped and cached, and observations never modify preservation decisions.
-- There is no new unit-test suite. Seven small end-to-end cases, real-source
-  controls, run coverage checks and a resume comparison provide verification.
-  Existing repository suites remain green.
-- Findings, uncertainty, scope and identities are reported honestly and all dated
-  historical artifacts/evidence are retained.
+- The implementation is Python; production Rust/readers and source Latin remain
+  unchanged. No new unit-test suite or mock framework is introduced.
+- Expected source ink/tokens are independent of production cuts/skips, with explicit
+  tokenless objects and full physical duplicate inventory.
+- Source-only gutter/baseline grouping accounts for residual ink and uncertainty;
+  it shares the screened scale estimator and never silently drops uncertain Latin.
+- Canonical duplicate transforms and ordered component unions permit one complete
+  copy while preserving partial-copy deficits and unique shared-page continuations.
+- One shared region-registration primitive and explicit whole-ink/end predicates
+  drive coverage; failed fits stay unresolved, and unit endpoints have one-sided rules.
+- Shared output profiles preserve historical defaults and narrowly authorize fixture
+  PDF creation inside fresh verification roots; snapshots/production inputs remain protected.
+- Executed helper/tool/language/settings identities govern comparison caches and resume.
+  CLI stages, adjudication modes, exit meanings and Haiku retry states are explicit.
+- All seams use the same ledger/renderer. Haiku uses the existing key lazily,
+  submits only explicit capped requests, and cannot alter source or repair policy.
+- Seven realistic full-path cases, reviewed source controls, scope checks and a
+  determinism rerun provide verification. Existing repository suites remain green.
+- Each step is independently verifiable with features available at that point;
+  optional provenance does not block the core audit.
+- Findings, uncertainty and limits are reported honestly. Historical plans,
+  review notes and all durable evidence remain on disk.
 
-An implementer should read current audit helper signatures and the latest delivery
-note, then proceed through the retained step numbers. Document implementation
-progress in a separate dated note under `llm_artifacts/`. If actual APIs differ,
-revise affected plan text in place without renumbering. Reuse existing helpers;
-do not port the generator or copy an existing matcher. Code comments describe
-current behavior and do not cite plan phases, step numbers, or this filename.
+An implementer should read the current helper APIs and latest delivery note, then
+follow the preserved identifiers (including 5.1a); Phase 2 may be deferred.
+Record progress in a separate dated implementation note. Revise affected plan
+text in place when actual APIs differ, without renumbering existing steps. Reuse
+shared helpers and explicit adapters; do not port production heuristics or copy
+matchers. Code comments describe current behavior, never plan phase/step IDs.

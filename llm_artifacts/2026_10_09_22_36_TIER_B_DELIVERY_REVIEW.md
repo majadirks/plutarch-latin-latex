@@ -219,9 +219,7 @@ Rebuilt locators: tomus 5, physical 33, folio 15.
 - [X] Source order, neighboring text, and every touched page break confirmed.
 - [X] Layout and source artifacts accepted.
 
-Human decision: Accepted by the user on 2026-10-10. Complete source text and
-punctuation, source order, neighboring text and page breaks, layout, and source
-artifacts are confirmed.
+Human decision: Accepted.
 
 ### Event 9: miss_crassus_44_1144
 
@@ -233,9 +231,7 @@ Rebuilt locators: tomus 5, physical 72, folio 54.
 - [X] Source order, neighboring text, and every touched page break confirmed.
 - [X] Layout and source artifacts accepted.
 
-Human decision: Accepted by the user on 2026-10-10. Complete source text and
-punctuation, source order, neighboring text and page breaks, layout, and source
-artifacts are confirmed.
+Human decision: Accepted.
 
 ### Event 5: miss_agesilaus_110_2063
 
@@ -247,9 +243,7 @@ Rebuilt locators: tomus 5, physical 209, folio 191.
 - [X] Source order, neighboring text, and every touched page break confirmed.
 - [X] Layout and source artifacts accepted.
 
-Human decision: Accepted by the user on 2026-10-10. Complete source text and
-punctuation, source order, neighboring text and page breaks, layout, and source
-artifacts are confirmed.
+Human decision: Accepted.
 
 ## Tomus 6
 
@@ -272,9 +266,7 @@ Rebuilt locators: tomus 6, physical 209, folio 201.
 - [X] Source order, neighboring text, and every touched page break confirmed.
 - [X] Layout and source artifacts accepted.
 
-Human decision: Accepted by the user on 2026-10-10. Complete source text and
-punctuation, source order, neighboring text and page breaks, layout, and source
-artifacts are confirmed.
+Human decision: Accepted.
 
 ### Event 8: miss_cato_minor_329_8786
 
@@ -286,9 +278,7 @@ Rebuilt locators: tomus 6, physical 284, folio 276.
 - [X] Source order, neighboring text, and every touched page break confirmed.
 - [X] Layout and source artifacts accepted.
 
-Human decision: Accepted by the user on 2026-10-10. Complete source text and
-punctuation, source order, neighboring text and page breaks, layout, and source
-artifacts are confirmed.
+Human decision: Accepted.
 
 ### Event 18: miss_cato_minor_352_15055
 
@@ -300,9 +290,7 @@ Rebuilt locators: tomus 6, physical 312, folio 304.
 - [X] Source order, neighboring text, and every touched page break confirmed.
 - [X] Layout and source artifacts accepted.
 
-Human decision: Accepted by the user on 2026-10-10. Complete source text and
-punctuation, source order, neighboring text and page breaks, layout, and source
-artifacts are confirmed.
+Human decision: Accepted.
 
 ## Tomus 7
 
