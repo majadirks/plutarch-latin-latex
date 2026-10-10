@@ -1258,3 +1258,222 @@ def expand_correspondence_line(record, line):
     return dict(line,direct_tokens=[record['token_pairs'][identifier] for identifier in line['direct_tokens_ids']],
                 context_tokens=[record['token_pairs'][identifier] for identifier in line['context_tokens_ids']],
                 registrations=[dict(record['registrations'][ref['registration_id']],**ref) for ref in line['registration_refs']])
+CASE_IDS = ('retained_control', 'head_and_foot_loss', 'interior_block_loss',
+            'redundant_copy_removed', 'sole_complete_copy_removed',
+            'shared_page_unique_tail', 'visible_pdf_clipping')
+FIXTURE_WORDS = '''amber baker cedar delta ember fable garden harbor island jacket kettle ladder
+magnet nectar olive pencil quartz ribbon silver timber velvet willow yellow zephyr
+anchor beacon castle dragon engine forest gravel hammer insect jungle kernel lantern
+marble nickel ocean planet rabbit saddle temple violet walnut zodiac copper bridge
+almond basket cherry dancer eagle feather garlic honey ivory jasper kitten lemon
+meadow nutmeg orange pepper quiver rocket sailor turtle vapor winter xenon zebra
+acorn barrel candle daisy elbow falcon golden handle iron jumper kayak lizard
+mirror noodle oyster pocket quiet rainbow salmon thunder urban village wagon yogurt
+artist bottle cabin desert elm fiddle ginger helmet iris jewel keeper lily
+market nature orbit pebble queen river stone tower union valley wheat young
+apricot bamboo cobalt drift earth flower globe health index journey knot lotus
+mint north orchid palm quest radius shell tide upper vine world youth
+arrow birch cloud dream east flame goose hill idea judge king lake
+moss night owl pearl quail rose star tree uncle voice wind yoke
+atlas brook crane dune ebony field glass hazel inlet jet kite leaf
+maple nest opal pine quarry reed shore trail unity vista wave yawn
+arch branch coral dawn echo fern grain hearth ink jade keel linen
+mango navy opera pond quilt ridge seed torch usher verse wood yard'''.split()
+
+
+def create_verification_inputs(args):
+    import copy
+    import io
+    import json
+    import numpy as np
+    import pymupdf
+    from PIL import Image, ImageDraw, ImageFont
+    import facsimile_line_audit as cli
+    repo, work = cli.paths(args)
+    root = Path(args.out).resolve()
+    verification_root = (work / 'runs/verification').resolve()
+    if root.exists() or root == verification_root or not common.contained(root, verification_root):
+        raise common.AuditError('Fixture root must be a fresh owned directory beneath runs/verification')
+    allowlist = frozenset(f'{case}/snapshot/inputs/{filename}' for case in CASE_IDS
+                         for filename in ('source.pdf', 'reader.pdf'))
+    permission = common.AuditOutputPolicy('fixture', root, allowlist)
+    common.safe_write_path(root / 'builder-manifest.json', work, repo)
+    root.mkdir(parents=True)
+    base_settings = cli.read_json(args.settings or repo / 'tools/facsimile-line-settings.json')
+    source_size, reader_size = (4000, 2200), (1940, 2200)
+    right_text, crop_left, crop_right, reader_left = 2080, 2060, 3940, 30
+    source_top, reader_top, line_pitch, row_height = 120, 70, 104, 80
+    font = ImageFont.load_default(size=44)
+    text_rows = [' '.join(FIXTURE_WORDS[i * 12:(i + 1) * 12]) + '.' for i in range(16)]
+    while max(font.getlength(text) for text in text_rows) > crop_right - right_text:
+        font = ImageFont.load_default(size=font.size - 1)
+    if font.size < 40:
+        raise common.AuditError('Fixture text needs a readable scalable font')
+    expected_cases = []
+    for case in CASE_IDS:
+        folder = root / case
+        snapshot = folder / 'snapshot'
+        inputs = snapshot / 'inputs'
+        inputs.mkdir(parents=True)
+        page_count = 2 if case in {'head_and_foot_loss', 'retained_control'} else 1
+        sources, line_regions = [], []
+        for page in range(1, page_count + 1):
+            image = Image.new('L', source_size, 255)
+            draw = ImageDraw.Draw(image)
+            for index, text in enumerate(text_rows if not (case == 'retained_control' and page == 2) else ['Quiet cedar verse.']):
+                text = ' '.join(text_rows[index].split()[:6] + text_rows[(index + 7) % 16].split()[6:]) if page == 2 and case != 'retained_control' else text
+                if case == 'retained_control' and index == 8:
+                    text = 'Quiet cedar verse.'
+                y = source_top + index * line_pitch
+                draw.text((120, y), text, font=font, fill=0)
+                draw.text((right_text + (50 if case == 'retained_control' and index == 8 else 0), y), text, font=font, fill=0)
+                a = np.asarray(image)
+                yy, xx = np.where(a[y:y + row_height, crop_left:crop_right] < 255)
+                box = [int(xx.min() + crop_left), int(yy.min() + y), int(xx.max() + crop_left + 1), int(yy.max() + y + 1)]
+                line_regions.append({'source_page': page, 'line': index, 'source_box_px': box,
+                                     'owner': 'sparse_fixture' if case == 'retained_control' and page == 2 else 'fixture',
+                                     'text_label': f'synthetic_row_{page}_{index}',
+                                     'unit_start': index == 0 and (page == 1 or case == 'retained_control'),
+                                     'unit_end': (index == 15 and page == (2 if case == 'head_and_foot_loss' else 1)) or
+                                                 (case == 'retained_control' and page == 2 and index == 0)})
+            sources.append(image)
+        if case in {'redundant_copy_removed', 'sole_complete_copy_removed', 'shared_page_unique_tail'}:
+            duplicate = sources[0].copy()
+            if case == 'shared_page_unique_tail':
+                duplicate.paste(255, (crop_left, source_top + 12 * line_pitch, crop_right, source_size[1]))
+            else:
+                duplicate.paste(255, (crop_left, source_top, right_text + 80, source_size[1]))
+            sources.append(duplicate)
+            for row in list(line_regions):
+                if case == 'shared_page_unique_tail' and row['line'] >= 12:
+                    continue
+                sy = source_top + row['line'] * line_pitch
+                a = np.asarray(duplicate)
+                yy, xx = np.where(a[sy:sy + row_height, crop_left:crop_right] < 255)
+                box = [int(xx.min() + crop_left), int(yy.min() + sy), int(xx.max() + crop_left + 1), int(yy.max() + sy + 1)]
+                line_regions.append(dict(row, source_page=2, source_box_px=box,
+                                         source_partial=case != 'shared_page_unique_tail'))
+        source_doc = pymupdf.open()
+        for image in sources:
+            data = io.BytesIO()
+            image.save(data, format='PNG')
+            page = source_doc.new_page(width=image.width * 72 / 300, height=image.height * 72 / 300)
+            page.insert_image(page.rect, stream=data.getvalue())
+        source_path = common.safe_write_path(inputs / 'source.pdf', work, repo, policy=permission)
+        source_doc.save(source_path, deflate=True)
+        source_doc.close()
+        omissions = []
+        if case == 'head_and_foot_loss':
+            omissions = [(page, index) for page in (1, 2) for index in (0, 15)]
+        elif case == 'interior_block_loss':
+            omissions = [(1, index) for index in range(5, 9)]
+        elif case == 'shared_page_unique_tail':
+            omissions = [(1, index) for index in range(12, 16)]
+        reader_sources = list(enumerate(sources[:page_count], 1))
+        if case == 'sole_complete_copy_removed':
+            reader_sources = [(2, sources[1])]
+        reader_doc = pymupdf.open()
+        placements, assets = [], []
+        painted_regions = []
+        for page_number, (source_page, source_image) in enumerate(reader_sources, 1):
+            canvas = Image.new('L', reader_size, 255)
+            page_rows = [r for r in line_regions if r['source_page'] == source_page]
+            for row in page_rows:
+                index = row['line']
+                if (source_page, index) in omissions:
+                    continue
+                sy = source_top + index * line_pitch
+                y = reader_top + (index - sum(p == source_page and i < index for p, i in omissions)) * line_pitch
+                canvas.paste(source_image.crop((crop_left, sy, crop_right, sy + row_height)), (reader_left, y))
+                box = row['source_box_px']
+                placements.append({'source_page': source_page, 'source_line': index, 'reader_page': page_number,
+                                   'reader_box_px': [box[0] - crop_left + reader_left, box[1] - sy + y,
+                                                     box[2] - crop_left + reader_left, box[3] - sy + y],
+                                   'builder_transform': [[1, 0, reader_left-crop_left], [0, 1, y - sy]]})
+            owner = 'sparse_fixture' if case == 'retained_control' and page_number == 2 else 'fixture'
+            ordinal = 1 if owner == 'sparse_fixture' else page_number
+            asset_name = f'facsimile_{owner}_{ordinal}.png'
+            canvas.save(inputs / asset_name)
+            assets.append(asset_name)
+            pdf_page = reader_doc.new_page(width=canvas.width * 72 / 300, height=canvas.height * 72 / 300)
+            pdf_page.insert_image(pdf_page.rect, filename=str(inputs / asset_name))
+            if case == 'visible_pdf_clipping':
+                hidden = next(p for p in placements if p['source_line'] == 5)
+                box = hidden['reader_box_px']
+                pdf_page.draw_rect(pymupdf.Rect(box[0] * 72 / 300, box[1] * 72 / 300,
+                                               box[2] * 72 / 300, box[3] * 72 / 300), color=None, fill=(1, 1, 1), overlay=True)
+                painted_regions.append({'reader_page':page_number,'source_page':source_page,'source_line':5,
+                                        'reader_box_px':box,'kind':'whole_line_overpaint'})
+                terminal = next(p for p in placements if p['source_line'] == 10)
+                bx = terminal['reader_box_px']
+                pdf_page.draw_rect(pymupdf.Rect((bx[2] - 25) * 72 / 300, bx[1] * 72 / 300,
+                                               bx[2] * 72 / 300, bx[3] * 72 / 300), color=None, fill=(1, 1, 1), overlay=True)
+                painted_regions.append({'reader_page':page_number,'source_page':source_page,'source_line':10,
+                                        'reader_box_px':[bx[2]-25,bx[1],bx[2],bx[3]],'kind':'terminal_glyph_overpaint'})
+                omissions.append((1, 5))
+        reader_path = common.safe_write_path(inputs / 'reader.pdf', work, repo, policy=permission)
+        reader_doc.save(reader_path, deflate=True)
+        reader_doc.close()
+        tex = inputs / 'reader.tex'
+        tex.write_text('\\begin{document}\n' + '\n'.join(f'\\includegraphics{{{asset}}}' for asset in assets) + '\n\\end{document}\n', encoding='utf-8')
+        source_digest = common.hash_file(source_path)
+        policy = {'schema_version': 1, 'version': 1, 'source_sha256': {'0': source_digest},
+                  'decisions': [], 'duplicate_groups': [], 'duplicate_seeds': [],
+                  'synthetic_regions': [dict(r, source_index=0, source_sha256=source_digest,
+                                              classification='body', provenance='synthetic_ground_truth') for r in line_regions]}
+        policy['synthetic_duplicate_regions'] = []
+        if case in {'redundant_copy_removed', 'sole_complete_copy_removed', 'shared_page_unique_tail'}:
+            for reference in [r for r in line_regions if r['source_page'] == 1]:
+                others = [r for r in line_regions if r['source_page'] == 2 and r['line'] == reference['line']]
+                if others:
+                    policy['synthetic_duplicate_regions'].append({'canonical': reference, 'other': others[0],
+                        'source_sha256': source_digest, 'provenance': 'synthetic_ground_truth',
+                        'reason': 'Builder copied these source pixels before applying the recorded source-side clip'})
+        settings = copy.deepcopy(base_settings)
+        table = [{'id': 'fixture', 'source': 0, 'start_page': 1, 'group': 1, 'kind': 'life'}]
+        if case == 'retained_control':
+            table.append({'id': 'sparse_fixture', 'source': 0, 'start_page': 2, 'group': 1, 'kind': 'life'})
+        for name, value in (('settings.json', settings), ('policy.json', policy), ('units.json', table)):
+            cli.write(inputs / name, value, args)
+        records = []
+        roles = {'source.pdf': 'source_pdf', 'reader.pdf': 'reader_pdf', 'reader.tex': 'reader_tex',
+                 'settings.json': 'settings', 'policy.json': 'source_policy', 'units.json': 'unit_table'}
+        for name, role in roles.items():
+            metadata = {'source_index': 0, 'page_count': len(sources)} if role == 'source_pdf' else {'tomus': 1} if role in {'reader_pdf', 'reader_tex'} else {}
+            records.append(dict(path=name, snapshot_path=f'inputs/{name}', role=role,
+                                sha256=common.hash_file(inputs / name), **metadata))
+        for name in assets:
+            records.append(dict(path=name, snapshot_path=f'inputs/{name}', role='reader_asset',
+                                sha256=common.hash_file(inputs / name),
+                                decoded_identity=common.decoded_image_identity(pymupdf.Pixmap(str(inputs / name)))))
+        runtime, prerequisites = cli.compute_runtime_identity(args, settings=settings, policy=policy)
+        for relative, digest in runtime['code'].items():
+            destination = inputs / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((repo / relative).read_bytes())
+            records.append(dict(path=relative, snapshot_path=f'inputs/{relative}', role='code', sha256=digest))
+        reader_map = common.map_reader_occurrences([dict(tomus=1, pdf_path=reader_path, tex_path=tex,
+            pdf_sha256=common.hash_file(reader_path), tex_sha256=common.hash_file(tex),
+            body_assets={name: common.decoded_image_identity(pymupdf.Pixmap(str(inputs / name))) for name in assets})])
+        manifest = {'schema_version': 1, 'target_kind': 'verification', 'capture_complete': True,
+                    'inputs': sorted(records, key=lambda r: r['path']), 'runtime': runtime,
+                    'observed_counts': {'sources': 1, 'readers': 1, 'units': len(table), 'body_pages': len(assets), 'physical_pages': len(assets)},
+                    'reviewed_source_endpoints': {'0': len(sources)}, 'reader_map': reader_map,
+                    'case_id': case}
+        manifest['snapshot_id'] = common.json_hash(manifest)
+        cli.write(snapshot / 'snapshot-manifest.json', manifest, args)
+        expectation = {'schema_version': 1, 'case_id': case, 'snapshot_id': manifest['snapshot_id'],
+                       'source_regions': line_regions, 'reader_placements': placements,
+                       'painted_reader_regions':painted_regions,
+                       'source_raster_dimensions':list(source_size),'reader_raster_dimensions':list(reader_size),
+                       'omitted_source_lines': [{'source_page': p, 'source_line': i} for p, i in omissions],
+                       'partial_source_lines': [{'source_page': 1, 'source_line': 10}] if case == 'visible_pdf_clipping' else
+                                               [{'source_page': 1, 'source_line': i} for i in range(16)] if case == 'sole_complete_copy_removed' else [],
+                       'expected_no_unique_loss': case in {'retained_control', 'redundant_copy_removed'},
+                       'builder_geometry_is_independent': True}
+        cli.write(folder / 'case-expectations.json', expectation, args)
+        expected_cases.append({'case_id': case, 'snapshot': f'{case}/snapshot',
+                               'expectations_sha256': common.hash_file(folder / 'case-expectations.json')})
+    cli.write(root / 'builder-manifest.json', {'schema_version': 1, 'target_kind': 'verification',
+                                              'cases': expected_cases, 'font_size': font.size}, args)
+    return root

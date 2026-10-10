@@ -124,6 +124,21 @@ them for every source object. Reviewed duplicate sequences use the earliest
 physical member for ordering while retaining the complete canonical scan as the
 fixed reference; a later reference cannot move a passage past unique prose.
 
+Prepare the seven disposable full-path cases in a fresh directory:
+
+```powershell
+python tools/facsimile_line_audit.py verify --prepare --out tmp/pdfs/facsimile_line_audit/runs/verification/cases-1
+```
+
+Preparation creates fourteen source/reader PDFs, reference TeX/PNG assets,
+verification snapshots and `case-expectations.json` with builder-known source
+boxes and reader placements. Synthetic source policy is accepted solely for
+verification targets. Source OCR comes from the actual rendered pixels. The
+cases include head/foot and interior losses, complete/redundant controls, a sole
+complete copy removed, unique shared-page tail loss and visible PDF overpainting
+of a whole line and terminal glyph. Sparse and verse subcases remain explicit.
+Prepared inputs are immutable; subsequent verification writes fresh result sets.
+
 Tool resolution uses the command option, `PLUTARCH_PDFTOPPM` or
 `PLUTARCH_TESSERACT`, then PATH. English language data uses `--tessdata-dir`,
 `PLUTARCH_TESSDATA_DIR`, or the directory reported by Tesseract. Missing usable

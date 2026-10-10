@@ -473,6 +473,9 @@ def main():
             return inventory_run(args)
         elif args.command == 'run':
             return pipeline_run(args)
+        elif args.command == 'verify' and args.prepare:
+            import facsimile_line_coverage as coverage
+            coverage.create_verification_inputs(args)
         elif args.command == 'adjudicate':
             import facsimile_line_coverage as coverage
             if args.source_reviews and args.inventory_dir and args.policy_out and not args.duplicate_reviews and not args.loss_reviews:

@@ -80,6 +80,16 @@ commits. Each completed required step receives its own commit and push.
   Empty-vocabulary, registry roundtrip and Python compilation checks pass. The
   existing portable tracked-files Rust check passes 419 library and 9 CLI tests
   and its required negative missing-evidence probe.
+- 5.1a: Added narrow fixture preparation for all seven named cases, with 14 PDFs,
+  nine reader body images and independently specified source/reader geometry.
+  Packaged scalable font size 44 preserves detectable punctuation at reader DPI.
+  Source OCR returns 200-412 words per ordinary case and three words for the
+  sparse subcase. Sources/reader pairs and the clipped terminal glyph were
+  rendered and inspected; source-page-2 placement for the sole partial copy is
+  explicit. Existing-root and outside-verification-root requests return exit 2.
+  No expected OCR is fabricated. Builder inputs remain under
+  `runs/verification/cases_5_1a`; later code stages adopt fresh runtime captures
+  of these authenticated inputs without changing the builder snapshots.
 - Repository regression gates: formatting and strict all-target Clippy pass;
   `cargo test` passes 419 library tests and 9 CLI tests with 76 existing ignored
   tests. Rust remains unchanged.
