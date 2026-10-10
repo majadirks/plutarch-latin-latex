@@ -3455,16 +3455,26 @@ fn tier_b_canvas_records(canvases: &[GrayImage]) -> Vec<serde_json::Value> {
 }
 
 fn tier_b_unit_snapshot(id: &str, scale: f32) -> serde_json::Value {
-    let range = operational_range(id);
     let (pages, metrics, traces) = audit_traced_unit(id);
+    tier_b_unit_snapshot_from(id, scale, &pages, &metrics, &traces)
+}
+
+fn tier_b_unit_snapshot_from(
+    id: &str,
+    scale: f32,
+    pages: &[PageBands],
+    metrics: &LineMetrics,
+    traces: &[RetainedSourcePageTrace],
+) -> serde_json::Value {
+    let range = operational_range(id);
     let geom = TrimGeom::default();
     let canvases = compose_pages(
-        &pages,
+        pages,
         scale,
         &geom,
         geom.first_body_budget(),
         geom.body_budget(),
-        &metrics,
+        metrics,
     );
     let canvas_hashes = tier_b_canvas_records(&canvases);
     let columns: Vec<_> = traces.iter().filter_map(|t|t.retained_index.map(|i|serde_json::json!({"source":t.source,"page":t.page,"width":pages[i].0.width(),"height":pages[i].0.height(),"sha256":tier_b_sha(pages[i].0.as_raw())}))).collect();
@@ -3473,6 +3483,244 @@ fn tier_b_unit_snapshot(id: &str, scale: f32) -> serde_json::Value {
         "retained_source_pages":traces.iter().filter(|t|t.retained_index.is_some()).map(|t|t.page).collect::<Vec<_>>(),
         "source_pages":traces,"retained_columns":columns,"metrics":{"height_med":metrics.height_med,"height_mad":metrics.height_mad,"width_med":metrics.width_med},
         "canvas_count":canvas_hashes.len(),"canvas_sequence_sha256":tier_b_sha(&serde_json::to_vec(&canvas_hashes).unwrap()),"canvas_hashes":canvas_hashes})
+}
+
+fn tier_b_repaired_source_pages(
+    ledger: &serde_json::Value,
+) -> std::collections::BTreeSet<(usize, u32)> {
+    ledger["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|event| {
+            event["initial_tier"] == "B"
+                && matches!(event["status"].as_str(), Some("installed" | "restored"))
+        })
+        .flat_map(|event| event["source_regions"].as_array().unwrap())
+        .map(|region| {
+            (
+                region["source_index"].as_u64().unwrap() as usize,
+                region["page"].as_u64().unwrap() as u32,
+            )
+        })
+        .collect()
+}
+
+fn tier_b_snapshot_reads_repaired_page(
+    snapshot: &serde_json::Value,
+    repaired: &std::collections::BTreeSet<(usize, u32)>,
+) -> bool {
+    snapshot["source_pages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|page| {
+            !page["retained_index"].is_null()
+                && repaired.contains(&(
+                    page["source"].as_u64().unwrap() as usize,
+                    page["page"].as_u64().unwrap() as u32,
+                ))
+        })
+}
+
+#[test]
+fn tier_b_affected_units_include_shared_source_pages() {
+    let ledger = serde_json::json!({"events":[{"initial_tier":"B","status":"installed","unit_id":"owner","source_regions":[{"source_index":0,"page":42}]}]});
+    let repaired = tier_b_repaired_source_pages(&ledger);
+    for id in ["owner", "adjacent_comparison"] {
+        let snapshot = serde_json::json!({"unit_id":id,"source_pages":[{"source":0,"page":42,"retained_index":0}]});
+        assert!(tier_b_snapshot_reads_repaired_page(&snapshot, &repaired));
+    }
+    for (source, page, index) in [(1, 42, Some(0)), (0, 41, Some(0)), (0, 42, None)] {
+        let snapshot = serde_json::json!({"source_pages":[{"source":source,"page":page,"retained_index":index}]});
+        assert!(!tier_b_snapshot_reads_repaired_page(&snapshot, &repaired));
+    }
+}
+
+#[test]
+#[ignore = "requires original source rasters and the immutable full-work baseline"]
+fn tier_b_full_work_matches_baseline_outside_repaired_units() -> Result<()> {
+    let ledger = audit_repair_ledger();
+    let root = AuditEvidenceRoot::from_environment();
+    let manifest = root.read_verified_json(&ledger["tier_b_baseline"])?;
+    let units = crate::facsimile::units::load_units(std::path::Path::new("facsimile_units.json"))?;
+    let ids: Vec<_> = units.iter().map(|unit| unit.id.clone()).collect();
+    let scale = production_body_scale();
+    let configuration = tier_b_configuration();
+    validate_tier_b_baseline_manifest(&manifest, &ids, &manifest["configuration"], scale)?;
+    anyhow::ensure!(
+        configuration["sources"] == manifest["configuration"]["sources"]
+            && configuration["unit_table"] == manifest["configuration"]["unit_table"],
+        "source PDFs or unit table differ from the immutable baseline"
+    );
+    let repaired = tier_b_repaired_source_pages(&ledger);
+    anyhow::ensure!(!repaired.is_empty(), "no installed repair scope");
+    let out = std::path::Path::new("tmp/pdfs/inner_tomi_audit_repairs/full-work-comparison");
+    std::fs::create_dir_all(out)?;
+    let mut results = Vec::new();
+    let mut affected = 0;
+    for entry in manifest["units"].as_array().unwrap() {
+        let id = entry["unit_id"].as_str().unwrap();
+        let baseline = root.read_verified_json(&entry["trace"])?;
+        anyhow::ensure!(
+            baseline["unit_id"] == id
+                && baseline["source"] == entry["source"]
+                && baseline["canvas_sequence_sha256"] == entry["canvas_sequence_sha256"],
+            "baseline unit identity or canvas summary mismatch"
+        );
+        let (pages, metrics, traces) = audit_traced_unit(id);
+        let current = tier_b_unit_snapshot_from(id, scale, &pages, &metrics, &traces);
+        std::fs::write(
+            out.join(format!("{id}.json")),
+            serde_json::to_vec_pretty(&current)?,
+        )?;
+        let changed = tier_b_snapshot_reads_repaired_page(&baseline, &repaired);
+        if !changed {
+            for (key, value) in baseline.as_object().unwrap() {
+                if key == "scale" {
+                    assert_eq!(
+                        (current[key].as_f64().unwrap() as f32).to_bits(),
+                        (value.as_f64().unwrap() as f32).to_bits(),
+                        "unrelated unit {id}: exact production scale"
+                    );
+                    continue;
+                }
+                assert_eq!(
+                    &current[key], value,
+                    "unrelated unit {id}: {key} must match the immutable baseline"
+                );
+            }
+            assert_eq!(
+                current.as_object().unwrap().len(),
+                baseline.as_object().unwrap().len(),
+                "unrelated snapshot fields"
+            );
+        } else {
+            affected += 1;
+            assert_eq!(
+                current["retained_source_pages"], baseline["retained_source_pages"],
+                "source sequence for {id}"
+            );
+            let old_metrics = LineMetrics {
+                height_med: baseline["metrics"]["height_med"].as_u64().unwrap() as u32,
+                height_mad: baseline["metrics"]["height_mad"].as_u64().unwrap() as u32,
+                width_med: baseline["metrics"]["width_med"].as_u64().unwrap() as u32,
+            };
+            let mut old_pages = Vec::new();
+            let mut old_traces = Vec::new();
+            let mut originals = std::collections::BTreeMap::new();
+            for page in baseline["source_pages"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|page| !page["retained_index"].is_null())
+            {
+                let source = page["source"].as_u64().unwrap() as usize;
+                let physical = page["page"].as_u64().unwrap() as u32;
+                let crop: [u32; 2] = serde_json::from_value(page["crop"].clone())?;
+                let rows: Vec<[u32; 2]> = serde_json::from_value(page["bands"].clone())?;
+                let deleted: Vec<[u32; 2]> = serde_json::from_value(page["deleted_rows"].clone())?;
+                anyhow::ensure!(
+                    deleted.is_empty(),
+                    "baseline reconstruction requires its unmodified source rows"
+                );
+                let original = real_source_image(source, physical);
+                let mut masked = original.clone();
+                mask_known_source_furniture(source, physical, &mut masked);
+                let column = crop_column(
+                    &masked,
+                    &Column {
+                        left: crop[0],
+                        right: crop[1],
+                    },
+                );
+                let old_column = baseline["retained_columns"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|item| item["source"] == source && item["page"] == physical)
+                    .unwrap();
+                assert_eq!(
+                    tier_b_sha(column.as_raw()),
+                    old_column["sha256"],
+                    "reconstructed original column {id} p{physical}"
+                );
+                let trace = RetainedSourcePageTrace {
+                    source,
+                    page: physical,
+                    retained_index: Some(old_pages.len()),
+                    crop,
+                    bands: rows.clone(),
+                    deleted_rows: deleted,
+                };
+                old_pages.push((
+                    column,
+                    rows.into_iter()
+                        .map(|row| Band {
+                            top: row[0],
+                            bottom: row[1],
+                        })
+                        .collect(),
+                ));
+                old_traces.push(trace);
+                originals.insert((source, physical), masked);
+            }
+            let mut previous_regions = Vec::new();
+            for (old_trace, rows) in extracted_neighbor_bands(&old_traces, &old_pages, &old_metrics)
+            {
+                let trace = retained_page(&traces, old_trace.source, old_trace.page).unwrap();
+                let index = trace.retained_index.unwrap();
+                let original = &originals[&(old_trace.source, old_trace.page)];
+                assert_source_region_pixels_survive(
+                    original,
+                    &pages[index].0,
+                    trace,
+                    [old_trace.crop[0], rows[0], old_trace.crop[1], rows[1]],
+                );
+                let right = old_trace.crop[1].min(
+                    old_trace.crop[0]
+                        + (TrimGeom::default().content_width() as f32 / scale).floor() as u32,
+                );
+                previous_regions.push(ReviewedSourceLine {
+                    source: old_trace.source,
+                    source_page: old_trace.page,
+                    region: [old_trace.crop[0], rows[0], right, rows[1]],
+                    role: "previously_retained_body_interval".into(),
+                });
+            }
+            let context = ReviewedLineContext {
+                traces: &traces,
+                originals: &originals,
+                pages: &pages,
+                metrics: &metrics,
+                scale,
+                geom: TrimGeom::default(),
+            };
+            assert_reviewed_source_lines_survive(&previous_regions, &context, false);
+        }
+        std::fs::write(
+            out.join(format!("{id}.json")),
+            serde_json::to_vec_pretty(&current)?,
+        )?;
+        results.push(serde_json::json!({"unit_id":id,"affected":changed,"baseline_trace":entry["trace"],"before_canvas_count":baseline["canvas_count"],"after_canvas_count":current["canvas_count"],"before_metrics":baseline["metrics"],"after_metrics":current["metrics"],"current_snapshot":tier_b_file_reference(&out.join(format!("{id}.json")))}));
+        println!(
+            "baseline comparison {id}: {}, {} -> {} canvases",
+            if changed {
+                "previous body preserved"
+            } else {
+                "identical"
+            },
+            baseline["canvas_count"],
+            current["canvas_count"]
+        );
+    }
+    let report = serde_json::json!({"schema_version":1,"baseline":ledger["tier_b_baseline"],"configuration":configuration,"scale":scale,"affected_unit_count":affected,"unchanged_unit_count":results.len()-affected,"units":results});
+    std::fs::write(
+        out.join("verification.json"),
+        serde_json::to_vec_pretty(&report)?,
+    )?;
+    println!("Full-work baseline: {affected} affected units preserve previous body; {} unrelated units identical",ids.len()-affected);
+    Ok(())
 }
 
 fn validate_tier_b_baseline_manifest(

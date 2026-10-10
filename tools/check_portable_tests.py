@@ -27,6 +27,7 @@ REQUIRED_TESTS = (
     "portable_evidence_document_rejects_missing_or_mismatched_reference",
     "portable_audit_projection_is_deterministic",
     "tier_b_baseline_manifest_rejects_missing_units_and_configuration_mismatch",
+    "tier_b_affected_units_include_shared_source_pages",
     "tier_b_restoration_selection_rejects_missing_events_and_wrong_counts",
     "reviewed_band_ledger_uses_production_crop_bounds",
     "reviewed_band_ledger_respects_shared_page_ownership",
