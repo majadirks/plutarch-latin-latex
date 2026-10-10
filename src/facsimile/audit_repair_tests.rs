@@ -2348,6 +2348,105 @@ fn unaffected_ordinary_line_packing_is_unchanged() {
     );
 }
 
+/// A synthetic Antonius p562 column: the measured 22-line block occupies its
+/// cut-point strip 249..1364, flanked by one ordinary line above and below, so
+/// `strips_in_reading_order` yields the block as a single Tall strip carrying the
+/// stored source pixels of its fingerprint region.
+fn antonius_block_fixture() -> (PageBands, LineMetrics, TrimGeom) {
+    let fixture = audit_repair_ledger();
+    let sample = audit_fingerprint_image(&fixture["source_fingerprints"]["antonius_whole_strip"]);
+    let mut col = column(2835, 815, &[(198, 243, 10, 800), (1372, 1417, 10, 800)]);
+    image::imageops::replace(&mut col, &sample, 0, 249);
+    (
+        (
+            col,
+            vec![
+                Band {
+                    top: 198,
+                    bottom: 243,
+                },
+                Band {
+                    top: 255,
+                    bottom: 1356,
+                },
+                Band {
+                    top: 1372,
+                    bottom: 1417,
+                },
+            ],
+        ),
+        LineMetrics {
+            height_med: 48,
+            height_mad: 2,
+            width_med: 760,
+        },
+        TrimGeom {
+            dpi: 300,
+            tb_w: 815,
+            tb_h: 1300,
+            pad_x: 0,
+            pad_y: 0,
+        },
+    )
+}
+
+#[test]
+fn antonius_whole_block_wraps_without_bisecting_glyphs() {
+    let (page, metrics, geom) = antonius_block_fixture();
+    let strips = strips_in_reading_order(std::slice::from_ref(&page), &metrics);
+    assert_eq!(strips.len(), 3);
+    assert!(matches!(strips[1].class, BandClass::Tall));
+    let block = Band {
+        top: 249,
+        bottom: 1364,
+    };
+    assert_eq!(strips[1].band, block);
+    assert!(is_known_whole_source_strip(&page.0, &block));
+    // Off-by-one strip intervals are not the measured block.
+    assert!(!is_known_whole_source_strip(
+        &page.0,
+        &Band {
+            top: 250,
+            bottom: 1364
+        }
+    ));
+    assert!(!is_known_whole_source_strip(
+        &page.0,
+        &Band {
+            top: 249,
+            bottom: 1363
+        }
+    ));
+    // Altered column dimensions no longer match the production column.
+    let sample = image::imageops::crop_imm(&page.0, 0, 249, 815, 1115).to_image();
+    for (w, h) in [(816, 2835), (815, 2836)] {
+        let mut other = GrayImage::from_pixel(w, h, Luma([255]));
+        image::imageops::replace(&mut other, &sample, 0, 249);
+        assert!(!is_known_whole_source_strip(&other, &block));
+    }
+    // A single flipped source pixel breaks the fingerprint.
+    let mut tampered = page.0.clone();
+    let shade = tampered.get_pixel(0, 249)[0];
+    tampered.put_pixel(0, 249, Luma([shade ^ 1]));
+    assert!(!is_known_whole_source_strip(&tampered, &block));
+
+    // A partially filled first canvas: the recognized block wraps whole onto a fresh
+    // canvas rather than being fill-split, and that canvas reproduces the source strip.
+    let canvases =
+        assert_scaled_stream(std::slice::from_ref(&page), &metrics, 1.0, &geom, 100, 1265);
+    assert_eq!(canvases.len(), 2, "block wraps whole to a fresh canvas");
+    assert_eq!(
+        image::imageops::crop_imm(&canvases[1], 0, 0, 815, 1115).to_image(),
+        sample,
+        "the wrapped block is the whole source strip, not bisected"
+    );
+
+    // An undersized budget invokes splitting and cannot promise whole glyphs.
+    let oversized = assert_scaled_stream(&[page], &metrics, 1.0, &geom, 400, 400);
+    assert!(oversized.len() >= 3);
+    assert!(oversized.iter().all(|c| c.height() <= 400));
+}
+
 #[test]
 #[ignore = "requires original source PDFs and production-scale composition"]
 fn comparison_s2_line_is_whole() {
@@ -3840,6 +3939,426 @@ tier_b_restoration_tests! {
     tier_b_source_lines_restored => "delivery",
 }
 
+const ANTONIUS_AUDIT_BAND: &[SourceBodyBand] = &[SourceBodyBand {
+    source: 1,
+    page: 562,
+    unit_id: "antonius",
+    dimensions: (815, 2835),
+    observed: Band {
+        top: 249,
+        bottom: 1356,
+    },
+    protected: Band {
+        top: 249,
+        bottom: 1356,
+    },
+}];
+
+const ANTONIUS_ANNOTATION_AUDIT_BAND: &[SourceBodyBand] = &[SourceBodyBand {
+    source: 1,
+    page: 562,
+    unit_id: "antonius",
+    dimensions: (826, 2835),
+    observed: Band {
+        top: 249,
+        bottom: 1356,
+    },
+    protected: Band {
+        top: 249,
+        bottom: 1356,
+    },
+}];
+
+struct AntoniusAuditConfigurationGuard {
+    extra: &'static [SourceBodyBand],
+    disabled: bool,
+    crop: Option<Column>,
+}
+
+impl Drop for AntoniusAuditConfigurationGuard {
+    fn drop(&mut self) {
+        AUDIT_EXTRA_BODY_BANDS.with(|slot| slot.set(self.extra));
+        AUDIT_DISABLE_ANTONIUS_WHOLE_STRIP.with(|slot| slot.set(self.disabled));
+        AUDIT_ANTONIUS_CROP_OVERRIDE.with(|slot| slot.set(self.crop));
+    }
+}
+
+fn with_antonius_audit_configuration<R>(
+    protected: bool,
+    whole: bool,
+    run: impl FnOnce() -> R,
+) -> R {
+    let guard = AntoniusAuditConfigurationGuard {
+        extra: AUDIT_EXTRA_BODY_BANDS.with(|slot| {
+            slot.replace(if whole {
+                ANTONIUS_ANNOTATION_AUDIT_BAND
+            } else if protected {
+                ANTONIUS_AUDIT_BAND
+            } else {
+                &[]
+            })
+        }),
+        disabled: AUDIT_DISABLE_ANTONIUS_WHOLE_STRIP.with(|slot| slot.replace(!whole)),
+        crop: AUDIT_ANTONIUS_CROP_OVERRIDE.with(|slot| {
+            slot.replace(if whole {
+                Some(Column {
+                    left: 895,
+                    right: 1721,
+                })
+            } else {
+                None
+            })
+        }),
+    };
+    let result = run();
+    drop(guard);
+    result
+}
+
+/// Trace three explicit configurations through production extraction and packing.
+/// Plain protection demonstrates the split boundary; whole-block recognition must
+/// preserve every measured missing line on one canvas and both historical anchors.
+#[test]
+#[ignore = "requires source PDFs and full-work production-scale composition"]
+fn antonius_block_composition_trace() {
+    assert!(
+        !SOURCE_BODY_BANDS
+            .iter()
+            .any(|r| r.source == 1 && r.page == 562),
+        "diagnosis requires the pre-installation Antonius table"
+    );
+    let ledger = audit_repair_ledger();
+    let event = ledger["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["event_id"] == "miss_antonius_562_20869")
+        .unwrap();
+    let reviewed: Vec<ReviewedSourceLine> =
+        serde_json::from_value(event["diagnosis"]["reviewed_lines"].clone()).unwrap();
+    assert_eq!(reviewed.len(), 22, "approved measured inventory");
+    let mut lines = reviewed.clone();
+    lines.extend(
+        serde_json::from_value::<Vec<ReviewedSourceLine>>(
+            event["diagnosis"]["reviewed_neighbor_lines"].clone(),
+        )
+        .unwrap(),
+    );
+    lines.sort_by_key(|l| (l.source_page, l.region[1]));
+    lines.dedup_by_key(|l| (l.source, l.source_page, l.region));
+    let policies = reviewed
+        .iter()
+        .map(|l| {
+            (
+                (l.source, l.source_page, l.region),
+                ReviewedEvidencePolicy::PromotedTierB,
+            )
+        })
+        .collect();
+    let originals = lines
+        .iter()
+        .map(|l| (l.source, l.source_page))
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .map(|(s, p)| ((s, p), real_source_image(s, p)))
+        .collect();
+    let scale = production_body_scale();
+    let geom = TrimGeom::default();
+    let root = std::path::Path::new("tmp/pdfs/inner_tomi_audit_repairs/antonius-composition");
+    let annotations = [
+        ReviewedSourceLine {
+            source: 1,
+            source_page: 562,
+            region: [908, 507, 931, 539],
+            role: "approved_annotation".into(),
+        },
+        ReviewedSourceLine {
+            source: 1,
+            source_page: 562,
+            region: [895, 947, 913, 967],
+            role: "approved_annotation".into(),
+        },
+    ];
+    let mut summaries = serde_json::Map::new();
+    let mut selected_column = None;
+    for (name, protected, whole) in [
+        ("baseline", false, false),
+        ("plain", true, false),
+        ("candidate", true, true),
+    ] {
+        with_antonius_audit_configuration(protected, whole, || {
+            audit_save_unit_trace(
+                "antonius",
+                &std::collections::BTreeSet::from([561, 562]),
+                &format!("antonius-composition/{name}"),
+            );
+            let (pages, metrics, traces) = audit_traced_unit("antonius");
+            let trace = retained_page(&traces, 1, 562).unwrap();
+            let index = trace.retained_index.unwrap();
+            let column = &pages[index].0;
+            let (raw, furniture) = band_source_column(1, 562, column);
+            let (_, pass_a) = render_and_band(1, 562, &|s, p| Ok(real_source_image(s, p))).unwrap();
+            let rows = |bands: &[Band]| bands.iter().map(|b| [b.top, b.bottom]).collect::<Vec<_>>();
+            assert!(raw.contains(&ANTONIUS_AUDIT_BAND[0].observed));
+            assert!(
+                !furniture.contains(&ANTONIUS_AUDIT_BAND[0].observed),
+                "first loss is the production furniture filter"
+            );
+            assert_eq!(
+                pass_a.contains(&ANTONIUS_AUDIT_BAND[0].protected),
+                protected
+            );
+            assert_eq!(
+                pages[index].1.contains(&ANTONIUS_AUDIT_BAND[0].protected),
+                protected
+            );
+            let mut stage_lines = lines.clone();
+            if whole {
+                stage_lines.extend(annotations.iter().cloned());
+                stage_lines.sort_by_key(|l| (l.source_page, l.region[1]));
+            }
+            let context = ReviewedLineContext {
+                traces: &traces,
+                originals: &originals,
+                pages: &pages,
+                metrics: &metrics,
+                scale,
+                geom,
+            };
+            let packed = compose_body_canvases(
+                &pages,
+                scale,
+                &geom,
+                geom.first_body_budget(),
+                geom.body_budget(),
+                &metrics,
+            );
+            let packed_hashes = tier_b_canvas_records(&packed);
+            let mut returned = packed;
+            retain_body_canvases(&mut returned, scale, &metrics);
+            let (strips, ranges, returned) =
+                ranges_for_composed_canvases(&pages, &metrics, scale, &geom, returned);
+            let mut coverage = Vec::new();
+            let mut first_failed = serde_json::Value::Null;
+            let mut strip_record = serde_json::Value::Null;
+            if protected {
+                let checked = if whole {
+                    assert_reviewed_source_lines_survive_with_policies(
+                        &stage_lines,
+                        &context,
+                        &policies,
+                        ReviewedEvidencePolicy::HistoricalTierA,
+                    )
+                } else {
+                    assert_reviewed_source_lines_survive(&stage_lines, &context, false)
+                };
+                assert_eq!(
+                    tier_b_canvas_records(&checked.canvases),
+                    tier_b_canvas_records(&returned)
+                );
+                coverage = checked.line_coverage;
+                for line in &reviewed {
+                    let row = coverage
+                        .iter()
+                        .find(|row| {
+                            row["source"] == line.source
+                                && row["source_page"] == line.source_page
+                                && row["region"] == serde_json::json!(line.region)
+                        })
+                        .unwrap();
+                    if row["canvas_owners"].as_array().unwrap().len() != 1 && first_failed.is_null()
+                    {
+                        first_failed = row.clone();
+                    }
+                }
+                if whole {
+                    assert!(first_failed.is_null());
+                    for annotation in &annotations {
+                        let row = coverage
+                            .iter()
+                            .find(|r| {
+                                r["region"] == serde_json::json!(annotation.region)
+                                    && r["source_page"] == 562
+                            })
+                            .unwrap();
+                        assert_eq!(
+                            row["canvas_owners"].as_array().unwrap().len(),
+                            1,
+                            "approved annotation stays whole"
+                        );
+                    }
+                    for neighbor in lines
+                        .iter()
+                        .filter(|l| l.source == 1 && l.source_page == 562 && l.role == "neighbor")
+                    {
+                        let row = coverage
+                            .iter()
+                            .find(|row| {
+                                row["source"] == neighbor.source
+                                    && row["source_page"] == neighbor.source_page
+                                    && row["region"] == serde_json::json!(neighbor.region)
+                            })
+                            .unwrap();
+                        assert_eq!(
+                            row["canvas_owners"].as_array().unwrap().len(),
+                            1,
+                            "following chapter cluster stays whole"
+                        );
+                    }
+                } else {
+                    assert!(
+                        !first_failed.is_null(),
+                        "plain protection must reproduce a bisected reviewed line"
+                    );
+                }
+                let (strip, _, _) = strips
+                    .iter()
+                    .find(|(s, _, _)| {
+                        s.page_img_index == index && s.band.top <= 249 && s.band.bottom >= 1356
+                    })
+                    .unwrap();
+                assert_eq!(
+                    strip.band,
+                    Band {
+                        top: 249,
+                        bottom: 1364
+                    }
+                );
+                let scaled = scale_strip(column, &strip.band, scale).unwrap();
+                assert!(scaled.height() <= geom.body_budget());
+                let fingerprint =
+                    image::imageops::crop_imm(column, 0, 249, column.width(), 1115).to_image();
+                assert_eq!(
+                    tier_b_sha(fingerprint.as_raw()),
+                    if whole {
+                        "5bd51a4290f3d012bcedf037f3cb8b0d67a4479bd381b3449a8165171b832632"
+                    } else {
+                        "ab6e88cedbcb8117631ab2ee3d942eb10392f2da3616000cbd18f6548f5dae95"
+                    }
+                );
+                assert_eq!(is_known_whole_source_strip(column, &strip.band), whole);
+                let ink: u64 = ink_profile_rows(&fingerprint, INK_THRESHOLD)
+                    .into_iter()
+                    .map(u64::from)
+                    .sum();
+                strip_record = serde_json::json!({"interval":[249,1364],"class":format!("{:?}",strip.class),"ink":ink,"scaled_dimensions":[scaled.width(),scaled.height()],"recognition_enabled":whole,"fingerprint":tier_b_sha(fingerprint.as_raw())});
+                for canvas in coverage
+                    .iter()
+                    .flat_map(|r| r["canvas_owners"].as_array().unwrap())
+                    .filter_map(|v| v.as_u64())
+                    .collect::<std::collections::BTreeSet<_>>()
+                {
+                    returned[canvas as usize - 1]
+                        .save(
+                            root.join(name)
+                                .join(format!("antonius-canvas-{canvas:03}.png")),
+                        )
+                        .unwrap();
+                }
+            }
+            let mut overlay = originals[&(1, 562)].clone();
+            for line in &reviewed {
+                let [left, top, right, bottom] = line.region;
+                for x in left..right {
+                    overlay.put_pixel(x, top, Luma([120]));
+                    overlay.put_pixel(x, bottom - 1, Luma([120]));
+                }
+            }
+            let overlay_path = root.join(name).join("reviewed-glyphs.png");
+            overlay.save(&overlay_path).unwrap();
+            let mut configuration = tier_b_configuration();
+            configuration["audit_overrides"] = serde_json::json!({"temporary_source_body_bands":if protected {serde_json::json!([{"source":1,"page":562,"unit_id":"antonius","dimensions":[column.width(),column.height()],"observed":[249,1356],"protected":[249,1356]}])} else {serde_json::json!([])},"antonius_whole_strip_recognition":whole,"production_crop":trace.crop});
+            let result = serde_json::json!({"schema_version":1,"event_id":event["event_id"],"unit_id":"antonius","configuration":name,"tested_configuration":configuration,
+                "measured_line_count":reviewed.len(),"historical_line_count":23,"scale":scale,"production_column":trace.crop,"column_dimensions":[column.width(),column.height()],
+                "raw_bands":rows(&raw),"furniture_filtered_bands":rows(&furniture),"pass_a_bands":rows(&pass_a),"pass_b_bands":trace.bands,
+                "metrics":{"height_med":metrics.height_med,"height_mad":metrics.height_mad,"width_med":metrics.width_med},"strip":strip_record,
+                "first_body_budget":geom.first_body_budget(),"body_budget":geom.body_budget(),"first_loss_stage":"pass_a_furniture_filter","first_failed_boundary":first_failed,
+                "line_coverage":coverage,"canvas_ranges":ranges,"packed_canvas_hashes":packed_hashes,"canvas_hashes":tier_b_canvas_records(&returned),
+                "source_pages":traces,"reviewed_lines":reviewed,"reviewed_annotations":annotations,"reviewed_neighbor_lines":event["diagnosis"]["reviewed_neighbor_lines"],"source_overlay":tier_b_file_reference(&overlay_path),
+                "full_trace":tier_b_file_reference(&root.join(name).join("antonius/trace.json"))});
+            std::fs::write(
+                root.join(name).join("antonius.json"),
+                serde_json::to_vec_pretty(&result).unwrap(),
+            )
+            .unwrap();
+            println!(
+                "{name}: {} canvases, first failed boundary {}",
+                returned.len(),
+                result["first_failed_boundary"]
+            );
+            summaries.insert(name.to_string(), result);
+            if whole {
+                selected_column = Some(column.clone());
+            }
+        });
+    }
+    let column = selected_column.unwrap();
+    let ink = ink_profile_rows(&column, INK_THRESHOLD);
+    let gaps: Vec<_>=reviewed.windows(2).map(|w| {
+        let bottom=w[0].region[3];let top=w[1].region[1];
+        let lo=bottom.min(top).saturating_sub(6);let hi=(bottom.max(top)+6).min(column.height());
+        serde_json::json!({"vertical_gap":i64::from(top)-i64::from(bottom),"rows":[lo,hi],"minimum_ink":ink[lo as usize..hi as usize].iter().min().unwrap()})
+    }).collect();
+    assert!(
+        gaps.iter().any(|g| g["vertical_gap"].as_i64().unwrap() < 0),
+        "overlap rules out disjoint horizontal splitting"
+    );
+    let decision = serde_json::json!({"schema_version":1,"event_id":event["event_id"],"unit_id":"antonius","outcome":"candidate_verified","selected_method":"whole_block",
+        "measured_line_count":22,"historical_line_count":23,"inter_line_seams":gaps,"stages":summaries.keys().map(|name|(name,tier_b_file_reference(&root.join(name).join("antonius.json")))).collect::<std::collections::BTreeMap<_,_>>()});
+    std::fs::write(
+        root.join("method-decision.json"),
+        serde_json::to_vec_pretty(&decision).unwrap(),
+    )
+    .unwrap();
+    assert!(AUDIT_EXTRA_BODY_BANDS.with(|slot| slot.get().is_empty()));
+    assert!(!AUDIT_DISABLE_ANTONIUS_WHOLE_STRIP.with(|slot| slot.get()));
+}
+
+#[test]
+fn antonius_trace_configuration_restores_on_failure() {
+    let result = std::panic::catch_unwind(|| {
+        with_antonius_audit_configuration(true, false, || panic!("intentional diagnostic failure"))
+    });
+    assert!(result.is_err());
+    assert!(AUDIT_EXTRA_BODY_BANDS.with(|slot| slot.get().is_empty()));
+    assert!(!AUDIT_DISABLE_ANTONIUS_WHOLE_STRIP.with(|slot| slot.get()));
+}
+
+#[test]
+#[ignore = "requires the original Antonius source raster"]
+fn antonius_annotation_crop_measurement() {
+    let raw = real_source_image(1, 562);
+    let mut masked = raw.clone();
+    mask_known_source_furniture(1, 562, &mut masked);
+    let col = crop_column(
+        &masked,
+        &Column {
+            left: 895,
+            right: 1721,
+        },
+    );
+    let (bands, kept) = band_source_column(1, 562, &col);
+    println!(
+        "raster {:?}, annotation-preserving column {:?}, raw {:?}, kept {:?}",
+        raw.dimensions(),
+        col.dimensions(),
+        bands,
+        kept
+    );
+    assert!(
+        bands.contains(&Band {
+            top: 249,
+            bottom: 1356
+        }),
+        "annotation extension retains the original block detector evidence"
+    );
+    let image = image::imageops::crop_imm(&col, 0, 249, col.width(), 1115).to_image();
+    println!("block fingerprint {}", tier_b_sha(image.as_raw()));
+    image
+        .save("tmp/pdfs/inner_tomi_audit_repairs/antonius-with-complete-markers.png")
+        .unwrap();
+}
+
 #[test]
 fn tier_b_restoration_selection_rejects_missing_events_and_wrong_counts() {
     let mut ledger = audit_repair_ledger();
@@ -5219,4 +5738,80 @@ fn tier_b_disposition_rejects_wrong_event_and_digest_mismatch() {
             "disposition rejects {kind}"
         );
     }
+}
+
+#[test]
+fn antonius_following_chapter_wraps_without_bisecting_glyphs() {
+    let ledger = audit_repair_ledger();
+    let mut column = GrayImage::from_pixel(826, 2835, Luma([255]));
+    for (key, top) in [
+        ("antonius_annotated_whole_strip", 249),
+        ("antonius_annotated_following_chapter", 1364),
+    ] {
+        image::imageops::replace(
+            &mut column,
+            &audit_fingerprint_image(&ledger["source_fingerprints"][key]),
+            0,
+            top,
+        );
+    }
+    let next = Band {
+        top: 1364,
+        bottom: 1691,
+    };
+    assert!(is_known_whole_source_strip(&column, &next));
+    assert!(!is_known_whole_source_strip(
+        &column,
+        &Band {
+            top: 1365,
+            bottom: 1691
+        }
+    ));
+    let mut changed = column.clone();
+    changed.put_pixel(0, 1364, Luma([0]));
+    assert!(!is_known_whole_source_strip(&changed, &next));
+    let metrics = LineMetrics {
+        height_med: 33,
+        height_mad: 2,
+        width_med: 777,
+    };
+    let starter = page_and_metrics(500, 826, &[(100, 400, 20, 790)]).0;
+    let pages = [
+        starter,
+        (
+            column,
+            vec![
+                Band {
+                    top: 249,
+                    bottom: 1356,
+                },
+                Band {
+                    top: 1373,
+                    bottom: 1691,
+                },
+            ],
+        ),
+    ];
+    let geom = TrimGeom {
+        dpi: 300,
+        tb_w: 1004,
+        tb_h: 1394,
+        pad_x: 0,
+        pad_y: 0,
+    };
+    let scale = 1.2023952;
+    let expected = scale_strip(&pages[1].0, &next, scale).unwrap();
+    let canvases = assert_scaled_stream(&pages, &metrics, scale, &geom, 1252, 1394);
+    assert_eq!(
+        canvases.len(),
+        3,
+        "the body block and following chapter wrap separately"
+    );
+    let retained =
+        image::imageops::crop_imm(&canvases[2], 0, 0, expected.width(), expected.height())
+            .to_image();
+    assert_eq!(
+        retained, expected,
+        "every following-chapter glyph stays intact"
+    );
 }

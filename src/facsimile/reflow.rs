@@ -830,6 +830,12 @@ fn render_and_band(
 
 /// Column bounds on a raster after edition-specific furniture masking.
 fn production_source_column(source: usize, page: u32, masked: &GrayImage) -> Result<Column> {
+    #[cfg(test)]
+    if source == 1 && page == 562 && masked.dimensions() == (1850, 2835) {
+        if let Some(column) = AUDIT_ANTONIUS_CROP_OVERRIDE.with(|slot| slot.get()) {
+            return Ok(column);
+        }
+    }
     Ok(preserve_known_body_crop_edge(
         source,
         page,
@@ -914,6 +920,13 @@ struct SourceBodyBand {
     dimensions: (u32, u32),
     observed: Band,
     protected: Band,
+}
+
+#[cfg(test)]
+thread_local! {
+    static AUDIT_EXTRA_BODY_BANDS: std::cell::Cell<&'static [SourceBodyBand]> = const { std::cell::Cell::new(&[]) };
+    static AUDIT_DISABLE_ANTONIUS_WHOLE_STRIP: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static AUDIT_ANTONIUS_CROP_OVERRIDE: std::cell::Cell<Option<Column>> = const { std::cell::Cell::new(None) };
 }
 
 const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
@@ -1785,7 +1798,12 @@ fn retain_known_source_body_bands(
 ) -> Vec<Band> {
     let mut result = kept.to_vec();
     let mut matched = false;
-    for record in SOURCE_BODY_BANDS.iter().filter(|r| {
+    let records = SOURCE_BODY_BANDS.iter();
+    #[cfg(test)]
+    let extra = AUDIT_EXTRA_BODY_BANDS.with(|slot| slot.get());
+    #[cfg(test)]
+    let records = records.chain(extra.iter());
+    for record in records.filter(|r| {
         r.source == source
             && r.page == page
             && r.dimensions == dimensions
@@ -2310,19 +2328,72 @@ fn matches_source_region_fingerprint(column: &GrayImage, region: [u32; 4], expec
     format!("{:x}", sha2::Sha256::digest(glyphs.as_raw())) == expected
 }
 
-/// Keep the reviewed skewed chapter cluster whole when it fits a fresh canvas.
+/// Recognize reviewed source strips by dimensions, cut-point interval, and original
+/// pixel fingerprint. A matching strip wraps whole only when it fits a fresh body
+/// canvas; the caller applies the measured scaled-height budget.
 fn is_known_whole_source_strip(column: &GrayImage, band: &Band) -> bool {
-    column.dimensions() == (817, 2836)
-        && *band
-            == (Band {
+    #[cfg(test)]
+    if matches!(column.dimensions(), (815, 2835) | (826, 2835))
+        && matches!((band.top, band.bottom), (249, 1364) | (1364, 1691))
+        && AUDIT_DISABLE_ANTONIUS_WHOLE_STRIP.with(|slot| slot.get())
+    {
+        return false;
+    }
+    type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
+    const WHOLE_STRIPS: &[WholeStripSignature] = &[
+        (
+            (817, 2836),
+            Band {
                 top: 1507,
                 bottom: 1648,
-            })
-        && matches_source_region_fingerprint(
-            column,
+            },
             [0, 1507, 817, 1648],
             "b9923339da9e250ebc0404036149d63cf9a253aafbb4c2f73957398188f608d0",
-        )
+        ),
+        (
+            (815, 2835),
+            Band {
+                top: 249,
+                bottom: 1364,
+            },
+            [0, 249, 815, 1364],
+            "ab6e88cedbcb8117631ab2ee3d942eb10392f2da3616000cbd18f6548f5dae95",
+        ),
+        (
+            (815, 2835),
+            Band {
+                top: 1364,
+                bottom: 1691,
+            },
+            [0, 1364, 815, 1691],
+            "70a25389a74d1114c2bf05345593112c8fb7e00d3e1382f759081765714e9f49",
+        ),
+        (
+            (826, 2835),
+            Band {
+                top: 249,
+                bottom: 1364,
+            },
+            [0, 249, 826, 1364],
+            "5bd51a4290f3d012bcedf037f3cb8b0d67a4479bd381b3449a8165171b832632",
+        ),
+        (
+            (826, 2835),
+            Band {
+                top: 1364,
+                bottom: 1691,
+            },
+            [0, 1364, 826, 1691],
+            "5a3cfc2d34e81d528e74ac84ce4c954d91dbbc65f12403579b6d665a8c868980",
+        ),
+    ];
+    WHOLE_STRIPS
+        .iter()
+        .any(|(dimensions, strip, region, fingerprint)| {
+            column.dimensions() == *dimensions
+                && *band == *strip
+                && matches_source_region_fingerprint(column, *region, fingerprint)
+        })
 }
 
 /// Fraction of a typical scaled line used as the minimum fill-split piece, so a cut
