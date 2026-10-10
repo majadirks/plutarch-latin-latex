@@ -33,6 +33,33 @@ remain under the run directory. A measured gutter is a source hypothesis;
 unresolved gutters, threshold disagreements and residual objects remain visible.
 Selected-ink accounting is distinct from reviewed source ownership and coverage.
 
+Source-only review sheets show the untouched page, annotated inventory and crop
+links before reader outcomes. Import source decisions into a fresh policy file:
+
+```powershell
+python tools/facsimile_line_audit.py adjudicate --inventory-dir <inventory-run> --source-reviews <reviews.json> --policy-out tmp/pdfs/facsimile_line_audit/runs/source_review/policy-v2.json
+```
+
+The review JSON requires `schema_version: 1`, the inventory's `snapshot_id` and
+`raw_inventory_id`, and a `decisions` array. Each decision specifies
+`occurrence_id`, `crop_sha256`, `classification`, `owner` (or null), `reason` and
+`reviewer`. Classifications are `body`, `heading`, `annotation`, `furniture` and
+`uncertain`. Optional boolean fields are `required_geometry_reviewed`,
+`source_partial`, `unit_start` and `unit_end`; an approved body region requires
+one captured unit owner on the same source. Keep uncertain objects unresolved.
+
+Measured `children` specify full-page `box_px`, classification and owner within
+their original object's bounds. The original parent retains its components and
+unreviewed ink. Optional `page_overrides` specify `source_index`, physical `page`,
+`full_crop_sha256`, `gutter_box_px`, `latin_left_px`, reason and reviewer.
+Reviews bind the source bytes and crop evidence; stale evidence is rejected.
+Reviewed ownership may extend the production table's candidate page interval.
+
+Adjudication preserves the old inventory and captured policy. Adopt the fresh
+policy through a new `capture --source-policy <policy-v2.json>` and inventory run;
+measured child crops are created in that new run. Verification probes that retain
+uncertainty are not approvals of production source ownership or exclusions.
+
 Tool resolution uses the command option, `PLUTARCH_PDFTOPPM` or
 `PLUTARCH_TESSERACT`, then PATH. English language data uses `--tessdata-dir`,
 `PLUTARCH_TESSDATA_DIR`, or the directory reported by Tesseract. Missing usable

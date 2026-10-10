@@ -33,6 +33,15 @@ commits. Each completed required step receives its own commit and push.
   Exact-identity resume, Python compilation and disposable production-fraction
   mutation checks pass. Source overlays were inspected for Theseus, Pericles
   and Antonius v2/562. Interrupted diagnostic runs remain preserved.
+- 3.2: Added source-only review sheets and source-mode adjudication into fresh,
+  source-bound policy versions. Snapshot, raw inventory, source crop, page-context,
+  owner, classification, measured child/gutter and residual-ink validation preserve
+  uncertainty and the original machine evidence. Reviewed ownership can extend
+  production candidate intervals on the same source. Disposable imports cover
+  a shared boundary page, Pericles material and the Antonius ending; their three
+  decisions remain uncertain and approve no source exclusions. Version-2 import,
+  stale-crop rejection, all 38,519 object validations and both-threshold accounting
+  pass. The verification policy is not adopted into corpus processing.
 - Repository regression gates: formatting and strict all-target Clippy pass;
   `cargo test` passes 419 library tests and 9 CLI tests with 76 existing ignored
   tests. Rust remains unchanged.

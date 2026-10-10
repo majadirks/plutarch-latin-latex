@@ -183,6 +183,8 @@ def inventory_source_page(image, record, page, owners, settings, run, args):
     from PIL import ImageDraw
     gray = np.asarray(image.convert('L'))
     columns = separate_source_columns(gray, settings)
+    if settings.get('reviewed_gutter_override'):
+        columns.update(settings['reviewed_gutter_override'], status='reviewed_source_override')
     x0, y0, x1, y1 = columns['roi']
     raw, labels = component_observations(gray[y0:y1, x0:x1], settings['thresholds'][0],
                                         settings['connectivity'], (x0, y0))
@@ -193,7 +195,7 @@ def inventory_source_page(image, record, page, owners, settings, run, args):
     assigned = []
     for line in lines:
         assigned.append(line['components'])
-        objects.append(dict(line, kind='line', classification='body' if columns['status'] == 'measured' else 'uncertain',
+        objects.append(dict(line, kind='line', classification='body' if columns['status'] in {'measured', 'reviewed_source_override'} else 'uncertain',
                             segmentation_status='provisional', required_geometry_reviewed=False))
     residual_groups = {}
     for component in residual:
@@ -256,7 +258,7 @@ def box_intersects_y(first, second):
     return min(first[3], second[3]) > max(first[1], second[1])
 
 
-def inventory_source_units(root, manifest, all_units, selected, settings, run, args, prerequisites):
+def inventory_source_units(root, manifest, all_units, selected, settings, run, args, prerequisites, *, source_policy=None):
     from PIL import Image
     import facsimile_line_audit as cli
     repo, work = cli.paths(args)
@@ -268,13 +270,17 @@ def inventory_source_units(root, manifest, all_units, selected, settings, run, a
         ranges.append(dict(unit_id=unit['id'], source_index=unit['source'], start=unit['start_page'], end=end))
     requested = {(r['source_index'], p) for r in ranges if r['unit_id'] in {u['id'] for u in selected}
                  for p in range(r['start'], r['end'] + 1)}
+    for decision in (source_policy or {}).get('decisions', []):
+        if decision.get('owner') in {u['id'] for u in selected}:
+            requested.add((decision['source_index'], decision['page']))
     pages, errors = [], []
     for source_index, page in sorted(requested):
         record_path, record = cli.snapshot_input(root, manifest, 'source_pdf', source_index=source_index)
         owners = [r['unit_id'] for r in ranges if r['source_index'] == source_index and r['start'] <= page <= r['end']]
         try:
             metadata = {'snapshot_id': manifest['snapshot_id'], 'code': cli.executed_code(repo),
-                        'source_sha256': record['sha256'], 'page': page, 'settings': common.json_hash(settings), 'owners': owners}
+                        'source_sha256': record['sha256'], 'page': page, 'settings': common.json_hash(settings), 'owners': owners,
+                        'policy': common.json_hash(source_policy)}
             entry_path = run / 'source-pages' / f'{source_index}_{page}.json'
             cached = common.reusable_entry(entry_path, metadata, work, repo, policy=common.AuditOutputPolicy('audit')) if args.resume else None
             if cached:
@@ -288,7 +294,8 @@ def inventory_source_units(root, manifest, all_units, selected, settings, run, a
                                            pdftoppm=prerequisites['tools']['pdftoppm']['path'],
                                            policy=common.AuditOutputPolicy('audit'))
             with Image.open(raster) as image:
-                item = inventory_source_page(image, record, page, owners, settings, run, args)
+                effective = measured_page_settings(settings, source_policy or {}, record, page, image)
+                item = inventory_source_page(image, record, page, owners, effective, run, args)
             if 'ocr_unavailable' in prerequisites['tools']:
                 item['ocr_status'] = 'ocr_unavailable'
             else:
@@ -311,3 +318,210 @@ def inventory_source_units(root, manifest, all_units, selected, settings, run, a
               'requested_pages': len(requested), 'completed_pages': len(pages), 'ranges': ranges,
               'raw_inventory_id': common.json_hash(pages)}
     return result, errors
+
+
+def apply_source_policy(inventory, policy, *, run=None, args=None, render_children=True):
+    import copy
+    result = copy.deepcopy(inventory)
+    lookup = {o['occurrence_id']: o for p in result['pages'] for o in p['occurrences']}
+    for decision in policy.get('decisions', []):
+        occurrence = lookup.get(decision['occurrence_id'])
+        if occurrence is None:
+            continue
+        if occurrence['crop']['sha256'] != decision['crop_sha256'] or occurrence['source_sha256'] != decision['source_sha256']:
+            raise common.AuditError('Source policy crop/source identity mismatch')
+        occurrence.update(classification=decision['classification'], owner=decision.get('owner'),
+                          required_geometry_reviewed=decision.get('required_geometry_reviewed', False),
+                          source_partial=decision.get('source_partial', False),
+                          review_provenance=decision.get('provenance', 'source_review'),
+                          review_reason=decision['reason'], reviewer=decision['reviewer'],
+                          unit_start=decision.get('unit_start', False), unit_end=decision.get('unit_end', False))
+        occurrence['reviewed_scope_extension'] = bool(decision.get('owner') and decision['owner'] not in occurrence['possible_owners'])
+        children = decision.get('children', [])
+        if children and render_children and (run is None or args is None):
+            raise common.AuditError('Measured source children require an owned run for their untouched crops')
+        for child in children:
+            validate_pixel_box(child['box_px'], occurrence['raster_dimensions'])
+            box, parent = child['box_px'], occurrence['box']
+            if not (parent[0] <= box[0] < box[2] <= parent[2] and parent[1] <= box[1] < box[3] <= parent[3]):
+                raise common.AuditError('Reviewed child escapes its original source object')
+            if child.get('classification') not in {'body', 'heading', 'annotation', 'furniture', 'uncertain'}:
+                raise common.AuditError('Unknown source child classification')
+            owner_sources = {r['unit_id']: r['source_index'] for r in inventory['ranges']}
+            if child.get('owner') and owner_sources.get(child['owner']) != occurrence['source_index']:
+                raise common.AuditError('Source child has conflicting source/owner identity')
+            if child['classification'] == 'body' and not child.get('owner'):
+                raise common.AuditError('Reviewed body child requires one owner')
+            from PIL import Image
+            child_id = common.json_hash([occurrence['occurrence_id'], box, 'reviewed_source_child_v1'])
+            if render_children:
+                with Image.open(Path(run) / occurrence['crop']['path']) as image:
+                    crop = save_crop(image, [box[0] - parent[0], box[1] - parent[1], box[2] - parent[0], box[3] - parent[1]],
+                                     Path(run), args, child_id)
+            else:
+                crop = dict(occurrence['crop'])
+            crop['box_px'] = box
+            item = dict(occurrence, occurrence_id=child_id, box=box, crop=crop,
+                        classification=child['classification'], owner=child.get('owner'),
+                        required_geometry_reviewed=True, kind='reviewed_child', components=[], faint_components=[],
+                        parent_ids=[occurrence['occurrence_id']], child_ids=[])
+            for page in result['pages']:
+                if page['source_index'] == item['source_index'] and page['page'] == item['page']:
+                    page['occurrences'].append(item)
+                    break
+            occurrence['child_ids'].append(child_id)
+        if children:
+            # The parent retains all original member components and any unreviewed ink.
+            occurrence['required_geometry_reviewed'] = False
+            occurrence['classification'] = 'uncertain'
+    result['policy_sha256'] = common.json_hash(policy)
+    validate_source_inventory(result)
+    return result
+
+
+def measured_page_settings(settings, policy, record, page, image):
+    import copy
+    import hashlib
+    selected = [r for r in policy.get('page_overrides', [])
+                if r['source_index'] == record['source_index'] and r['page'] == page]
+    if not selected:
+        return settings
+    if len(selected) != 1:
+        raise common.AuditError('Conflicting reviewed source-page overrides')
+    decision = selected[0]
+    if (record['sha256'] != decision['source_sha256'] or
+            hashlib.sha256(image.convert('L').tobytes()).hexdigest() != decision['gray_sha256']):
+        raise common.AuditError('Reviewed source-page override identity mismatch')
+    validate_pixel_box(decision['gutter_box_px'], list(image.size))
+    revised = copy.deepcopy(settings)
+    revised['reviewed_gutter_override'] = {'gutter': decision['gutter_box_px'],
+                                         'latin_left': decision['latin_left_px']}
+    return revised
+
+
+def validate_source_inventory(inventory):
+    seen = set()
+    owner_sources = {r['unit_id']: r['source_index'] for r in inventory['ranges']}
+    for page in inventory['pages']:
+        for occurrence in page['occurrences']:
+            if occurrence['occurrence_id'] in seen:
+                raise common.AuditError('Repeated source occurrence identity')
+            seen.add(occurrence['occurrence_id'])
+            validate_pixel_box(occurrence['box'], occurrence['raster_dimensions'])
+            if occurrence['classification'] not in {'body', 'heading', 'annotation', 'furniture', 'uncertain'}:
+                raise common.AuditError('Unknown source classification')
+            if occurrence.get('owner') and owner_sources.get(occurrence['owner']) != occurrence['source_index']:
+                raise common.AuditError('Reviewed owner conflicts with captured unit/source identity')
+            if occurrence.get('required_geometry_reviewed') and occurrence['classification'] == 'body' and not occurrence.get('owner'):
+                raise common.AuditError('Reviewed body geometry requires one logical owner')
+        if any(a['residual_pixels'] or a['components'] != a['assigned_components'] for a in page['accounting']):
+            raise common.AuditError('Unaccounted source ink')
+    return inventory
+
+
+def validate_pixel_box(box, dimensions):
+    if (not isinstance(box, list) or len(box) != 4 or
+            any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in box) or
+            not 0 <= box[0] < box[2] <= dimensions[0] or not 0 <= box[1] < box[3] <= dimensions[1]):
+        raise common.AuditError(f'Invalid full-pixel box: {box}')
+    return box
+
+
+def write_source_review_sheet(inventory, run, args):
+    import html
+    import facsimile_line_audit as cli
+    sections = ['<!doctype html><meta charset="utf-8"><title>Source-only inventory review</title>',
+                '<style>body{font:18px system-ui;max-width:1200px;margin:auto}img{max-width:100%}article{border-top:1px solid #ccc;padding:1em}code{word-break:break-all}</style>',
+                '<h1>Source-only inventory review</h1><p>Classification and ownership hypotheses require source review. No reader verdict is shown.</p>']
+    for page in inventory['pages']:
+        sections.append(f'<article><h2>Source {page["source_index"] + 1}, physical page {page["page"]}</h2>')
+        sections.append(f'<a href="{html.escape(page["full_context"]["path"], quote=True)}">Untouched source</a>')
+        sections.append(f'<img loading="lazy" src="{html.escape(page["overlay"]["path"], quote=True)}">')
+        for obj in page['occurrences']:
+            sections.append(f'<p><code>{obj["occurrence_id"]}</code>: {html.escape(obj["kind"])} / {html.escape(obj["classification"])}; possible owners {html.escape(", ".join(obj["possible_owners"]))}; <a href="{obj["crop"]["path"]}">crop</a></p>')
+        sections.append('</article>')
+    repo, work = cli.paths(args)
+    path = common.safe_write_path(run / 'source-review.html', work, repo, policy=common.AuditOutputPolicy('audit'))
+    path.write_text('\n'.join(sections), encoding='utf-8')
+
+
+def adjudicate_source(args):
+    import facsimile_line_audit as cli
+    run = Path(args.inventory_dir).resolve()
+    inventory = cli.read_json(run / 'source-inventory.json')
+    reviews = cli.read_json(args.source_reviews)
+    if reviews.get('schema_version') != 1:
+        raise common.AuditError('Source reviews require schema_version 1')
+    if reviews.get('snapshot_id') != inventory['snapshot_id'] or reviews.get('raw_inventory_id') != inventory['raw_inventory_id']:
+        raise common.AuditError('Stale source review snapshot/inventory identity')
+    repo, work = cli.paths(args)
+    target = common.safe_write_path(args.policy_out, work, repo, policy=common.AuditOutputPolicy('audit'))
+    if target.exists():
+        raise common.AuditError('Policy destination must be fresh')
+    manifest = cli.read_json(run / 'run-manifest.json')
+    if common.hash_file(run / 'source-inventory.json') != manifest['record_sha256']['source-inventory.json']:
+        raise common.AuditError('Source inventory record identity mismatch')
+    root, captured = cli.resolve_run_snapshot(manifest, args)
+    policy_path, _ = cli.snapshot_input(root, captured, 'source_policy')
+    policy = cli.read_json(policy_path)
+    lookup = {o['occurrence_id']: o for p in inventory['pages'] for o in p['occurrences']}
+    imported = []
+    for decision in reviews.get('decisions', []):
+        for flag in ('required_geometry_reviewed', 'source_partial', 'unit_start', 'unit_end'):
+            if flag in decision and not isinstance(decision[flag], bool):
+                raise common.AuditError(f'Source review {flag} requires a boolean')
+        obj = lookup.get(decision.get('occurrence_id'))
+        if not obj or obj['crop']['sha256'] != decision.get('crop_sha256'):
+            raise common.AuditError('Unknown occurrence or stale source crop hash')
+        if common.hash_file(run / common.relative_path(obj['crop']['path'])) != obj['crop']['sha256']:
+            raise common.AuditError('Reviewed source crop bytes changed')
+        if not decision.get('reason') or not decision.get('reviewer'):
+            raise common.AuditError('Source decision requires reason and reviewer')
+        if decision.get('classification') not in {'body', 'heading', 'annotation', 'furniture', 'uncertain'}:
+            raise common.AuditError('Invalid reviewed classification')
+        owner_sources = {r['unit_id']: r['source_index'] for r in inventory['ranges']}
+        if decision.get('owner') and owner_sources.get(decision['owner']) != obj['source_index']:
+            raise common.AuditError('Reviewed owner lies outside captured source/owner identity')
+        if decision.get('required_geometry_reviewed') and decision['classification'] == 'body' and not decision.get('owner'):
+            raise common.AuditError('Body review requires one owner')
+        record = dict(decision, source_sha256=obj['source_sha256'], source_index=obj['source_index'], page=obj['page'],
+                      evidence_sha256=obj['crop']['sha256'],
+                      snapshot_id=inventory['snapshot_id'], raw_inventory_id=inventory['raw_inventory_id'])
+        if record.get('provenance') == 'synthetic_ground_truth' and captured['target_kind'] != 'verification':
+            raise common.AuditError('Synthetic review cannot approve corpus source')
+        imported.append(record)
+    page_imports = []
+    for decision in reviews.get('page_overrides', []):
+        pages = [p for p in inventory['pages'] if p['source_index'] == decision.get('source_index')
+                 and p['page'] == decision.get('page')]
+        if len(pages) != 1 or pages[0]['full_context']['sha256'] != decision.get('full_crop_sha256'):
+            raise common.AuditError('Stale reviewed page-context identity')
+        page = pages[0]
+        if common.hash_file(run / common.relative_path(page['full_context']['path'])) != page['full_context']['sha256']:
+            raise common.AuditError('Reviewed source page bytes changed')
+        from PIL import Image
+        import hashlib
+        with Image.open(run / page['full_context']['path']) as image:
+            validate_pixel_box(decision['gutter_box_px'], list(image.size))
+            if not decision['gutter_box_px'][2] <= decision['latin_left_px'] < image.width:
+                raise common.AuditError('Reviewed Latin edge must follow the gutter')
+            digest = hashlib.sha256(image.convert('L').tobytes()).hexdigest()
+        if not decision.get('reason') or not decision.get('reviewer'):
+            raise common.AuditError('Page override requires source-only reason and reviewer')
+        page_imports.append(dict(decision, gray_sha256=digest, source_sha256=page['source_sha256'],
+                                 evidence_sha256=page['full_context']['sha256']))
+    if len({(p['source_index'], p['page']) for p in page_imports}) != len(page_imports):
+        raise common.AuditError('Duplicate source page overrides')
+    if len({d['occurrence_id'] for d in imported}) != len(imported):
+        raise common.AuditError('Duplicate source review decisions')
+    revised = {d['occurrence_id']: d for d in policy['decisions']}
+    revised.update({d['occurrence_id']: d for d in imported})
+    policy['decisions'] = [revised[k] for k in sorted(revised)]
+    previous_pages = {(p['source_index'], p['page']): p for p in policy.get('page_overrides', [])}
+    previous_pages.update({(p['source_index'], p['page']): p for p in page_imports})
+    policy['page_overrides'] = [previous_pages[k] for k in sorted(previous_pages)]
+    policy['version'] += 1
+    apply_source_policy(inventory, policy, run=run, args=args, render_children=False)
+    cli.validate_source_policy(policy, target_kind=captured['target_kind'])
+    cli.write(target, policy, args)
+    return policy

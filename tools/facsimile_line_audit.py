@@ -92,7 +92,7 @@ def executed_code(repo):
         filename = getattr(module, '__file__', None)
         if filename:
             path = Path(filename).resolve()
-            if common.contained(path, repo / 'tools') and 'audit' in path.name:
+            if common.contained(path, repo / 'tools') and path.suffix == '.py':
                 files.add(path)
     return {p.relative_to(repo).as_posix(): common.hash_file(p)
             for p in sorted(files) if p.is_file()}
@@ -116,12 +116,14 @@ def validate_source_policy(policy, source_hashes=None, *, target_kind='corpus'):
     if policy.get('schema_version') != 1 or not isinstance(policy.get('version'), int):
         raise AuditError('Source policy requires schema_version 1 and integer version')
     hashes = policy.get('source_sha256', {})
+    if target_kind != 'verification' and (policy.get('synthetic_regions') or policy.get('synthetic_duplicate_regions')):
+        raise AuditError('Synthetic geometry is forbidden for corpus inputs')
     if source_hashes is not None and hashes != source_hashes:
         raise AuditError('Policy must bind exactly the captured source digests')
-    for record in policy.get('decisions', []) + policy.get('duplicate_groups', []):
+    for record in policy.get('decisions', []) + policy.get('duplicate_groups', []) + policy.get('page_overrides', []):
         if record.get('provenance') == 'synthetic_ground_truth' and target_kind != 'verification':
             raise AuditError('Synthetic policy is forbidden for corpus inputs')
-        if not record.get('reason') or not record.get('evidence_sha256'):
+        if not record.get('reason') or not re.fullmatch('[0-9a-f]{64}', record.get('evidence_sha256', '')):
             raise AuditError('Reviewed policy requires reason and evidence identity')
     return policy
 
@@ -147,6 +149,8 @@ def capture_snapshot(args):
     readers = (repo / readers).resolve() if not readers.is_absolute() else readers.resolve()
     settings_path = Path(args.settings) if args.settings else repo / 'tools/facsimile-line-settings.json'
     policy_path = Path(args.source_policy) if args.source_policy else repo / 'tools/facsimile-source-policy.json'
+    if any(p.resolve() == (repo / 'secrets.json').resolve() for p in (settings_path, policy_path)):
+        raise AuditError('Credentials cannot be audit inputs')
     settings, policy = read_json(settings_path), read_json(policy_path)
     runtime, prerequisites = compute_runtime_identity(args, settings=settings, policy=policy)
     reuse = None
@@ -224,6 +228,9 @@ def capture_snapshot(args):
             shutil.copyfileobj(source, output, 1024 * 1024)
         if common.hash_file(destination) != record['sha256'] or common.hash_file(repo / record['path']) != record['sha256']:
             raise AuditError(f'Input changed during capture: {record["path"]}')
+    for record in records:
+        if common.hash_file(repo / record['path']) != record['sha256']:
+            raise AuditError(f'Original changed before capture completion: {record["path"]}')
     manifest = {'schema_version': 1, 'target_kind': 'corpus', 'capture_complete': True,
                 'inputs': sorted(records, key=lambda r: r['path']), 'runtime': runtime,
                 'observed_counts': {'sources': 2, 'readers': 8, 'units': 68,
@@ -302,13 +309,16 @@ def inventory_run(args):
     elif run.exists() and not args.resume:
         raise AuditError('New run directory must be fresh')
     with common.run_directory(run, work, repo, policy=common.AuditOutputPolicy('audit')):
-        run_record = dict(runtime, processing_complete=False, completed_stage='inventory', record_sha256={})
+        run_record = dict(runtime, processing_complete=False, completed_stage='inventory', record_sha256={},
+                          operational_snapshot=str(root), trace_diagnostics='not_requested')
         write(existing, run_record, args)
         unit_path, _ = snapshot_input(root, manifest, 'unit_table')
         inventory, errors = coverage.inventory_source_units(root, manifest, read_json(unit_path), units,
-                                                            settings, run, args, prerequisites)
+                                                            settings, run, args, prerequisites, source_policy=policy)
         inventory['runtime_id'] = runtime['runtime_id']
+        inventory = coverage.apply_source_policy(inventory, policy, run=run, args=args)
         write(run / 'source-inventory.json', inventory, args)
+        coverage.write_source_review_sheet(inventory, run, args)
         write(run / 'errors.json', {'schema_version': 1, 'snapshot_id': manifest['snapshot_id'],
                                   'runtime_id': runtime['runtime_id'], 'errors': errors}, args)
         run_record.update(processing_complete=not errors, requested_pages=inventory['requested_pages'],
@@ -317,6 +327,20 @@ def inventory_run(args):
                                          for name in ('source-inventory.json', 'errors.json')})
         write(existing, run_record, args)
     return 3 if errors else 0
+
+
+def resolve_run_snapshot(run_record, args):
+    _, work = paths(args)
+    candidates = [Path(args.snapshot)] if args.snapshot else []
+    if run_record.get('operational_snapshot'):
+        candidates.append(Path(run_record['operational_snapshot']))
+    candidates.extend(p.parent for p in (work / 'snapshots').glob('*/snapshot-manifest.json'))
+    for candidate in candidates:
+        if candidate.is_dir():
+            manifest = read_json(candidate / 'snapshot-manifest.json')
+            if manifest.get('snapshot_id') == run_record['snapshot_id']:
+                return load_snapshot(candidate)
+    raise AuditError('Cannot locate authenticated run snapshot; supply --snapshot')
 
 
 def make_parser():
@@ -353,6 +377,12 @@ def main():
             capture_snapshot(args)
         elif args.command == 'inventory':
             return inventory_run(args)
+        elif args.command == 'adjudicate':
+            import facsimile_line_coverage as coverage
+            if args.source_reviews and args.inventory_dir and args.policy_out and not args.duplicate_reviews and not args.loss_reviews:
+                coverage.adjudicate_source(args)
+            else:
+                raise AuditError('Available source mode requires --inventory-dir, --source-reviews and --policy-out')
         else:
             raise AuditError(f'{args.command}: this stage is not implemented yet')
         return 0
