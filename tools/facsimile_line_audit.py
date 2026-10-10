@@ -317,14 +317,17 @@ def inventory_run(args):
                                                             settings, run, args, prerequisites, source_policy=policy)
         inventory['runtime_id'] = runtime['runtime_id']
         inventory = coverage.apply_source_policy(inventory, policy, run=run, args=args)
+        duplicates = coverage.resolve_duplicate_groups(inventory, policy)
         write(run / 'source-inventory.json', inventory, args)
+        write(run / 'duplicate-groups.json', duplicates, args)
         coverage.write_source_review_sheet(inventory, run, args)
+        coverage.write_duplicate_review_sheet(inventory, duplicates, run, args)
         write(run / 'errors.json', {'schema_version': 1, 'snapshot_id': manifest['snapshot_id'],
                                   'runtime_id': runtime['runtime_id'], 'errors': errors}, args)
         run_record.update(processing_complete=not errors, requested_pages=inventory['requested_pages'],
                           completed_pages=inventory['completed_pages'],
                           record_sha256={name: common.hash_file(run / name)
-                                         for name in ('source-inventory.json', 'errors.json')})
+                                         for name in ('source-inventory.json', 'duplicate-groups.json', 'errors.json')})
         write(existing, run_record, args)
     return 3 if errors else 0
 
@@ -381,8 +384,10 @@ def main():
             import facsimile_line_coverage as coverage
             if args.source_reviews and args.inventory_dir and args.policy_out and not args.duplicate_reviews and not args.loss_reviews:
                 coverage.adjudicate_source(args)
+            elif args.duplicate_reviews and args.inventory_dir and args.policy_out and not args.source_reviews and not args.loss_reviews:
+                coverage.adjudicate_duplicates(args)
             else:
-                raise AuditError('Available source mode requires --inventory-dir, --source-reviews and --policy-out')
+                raise AuditError('Source/duplicate mode requires --inventory-dir, exactly one review file and --policy-out')
         else:
             raise AuditError(f'{args.command}: this stage is not implemented yet')
         return 0

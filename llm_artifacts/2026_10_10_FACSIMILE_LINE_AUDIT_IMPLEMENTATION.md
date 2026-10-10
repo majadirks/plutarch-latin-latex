@@ -42,6 +42,14 @@ commits. Each completed required step receives its own commit and push.
   decisions remain uncertain and approve no source exclusions. Version-2 import,
   stale-crop rejection, all 38,519 object validations and both-threshold accounting
   pass. The verification policy is not adopted into corpus processing.
+- 4.1: Added source-bound duplicate-region validation, source-only paired review
+  sheets with canonical polygon overlays, all 12 historical numeric seeds and
+  duplicate-mode adjudication into fresh policies. Nine seeds use `reviewed_lines`
+  rather than `occurrences`; both formats retain their full provenance. Disposable
+  self-reference coordinate import preserves an unresolved canonical reference.
+  Escaping boxes, uncovered canonical spans, conflicting owners and an incomplete
+  reference claiming completeness are rejected. No corpus equivalence is guessed
+  or installed; historical seed groups still require source-region review.
 - Repository regression gates: formatting and strict all-target Clippy pass;
   `cargo test` passes 419 library tests and 9 CLI tests with 76 existing ignored
   tests. Rust remains unchanged.

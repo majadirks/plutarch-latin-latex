@@ -273,6 +273,10 @@ def inventory_source_units(root, manifest, all_units, selected, settings, run, a
     for decision in (source_policy or {}).get('decisions', []):
         if decision.get('owner') in {u['id'] for u in selected}:
             requested.add((decision['source_index'], decision['page']))
+    for group in (source_policy or {}).get('duplicate_groups', []):
+        if group.get('owner') in {u['id'] for u in selected}:
+            for mapping in group['region_maps']:
+                requested.add((mapping['source_index'], mapping['page']))
     pages, errors = [], []
     for source_index, page in sorted(requested):
         record_path, record = cli.snapshot_input(root, manifest, 'source_pdf', source_index=source_index)
@@ -522,6 +526,176 @@ def adjudicate_source(args):
     policy['page_overrides'] = [previous_pages[k] for k in sorted(previous_pages)]
     policy['version'] += 1
     apply_source_policy(inventory, policy, run=run, args=args, render_children=False)
+    cli.validate_source_policy(policy, target_kind=captured['target_kind'])
+    cli.write(target, policy, args)
+    return policy
+
+
+def seed_duplicate_groups(policy):
+    """Preserve numeric provenance without granting geometric equivalence."""
+    return sorted([{'seed_id': common.json_hash(seed['numeric_provenance']),
+                    'status': 'requires_region_review', 'numeric_provenance': seed['numeric_provenance']}
+                   for seed in policy.get('duplicate_seeds', [])], key=lambda seed: seed['seed_id'])
+
+
+def polygon_mask(polygon, dimensions):
+    import cv2
+    import numpy as np
+    width, height = map(int, dimensions)
+    mask = np.zeros((height, width), dtype=np.uint8)
+    cv2.fillPoly(mask, [np.rint(polygon).astype(np.int32)], 1)
+    return mask.astype(bool)
+
+
+def resolve_duplicate_groups(inventory, policy):
+    """Authenticate reviewed source fragments in a fixed canonical pixel frame."""
+    import cv2
+    import numpy as np
+    lookup = {o['occurrence_id']: o for p in inventory['pages'] for o in p['occurrences']}
+    owner_sources = {r['unit_id']: r['source_index'] for r in inventory['ranges']}
+    groups, assigned, positions = [], {}, set()
+    for group in policy.get('duplicate_groups', []):
+        canonical = lookup.get(group.get('canonical_occurrence_id'))
+        maps = group.get('region_maps', [])
+        present = [m for m in maps if m.get('occurrence_id') in lookup]
+        if canonical is None and not present:
+            continue
+        if canonical is None or len(present) != len(maps):
+            raise common.AuditError('Duplicate group is only partially inventoried')
+        owner = group.get('owner')
+        if canonical.get('owner') != owner or owner_sources.get(owner) != canonical['source_index']:
+            raise common.AuditError('Canonical duplicate owner is unreviewed or conflicting')
+        if (canonical['crop']['sha256'] != group.get('canonical_crop_sha256') or
+                canonical['source_sha256'] != group.get('source_sha256') or
+                group.get('evidence_sha256') != canonical['crop']['sha256']):
+            raise common.AuditError('Stale canonical duplicate evidence')
+        sequence = group.get('logical_sequence')
+        if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0 or (owner, sequence) in positions:
+            raise common.AuditError('Duplicate passage requires a unique nonnegative logical sequence')
+        positions.add((owner, sequence))
+        width, height = canonical['crop']['box_px'][2] - canonical['crop']['box_px'][0], canonical['crop']['box_px'][3] - canonical['crop']['box_px'][1]
+        if width != int(width) or height != int(height):
+            raise common.AuditError('Canonical crop requires integer pixel dimensions')
+        canonical_union = np.zeros((int(height), int(width)), dtype=bool)
+        reference_complete = canonical.get('required_geometry_reviewed', False) and not canonical.get('source_partial', False)
+        for mapping in maps:
+            obj = lookup[mapping['occurrence_id']]
+            if (obj['crop']['sha256'] != mapping.get('crop_sha256') or
+                    mapping.get('evidence_sha256') != obj['crop']['sha256'] or
+                    obj['source_sha256'] != canonical['source_sha256'] or obj.get('owner') != owner):
+                raise common.AuditError('Duplicate fragment evidence/source/owner conflict')
+            validate_pixel_box(mapping['source_box_px'], obj['raster_dimensions'])
+            b, parent = mapping['source_box_px'], obj['box']
+            if not (parent[0] <= b[0] < b[2] <= parent[2] and parent[1] <= b[1] < b[3] <= parent[3]):
+                raise common.AuditError('Duplicate fragment escapes its original occurrence')
+            matrix = np.asarray(mapping['to_canonical'], dtype=float)
+            if matrix.shape != (2, 3) or not np.isfinite(matrix).all() or abs(np.linalg.det(matrix[:, :2])) < 1e-8:
+                raise common.AuditError('Invalid canonical affine transform')
+            polygon = np.asarray(mapping['covered_polygon'], dtype=float)
+            if (polygon.ndim != 2 or polygon.shape[1] != 2 or len(polygon) < 3 or
+                    not np.isfinite(polygon).all() or (polygon[:, 0] < 0).any() or
+                    (polygon[:, 0] > width).any() or (polygon[:, 1] < 0).any() or (polygon[:, 1] > height).any() or
+                    abs(cv2.contourArea(polygon.astype(np.float32))) < 1):
+                raise common.AuditError('Invalid canonical coverage polygon')
+            residual = mapping.get('max_residual_px')
+            if isinstance(residual, bool) or not isinstance(residual, (int, float)) or not math.isfinite(residual) or residual < 0:
+                raise common.AuditError('Duplicate fragment requires a finite measured residual')
+            corners = np.asarray([[b[0], b[1], 1], [b[2], b[1], 1], [b[2], b[3], 1], [b[0], b[3], 1]]) @ matrix.T
+            contour = corners.astype(np.float32)
+            if any(cv2.pointPolygonTest(contour, tuple(map(float, point)), True) < -0.01 for point in polygon):
+                raise common.AuditError('Claimed coverage exceeds its mapped physical fragment')
+            mask = polygon_mask(polygon, [width, height])
+            if mapping.get('complete') and (not mask.all() or obj.get('source_partial', False)):
+                raise common.AuditError('Partial source fragment cannot claim complete canonical coverage')
+            if obj['occurrence_id'] == canonical['occurrence_id']:
+                canonical_union |= mask
+            previous = assigned.get(obj['occurrence_id'])
+            if previous is not None and previous != group['canonical_occurrence_id']:
+                raise common.AuditError('Source occurrence belongs to conflicting duplicate groups')
+        if not maps or not canonical_union.all():
+            raise common.AuditError('Canonical reference maps leave required spans uncovered')
+        if group.get('complete') and not reference_complete:
+            raise common.AuditError('Unreviewed or partial canonical reference cannot claim completeness')
+        assigned.update({m['occurrence_id']: group['canonical_occurrence_id'] for m in maps})
+        groups.append(dict(group, status='reviewed' if reference_complete else 'unresolved_reference',
+                           canonical_dimensions=[int(width), int(height)], reference_complete=reference_complete,
+                           group_id=common.json_hash([owner, sequence, canonical['occurrence_id'], maps])))
+    return {'schema_version': 1, 'snapshot_id': inventory['snapshot_id'],
+            'runtime_id': inventory.get('runtime_id'), 'seeds': seed_duplicate_groups(policy),
+            'groups': sorted(groups, key=lambda g: (g['owner'], g['logical_sequence'], g['group_id']))}
+
+
+def write_duplicate_review_sheet(inventory, duplicates, run, args):
+    import html
+    from PIL import Image, ImageDraw
+    import facsimile_line_audit as cli
+    repo, work = cli.paths(args)
+    lookup = {o['occurrence_id']: o for p in inventory['pages'] for o in p['occurrences']}
+    sections = ['<!doctype html><meta charset="utf-8"><title>Source duplicate review</title>',
+                '<style>body{font:18px system-ui;max-width:1200px;margin:auto}img{max-width:48%}code{word-break:break-all}</style>',
+                '<h1>Source-only duplicate review</h1><p>Numeric seeds require measured region review. No reader outcome grants equivalence.</p>']
+    for seed in duplicates['seeds']:
+        provenance = seed['numeric_provenance']
+        sections.append('<h2>' + html.escape(provenance['unit_id']) + '</h2><pre>' +
+                        html.escape(__import__('json').dumps(provenance, ensure_ascii=False, indent=2)) + '</pre>')
+        pages = set(provenance.get('skip_pages', []) + provenance.get('retain_sequence', []))
+        for page in inventory['pages']:
+            if page['source_index'] == provenance['source'] and page['page'] in pages:
+                sections.append(f'<p>Physical source page {page["page"]}</p><img loading="lazy" src="{html.escape(page["full_context"]["path"], quote=True)}">')
+    for group in duplicates['groups']:
+        sections.append('<h2>' + html.escape(group['owner']) + ' canonical ' + group['canonical_occurrence_id'] + '</h2>')
+        canonical = lookup[group['canonical_occurrence_id']]
+        with Image.open(Path(run) / canonical['crop']['path']) as original:
+            overlay = original.convert('RGB')
+            drawing = ImageDraw.Draw(overlay)
+            for mapping in group['region_maps']:
+                drawing.polygon([tuple(point) for point in mapping['covered_polygon']], outline='magenta', width=2)
+            crop = save_crop(overlay, [0, 0, overlay.width, overlay.height], Path(run), args, 'duplicate_' + group['group_id'])
+        sections.append('<p>Canonical coverage polygons</p><img src="' + crop['path'] + '">')
+        for mapping in group['region_maps']:
+            obj = lookup[mapping['occurrence_id']]
+            sections.append('<p><code>' + obj['occurrence_id'] + '</code> ' + html.escape(str(mapping['covered_polygon'])) +
+                            '</p><img loading="lazy" src="' + html.escape(obj['crop']['path'], quote=True) + '">')
+    target = common.safe_write_path(Path(run) / 'duplicate-review.html', work, repo, policy=common.AuditOutputPolicy('audit'))
+    target.write_text('\n'.join(sections), encoding='utf-8')
+
+
+def adjudicate_duplicates(args):
+    import facsimile_line_audit as cli
+    run = Path(args.inventory_dir).resolve()
+    inventory = cli.read_json(run / 'source-inventory.json')
+    reviews = cli.read_json(args.duplicate_reviews)
+    if (reviews.get('schema_version') != 1 or reviews.get('snapshot_id') != inventory['snapshot_id'] or
+            reviews.get('raw_inventory_id') != inventory['raw_inventory_id']):
+        raise common.AuditError('Stale duplicate review schema/inventory/snapshot identity')
+    repo, work = cli.paths(args)
+    target = common.safe_write_path(args.policy_out, work, repo, policy=common.AuditOutputPolicy('audit'))
+    if target.exists():
+        raise common.AuditError('Duplicate policy destination must be fresh')
+    run_record = cli.read_json(run / 'run-manifest.json')
+    if common.hash_file(run / 'source-inventory.json') != run_record['record_sha256']['source-inventory.json']:
+        raise common.AuditError('Source inventory record identity mismatch')
+    root, captured = cli.resolve_run_snapshot(run_record, args)
+    policy_path, _ = cli.snapshot_input(root, captured, 'source_policy')
+    policy = cli.read_json(policy_path)
+    groups = reviews.get('duplicate_groups', [])
+    lookup = {o['occurrence_id']: o for p in inventory['pages'] for o in p['occurrences']}
+    for group in groups:
+        if not group.get('reviewer') or not group.get('reason'):
+            raise common.AuditError('Duplicate decision requires reviewer and source-only reason')
+        if group.get('canonical_occurrence_id') not in lookup or not group.get('region_maps'):
+            raise common.AuditError('Duplicate review requires an inventoried canonical reference and maps')
+        if group.get('provenance') == 'synthetic_ground_truth' and captured['target_kind'] != 'verification':
+            raise common.AuditError('Synthetic review cannot approve corpus duplicates')
+        for mapping in group.get('region_maps', []):
+            obj = lookup.get(mapping.get('occurrence_id'))
+            if obj is None or common.hash_file(run / common.relative_path(obj['crop']['path'])) != mapping.get('crop_sha256'):
+                raise common.AuditError('Duplicate crop bytes changed or occurrence is unknown')
+            mapping.update(source_index=obj['source_index'], page=obj['page'])
+    policy['duplicate_groups'] = policy.get('duplicate_groups', []) + groups
+    policy['version'] += 1
+    resolved_inventory = apply_source_policy(inventory, policy, render_children=False)
+    resolve_duplicate_groups(resolved_inventory, policy)
     cli.validate_source_policy(policy, target_kind=captured['target_kind'])
     cli.write(target, policy, args)
     return policy

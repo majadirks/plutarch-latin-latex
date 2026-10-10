@@ -60,6 +60,27 @@ policy through a new `capture --source-policy <policy-v2.json>` and inventory ru
 measured child crops are created in that new run. Verification probes that retain
 uncertainty are not approvals of production source ownership or exclusions.
 
+`duplicate-groups.json` and `duplicate-review.html` preserve all numeric duplicate
+seeds and show source pairs and canonical coverage polygons. Numeric skips never
+grant equivalence. Import measured duplicate reviews with:
+
+```powershell
+python tools/facsimile_line_audit.py adjudicate --inventory-dir <inventory-run> --duplicate-reviews <reviews.json> --policy-out tmp/pdfs/facsimile_line_audit/runs/duplicate_review/policy-v3.json
+```
+
+Duplicate review JSON binds the same schema, snapshot and raw-inventory IDs and
+contains `duplicate_groups`. Each group specifies `owner`, `logical_sequence`,
+`canonical_occurrence_id`, `canonical_crop_sha256`, `source_sha256`, reason,
+reviewer and `evidence_sha256` equal to the canonical crop hash. Each `region_maps`
+entry specifies occurrence/crop identity, original full-page `source_box_px`, a
+2-by-3 `to_canonical` affine matrix, `covered_polygon` in canonical crop pixels,
+finite `max_residual_px`, and evidence hash equal to its untouched source crop.
+Canonical maps must cover the complete required reference span. Multiple maps
+may describe one physical occurrence; a partial fragment cannot claim `complete`.
+An unreviewed or source-partial reference stays unresolved. Import records the
+physical pages so new inventories include reviewed duplicate regions outside
+production candidate intervals. Production skip decisions remain unchanged.
+
 Tool resolution uses the command option, `PLUTARCH_PDFTOPPM` or
 `PLUTARCH_TESSERACT`, then PATH. English language data uses `--tessdata-dir`,
 `PLUTARCH_TESSDATA_DIR`, or the directory reported by Tesseract. Missing usable
