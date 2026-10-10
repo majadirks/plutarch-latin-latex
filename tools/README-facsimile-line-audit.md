@@ -81,6 +81,16 @@ An unreviewed or source-partial reference stays unresolved. Import records the
 physical pages so new inventories include reviewed duplicate regions outside
 production candidate intervals. Production skip decisions remain unchanged.
 
+Inventory also writes `logical-lines.json` and `logical-review.html`. Logical IDs
+bind canonical reference identity and geometric maps, so a classification/verdict
+change preserves them. Each region retains the whole reference box, threshold
+component observations, physical maps, per-occurrence source-span fractions,
+ownership review status and source-partial uncertainty. Candidate owners support
+localization without becoming reviewed ownership. Physical, logical, redundant,
+annotation, source-partial and unresolved counts are reported separately; a
+partial alternate never shrinks the required canonical span. Source-span coverage
+describes source geometry and does not certify visible reader coverage.
+
 Tool resolution uses the command option, `PLUTARCH_PDFTOPPM` or
 `PLUTARCH_TESSERACT`, then PATH. English language data uses `--tessdata-dir`,
 `PLUTARCH_TESSDATA_DIR`, or the directory reported by Tesseract. Missing usable

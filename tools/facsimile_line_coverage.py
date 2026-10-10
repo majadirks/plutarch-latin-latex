@@ -699,3 +699,138 @@ def adjudicate_duplicates(args):
     cli.validate_source_policy(policy, target_kind=captured['target_kind'])
     cli.write(target, policy, args)
     return policy
+
+
+def build_logical_lines(inventory, duplicate_groups):
+    """Retain every physical object and give reviewed equivalents one reference."""
+    objects = [o for p in inventory['pages'] for o in p['occurrences']]
+    lookup = {o['occurrence_id']: o for o in objects}
+    pages = {(p['source_index'], p['page']): p for p in inventory['pages']}
+    component_lookup = {(p['source_index'], p['page'], field, c['component']): c
+                        for p in inventory['pages'] for field in ('components', 'faint_components') for c in p[field]}
+    groups = duplicate_groups['groups']
+    grouped = {m['occurrence_id']: g for g in groups for m in g['region_maps']}
+    canonical_objects = {grouped[o['occurrence_id']]['canonical_occurrence_id'] if o['occurrence_id'] in grouped
+                         else o['occurrence_id'] for o in objects}
+    ordered = sorted((lookup[i] for i in canonical_objects),
+                     key=lambda o: (o['source_index'], o['page'], o['box'][1], o['box'][0], o['occurrence_id']))
+    positions, group_order, logical = {}, {}, []
+    for obj in ordered:
+        group = grouped.get(obj['occurrence_id'])
+        owner = group['owner'] if group else obj.get('owner')
+        possible_owners = obj['possible_owners']
+        owner_hint = owner or (possible_owners[0] if len(possible_owners) == 1 else None)
+        x0, y0, x1, y1 = obj['box']
+        width, height = x1 - x0, y1 - y0
+        maps = group['region_maps'] if group else [{
+            'occurrence_id': obj['occurrence_id'], 'source_box_px': obj['box'],
+            'source_index': obj['source_index'], 'page': obj['page'],
+            'to_canonical': [[1, 0, -x0], [0, 1, -y0]],
+            'covered_polygon': [[0, 0], [width, 0], [width, height], [0, height]],
+            'crop_sha256': obj['crop']['sha256'], 'evidence_sha256': obj['crop']['sha256'], 'max_residual_px': 0}]
+        if group:
+            if group['logical_sequence'] <= group_order.get(owner, -1):
+                raise common.AuditError('Reviewed duplicate sequence contradicts canonical source order')
+            group_order[owner] = group['logical_sequence']
+        geometry_maps = [{key: mapping[key] for key in ('occurrence_id', 'source_box_px', 'to_canonical',
+                                                       'covered_polygon', 'crop_sha256')} for mapping in maps]
+        line_id = common.json_hash([owner, obj['occurrence_id'], geometry_maps])
+        position = positions.get(owner_hint, 0)
+        positions[owner_hint] = position + 1
+        reviewed = bool(owner) and obj.get('required_geometry_reviewed', False) and not obj.get('source_partial', False)
+        if group and not group['reference_complete']:
+            reviewed = False
+        components = []
+        for field in ('components', 'faint_components'):
+            for identifier in obj.get(field, []):
+                member = component_lookup[(obj['source_index'], obj['page'], field, identifier)]
+                box = member['box']
+                components.append({'component': identifier, 'threshold': member['threshold'], 'area': member['area'],
+                                   'box_px': [box[0]-x0, box[1]-y0, box[2]-x0, box[3]-y0]})
+        spans = []
+        for identifier in sorted({m['occurrence_id'] for m in maps}):
+            members = [m for m in maps if m['occurrence_id'] == identifier]
+            if group:
+                import numpy as np
+                union = np.zeros((int(height), int(width)), dtype=bool)
+                for mapping in members:
+                    union |= polygon_mask(mapping['covered_polygon'], [width, height])
+                fraction = float(union.mean())
+            else:
+                fraction = 1.0
+            spans.append({'occurrence_id': identifier, 'canonical_box_fraction': fraction,
+                          'full_reference_span': fraction == 1.0 and not lookup[identifier].get('source_partial', False),
+                          'source_partial': lookup[identifier].get('source_partial', False)})
+        uncertainty = [] if reviewed else ['unreviewed_source_geometry_or_owner']
+        if obj.get('source_partial', False):
+            uncertainty.append('source_partial_reference')
+        if obj.get('child_ids'):
+            uncertainty.append('parent_retains_unreviewed_ink')
+        logical.append({'logical_line_id': line_id, 'owner': owner_hint, 'owner_reviewed': bool(owner),
+                        'sequence_position': position, 'canonical_occurrence_id': obj['occurrence_id'],
+                        'canonical_dimensions': [width, height], 'canonical_crop': obj['crop'],
+                        'required_box_px': [0, 0, width, height], 'required_components': components,
+                        'required_ink_source': 'untouched_canonical_crop', 'classification': obj['classification'],
+                        'geometry_reviewed': reviewed, 'source_partial': obj.get('source_partial', False),
+                        'reviewed_unit_start': obj.get('unit_start', False), 'reviewed_unit_end': obj.get('unit_end', False),
+                        'source_uncertainty': uncertainty, 'physical_maps': maps,
+                        'source_region_coverage': spans,
+                        'duplicate_group_id': group.get('group_id') if group else None,
+                        'source_index': obj['source_index'], 'page': obj['page'], 'source_box_px': obj['box'],
+                        'ocr_missing': not bool(obj.get('ocr_observations')),
+                        'source_segmentation_status': pages[(obj['source_index'], obj['page'])]['segmentation_status']})
+    validate_logical_sequence(logical)
+    redundant = sum(len({m['occurrence_id'] for m in g['region_maps']}) - 1 for g in groups)
+    counts = {'physical_occurrences': len(objects), 'logical_regions': len(logical),
+              'redundant_occurrences': redundant, 'body_lines': sum(l['classification'] == 'body' for l in logical),
+              'annotations': sum(l['classification'] == 'annotation' for l in logical),
+              'furniture': sum(l['classification'] == 'furniture' for l in logical),
+              'source_partial': sum(l['source_partial'] for l in logical),
+              'physical_source_partial': sum(o.get('source_partial', False) for o in objects),
+              'unresolved_geometry': sum(not l['geometry_reviewed'] for l in logical),
+              'unreviewed_owner': sum(not l['owner_reviewed'] for l in logical),
+              'tokenless_observations': sum(l['ocr_missing'] for l in logical)}
+    if len(logical) + redundant != len(objects):
+        raise common.AuditError('Physical/logical duplicate accounting disagrees')
+    return {'schema_version': 1, 'snapshot_id': inventory['snapshot_id'], 'runtime_id': inventory.get('runtime_id'),
+            'lines': logical, 'counts': counts, 'logical_map_id': common.json_hash(logical),
+            'index_contract': {'canonical_key': 'logical_line_id', 'physical_key': 'occurrence_id',
+                               'tokenless_objects_remain_expected': True, 'physical_geometry': 'physical_maps'}}
+
+
+def validate_logical_sequence(lines):
+    seen, physical, positions = set(), {}, {}
+    for line in lines:
+        if line['logical_line_id'] in seen:
+            raise common.AuditError('Repeated logical line identity')
+        seen.add(line['logical_line_id'])
+        owner = line['owner']
+        if line['sequence_position'] != positions.get(owner, 0):
+            raise common.AuditError('Contradictory logical order')
+        positions[owner] = positions.get(owner, 0) + 1
+        if line['geometry_reviewed'] and (not line['owner_reviewed'] or not owner or line['source_partial']):
+            raise common.AuditError('Reviewed logical geometry requires one reviewed owner and a complete reference')
+        for mapping in line['physical_maps']:
+            previous = physical.setdefault(mapping['occurrence_id'], line['logical_line_id'])
+            if previous != line['logical_line_id']:
+                raise common.AuditError('Physical occurrence has contradictory logical membership')
+        validate_pixel_box(line['required_box_px'], line['canonical_dimensions'])
+    return lines
+
+
+def write_logical_review_sheet(logical, run, args):
+    import html
+    import facsimile_line_audit as cli
+    sections = ['<!doctype html><meta charset="utf-8"><title>Logical source sequence</title>',
+                '<style>body{font:18px system-ui;max-width:1200px;margin:auto}code{word-break:break-all}img{max-width:100%}</style>',
+                '<h1>Logical source sequence</h1><p>Required reference spans are independent of reader coverage. Unreviewed ownership stays explicit.</p>']
+    for line in logical['lines']:
+        sections.append('<article><h2>' + html.escape(line['owner'] or 'unresolved owner') +
+                        f' / position {line["sequence_position"]}</h2><code>' + line['logical_line_id'] + '</code>' +
+                        f'<p>Source {line["source_index"]+1}, physical page {line["page"]}; ' +
+                        html.escape(line['classification']) + '; ' + html.escape(', '.join(line['source_uncertainty'])) +
+                        '</p><img loading="lazy" src="' + html.escape(line['canonical_crop']['path'], quote=True) + '">' +
+                        '<pre>' + html.escape(str(line['source_region_coverage'])) + '</pre></article>')
+    repo, work = cli.paths(args)
+    target = common.safe_write_path(Path(run) / 'logical-review.html', work, repo, policy=common.AuditOutputPolicy('audit'))
+    target.write_text('\n'.join(sections), encoding='utf-8')

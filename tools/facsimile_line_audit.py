@@ -318,16 +318,19 @@ def inventory_run(args):
         inventory['runtime_id'] = runtime['runtime_id']
         inventory = coverage.apply_source_policy(inventory, policy, run=run, args=args)
         duplicates = coverage.resolve_duplicate_groups(inventory, policy)
+        logical = coverage.build_logical_lines(inventory, duplicates)
         write(run / 'source-inventory.json', inventory, args)
         write(run / 'duplicate-groups.json', duplicates, args)
+        write(run / 'logical-lines.json', logical, args)
         coverage.write_source_review_sheet(inventory, run, args)
         coverage.write_duplicate_review_sheet(inventory, duplicates, run, args)
+        coverage.write_logical_review_sheet(logical, run, args)
         write(run / 'errors.json', {'schema_version': 1, 'snapshot_id': manifest['snapshot_id'],
                                   'runtime_id': runtime['runtime_id'], 'errors': errors}, args)
         run_record.update(processing_complete=not errors, requested_pages=inventory['requested_pages'],
                           completed_pages=inventory['completed_pages'],
                           record_sha256={name: common.hash_file(run / name)
-                                         for name in ('source-inventory.json', 'duplicate-groups.json', 'errors.json')})
+                                         for name in ('source-inventory.json', 'duplicate-groups.json', 'logical-lines.json', 'errors.json')})
         write(existing, run_record, args)
     return 3 if errors else 0
 

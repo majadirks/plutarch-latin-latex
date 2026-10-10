@@ -50,6 +50,14 @@ commits. Each completed required step receives its own commit and push.
   Escaping boxes, uncovered canonical spans, conflicting owners and an incomplete
   reference claiming completeness are rejected. No corpus equivalence is guessed
   or installed; historical seed groups still require source-region review.
+- 4.2: Added ordered canonical logical regions, threshold-component coordinates,
+  explicit source-span/ownership metadata, source-only sequence sheets and
+  separate physical/logical/redundant/source-partial/annotation/uncertainty counts.
+  All 831 objects in disposable shared-boundary, Pericles and Cato duplicate-block
+  page probes remain represented. Classification-only edits preserve logical IDs.
+  A partial alternate preserves the full required reference and unresolved status;
+  contradictory order is rejected. Python compilation passes. Index adapters will
+  consume the same logical/physical keys; tokenless observations remain expected.
 - Repository regression gates: formatting and strict all-target Clippy pass;
   `cargo test` passes 419 library tests and 9 CLI tests with 76 existing ignored
   tests. Rust remains unchanged.
