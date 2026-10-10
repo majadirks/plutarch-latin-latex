@@ -124,13 +124,37 @@ commits. Each completed required step receives its own commit and push.
   Latin loss. Source/mask pairs and terminal detail were inspected. Exact-identity
   scoped resume, credential-settings rejection and Python compilation pass.
   Earlier successful, failed and interrupted diagnostic runs remain intact.
+- 6.1: Added systematic physical-source, unit/shared-page, duplicate-bypass,
+  reader-body and implicated-region contexts. Owned body anchors, unreviewed
+  surrounding ink and one-sided endpoint evidence remain distinct. Source copies
+  stay visible and partial logical references cannot waive them. One evidence
+  renderer preserves untouched crop hashes, neutral bounded tiles, transforms
+  and labeled display copies; coverage and review share the visible PDF raster.
+  Full `run`/`verify` and `report` produce seam/task records, escaped HTML,
+  report manifests and bound human-review templates. Human-loss import writes
+  separate versions and authenticates ledger/task/crop identities; it never
+  changes source policy or machine verdicts. Sparse and shared unit boundaries
+  include mapped reader overviews while unlocalized regions remain inconclusive.
+  All seven full cases pass with 99/99 systematic/context seams, 250 deduplicated
+  overlapping tasks and all 30 known loss targets preserved. Independent PDF,
+  unit-table and reader-occurrence transition counts agree. All tasks have at
+  most six requested IDs and 1,400-pixel neutral images. The verification checks
+  12,561 evidence/link references, complete-anchor contexts, duplicate waivers,
+  candidate task membership and owned context. Synthetic human-review import and
+  mutated-hash rejection pass. Retained/shared-boundary and clipping reports
+  regenerate byte-identically; HTML escaping passes. Saved source/reader image
+  pairs were inspected. Browser runtime discovery returned no connected browser,
+  so browser layout inspection remains a human verification item.
+  Final full-case report:
+  `runs/verification/cases_5_1a/results/cbec0c382eca4d39127d573a0677ea2ffd660a63b51444df0f08133b0a0ec790/verification-results.json`.
+  Early report-order diagnostics remain preserved. Python compilation,
+  formatting, strict all-target Clippy and the full existing Rust suite pass.
 - Repository regression gates: formatting and strict all-target Clippy pass;
   `cargo test` passes 419 library tests and 9 CLI tests with 76 existing ignored
   tests. Rust remains unchanged.
 
-Implementation pauses after committing and pushing 5.2 at the user's request.
-Continue at 6.1 with systematic seams, neutral evidence tasks, reports and bound
-human-loss reviews. Model review, complete seam calibration, the fixed real-source
-panel, full-corpus coverage and durable archival delivery remain pending. Phase 2
-remains optional and deferred. Coverage-case success does not certify the corpus's
-Latin coverage or complete the later seam checks.
+Continue at 6.2 with the optional capped SDK reviewer and explicit delivery-state
+recovery. Complete seam calibration, the fixed real-source panel, full-corpus
+coverage and durable archival delivery remain pending. Phase 2 remains optional
+and deferred. Successful synthetic coverage/seam cases do not certify the corpus's
+Latin coverage or substitute for source ownership/geometry review.

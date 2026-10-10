@@ -39,6 +39,7 @@
     "source_psm": 6
   },
   "reader_dpi": 180,
+  "review_context_pitch_glyphs": 2,
   "registration": {
     "features": 4000,
     "gap_tolerance_glyphs": 0.5,

@@ -359,6 +359,9 @@ def capture_verification_runtime(builder_snapshot, args):
     if args.settings and Path(args.settings).resolve() == (repo/'secrets.json').resolve():
         raise AuditError('Credentials cannot be audit inputs')
     settings = read_json(args.settings or settings_path)
+    defaults = read_json(repo/'tools/facsimile-line-settings.json')
+    settings = dict(defaults,**settings)
+    settings['registration'] = dict(defaults['registration'],**settings['registration'])
     policy = read_json(policy_path)
     validate_source_policy(policy,target_kind='verification')
     runtime,prerequisites = compute_runtime_identity(args,settings=settings,policy=policy)
@@ -378,8 +381,12 @@ def capture_verification_runtime(builder_snapshot, args):
         revised = dict(record,sha256=common.hash_file(path))
         destination = common.safe_write_path(root/revised['snapshot_path'],work,repo,capture_root=root)
         destination.parent.mkdir(parents=True,exist_ok=True)
-        with path.open('rb') as source,destination.open('xb') as output:
-            shutil.copyfileobj(source,output,1024*1024)
+        if record['role']=='settings':
+            write(destination,settings,args,capture_root=root)
+            revised['sha256'] = common.hash_file(destination)
+        else:
+            with path.open('rb') as source,destination.open('xb') as output:
+                shutil.copyfileobj(source,output,1024*1024)
         if common.hash_file(destination) != revised['sha256']:
             raise AuditError('Verification input copy digest mismatch')
         inputs.append(revised)
@@ -400,8 +407,9 @@ def capture_verification_runtime(builder_snapshot, args):
 def pipeline_run(args):
     import facsimile_line_coverage as coverage
     import audit_inner_tomi as historical
-    if not args.snapshot or not args.run_dir or args.stop_after not in ('locate','coverage'):
-        raise AuditError('Run requires --snapshot, --run-dir and --stop-after locate or coverage')
+    args.stop_after = args.stop_after or 'seams'
+    if not args.snapshot or not args.run_dir or args.stop_after not in ('locate','coverage','seams'):
+        raise AuditError('Run requires --snapshot, --run-dir and a supported stop stage')
     configuration = run_configuration(args)
     root, manifest, settings, policy, units, runtime, prerequisites = configuration
     repo, work = paths(args)
@@ -467,10 +475,13 @@ def pipeline_run(args):
         names = ['source-inventory.json','duplicate-groups.json','logical-lines.json','source-token-bundle.json',
                  'source-index.json','reader-map.json','reader-observations.json','reader-tokens.json',
                  'locations.json','correspondences.json','errors.json']
-        if args.stop_after == 'coverage':
+        if args.stop_after in ('coverage','seams'):
             ledger = coverage.measure_coverage_run(logical, correspondences, reader_map, bundle, root, manifest, settings, run, args, prerequisites)
             write(run / 'coverage-ledger.json',ledger,args)
             names.append('coverage-ledger.json')
+        if args.stop_after == 'seams':
+            names.extend(coverage.complete_seam_report(inventory,logical,ledger,reader_map,correspondences,
+                root,manifest,settings,run,args,prerequisites))
         if executed_code(repo) != runtime['code']:
             raise AuditError('Executed code changed during processing; create a fresh capture/run')
         record.update(processing_complete=not errors, completed_stage=args.stop_after,
@@ -509,7 +520,7 @@ def make_parser():
             sub.add_argument('--snapshot-dir', required=True)
             sub.add_argument('--reuse-snapshot', help='Reuse authenticated raw reader geometry when mapper and input bytes agree')
         if command in ('run', 'verify'):
-            sub.add_argument('--stop-after', choices=('locate', 'coverage'))
+            sub.add_argument('--stop-after', choices=('locate', 'coverage', 'seams'))
         if command == 'verify':
             sub.add_argument('--prepare', action='store_true')
             sub.add_argument('--out', required=True)
@@ -522,6 +533,11 @@ def make_parser():
 def main():
     args = make_parser().parse_args()
     try:
+        repo,_ = paths(args)
+        for name in ('settings','source_policy','source_reviews','duplicate_reviews','loss_reviews'):
+            supplied = getattr(args,name,None)
+            if supplied and Path(supplied).resolve()==(repo/'secrets.json').resolve():
+                raise AuditError('Credentials cannot be audit inputs')
         if args.command == 'check':
             common.progress(json.dumps(check_audit_prerequisites(args), indent=2))
         elif args.command == 'capture':
@@ -536,14 +552,19 @@ def main():
         elif args.command == 'verify':
             import facsimile_line_coverage as coverage
             return coverage.run_verification_cases(args)
+        elif args.command == 'report':
+            import facsimile_line_coverage as coverage
+            coverage.report(args)
         elif args.command == 'adjudicate':
             import facsimile_line_coverage as coverage
             if args.source_reviews and args.inventory_dir and args.policy_out and not args.duplicate_reviews and not args.loss_reviews:
                 coverage.adjudicate_source(args)
             elif args.duplicate_reviews and args.inventory_dir and args.policy_out and not args.source_reviews and not args.loss_reviews:
                 coverage.adjudicate_duplicates(args)
+            elif args.loss_reviews and args.run_dir and args.reviews_out and not args.source_reviews and not args.duplicate_reviews and not args.policy_out:
+                coverage.adjudicate_losses(args)
             else:
-                raise AuditError('Source/duplicate mode requires --inventory-dir, exactly one review file and --policy-out')
+                raise AuditError('Adjudicate requires a complete source, duplicate, or loss review mode')
         else:
             raise AuditError(f'{args.command}: this stage is not implemented yet')
         return 0

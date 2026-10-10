@@ -177,8 +177,48 @@ current executed code/settings, then runs ordinary OCR, localization and coverag
 Each case writes `case-result.json` in its new `results/<snapshot-id-prefix>`
 directory. Aggregate records live in `results/<report-hash>/verification-results.json`
 under the prepared root. Known losses that remain unresolved and incomplete
-retained controls fail verification with exit 4. The coverage stage does not yet
-score seams or model/human review delivery.
+retained controls fail verification with exit 4. `--stop-after coverage` scores
+coverage; the default full invocation includes seams, neutral tasks and reports.
+
+Generate a full audit or regenerate derived reports from an authenticated run:
+
+```powershell
+python tools/facsimile_line_audit.py run --snapshot <snapshot> --run-dir <fresh-run> --units <unit-ids>
+python tools/facsimile_line_audit.py report --run-dir <completed-run>
+python tools/facsimile_line_audit.py verify --out tmp/pdfs/facsimile_line_audit/runs/verification/cases_5_1a
+```
+
+Full runs write `seam-inventory.json`, `review-tasks.json`, `coverage-report.html`,
+`report-manifest.json` and `loss-review-template.json`. The seam inventory includes
+every adjacent physical source page, unit opening/ending/transition, potential
+shared-page boundary, reviewed duplicate bypass and adjacent reader body
+occurrence, including apparently complete anchors. Physical duplicate copies
+remain visible; unresolved or partial logical coverage cannot waive them.
+Three owned body lines supply context on each side, with uncertain ink and
+annotations retained separately. Sparse context stays within its unit. Source
+ownership uncertainty and complete anchors have distinct fields.
+
+Each overlapping neutral task contains at most six region IDs and images whose
+longest side is at most 1,400 pixels. Untouched crop hashes and resize transforms
+are retained alongside labeled display copies. Reader evidence uses the same
+visible PDF raster as coverage, including both reader-page sides and mapped unit
+endpoint overviews. Unlocalized regions stay explicit and inconclusive. Machine
+verdicts and repair labels are excluded from task payloads. Reports show scope,
+source/reader exclusions, uncertainty denominators and all evidence links.
+
+For human loss review, copy `loss-review-template.json` to a fresh file, retain
+the identity and crop-hash fields, select the decisions being reviewed, and fill
+in `verdict` (`confirmed_loss`, `retained` or `uncertain`), `reviewer` and `reason`:
+
+```powershell
+python tools/facsimile_line_audit.py adjudicate --run-dir <completed-run> --loss-reviews <filled-template.json> --reviews-out <new-review-version.json>
+```
+
+Review import authenticates snapshot/runtime, ledger, task set and every bound
+source/visible-reader crop. It rejects stale evidence, duplicate decisions and
+loss confirmations without reader evidence. Outputs are separately versioned;
+machine verdicts and source policy remain immutable. `report` requires executed
+code to match the capture and reproduces derived views for the same ledger.
 
 Tool resolution uses the command option, `PLUTARCH_PDFTOPPM` or
 `PLUTARCH_TESSERACT`, then PATH. English language data uses `--tessdata-dir`,
@@ -195,4 +235,4 @@ directory beneath `runs/verification`; ordinary processing cannot create PDFs.
 Exit codes are 0 for completed requested processing (including findings and
 uncertainty), 2 for invalid inputs/configuration, 3 for interrupted/incomplete
 processing, and 4 for failed explicitly requested calibration. Commands for later
-stages report unavailability until those stages are implemented.
+model submission and optional trace stages report unavailability until implemented.

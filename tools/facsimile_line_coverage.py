@@ -1775,6 +1775,29 @@ def measure_ordered_component_union(source_gray, pieces, settings):
             'union_reasons':['uncertain_piece_support'] if piece_uncertain else []}
 
 
+def load_visible_reader_page(root, manifest, settings, args, prerequisites, tomus, page):
+    """Render visible PDF pixels in the same MediaBox frame as reader coordinates."""
+    import numpy as np
+    import pymupdf
+    from PIL import Image
+    import facsimile_line_audit as cli
+    repo,work = cli.paths(args)
+    pdf,record = cli.snapshot_input(root,manifest,'reader_pdf',tomus=tomus)
+    raster,metadata = common.render_page(pdf,record,page,settings['reader_dpi'],work,repo,
+        pdftoppm=prerequisites['tools']['pdftoppm']['path'],policy=common.AuditOutputPolicy('audit'))
+    with Image.open(raster) as image:
+        gray = np.asarray(image.convert('L')).copy()
+    with pymupdf.open(pdf) as document:
+        leaf = document[page-1]
+        if leaf.rotation:
+            raise common.AuditError('Rotated reader visibility requires an explicit coordinate mapping')
+        crop,media = leaf.cropbox,leaf.mediabox
+        visible = [int(round((crop[i]-media[i%2])*settings['reader_dpi']/72)) for i in range(4)]
+    xx,yy = np.meshgrid(np.arange(gray.shape[1]),np.arange(gray.shape[0]))
+    gray[(xx<visible[0]) | (xx>=visible[2]) | (yy<visible[1]) | (yy>=visible[3])] = 255
+    return gray,metadata,visible
+
+
 def measure_coverage_run(logical, correspondences, reader_map, bundle, root, manifest, settings, run, args, prerequisites):
     """Keep required source pixels fixed while measuring bounded visible reader pieces."""
     import cv2
@@ -1792,21 +1815,7 @@ def measure_coverage_run(logical, correspondences, reader_map, bundle, root, man
     def render(tomus,page):
         key = (tomus,page)
         if key not in images:
-            pdf,record = cli.snapshot_input(root,manifest,'reader_pdf',tomus=tomus)
-            raster,meta = common.render_page(pdf,record,page,settings['reader_dpi'],work,repo,
-                pdftoppm=prerequisites['tools']['pdftoppm']['path'],policy=common.AuditOutputPolicy('audit'))
-            with Image.open(raster) as image:
-                gray = np.asarray(image.convert('L')).copy()
-            # A MediaBox render includes pixels outside the PDF's visible CropBox.
-            with pymupdf.open(pdf) as document:
-                leaf = document[page-1]
-                if leaf.rotation:
-                    raise common.AuditError('Rotated reader visibility requires an explicit coordinate mapping')
-                crop,media = leaf.cropbox,leaf.mediabox
-                visible = [int(round((crop[i]-media[i%2])*settings['reader_dpi']/72)) for i in range(4)]
-            xx,yy = np.meshgrid(np.arange(gray.shape[1]),np.arange(gray.shape[0]))
-            gray[(xx<visible[0]) | (xx>=visible[2]) | (yy<visible[1]) | (yy>=visible[3])] = 255
-            images[key] = (gray,meta,visible)
+            images[key] = load_visible_reader_page(root,manifest,settings,args,prerequisites,tomus,page)
             if len(images)>4:
                 images.popitem(last=False)
         images.move_to_end(key)
@@ -2061,7 +2070,7 @@ def run_verification_cases(args):
         snapshot,manifest = cli.capture_verification_runtime(root/case['snapshot'],selected)
         selected.snapshot = str(snapshot)
         selected.units = None
-        selected.stop_after = args.stop_after or 'coverage'
+        selected.stop_after = args.stop_after or 'seams'
         selected.run_dir = str(root/case['case_id']/'results'/manifest['snapshot_id'][:16])
         selected.resume = True
         code = cli.pipeline_run(selected)
@@ -2089,7 +2098,462 @@ def run_verification_cases(args):
         cli.write(run/'case-result.json',summary,args)
         common.progress(str(summary))
     report = {'schema_version':1,'cases':summaries,'passed':all(case['passed'] for case in summaries),
-              'completed_stage':args.stop_after or 'coverage','expectations_sha256':common.hash_file(root/'builder-manifest.json')}
+              'completed_stage':args.stop_after or 'seams','expectations_sha256':common.hash_file(root/'builder-manifest.json')}
     identity = common.json_hash(report)
     cli.write(root/'results'/identity/'verification-results.json',report,args)
     return 0 if report['passed'] else 4
+
+
+def build_seam_inventory(inventory,logical,ledger,reader_map,correspondences,settings):
+    """Enumerate source, unit, duplicate, and reader edges with owned context."""
+    from collections import Counter
+    lines = {line['logical_line_id']:line for line in logical['lines']}
+    results = {line['logical_line_id']:line for line in ledger['lines']}
+    objects = {obj['occurrence_id']:obj for page in inventory['pages'] for obj in page['occurrences']}
+    physical,by_owner,reader_lines = {},{},{}
+    for line in logical['lines']:
+        by_owner.setdefault(line['owner'],[]).append(line['logical_line_id'])
+        for mapping in line['physical_maps']:
+            obj = objects[mapping['occurrence_id']]
+            physical.setdefault((mapping['source_index'],mapping['page']),[]).append(
+                {'logical_line_id':line['logical_line_id'],'occurrence_id':obj['occurrence_id'],
+                 'owner':line['owner'],'box':obj['box'],'possible_owners':obj['possible_owners']})
+    for item in correspondences['lines']:
+        for page in item['reader_pages']:
+            reader_lines.setdefault((lines[item['logical_line_id']]['owner'],*page),[]).append(item['logical_line_id'])
+    count = settings['seam_context_lines']
+    for members in by_owner.values():
+        members.sort(key=lambda identifier:lines[identifier]['sequence_position'])
+    for members in physical.values():
+        members.sort(key=lambda member:(member['box'][1],member['box'][0],member['occurrence_id']))
+
+    def preferred(identifiers):
+        body = [identifier for identifier in identifiers if lines[identifier]['classification']=='body']
+        return body or [identifier for identifier in identifiers if lines[identifier]['classification']=='uncertain'
+                        and not objects[lines[identifier]['canonical_occurrence_id']].get('child_ids')]
+
+    def context(owner,position,ending):
+        if owner is None:
+            return []
+        members = by_owner.get(owner,[])
+        selected = preferred([identifier for identifier in members if
+                              (lines[identifier]['sequence_position']<position if ending else lines[identifier]['sequence_position']>=position)])
+        anchors = selected[-count:] if ending else selected[:count]
+        return anchors
+
+    def edge(page,ending):
+        members = physical.get(page,[])
+        identifiers = list(dict.fromkeys(member['logical_line_id'] for member in members))
+        selected = preferred(identifiers)
+        anchor = selected[-1] if ending and selected else selected[0] if selected else None
+        if anchor is None:
+            return [],[],None
+        owner = lines[anchor]['owner']
+        owned = [identifier for identifier in selected if lines[identifier]['owner']==owner]
+        anchors = owned[-count:] if ending else owned[:count]
+        if len(anchors)<count:
+            position = lines[anchor]['sequence_position']+(1 if ending else 0)
+            anchors = list(dict.fromkeys(context(owner,position,ending)+anchors))
+            anchors.sort(key=lambda identifier:lines[identifier]['sequence_position'])
+            anchors = anchors[-count:] if ending else anchors[:count]
+        occurrences = [member['occurrence_id'] for member in members if member['logical_line_id'] in anchors]
+        return anchors,occurrences,owner
+
+    seams = []
+    def unit_reader_edges(before_owner,after_owner):
+        before = sorted((row for row in reader_map['body_pages'] if row['unit_id']==before_owner),key=lambda row:(row['tomus'],row['page'],row['ordinal']))
+        after = sorted((row for row in reader_map['body_pages'] if row['unit_id']==after_owner),key=lambda row:(row['tomus'],row['page'],row['ordinal']))
+        return [dict(row,context_side=side) for members,side in ((before[-1:],'before'),(after[:1],'after')) for row in members]
+
+    def add(kind,before,after,**detail):
+        identifiers = list(dict.fromkeys(before+after))
+        owners = {lines[identifier]['owner'] for identifier in identifiers}
+        ancillary = []
+        for owner in sorted(owners,key=lambda owner:owner or ""):
+            owned_anchors = [lines[identifier]['sequence_position'] for identifier in identifiers if lines[identifier]['owner']==owner]
+            if not owned_anchors:
+                continue
+            for identifier in by_owner.get(owner,[]):
+                line = lines[identifier]
+                if (min(owned_anchors)<=line['sequence_position']<=max(owned_anchors) and identifier not in identifiers
+                    and line['classification'] in ('uncertain','annotation','furniture')):
+                    ancillary.append(identifier)
+        record = {'kind':kind,'before_line_ids':before,'after_line_ids':after,
+                  'context_region_ids':list(dict.fromkeys(ancillary)),**detail}
+        inspected = identifiers+record['context_region_ids']
+        record['anchor_coverage_status'] = 'complete' if identifiers and all(results[identifier]['status']=='complete' for identifier in identifiers) else 'unresolved'
+        record['coverage_status'] = 'complete' if inspected and all(results[identifier]['status']=='complete' for identifier in inspected) else 'unresolved'
+        record['context_owners'] = {identifier:lines[identifier]['owner'] for identifier in inspected}
+        record['seam_id'] = common.json_hash(record)
+        seams.append(record)
+
+    page_keys = sorted(physical)
+    for previous,current in zip(page_keys,page_keys[1:]):
+        if previous[0]!=current[0] or current[1]!=previous[1]+1:
+            continue
+        before,before_occurrences,before_owner = edge(previous,True)
+        after,after_occurrences,after_owner = edge(current,False)
+        add('source_page',before,after,source_pages=[list(previous),list(current)],
+            before_occurrence_ids=before_occurrences,after_occurrence_ids=after_occurrences,
+            before_owner=before_owner,after_owner=after_owner,unit_boundary=before_owner!=after_owner,
+            context_kind='interior',reader_occurrences=unit_reader_edges(before_owner,after_owner) if before_owner!=after_owner else [])
+    units = list(dict.fromkeys(unit['unit_id'] for unit in reader_map['units']))
+    for owner in units:
+        members = by_owner.get(owner,[])
+        anchors = preferred(members)
+        owned_rows = sorted((row for row in reader_map['body_pages'] if row['unit_id']==owner),key=lambda row:(row['tomus'],row['page'],row['ordinal']))
+        add('unit_opening',[],anchors[:count],owner=owner,context_kind='opening',evidence_strength='one_sided',
+            reviewed_boundary=any(lines[identifier]['reviewed_unit_start'] for identifier in members),reader_occurrences=owned_rows[:1])
+        add('unit_ending',anchors[-count:],[],owner=owner,context_kind='ending',evidence_strength='one_sided',
+            reviewed_boundary=any(lines[identifier]['reviewed_unit_end'] for identifier in members),reader_occurrences=owned_rows[-1:])
+    for previous,current in zip(units,units[1:]):
+        before,after = preferred(by_owner.get(previous,[]))[-count:],preferred(by_owner.get(current,[]))[:count]
+        add('unit_transition',before,after,before_owner=previous,after_owner=current,context_kind='unit_boundary',
+            reader_occurrences=unit_reader_edges(previous,current))
+    for page,members in sorted(physical.items()):
+        candidates = sorted({owner for member in members for owner in member['possible_owners']})
+        if len(candidates)<2:
+            continue
+        reviewed_owners = sorted({member['owner'] for member in members if lines[member['logical_line_id']]['owner_reviewed']})
+        identifiers = list(dict.fromkeys(member['logical_line_id'] for member in members))
+        before = [identifier for identifier in preferred(identifiers) if lines[identifier]['owner']==candidates[0]][-count:]
+        after = [identifier for identifier in preferred(identifiers) if lines[identifier]['owner']==candidates[-1]][:count]
+        add('shared_page',before,after,source_page=list(page),possible_owners=candidates,reviewed_owners=reviewed_owners,
+            uncertain_region_ids=[identifier for identifier in identifiers if not lines[identifier]['owner_reviewed']],
+            context_kind='shared_ownership',reader_occurrences=unit_reader_edges(candidates[0],candidates[-1]))
+    for line in logical['lines']:
+        identifier = line['logical_line_id']
+        position,owner = line['sequence_position'],line['owner']
+        if line['duplicate_group_id']:
+            add('duplicate_bypass',context(owner,position,True),context(owner,position,False),owner=owner,
+                duplicate_group_id=line['duplicate_group_id'],logical_line_id=identifier,physical_maps=line['physical_maps'],
+                waived_redundant_occurrences=results[identifier].get('waived_source_occurrences',[]),
+                reference_complete=results[identifier]['status']=='complete',context_kind='interior')
+        if results[identifier]['status'] in ('partial','absent'):
+            add('region_context',context(owner,position,True),context(owner,position,False),owner=owner,
+                logical_line_id=identifier,context_kind=results[identifier]['context_kind'])
+    rows = sorted(reader_map['body_pages'],key=lambda row:(row['tomus'],row['page'],row['ordinal']))
+    for previous,current in zip(rows,rows[1:]):
+        if previous['tomus']!=current['tomus']:
+            continue
+        before = preferred(reader_lines.get((previous['unit_id'],previous['tomus'],previous['page']),[]))[-count:]
+        after = preferred(reader_lines.get((current['unit_id'],current['tomus'],current['page']),[]))[:count]
+        before = before or preferred(by_owner.get(previous['unit_id'],[]))[-count:]
+        after = after or preferred(by_owner.get(current['unit_id'],[]))[:count]
+        add('reader_body',before,after,reader_occurrences=[dict(previous),dict(current)],
+            reader_pages=[[previous['tomus'],previous['page']],[current['tomus'],current['page']]],
+            before_owner=previous['unit_id'],after_owner=current['unit_id'],unit_boundary=previous['unit_id']!=current['unit_id'],
+            context_kind='interior' if previous['unit_id']==current['unit_id'] else 'unit_boundary')
+    counts = dict(Counter(seam['kind'] for seam in seams))
+    return {'schema_version':1,'snapshot_id':ledger['snapshot_id'],'runtime_id':ledger['runtime_id'],
+            'seams':seams,'counts':counts,'requested_seams':len(seams),'processed_seams':len(seams),
+            'expected_counts':{'source_page':sum(a[0]==b[0] and b[1]==a[1]+1 for a,b in zip(page_keys,page_keys[1:])),
+                'unit_opening':len(units),'unit_ending':len(units),'unit_transition':max(0,len(units)-1),
+                'reader_body':sum(a['tomus']==b['tomus'] for a,b in zip(rows,rows[1:])),
+                'duplicate_bypass':sum(bool(line['duplicate_group_id']) for line in logical['lines'])},
+            'unresolved_seams':sum(seam['coverage_status']!='complete' for seam in seams),'seam_inventory_id':common.json_hash(seams)}
+
+
+def render_evidence_tile(crop,label,run,args,settings):
+    """Preserve original pixel crops and provide neutral tiles and labeled display copies."""
+    from PIL import Image,ImageDraw
+    import facsimile_line_audit as cli
+    repo,work = cli.paths(args)
+    original = Path(run)/common.relative_path(crop['path'])
+    if common.hash_file(original)!=crop['sha256']:
+        raise common.AuditError('Stale evidence crop')
+    identifier = common.json_hash([crop['sha256'],label,settings['task_longest_side'],'neutral_png_v1'])
+    path = common.safe_write_path(Path(run)/'review-crops'/(identifier+'.png'),work,repo,policy=common.AuditOutputPolicy('audit'))
+    path.parent.mkdir(parents=True,exist_ok=True)
+    with Image.open(original) as image:
+        neutral = image.convert('RGB')
+        dimensions = list(neutral.size)
+        neutral.thumbnail((settings['task_longest_side'],settings['task_longest_side']))
+        neutral.save(path)
+    display = Image.new('RGB',(max(300,neutral.width),neutral.height+28),'white')
+    display.paste(neutral,(0,28))
+    draw = ImageDraw.Draw(display)
+    draw.text((4,6),label,fill='black')
+    draw.rectangle([0,28,neutral.width-1,display.height-1],outline='red',width=1)
+    display_path = common.safe_write_path(path.with_name(identifier+'_display.png'),work,repo,policy=common.AuditOutputPolicy('audit'))
+    display.save(display_path)
+    return {'crop_id':identifier,'label':label,'path':path.relative_to(run).as_posix(),'sha256':common.hash_file(path),
+            'dimensions':list(neutral.size),'original':crop,'original_dimensions':dimensions,
+            'display_path':display_path.relative_to(run).as_posix(),'display_sha256':common.hash_file(display_path),
+            'resize_scale':[neutral.width/dimensions[0],neutral.height/dimensions[1]]}
+
+
+def build_review_tasks(seams,inventory,logical,ledger,reader_map,correspondences,root,manifest,settings,run,args,prerequisites):
+    """Bind neutral source/visible-reader evidence without machine coverage verdicts."""
+    import numpy as np
+    from PIL import Image
+    from collections import OrderedDict
+    lookup = {line['logical_line_id']:line for line in logical['lines']}
+    results = {line['logical_line_id']:line for line in ledger['lines']}
+    objects = {obj['occurrence_id']:obj for page in inventory['pages'] for obj in page['occurrences']}
+    correspondence_lookup = {line['logical_line_id']:line for line in correspondences['lines']}
+    images,tile_cache,line_evidence = OrderedDict(),{},{}
+    rows = reader_map['body_pages']
+
+    def visible_crop(tomus,page,box,owner):
+        key = (tomus,page)
+        if key not in images:
+            images[key] = load_visible_reader_page(root,manifest,settings,args,prerequisites,tomus,page)
+            if len(images)>4:
+                images.popitem(last=False)
+        gray,meta,visible = images[key]
+        owned = [row for row in rows if (row['tomus'],row['page'],row['unit_id'])==(tomus,page,owner)]
+        crops = []
+        for row in owned:
+            body = [row['body_box'][i]*gray.shape[1 if i%2==0 else 0] for i in range(4)]
+            clipped = [max(visible[0],body[0],box[0]),max(visible[1],body[1],box[1]),
+                       min(visible[2],body[2],box[2]),min(visible[3],body[3],box[3])]
+            clipped = [math.floor(clipped[0]),math.floor(clipped[1]),math.ceil(clipped[2]),math.ceil(clipped[3])]
+            if clipped[0]>=clipped[2] or clipped[1]>=clipped[3]:
+                continue
+            identifier = common.json_hash([meta,clipped,row['unit_id'],row['ordinal'],'visible_review_context'])
+            crop = save_crop(Image.fromarray(gray),clipped,Path(run),args,identifier)
+            crops.append(dict(crop,tomus=tomus,reader_page=page,ordinal=row['ordinal'],owner=owner,
+                              reader_input_sha256=row['input_sha256'],render_dpi=settings['reader_dpi']))
+        return crops
+
+    def tile(crop,label):
+        key = (crop['sha256'],label)
+        if key not in tile_cache:
+            tile_cache[key] = render_evidence_tile(crop,label,run,args,settings)
+        return tile_cache[key]
+
+    def evidence(identifier):
+        if identifier in line_evidence:
+            return line_evidence[identifier]
+        line,result = lookup[identifier],results[identifier]
+        sources = []
+        for mapping in line['physical_maps']:
+            obj = objects[mapping['occurrence_id']]
+            source = tile(obj['crop'],'Source '+str(obj['source_index']+1)+' page '+str(obj['page'])+' '+obj['occurrence_id'][:12])
+            sources.append(dict(source,source_index=obj['source_index'],source_page=obj['page'],
+                                occurrence_id=obj['occurrence_id'],logical_line_ids=[identifier]))
+        readers = []
+        for occurrence in result.get('occurrences',[]):
+            measured = ledger['measurements'][occurrence['measurement_id']]
+            crop = dict(measured['crops']['observed_gray'],tomus=occurrence['tomus'],reader_page=occurrence['reader_page'],
+                        box_px=occurrence['reader_box_px'],owner=line['owner'])
+            readers.append(dict(tile(crop,'Visible reader '+str(crop['tomus'])+' page '+str(crop['reader_page'])),
+                                logical_line_ids=[identifier],tomus=crop['tomus'],reader_page=crop['reader_page'],localized=True))
+        for extent in result.get('reader_extents',[]):
+            for crop in visible_crop(extent['tomus'],extent['reader_page'],extent['box_px'],line['owner']):
+                readers.append(dict(tile(crop,'Visible reader '+str(crop['tomus'])+' page '+str(crop['reader_page'])),
+                                    logical_line_ids=[identifier],tomus=crop['tomus'],reader_page=crop['reader_page'],localized=True))
+        if not readers:
+            item = expand_correspondence_line(correspondences,correspondence_lookup[identifier])
+            for fit in item['registrations']:
+                if not fit.get('matched') or not fit.get('projection_valid_for_line'):
+                    continue
+                box = line['source_box_px']
+                points = np.asarray([[box[0],box[1],1],[box[2],box[1],1],[box[2],box[3],1],[box[0],box[3],1]]) @ np.asarray(fit['matrix']).T
+                padding = fit['reader_glyph_height']
+                projected = [points[:,0].min()-padding,points[:,1].min()-padding,points[:,0].max()+padding,points[:,1].max()+padding]
+                for crop in visible_crop(fit['tomus'],fit['reader_page'],projected,line['owner']):
+                    readers.append(dict(tile(crop,'Visible reader '+str(crop['tomus'])+' page '+str(crop['reader_page'])),
+                                        logical_line_ids=[identifier],tomus=crop['tomus'],reader_page=crop['reader_page'],
+                                        localized=True,registration_id=fit['registration_id']))
+                if readers:
+                    break
+        line_evidence[identifier] = (sources,readers)
+        return sources,readers
+
+    tasks,identities = [],{}
+    for seam in seams['seams']:
+        identifiers = list(dict.fromkeys(seam['before_line_ids']+seam['after_line_ids']+seam['context_region_ids']+seam.get('uncertain_region_ids',[])))
+        extra_readers = []
+        for index,row in enumerate(seam.get('reader_occurrences',[])):
+            key = (row['tomus'],row['page'])
+            if key not in images:
+                images[key] = load_visible_reader_page(root,manifest,settings,args,prerequisites,*key)
+            gray,_,_ = images[key]
+            body = [row['body_box'][i]*gray.shape[1 if i%2==0 else 0] for i in range(4)]
+            height = common.ink_line_height(gray)
+            side = row.get('context_side') or ('after' if seam['kind']=='unit_opening' or (seam['kind']=='reader_body' and index==1) else 'before')
+            if height:
+                span = height*settings['seam_context_lines']*settings['review_context_pitch_glyphs']
+                if side=='before':
+                    body[1] = max(body[1],body[3]-span)
+                else:
+                    body[3] = min(body[3],body[1]+span)
+            for crop in visible_crop(row['tomus'],row['page'],body,row['unit_id']):
+                extra_readers.append(dict(tile(crop,'Visible reader '+str(row['tomus'])+' page '+str(row['page'])),
+                    logical_line_ids=[identifier for identifier in identifiers if lookup[identifier]['owner']==row['unit_id']],
+                    tomus=row['tomus'],reader_page=row['page'],localized=False,context_side=side))
+        windows = [identifiers[offset:offset+settings['task_max_lines']] for offset in range(0,len(identifiers),settings['task_max_lines']-1)] or [[]]
+        for selected in windows:
+            sources,readers,unlocalized = [],list(extra_readers),[]
+            for identifier in selected:
+                source_tiles,reader_tiles = evidence(identifier)
+                sources.extend(source_tiles)
+                readers.extend(reader_tiles)
+                if not reader_tiles:
+                    unlocalized.append(identifier)
+            sources = list({crop['crop_id']:crop for crop in sources}.values())
+            merged = {}
+            for crop in readers:
+                previous = merged.setdefault(crop['crop_id'],dict(crop))
+                previous['logical_line_ids'] = sorted(set(previous['logical_line_ids']+crop['logical_line_ids']) & set(selected))
+            readers = list(merged.values())
+            identity = common.json_hash([selected,[(crop['crop_id'],crop['logical_line_ids']) for crop in sources+readers]])
+            if identity in identities:
+                task = identities[identity]
+                task['seam_ids'].append(seam['seam_id'])
+                task['seam_reasons'] = sorted(set(task['seam_reasons']+[seam['kind']]))
+                continue
+            task = {'task_id':identity,'line_ids':selected,'line_owners':{identifier:lookup[identifier]['owner'] for identifier in selected},
+                    'source_crops':sources,'reader_crops':readers,'seam_ids':[seam['seam_id']],'seam_reasons':[seam['kind']],
+                    'unlocalized_line_ids':unlocalized,'inconclusive':bool(unlocalized) or not selected or not readers,
+                    'snapshot_id':ledger['snapshot_id'],'runtime_id':ledger['runtime_id']}
+            identities[identity] = task
+            tasks.append(task)
+        if len(tasks)%50==0:
+            common.progress(f'Review evidence: {len(tasks)} tasks')
+    return {'schema_version':1,'snapshot_id':ledger['snapshot_id'],'runtime_id':ledger['runtime_id'],
+            'tasks':tasks,'task_count':len(tasks),'inconclusive_count':sum(task['inconclusive'] for task in tasks),
+            'task_set_id':common.json_hash(tasks)}
+
+
+def loss_review_crop_hashes(line,ledger,tasks):
+    crops = {line['source_crop']['path']:line['source_crop']['sha256']}
+    for task in tasks['tasks']:
+        for crop in task['source_crops']+task['reader_crops']:
+            if line['logical_line_id'] in crop['logical_line_ids']:
+                crops[crop['original']['path']] = crop['original']['sha256']
+                crops[crop['path']] = crop['sha256']
+    return dict(sorted(crops.items()))
+
+
+def write_coverage_report(inventory,logical,ledger,seams,tasks,reader_map,manifest,run,args):
+    """Write escaped human evidence and explicit scope/uncertainty denominators."""
+    import html,json
+    import facsimile_line_audit as cli
+    repo,work = cli.paths(args)
+    def escaped(value):
+        return html.escape(str(value),quote=True)
+    path = common.safe_write_path(Path(run)/'coverage-report.html',work,repo,policy=common.AuditOutputPolicy('audit'))
+    summary = {'snapshot_id':ledger['snapshot_id'],'runtime_id':ledger['runtime_id'],
+        'capture_scope':manifest['observed_counts'],'requested_source_pages':inventory['requested_pages'],
+        'processed_source_pages':inventory['completed_pages'],'failed_source_pages':inventory['requested_pages']-inventory['completed_pages'],
+        'requested_reader_body_occurrences':len(reader_map['body_pages']),
+        'capture_reader_nonbody_pages':manifest['observed_counts']['physical_pages']-manifest['observed_counts']['body_pages'],
+        'coverage':ledger['counts'],'source':ledger['source_denominators'],'ocr':ledger['ocr_denominators'],
+        'seams':seams['counts'],'requested_seams':seams['requested_seams'],'processed_seams':seams['processed_seams'],
+        'unresolved_seams':seams['unresolved_seams'],'tasks':tasks['task_count'],'inconclusive_tasks':tasks['inconclusive_count']}
+    with path.open('w',encoding='utf-8') as stream:
+        stream.write('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Facsimile source coverage</title><style>body{font-family:system-ui;max-width:1100px;margin:2em auto;padding:0 1em}img{max-width:100%;height:auto}article,details{border-top:1px solid #aaa;padding:1em 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1em}</style><h1>Facsimile source coverage and seams</h1><p>Processing completion does not certify Latin coverage. Unreviewed source ownership and geometry, source damage, tokenless ink and weak localizations remain explicit. Machine observations/candidates, human verdicts and model observations are separate. Nonbody reader pages include blanks and preliminary material.</p><pre>'+escaped(json.dumps(summary,indent=2,sort_keys=True))+'</pre><p><a href="coverage-ledger.json">Machine ledger</a> · <a href="seam-inventory.json">Seam inventory</a> · <a href="review-tasks.json">Neutral review tasks</a> · <a href="loss-review-template.json">Human review template</a></p><h2>Systematic seams</h2>')
+        for seam in seams['seams']:
+            stream.write('<details><summary>'+escaped(seam['kind'])+' / '+escaped(seam['coverage_status'])+' / '+escaped(seam['context_kind'])+'</summary><pre>'+escaped(json.dumps(seam,indent=2,sort_keys=True))+'</pre><p>')
+            for task in tasks['tasks']:
+                if seam['seam_id'] in task['seam_ids']:
+                    stream.write('<a href="#'+escaped(task['task_id'])+'">Evidence '+escaped(task['task_id'][:12])+'</a> ')
+            stream.write('</p></details>')
+        stream.write('<h2>Source and visible reader evidence</h2>')
+        for task in tasks['tasks']:
+            stream.write('<article id="'+escaped(task['task_id'])+'"><h3>'+escaped(', '.join(task['seam_reasons']))+'</h3><p>'+escaped(task['line_ids'])+'</p>')
+            if task['inconclusive']:
+                stream.write('<p>Reader localization is incomplete. Unlocalized regions require source ownership and reader extent review.</p>')
+            stream.write('<div class="pair">')
+            for crop in task['source_crops']+task['reader_crops']:
+                stream.write('<figure><a href="'+escaped(crop['original']['path'])+'"><img loading="lazy" src="'+escaped(crop['display_path'])+'" alt="'+escaped(crop['label'])+'"></a><figcaption>'+escaped(crop['label'])+' / '+escaped(crop['crop_id'][:12])+'</figcaption></figure>')
+            stream.write('</div></article>')
+        stream.write('<h2>All source regions</h2>')
+        for result in ledger['lines']:
+            stream.write('<details><summary>'+escaped(result['owner'])+' / source '+escaped(result['source_page'])+' / '+escaped(result['status'])+' / '+escaped(result['logical_line_id'][:12])+'</summary><pre>'+escaped(json.dumps({key:value for key,value in result.items() if key!='occurrences'},indent=2,sort_keys=True))+'</pre><a href="'+escaped(result['source_crop']['path'])+'">Untouched source crop</a>')
+            for item in result.get('occurrences',[]):
+                measured = ledger['measurements'][item['measurement_id']]
+                for label,crop in sorted(measured['crops'].items()):
+                    stream.write('<p><a href="'+escaped(crop['path'])+'">'+escaped(label)+'</a></p>')
+            stream.write('</details>')
+        stream.write('</html>\n')
+    return path
+
+
+def complete_seam_report(inventory,logical,ledger,reader_map,correspondences,root,manifest,settings,run,args,prerequisites):
+    import facsimile_line_audit as cli
+    seams = build_seam_inventory(inventory,logical,ledger,reader_map,correspondences,settings)
+    for kind,expected in seams['expected_counts'].items():
+        if seams['counts'].get(kind,0)!=expected:
+            raise common.AuditError('Seam count differs from its explicit transition denominator: '+kind)
+    tasks = build_review_tasks(seams,inventory,logical,ledger,reader_map,correspondences,root,manifest,settings,run,args,prerequisites)
+    for name,value in (('seam-inventory.json',seams),('review-tasks.json',tasks)):
+        cli.write(Path(run)/name,value,args)
+    selected = {identifier for task in tasks['tasks'] for identifier in task['line_ids']}
+    template = {'schema_version':1,'version':0,'snapshot_id':ledger['snapshot_id'],'runtime_id':ledger['runtime_id'],
+                'ledger_sha256':common.hash_file(Path(run)/'coverage-ledger.json'),
+                'tasks_sha256':common.hash_file(Path(run)/'review-tasks.json'),
+                'decisions':[{'logical_line_id':line['logical_line_id'],'crop_sha256':loss_review_crop_hashes(line,ledger,tasks),
+                              'verdict':'uncertain','reason':'','reviewer':''} for line in ledger['lines'] if line['logical_line_id'] in selected]}
+    cli.write(Path(run)/'loss-review-template.json',template,args)
+    write_coverage_report(inventory,logical,ledger,seams,tasks,reader_map,manifest,run,args)
+    names = ['seam-inventory.json','review-tasks.json','loss-review-template.json','coverage-report.html']
+    record = {'schema_version':1,'completed_stage':'seams','snapshot_id':ledger['snapshot_id'],'runtime_id':ledger['runtime_id'],
+              'machine_ledger_sha256':common.hash_file(Path(run)/'coverage-ledger.json'),
+              'executed_code':cli.executed_code(cli.paths(args)[0]),'record_sha256':{name:common.hash_file(Path(run)/name) for name in names}}
+    cli.write(Path(run)/'report-manifest.json',record,args)
+    return names+['report-manifest.json']
+
+
+def report(args):
+    import facsimile_line_audit as cli
+    if not args.run_dir:
+        raise common.AuditError('Report requires --run-dir')
+    run = Path(args.run_dir).resolve()
+    record = cli.read_json(run/'run-manifest.json')
+    root,manifest = cli.resolve_run_snapshot(record,args)
+    args.snapshot = str(root)
+    args.units = ','.join(record['scope'])
+    args.stop_after = record['stop_after']
+    configuration = cli.run_configuration(args)
+    if configuration[5]['runtime_id']!=record['runtime_id'] or not record['processing_complete']:
+        raise common.AuditError('Report requires an authenticated completed coverage run')
+    for name,digest in record['record_sha256'].items():
+        if common.hash_file(run/common.relative_path(name))!=digest:
+            raise common.AuditError('Completed machine run record changed')
+    with common.run_directory(run,cli.paths(args)[1],cli.paths(args)[0],policy=common.AuditOutputPolicy('audit')):
+        complete_seam_report(cli.read_json(run/'source-inventory.json'),cli.read_json(run/'logical-lines.json'),
+            cli.read_json(run/'coverage-ledger.json'),cli.read_json(run/'reader-map.json'),cli.read_json(run/'correspondences.json'),
+            root,manifest,configuration[2],run,args,configuration[6])
+
+
+def adjudicate_losses(args):
+    """Write new human review versions while preserving immutable machine verdicts."""
+    import facsimile_line_audit as cli
+    run = Path(args.run_dir).resolve()
+    record = cli.read_json(run/'run-manifest.json')
+    ledger,tasks = cli.read_json(run/'coverage-ledger.json'),cli.read_json(run/'review-tasks.json')
+    review = cli.read_json(args.loss_reviews)
+    digest = common.hash_file(run/'coverage-ledger.json')
+    report_record = cli.read_json(run/'report-manifest.json')
+    tasks_digest = common.hash_file(run/'review-tasks.json')
+    expected_tasks = record['record_sha256'].get('review-tasks.json',report_record['record_sha256']['review-tasks.json'])
+    if (review.get('schema_version')!=1 or review.get('snapshot_id')!=ledger['snapshot_id'] or
+        review.get('runtime_id')!=ledger['runtime_id'] or review.get('ledger_sha256')!=digest or
+        review.get('tasks_sha256')!=tasks_digest or expected_tasks!=tasks_digest or
+        report_record['machine_ledger_sha256']!=digest or report_record['runtime_id']!=ledger['runtime_id'] or
+        record['record_sha256']['coverage-ledger.json']!=digest):
+        raise common.AuditError('Stale human loss review identity')
+    lookup = {line['logical_line_id']:line for line in ledger['lines']}
+    seen = set()
+    for decision in review['decisions']:
+        identifier = decision['logical_line_id']
+        if (identifier not in lookup or identifier in seen or decision.get('verdict') not in ('confirmed_loss','retained','uncertain')
+            or not isinstance(decision.get('reason'),str) or not decision['reason'].strip()
+            or not isinstance(decision.get('reviewer'),str) or not decision['reviewer'].strip()):
+            raise common.AuditError('Invalid human loss decision')
+        expected = loss_review_crop_hashes(lookup[identifier],ledger,tasks)
+        if decision.get('crop_sha256')!=expected or any(common.hash_file(run/common.relative_path(path))!=sha for path,sha in expected.items()):
+            raise common.AuditError('Stale human loss crop hashes')
+        if decision['verdict']=='confirmed_loss' and not any(identifier in crop['logical_line_ids'] for task in tasks['tasks'] for crop in task['reader_crops']):
+            raise common.AuditError('Confirmed loss requires bound visible-reader evidence')
+        seen.add(identifier)
+    version = review.get('version')
+    if not isinstance(version,int) or isinstance(version,bool) or version<0 or Path(args.reviews_out).exists():
+        raise common.AuditError('Human loss review needs a valid version and a new output file')
+    revised = dict(review,version=version+1,parent_review_sha256=common.hash_file(args.loss_reviews))
+    revised['review_set_id'] = common.json_hash(revised)
+    cli.write(args.reviews_out,revised,args)
