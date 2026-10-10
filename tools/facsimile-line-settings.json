@@ -41,6 +41,7 @@
   "reader_dpi": 180,
   "registration": {
     "features": 4000,
+    "gap_tolerance_glyphs": 0.5,
     "max_iters": 2000,
     "minimum_inlier_fraction": 0.6,
     "minimum_inliers": 8,
@@ -49,8 +50,10 @@
     "ratio": 0.7,
     "residual_glyphs": 0.2,
     "rotation_degrees": 3,
+    "reader_padding_glyphs": 3,
     "scale_tolerance": 0.1,
     "seed": 0,
+    "source_padding_glyphs": 1,
     "translation_glyphs": 2
   },
   "schema_version": 1,

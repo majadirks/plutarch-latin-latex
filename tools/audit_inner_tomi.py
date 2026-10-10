@@ -40,6 +40,7 @@ from inner_audit_common import (
     progress,
     progress_heartbeat,
     read_footer_folio,
+    register_pixel_regions,
     relative_path,
     render_page,
     reusable_entry,
@@ -2991,31 +2992,14 @@ def match_source_image(row, source_index, source_page, root, manifest, work, rep
         source = np.asarray(image.convert("L"))
     rb = pixel_bounds(row["body_box"], reader_meta["raster_dimensions"])
     sb = pixel_bounds([SOURCE_LATIN_X0, 0.10, 1.0, 0.94], source_meta["raster_dimensions"])
-    sift = cv2.SIFT_create(nfeatures=th["features"])
-    sk, sd = sift.detectAndCompute(source[sb[1]:sb[3], sb[0]:sb[2]], None)
-    rk, rd = sift.detectAndCompute(target[rb[1]:rb[3], rb[0]:rb[2]], None)
-    result = {"matched": False, "reason": "insufficient source/output image correspondences", "matrix": None,
-              "source_dimensions": source_meta["raster_dimensions"], "reader_dimensions": reader_meta["raster_dimensions"],
-              "source_page": source_page, "source_index": source_index, "reader_page": row["page"], "tomus": row["tomus"]}
-    if sd is not None and rd is not None and len(sk) >= 8 and len(rk) >= 8:
-        pairs = cv2.BFMatcher(cv2.NORM_L2).knnMatch(sd, rd, k=2)
-        good = [p[0] for p in pairs if len(p) == 2 and p[0].distance < th["ratio"] * p[1].distance]
-        if len(good) >= th["minimum_inliers"]:
-            first = np.float32([[sk[p.queryIdx].pt[0] + sb[0], sk[p.queryIdx].pt[1] + sb[1]] for p in good])
-            second = np.float32([[rk[p.trainIdx].pt[0] + rb[0], rk[p.trainIdx].pt[1] + rb[1]] for p in good])
-            cv2.setRNGSeed(0)
-            matrix, mask = cv2.estimateAffinePartial2D(first, second, method=cv2.RANSAC,
-                ransacReprojThreshold=th["reprojection_px"], maxIters=2000)
-            if matrix is not None and mask is not None and np.isfinite(matrix).all():
-                selected = mask.ravel().astype(bool)
-                count = int(selected.sum())
-                fraction = count / len(good)
-                scale = math.hypot(float(matrix[0, 0]), float(matrix[1, 0]))
-                valid = count >= th["minimum_inliers"] and fraction >= th["minimum_inlier_fraction"] and 0.2 <= scale <= 5
-                result.update({"matched": valid, "reason": "registered prose pixels" if valid else "weak image registration",
-                    "matrix": matrix.tolist(), "inliers": count, "inlier_fraction": fraction,
-                    "source_inlier_box": [float(first[selected, 0].min()), float(first[selected, 1].min()),
-                                          float(first[selected, 0].max()), float(first[selected, 1].max())] if count else None})
+    registered = register_pixel_regions(source, target, sb, rb, th)
+    result = {"source_dimensions": source_meta["raster_dimensions"],
+              "reader_dimensions": reader_meta["raster_dimensions"],
+              "source_page": source_page, "source_index": source_index,
+              "reader_page": row["page"], "tomus": row["tomus"]}
+    for key in ("matched", "reason", "matrix", "inliers", "inlier_fraction", "source_inlier_box"):
+        if key in registered:
+            result[key] = registered[key]
     write_json(cache, {"schema_version": 1, "complete": True, "metadata": metadata, "data": result}, work, repo)
     return result
 

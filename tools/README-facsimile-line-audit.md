@@ -91,6 +91,39 @@ annotation, source-partial and unresolved counts are reported separately; a
 partial alternate never shrinks the required canonical span. Source-span coverage
 describes source geometry and does not certify visible reader coverage.
 
+Run the available localization stage with:
+
+```powershell
+python tools/facsimile_line_audit.py run --snapshot <snapshot> --run-dir <fresh-run> --units theseus,pericles,cato_minor,antonius,comparatio_sertorii_et_eumenis --stop-after locate
+```
+
+This stage writes the inventory, logical regions, source-only token bundle/index,
+reader map/OCR/tokens, ordered locations and local-strip correspondences. Raw OCR
+and ambiguous words remain visible; tokenless objects stay in the image queue.
+An empty source vocabulary is recorded as `no_source_anchors`. The existing token
+matcher consumes canonical source sequences with no historical duplicate aliases.
+Bounded local alignment refines reader tokens around exact anchors. Conflicting
+or backward refinements remain ambiguous observations. Post-binding tokenless
+counts come from the token bundle; logical records mark OCR assignment as pending.
+
+Local image fits use the shared SIFT/RANSAC primitive with explicit pixel regions.
+Scale, word-box agreement, reprojection residual, inlier extent and alternate
+placements govern fit validity. Each changed source/reader gap or page starts a
+separate strip. A context fit outside the line's bounded projection is marked
+`changed_gap_context_only`; it cannot certify that line's ink. Source-region IDs
+depend on source detector settings, independently of reader matching settings.
+Completed-stage resume requires the same code, tool, language, policy and settings
+identities and authenticates saved record hashes. Localization completion does
+not claim that coverage or seam processing has completed.
+
+`correspondences.json` stores token pairs and registrations in shared registries.
+Each line references their IDs and retains its own projection validity/evidence
+type. `expand_correspondence_line` restores the same observation shape for the
+coverage evaluator. These registries preserve inlier details without repeating
+them for every source object. Reviewed duplicate sequences use the earliest
+physical member for ordering while retaining the complete canonical scan as the
+fixed reference; a later reference cannot move a passage past unique prose.
+
 Tool resolution uses the command option, `PLUTARCH_PDFTOPPM` or
 `PLUTARCH_TESSERACT`, then PATH. English language data uses `--tessdata-dir`,
 `PLUTARCH_TESSDATA_DIR`, or the directory reported by Tesseract. Missing usable

@@ -113,7 +113,7 @@ def compute_runtime_identity(args, *, snapshot=None, settings=None, policy=None,
 
 
 def validate_source_policy(policy, source_hashes=None, *, target_kind='corpus'):
-    if policy.get('schema_version') != 1 or not isinstance(policy.get('version'), int):
+    if policy.get('schema_version') != 1 or isinstance(policy.get('version'), bool) or not isinstance(policy.get('version'), int) or policy['version'] < 1:
         raise AuditError('Source policy requires schema_version 1 and integer version')
     hashes = policy.get('source_sha256', {})
     if target_kind != 'verification' and (policy.get('synthetic_regions') or policy.get('synthetic_duplicate_regions')):
@@ -155,9 +155,11 @@ def capture_snapshot(args):
     runtime, prerequisites = compute_runtime_identity(args, settings=settings, policy=policy)
     reuse = None
     if getattr(args, 'reuse_snapshot', None):
-        _, reuse = load_snapshot(args.reuse_snapshot)
+        reuse_root, reuse = load_snapshot(args.reuse_snapshot)
         if reuse['runtime']['code'].get('tools/inner_audit_common.py') != runtime['code']['tools/inner_audit_common.py']:
-            raise AuditError('Raw reader-map reuse requires identical executed mapper code')
+            old_common, _ = snapshot_input(reuse_root, reuse, 'code', path='tools/inner_audit_common.py')
+            if raw_mapper_identity(old_common) != raw_mapper_identity(repo / 'tools/inner_audit_common.py'):
+                raise AuditError('Raw reader-map reuse requires identical executed mapper code')
     reused_inputs = {r['path']: r for r in reuse['inputs']} if reuse else {}
     records = []
 
@@ -289,11 +291,11 @@ def run_configuration(args):
     return root, manifest, settings, policy, units, runtime, prerequisites
 
 
-def inventory_run(args):
+def inventory_run(args, *, configuration=None):
     import facsimile_line_coverage as coverage
     if not args.snapshot or not args.run_dir:
         raise AuditError('inventory requires --snapshot and --run-dir')
-    root, manifest, settings, policy, units, runtime, prerequisites = run_configuration(args)
+    root, manifest, settings, policy, units, runtime, prerequisites = configuration or run_configuration(args)
     repo, work = paths(args)
     run = common.safe_write_path(args.run_dir, work, repo, policy=common.AuditOutputPolicy('audit'))
     existing = run / 'run-manifest.json'
@@ -332,6 +334,92 @@ def inventory_run(args):
                           record_sha256={name: common.hash_file(run / name)
                                          for name in ('source-inventory.json', 'duplicate-groups.json', 'logical-lines.json', 'errors.json')})
         write(existing, run_record, args)
+    return 3 if errors else 0
+
+
+def raw_mapper_identity(path):
+    """Authenticate the common module independently of its unused registration primitive."""
+    import ast
+    module = ast.parse(Path(path).read_text(encoding='utf-8'))
+    module.body = [node for node in module.body if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                   or node.name != 'register_pixel_regions']
+    return common.json_hash(ast.dump(module, include_attributes=False))
+
+
+def pipeline_run(args):
+    import facsimile_line_coverage as coverage
+    import audit_inner_tomi as historical
+    if not args.snapshot or not args.run_dir or args.stop_after != 'locate':
+        raise AuditError('Available run stage requires --snapshot, --run-dir and --stop-after locate')
+    configuration = run_configuration(args)
+    root, manifest, settings, policy, units, runtime, prerequisites = configuration
+    repo, work = paths(args)
+    run = common.safe_write_path(args.run_dir, work, repo, policy=common.AuditOutputPolicy('audit'))
+    if (run / 'run-manifest.json').exists():
+        previous = read_json(run / 'run-manifest.json')
+        if not args.resume or previous['runtime_id'] != runtime['runtime_id']:
+            raise AuditError('Existing run requires exact identity and --resume')
+        if previous.get('processing_complete') and previous.get('completed_stage') == args.stop_after:
+            for filename, digest in previous['record_sha256'].items():
+                if common.hash_file(run / common.relative_path(filename)) != digest:
+                    raise AuditError('Completed run record digest changed')
+            return 0
+    if inventory_run(args, configuration=configuration):
+        return 3
+    with common.run_directory(run, work, repo, policy=common.AuditOutputPolicy('audit')):
+        record = read_json(run / 'run-manifest.json')
+        record.update(processing_complete=False)
+        write(run / 'run-manifest.json', record, args)
+        inventory, logical = read_json(run / 'source-inventory.json'), read_json(run / 'logical-lines.json')
+        bundle = coverage.source_inventory_to_tokens(inventory, logical)
+        index = coverage.build_source_index(bundle, logical, units, settings)
+        for name, data in (('source-token-bundle.json', bundle), ('source-index.json', index)):
+            data.update(snapshot_id=manifest['snapshot_id'], runtime_id=runtime['runtime_id'])
+            write(run / name, data, args)
+        selected = {unit['id'] for unit in units}
+        reader_map = dict(manifest['reader_map'], snapshot_id=manifest['snapshot_id'], runtime_id=runtime['runtime_id'],
+                          body_pages=[r for r in manifest['reader_map']['body_pages'] if r['unit_id'] in selected],
+                          units=[u for u in manifest['reader_map']['units'] if u['unit_id'] in selected])
+        write(run / 'reader-map.json', reader_map, args)
+        observations, errors = {}, []
+        for count, row in enumerate(reader_map['body_pages']):
+            key = (row['tomus'], row['page'])
+            if key in observations:
+                continue
+            try:
+                if 'ocr_unavailable' in prerequisites['tools']:
+                    observations[key] = {'ocr_status':'ocr_unavailable', 'words':[]}
+                else:
+                    pdf, pdf_record = snapshot_input(root, manifest, 'reader_pdf', tomus=row['tomus'])
+                    observations[key] = historical.ocr_page_region(pdf, pdf_record, row['page'], settings['reader_dpi'],
+                        settings['ocr']['reader_psm'], settings['ocr']['language'], work, repo,
+                        tesseract=prerequisites['tools']['tesseract']['path'],
+                        tessdata_dir=prerequisites['tools']['tesseract'].get('tessdata_dir'),
+                        pdftoppm=prerequisites['tools']['pdftoppm']['path'], policy=common.AuditOutputPolicy('audit'))
+            except (AuditError, OSError, ValueError) as exc:
+                errors.append({'stage':'reader_ocr','tomus':row['tomus'],'page':row['page'],'error':str(exc)})
+            if count % 10 == 0:
+                common.progress(f'Reader OCR observations: {count+1}/{len(reader_map["body_pages"])}')
+        reader_tokens = coverage.reader_observations_to_tokens(reader_map, observations)
+        locations = coverage.locate_reader_neighborhoods(index, reader_tokens, settings)
+        correspondences = coverage.build_line_correspondences(logical, locations, reader_map, settings)
+        correspondences = coverage.register_local_strips(correspondences, logical, root, manifest, settings, run, args, prerequisites)
+        correspondences = coverage.compact_correspondences(correspondences)
+        if executed_code(repo) != runtime['code']:
+            raise AuditError('Executed code changed during processing; create a fresh capture/run')
+        for name, data in (('reader-observations.json', {'schema_version':1, 'pages':[dict(o,tomus=t,page=p) for (t,p),o in sorted(observations.items())]}),
+                           ('reader-tokens.json', {'schema_version':1,'tokens':reader_tokens}),
+                           ('locations.json', locations), ('correspondences.json', correspondences),
+                           ('errors.json', {'schema_version':1,'errors':errors})):
+            data.update(snapshot_id=manifest['snapshot_id'],runtime_id=runtime['runtime_id'])
+            write(run / name, data, args)
+        names = ('source-inventory.json','duplicate-groups.json','logical-lines.json','source-token-bundle.json',
+                 'source-index.json','reader-map.json','reader-observations.json','reader-tokens.json',
+                 'locations.json','correspondences.json','errors.json')
+        record.update(processing_complete=not errors, completed_stage='locate',
+                      requested_reader_occurrences=len(reader_map['body_pages']), processed_reader_pages=len(observations),
+                      record_sha256={name:common.hash_file(run/name) for name in names})
+        write(run / 'run-manifest.json', record, args)
     return 3 if errors else 0
 
 
@@ -383,6 +471,8 @@ def main():
             capture_snapshot(args)
         elif args.command == 'inventory':
             return inventory_run(args)
+        elif args.command == 'run':
+            return pipeline_run(args)
         elif args.command == 'adjudicate':
             import facsimile_line_coverage as coverage
             if args.source_reviews and args.inventory_dir and args.policy_out and not args.duplicate_reviews and not args.loss_reviews:
@@ -397,7 +487,7 @@ def main():
     except common.CalibrationError as exc:
         print(str(exc), file=sys.stderr)
         return 4
-    except (AuditError, OSError, ValueError, KeyError) as exc:
+    except (AuditError, OSError, ValueError, KeyError, TypeError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
     except KeyboardInterrupt:

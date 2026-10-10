@@ -190,7 +190,11 @@ def inventory_source_page(image, record, page, owners, settings, run, args):
                                         settings['connectivity'], (x0, y0))
     scale = columns['observations'][0]['glyph_height']
     lines, residual = assemble_source_lines(raw, scale, columns['latin_left'], settings)
-    detector = common.json_hash({'settings': settings, 'adapter': 'independent-source-components-v1'})
+    source_settings = {key: settings[key] for key in ('source_dpi', 'inspection_roi', 'thresholds',
+                                                    'connectivity', 'grouping', 'gutter')}
+    if settings.get('reviewed_gutter_override'):
+        source_settings['reviewed_gutter_override'] = settings['reviewed_gutter_override']
+    detector = common.json_hash({'settings': source_settings, 'adapter': 'independent-source-components-v1'})
     objects = []
     assigned = []
     for line in lines:
@@ -331,6 +335,8 @@ def apply_source_policy(inventory, policy, *, run=None, args=None, render_childr
     for decision in policy.get('decisions', []):
         occurrence = lookup.get(decision['occurrence_id'])
         if occurrence is None:
+            if any(p['source_index'] == decision['source_index'] and p['page'] == decision['page'] for p in inventory['pages']):
+                raise common.AuditError('Reviewed source occurrence is stale on an inventoried page')
             continue
         if occurrence['crop']['sha256'] != decision['crop_sha256'] or occurrence['source_sha256'] != decision['source_sha256']:
             raise common.AuditError('Source policy crop/source identity mismatch')
@@ -346,7 +352,10 @@ def apply_source_policy(inventory, policy, *, run=None, args=None, render_childr
             raise common.AuditError('Measured source children require an owned run for their untouched crops')
         for child in children:
             validate_pixel_box(child['box_px'], occurrence['raster_dimensions'])
-            box, parent = child['box_px'], occurrence['box']
+            measured_box = child['box_px']
+            box = [math.floor(measured_box[0]), math.floor(measured_box[1]),
+                   math.ceil(measured_box[2]), math.ceil(measured_box[3])]
+            parent = occurrence['box']
             if not (parent[0] <= box[0] < box[2] <= parent[2] and parent[1] <= box[1] < box[3] <= parent[3]):
                 raise common.AuditError('Reviewed child escapes its original source object')
             if child.get('classification') not in {'body', 'heading', 'annotation', 'furniture', 'uncertain'}:
@@ -366,6 +375,7 @@ def apply_source_policy(inventory, policy, *, run=None, args=None, render_childr
                 crop = dict(occurrence['crop'])
             crop['box_px'] = box
             item = dict(occurrence, occurrence_id=child_id, box=box, crop=crop,
+                        measured_box_px=measured_box,
                         classification=child['classification'], owner=child.get('owner'),
                         required_geometry_reviewed=True, kind='reviewed_child', components=[], faint_components=[],
                         parent_ids=[occurrence['occurrence_id']], child_ids=[])
@@ -559,6 +569,9 @@ def resolve_duplicate_groups(inventory, policy):
         maps = group.get('region_maps', [])
         present = [m for m in maps if m.get('occurrence_id') in lookup]
         if canonical is None and not present:
+            if any(m.get('source_index') == p['source_index'] and m.get('page') == p['page']
+                   for m in maps for p in inventory['pages']):
+                raise common.AuditError('Reviewed duplicate occurrence is stale on an inventoried page')
             continue
         if canonical is None or len(present) != len(maps):
             raise common.AuditError('Duplicate group is only partially inventoried')
@@ -591,6 +604,10 @@ def resolve_duplicate_groups(inventory, policy):
             matrix = np.asarray(mapping['to_canonical'], dtype=float)
             if matrix.shape != (2, 3) or not np.isfinite(matrix).all() or abs(np.linalg.det(matrix[:, :2])) < 1e-8:
                 raise common.AuditError('Invalid canonical affine transform')
+            if obj['occurrence_id'] == canonical['occurrence_id']:
+                origin = canonical['crop']['box_px'][:2]
+                if not np.allclose(matrix, [[1,0,-origin[0]], [0,1,-origin[1]]], atol=1e-9, rtol=0):
+                    raise common.AuditError('Canonical self-map must preserve its actual crop pixel frame')
             polygon = np.asarray(mapping['covered_polygon'], dtype=float)
             if (polygon.ndim != 2 or polygon.shape[1] != 2 or len(polygon) < 3 or
                     not np.isfinite(polygon).all() or (polygon[:, 0] < 0).any() or
@@ -712,8 +729,14 @@ def build_logical_lines(inventory, duplicate_groups):
     grouped = {m['occurrence_id']: g for g in groups for m in g['region_maps']}
     canonical_objects = {grouped[o['occurrence_id']]['canonical_occurrence_id'] if o['occurrence_id'] in grouped
                          else o['occurrence_id'] for o in objects}
-    ordered = sorted((lookup[i] for i in canonical_objects),
-                     key=lambda o: (o['source_index'], o['page'], o['box'][1], o['box'][0], o['occurrence_id']))
+    def source_order(obj):
+        group = grouped.get(obj['occurrence_id'])
+        if group:
+            return min((lookup[m['occurrence_id']]['source_index'], lookup[m['occurrence_id']]['page'],
+                        m['source_box_px'][1], m['source_box_px'][0], m['occurrence_id']) for m in group['region_maps'])
+        return obj['source_index'], obj['page'], obj['box'][1], obj['box'][0], obj['occurrence_id']
+
+    ordered = sorted((lookup[i] for i in canonical_objects), key=source_order)
     positions, group_order, logical = {}, {}, []
     for obj in ordered:
         group = grouped.get(obj['occurrence_id'])
@@ -777,7 +800,8 @@ def build_logical_lines(inventory, duplicate_groups):
                         'source_region_coverage': spans,
                         'duplicate_group_id': group.get('group_id') if group else None,
                         'source_index': obj['source_index'], 'page': obj['page'], 'source_box_px': obj['box'],
-                        'ocr_missing': not bool(obj.get('ocr_observations')),
+                        'sequence_origin': list(source_order(obj)), 'ocr_assignment_status': 'pending',
+                        'raw_ocr_available': bool(pages[(obj['source_index'],obj['page'])].get('ocr',{}).get('words')),
                         'source_segmentation_status': pages[(obj['source_index'], obj['page'])]['segmentation_status']})
     validate_logical_sequence(logical)
     redundant = sum(len({m['occurrence_id'] for m in g['region_maps']}) - 1 for g in groups)
@@ -789,7 +813,8 @@ def build_logical_lines(inventory, duplicate_groups):
               'physical_source_partial': sum(o.get('source_partial', False) for o in objects),
               'unresolved_geometry': sum(not l['geometry_reviewed'] for l in logical),
               'unreviewed_owner': sum(not l['owner_reviewed'] for l in logical),
-              'tokenless_observations': sum(l['ocr_missing'] for l in logical)}
+              'ocr_assignment_pending': len(logical),
+              'raw_ocr_unavailable': sum(not l['raw_ocr_available'] for l in logical)}
     if len(logical) + redundant != len(objects):
         raise common.AuditError('Physical/logical duplicate accounting disagrees')
     return {'schema_version': 1, 'snapshot_id': inventory['snapshot_id'], 'runtime_id': inventory.get('runtime_id'),
@@ -834,3 +859,402 @@ def write_logical_review_sheet(logical, run, args):
     repo, work = cli.paths(args)
     target = common.safe_write_path(Path(run) / 'logical-review.html', work, repo, policy=common.AuditOutputPolicy('audit'))
     target.write_text('\n'.join(sections), encoding='utf-8')
+
+
+def box_intersection(first, second):
+    return max(0, min(first[2], second[2]) - max(first[0], second[0])) * max(0, min(first[3], second[3]) - max(first[1], second[1]))
+
+
+def source_inventory_to_tokens(inventory, logical_lines, ocr_observations=None):
+    physical = {}
+    ambiguous = []
+    logical_lookup = {m['occurrence_id']: line for line in logical_lines['lines'] for m in line['physical_maps']}
+    for page in inventory['pages']:
+        words = (ocr_observations or {}).get((page['source_index'], page['page']), page.get('ocr', {})).get('words', [])
+        objects = page['occurrences']
+        for word in words:
+            dimensions = page.get('ocr', {}).get('raster_dimensions') or objects[0]['raster_dimensions']
+            box = [word['box'][i] * dimensions[i % 2] for i in range(4)]
+            parents = [o for o in objects if box_intersection(box, o['box']) >= 0.5 * (box[2] - box[0]) * (box[3] - box[1])]
+            child_parents = [o for o in parents if o.get('kind') == 'reviewed_child']
+            if child_parents:
+                ancestor_ids = {identifier for child in child_parents for identifier in child['parent_ids']}
+                parents = [o for o in parents if o['occurrence_id'] not in ancestor_ids]
+            if len(parents) != 1:
+                ambiguous.append(dict(word, source_index=page['source_index'], page=page['page'], reason='ambiguous_inventory_assignment'))
+                continue
+            obj = parents[0]
+            line = logical_lookup.get(obj['occurrence_id'])
+            views = historical.comparison_views([word['text']])[0]
+            token = dict(views, provider='tesseract_raster', occurrence_id=obj['occurrence_id'],
+                         logical_line_id=line['logical_line_id'] if line else None,
+                         source_index=page['source_index'], page=page['page'], source_box_px=box,
+                         box=word['box'], physical_line_id=word['line_id'],
+                         logical_position=line['sequence_position'] if line else None,
+                         line=word['line_id'], confidence=word.get('conf'),
+                         hyphen_join_hypothesis=word['text'].endswith(tuple(historical.HYPHENS)))
+            physical.setdefault(obj['occurrence_id'], []).append(token)
+    canonical, reverse, alternate_alignments = {}, {}, []
+    for line in logical_lines['lines']:
+        tokens = sorted(physical.get(line['canonical_occurrence_id'], []), key=lambda t: (tuple(t['physical_line_id']), t['source_box_px'][0]))
+        canonical[line['logical_line_id']] = tokens
+        for index, token in enumerate(tokens):
+            reverse[f'{line["logical_line_id"]}:{index}'] = [dict(occurrence_id=token['occurrence_id'], source_box_px=token['source_box_px'])]
+        for mapping in line['physical_maps']:
+            other = physical.get(mapping['occurrence_id'], [])
+            if mapping['occurrence_id'] == line['canonical_occurrence_id'] or not other or not tokens:
+                continue
+            refinement = historical.align_tokens(tokens, other, mode='local', settings=historical.detector_settings())
+            # Geometric maps remain authoritative even when alternate OCR is uncertain.
+            alternate_alignments.append({'occurrence_id': mapping['occurrence_id'],
+                                          'logical_line_id': line['logical_line_id'],
+                                          'ordered_similarity': refinement['ordered_similarity'],
+                                          'inconclusive': refinement.get('inconclusive', False),
+                                          'operations': refinement.get('operations', [])})
+            if not refinement.get('inconclusive'):
+                for operation in refinement.get('operations', []):
+                    if not operation['covered']:
+                        continue
+                    for index in operation['source']:
+                        for other_index in operation['output']:
+                            token = other[other_index]
+                            reverse[f'{line["logical_line_id"]}:{index}'].append({
+                                'occurrence_id': token['occurrence_id'], 'source_box_px': token['source_box_px'],
+                                'alignment_hypothesis': True})
+    return {'schema_version': 1, 'physical_tokens': physical, 'canonical_tokens': canonical,
+            'tokenless_objects': [{'occurrence_id': o['occurrence_id'], 'ocr_missing': True,
+                                  'logical_line_id': logical_lookup[o['occurrence_id']]['logical_line_id'],
+                                  'source_index': o['source_index'], 'page': o['page']}
+                                 for p in inventory['pages'] for o in p['occurrences'] if not physical.get(o['occurrence_id'])],
+            'ambiguous_words': ambiguous, 'reverse_lookup': reverse, 'alternate_alignments': alternate_alignments,
+            'logical_map_id': logical_lines['logical_map_id']}
+
+
+def source_bundle_to_index_unit(bundle, lines, unit_id, source_index):
+    selected = [l for l in lines['lines'] if l['owner'] == unit_id and l['classification'] in {'body', 'uncertain'}]
+    tokens = [t for line in selected for t in bundle['canonical_tokens'][line['logical_line_id']]]
+    selected_ids = {line['logical_line_id'] for line in selected}
+    return {'unit_id': unit_id, 'source_index': source_index, 'tokens': tokens,
+            'strict': [t['strict'] for t in tokens], 'tolerant': [t['tolerant'] for t in tokens],
+            'anchors': historical.anchor_information([t['strict'] for t in tokens]),
+            'canonical_reverse_lookup': {key: value for key, value in bundle['reverse_lookup'].items()
+                                        if key.split(':')[0] in selected_ids}}
+
+
+def build_source_index(bundle, logical_lines, units, settings):
+    index_units = [source_bundle_to_index_unit(bundle, logical_lines, u['id'], u['source']) for u in units]
+    strict_docs, tolerant_docs = [], []
+    size, stride = settings['source_index']['windows']['local']
+    for unit in index_units:
+        for start, end in historical.passage_windows(len(unit['tokens']), size, stride):
+            if any(unit['strict'][start:end]):
+                strict_docs.append(' '.join(unit['strict'][start:end]))
+                tolerant_docs.append(' '.join(unit['tolerant'][start:end]))
+    if not strict_docs or not any(len(doc.replace(' ', '')) >= 3 for doc in strict_docs):
+        return {'schema_version': 1, 'status': 'no_source_anchors', 'units': index_units}
+    fitted = historical.fit_source_index(strict_docs, tolerant_docs)
+    strict_vocab, strict_idf = historical.vectorizer_vocab_idf(fitted['strict'][0])
+    tolerant_vocab, tolerant_idf = historical.vectorizer_vocab_idf(fitted['tolerant'][0])
+    return {'schema_version': 1, 'status': 'fitted_source_only', 'units': index_units,
+            'strict_vocabulary': strict_vocab, 'strict_idf': strict_idf,
+            'tolerant_vocabulary': tolerant_vocab, 'tolerant_idf': tolerant_idf}
+
+
+def reader_observations_to_tokens(reader_map, ocr_observations):
+    observations = []
+    for row in reader_map['body_pages']:
+        observation = ocr_observations.get((row['tomus'], row['page']), {})
+        for word in observation.get('words', []):
+            if box_intersection(word['box'], row['body_box']) <= 0:
+                continue
+            views = historical.comparison_views([word['text']])[0]
+            dimensions = observation['raster_dimensions']
+            observations.append(dict(views, unit_id=row['unit_id'], tomus=row['tomus'], page=row['page'],
+                occurrence_id=f'{row["tomus"]}:{row["page"]}:{row["ordinal"]}',
+                body_box=row['body_box'], box=word['box'],
+                pixel_box=[word['box'][i] * dimensions[i % 2] for i in range(4)],
+                line_id=word['line_id'], folio=row['folio'], folio_provenance=row['folio_provenance'],
+                provider='tesseract_raster', hyphen_join_hypothesis=word['text'].endswith(tuple(historical.HYPHENS))))
+    return sorted(observations, key=lambda t: (t['tomus'], t['page'], tuple(t['line_id']), t['pixel_box'][0]))
+
+
+def locate_reader_neighborhoods(source_index, reader_tokens, settings):
+    if source_index['status'] == 'no_source_anchors':
+        return {'status': 'no_source_anchors', 'units': []}
+    vectorizers = historical.load_source_index(source_index)
+    located = []
+    for unit in source_index['units']:
+        reader = [t for t in reader_tokens if t['unit_id'] == unit['unit_id']]
+        anchors = historical.find_reader_occurrences(reader, unit, vectorizers['strict'], settings['source_index'])
+        path = historical.chain_matches(anchors, [], settings['source_index'])
+        correspondences = []
+        previous = -1
+        restarts = []
+        candidates, exact, refinements = {}, {}, []
+        for anchor in path:
+            margin = historical.context_placement_margin(anchor, anchors, [])
+            if anchor['source_start'] < previous:
+                restarts.append(anchor)
+                continue
+            previous = anchor['source_end']
+            if margin < settings['registration']['placement_margin']:
+                continue
+            for index in range(anchor['length']):
+                source_position, reader_position = anchor['source_start']+index, anchor['output_start']+index
+                exact[source_position] = reader_position
+                candidates[(source_position,reader_position)] = (anchor,margin)
+            source_start, source_end = max(0,anchor['source_start']-16), min(len(unit['tokens']),anchor['source_end']+16)
+            reader_start, reader_end = max(0,anchor['output_start']-16), min(len(reader),anchor['output_end']+16)
+            refinement = historical.align_tokens(unit['tokens'][source_start:source_end], reader[reader_start:reader_end],
+                                                  mode='local', settings=settings['source_index'])
+            refinements.append({'source_interval':[source_start,source_end], 'reader_interval':[reader_start,reader_end],
+                                'alignment':refinement})
+            for operation in refinement.get('operations', []):
+                if operation['covered']:
+                    for si in operation['source']:
+                        for ri in operation['output']:
+                            candidates.setdefault((source_start+si,reader_start+ri),(anchor,margin))
+        by_source = {}
+        for si,ri in candidates:
+            by_source.setdefault(si,set()).add(ri)
+        ambiguities, last_reader = [], -1
+        for si in sorted(by_source):
+            choices = {exact[si]} if si in exact else by_source[si]
+            if len(choices) != 1:
+                ambiguities.append({'source_token_index':si,'reader_token_indices':sorted(choices),'reason':'ambiguous_local_refinement'})
+                continue
+            ri = next(iter(choices))
+            if ri < last_reader:
+                ambiguities.append({'source_token_index':si,'reader_token_indices':[ri],'reason':'nonmonotonic_local_refinement'})
+                continue
+            last_reader = ri
+            anchor,margin = candidates[(si,ri)]
+            correspondences.append({'source':unit['tokens'][si], 'reader':reader[ri], 'anchor':anchor,
+                                    'placement_margin':margin, 'source_token_index':si,'reader_token_index':ri,
+                                    'refinement_hypothesis':si not in exact})
+        common.progress(f'Localization {unit["unit_id"]}: {len(anchors)} anchors, {len(correspondences)} ordered token pairs')
+        located.append({'unit_id': unit['unit_id'], 'anchors': anchors, 'path': path,
+                        'path_restarts': restarts, 'token_correspondences': correspondences,
+                        'refinements':refinements,'refinement_ambiguities':ambiguities})
+    return {'schema_version': 1, 'status': 'localized_observations', 'units': located}
+
+
+def build_line_correspondences(logical_lines, locations, reader_map, settings):
+    import bisect
+    all_pairs = [pair for unit in locations.get('units', []) for pair in unit['token_correspondences']]
+    direct = {}
+    for pair in all_pairs:
+        direct.setdefault(pair['source']['logical_line_id'], []).append(pair)
+    lines = logical_lines['lines']
+    by_owner = {}
+    for line in lines:
+        if direct.get(line['logical_line_id']):
+            by_owner.setdefault(line['owner'], []).append(line)
+    rows_by_owner = {}
+    for row in reader_map['body_pages']:
+        rows_by_owner.setdefault(row['unit_id'], []).append((row['tomus'],row['page']))
+    positions_by_owner = {owner: [line['sequence_position'] for line in members] for owner,members in by_owner.items()}
+    output = []
+    for line in lines:
+        own = direct.get(line['logical_line_id'], [])
+        candidates = by_owner.get(line['owner'], [])
+        positions = positions_by_owner.get(line['owner'], [])
+        low = bisect.bisect_left(positions, line['sequence_position'])
+        high = bisect.bisect_right(positions, line['sequence_position'])
+        before = candidates[max(0,low-3):low]
+        after = candidates[high:high+3]
+        context = own + [p for l in before + after for p in direct[l['logical_line_id']]]
+        reader_pages = sorted({(p['reader']['tomus'], p['reader']['page']) for p in context})
+        unit_rows = rows_by_owner.get(line['owner'], [])
+        if len(reader_pages) > 2 or (len(reader_pages) == 2 and
+                (reader_pages[0][0] != reader_pages[1][0] or unit_rows.index(reader_pages[1]) - unit_rows.index(reader_pages[0]) != 1)):
+            reader_pages = []
+            reason = 'neighborhood_exceeds_two_adjacent_reader_pages'
+        else:
+            reason = None if context else 'no_ordered_anchors'
+        if not own and not (before and after) and not line.get('reviewed_unit_start') and not line.get('reviewed_unit_end'):
+            reason = 'interior_requires_two_sided_ordered_anchors'
+            reader_pages = []
+        if context:
+            ordered_pairs = sorted(context, key=lambda p: (p['source']['logical_position'], p['source']['source_box_px'][0]))
+            reader_positions = [(p['reader']['tomus'],p['reader']['page'],tuple(p['reader']['line_id']),p['reader']['pixel_box'][0]) for p in ordered_pairs]
+            if reader_positions != sorted(reader_positions):
+                reason = 'nonmonotonic_local_reader_path'
+                reader_pages = []
+        endpoint = ('opening' if line.get('reviewed_unit_start') else
+                    'ending' if line.get('reviewed_unit_end') else 'interior')
+        if endpoint != 'interior' and unit_rows:
+            expected_edge = unit_rows[0] if endpoint == 'opening' else unit_rows[-1]
+            if expected_edge not in reader_pages:
+                reason = 'unit_endpoint_reader_edge_unbounded'
+                reader_pages = []
+        output.append({'logical_line_id': line['logical_line_id'], 'direct_tokens': own,
+                       'before_lines': [l['logical_line_id'] for l in before], 'after_lines': [l['logical_line_id'] for l in after],
+                       'context_tokens': context, 'reader_pages': [list(p) for p in reader_pages],
+                       'context_kind': endpoint, 'localization_reason': reason,
+                       'localization_status': 'bounded' if reader_pages else 'unresolved'})
+    return {'schema_version': 1, 'lines': output}
+
+
+def register_local_strips(correspondences, logical_lines, root, manifest, settings, run, args, prerequisites):
+    """Fit each consistent local anchor strip independently in original pixels."""
+    import cv2
+    import numpy as np
+    from collections import OrderedDict
+    from PIL import Image
+    import facsimile_line_audit as cli
+    repo, work = cli.paths(args)
+    lines = {line['logical_line_id']: line for line in logical_lines['lines']}
+    images = OrderedDict()
+    fit_cache = OrderedDict()
+
+    def rendered(role, number, selector):
+        key = (role, number, tuple(sorted(selector.items())))
+        if key not in images:
+            pdf, record = cli.snapshot_input(root, manifest, role, **selector)
+            dpi = settings['source_dpi'] if role == 'source_pdf' else settings['reader_dpi']
+            raster, metadata = common.render_page(pdf, record, number, dpi, work, repo,
+                pdftoppm=prerequisites['tools']['pdftoppm']['path'], policy=common.AuditOutputPolicy('audit'))
+            with Image.open(raster) as image:
+                gray = np.asarray(image.convert('L'))
+            images[key] = (gray, metadata, common.ink_line_height(gray))
+            if len(images) > 4:
+                images.popitem(last=False)
+        images.move_to_end(key)
+        return images[key]
+
+    completed = []
+    for count, correspondence in enumerate(correspondences['lines']):
+        line = lines[correspondence['logical_line_id']]
+        fits = []
+        if correspondence['localization_status'] == 'bounded':
+            grouped = {}
+            for pair in correspondence['context_tokens']:
+                source, reader = pair['source'], pair['reader']
+                if source['source_index'] != line['source_index'] or source['page'] != line['page']:
+                    continue
+                key = (reader['tomus'], reader['page'], source['logical_line_id'], tuple(reader['line_id']))
+                grouped.setdefault(key, []).append(pair)
+            anchor_lines = []
+            for key, pairs in grouped.items():
+                anchor_lines.append({'key': key, 'pairs': pairs,
+                    'source_box': union_boxes([p['source']['source_box_px'] for p in pairs]),
+                    'reader_box': union_boxes([p['reader']['pixel_box'] for p in pairs]),
+                    'word_scale':float(np.median([(p['reader']['pixel_box'][3]-p['reader']['pixel_box'][1]) /
+                        max(1,p['source']['source_box_px'][3]-p['source']['source_box_px'][1]) for p in pairs]))})
+            anchor_lines.sort(key=lambda a: (a['key'][0],a['key'][1],a['source_box'][1],a['source_box'][0]))
+            strips = []
+            for anchor in anchor_lines:
+                if strips:
+                    previous = strips[-1][-1]
+                    scale = (anchor['reader_box'][3]-anchor['reader_box'][1])/max(1,anchor['source_box'][3]-anchor['source_box'][1])
+                    source_gap = anchor['source_box'][1]-previous['source_box'][3]
+                    reader_gap = anchor['reader_box'][1]-previous['reader_box'][3]
+                    tolerance = max(1,anchor['reader_box'][3]-anchor['reader_box'][1]) * settings['registration']['gap_tolerance_glyphs']
+                    same = (anchor['key'][:2] == previous['key'][:2] and abs(reader_gap-scale*source_gap) <= tolerance and
+                            abs(anchor['word_scale']/previous['word_scale']-1) <= settings['registration']['scale_tolerance'])
+                else:
+                    same = False
+                if same:
+                    strips[-1].append(anchor)
+                else:
+                    strips.append([anchor])
+            for strip in strips:
+                tomus, page = strip[0]['key'][:2]
+                source, source_meta, source_height = rendered('source_pdf', line['page'], {'source_index': line['source_index']})
+                reader, reader_meta, reader_height = rendered('reader_pdf', page, {'tomus': tomus})
+                if source_height is None or reader_height is None:
+                    fits.append({'matched': False, 'validity_reasons': ['glyph_scale_unresolved'], 'reader_page': page, 'tomus': tomus})
+                    continue
+                scale = reader_height/source_height
+                pairs = [p for anchor in strip for p in anchor['pairs']]
+                word_scale = float(np.median([(p['reader']['pixel_box'][3]-p['reader']['pixel_box'][1]) /
+                                             max(1,p['source']['source_box_px'][3]-p['source']['source_box_px'][1]) for p in pairs]))
+                raw_source = union_boxes([a['source_box'] for a in strip])
+                raw_reader = union_boxes([a['reader_box'] for a in strip])
+
+                def padded(box, gray, padding):
+                    return [max(0,math.floor(box[0]-padding)),max(0,math.floor(box[1]-padding)),
+                            min(gray.shape[1],math.ceil(box[2]+padding)),min(gray.shape[0],math.ceil(box[3]+padding))]
+
+                source_box = padded(raw_source, source, source_height * settings['registration']['source_padding_glyphs'])
+                reader_box = padded(raw_reader, reader, reader_height * settings['registration']['reader_padding_glyphs'])
+                measured = dict(settings['registration'], reader_glyph_height=reader_height,
+                                reprojection_px=settings['registration']['residual_glyphs']*reader_height,
+                                expected_translation=np.median([np.asarray([(p['reader']['pixel_box'][0]+p['reader']['pixel_box'][2])/2,
+                                     (p['reader']['pixel_box'][1]+p['reader']['pixel_box'][3])/2]) -
+                                     scale*np.asarray([(p['source']['source_box_px'][0]+p['source']['source_box_px'][2])/2,
+                                     (p['source']['source_box_px'][1]+p['source']['source_box_px'][3])/2]) for p in pairs],axis=0).tolist())
+                metadata = {'runtime_id': logical_lines['runtime_id'], 'caller': 'local_anchor_strip',
+                            'source_render': source_meta, 'reader_render': reader_meta,
+                            'source_box_px': source_box, 'reader_box_px': reader_box, 'settings': measured, 'initial_scale': scale,
+                            'anchor_line_ids':sorted({p['source']['logical_line_id'] for p in pairs})}
+                registration_id = common.json_hash(metadata)
+                cache = work / 'cache/line_registration' / (registration_id+'.json')
+                fit = fit_cache.get(registration_id)
+                if fit is None:
+                    fit = common.reusable_entry(cache, metadata, work, repo, policy=common.AuditOutputPolicy('audit'))
+                if fit is None:
+                    fit = common.register_pixel_regions(source, reader, source_box, reader_box, measured, scale)
+                    if abs(word_scale/scale-1) > settings['registration']['scale_tolerance']:
+                        fit['matched'] = False
+                        fit['validity_reasons'].append('word_box_and_glyph_scales_disagree')
+                    fit.update(source_index=line['source_index'], source_page=line['page'], reader_page=page, tomus=tomus,
+                               source_dimensions=[source.shape[1],source.shape[0]], reader_dimensions=[reader.shape[1],reader.shape[0]],
+                               source_box_px=source_box, reader_box_px=reader_box, source_glyph_height=source_height,
+                               reader_glyph_height=reader_height, word_box_scale=word_scale,
+                               anchor_line_ids=sorted({p['source']['logical_line_id'] for p in pairs}),
+                               evidence_type='direct_anchor_strip' if correspondence['direct_tokens'] else 'inherited_bounded_gap',
+                               registration_id=common.json_hash(metadata))
+                    common.write_json(cache, {'schema_version':1,'complete':True,'metadata':metadata,'data':fit}, work, repo,
+                                      policy=common.AuditOutputPolicy('audit'))
+                fit_cache[registration_id] = fit
+                fit_cache.move_to_end(registration_id)
+                if len(fit_cache) > 1024:
+                    fit_cache.popitem(last=False)
+                source_range = fit['source_box_px']
+                within = source_range[1] <= line['source_box_px'][1] and line['source_box_px'][3] <= source_range[3]
+                distance = max(0,source_range[1]-line['source_box_px'][3],line['source_box_px'][1]-source_range[3])
+                endpoint_near = correspondence['context_kind'] != 'interior' and distance <= 3*source_height
+                fits.append(dict(fit, projection_valid_for_line=within or endpoint_near,
+                                 evidence_type='direct_anchor_strip' if line['logical_line_id'] in fit['anchor_line_ids'] else
+                                 'inherited_bounded_gap' if within or endpoint_near else 'changed_gap_context_only'))
+        completed.append(dict(correspondence, registrations=fits,
+                              image_status='registered' if any(f.get('matched') for f in fits) else 'unresolved'))
+        if count % 100 == 0:
+            common.progress(f'Local strip observations: {count+1}/{len(correspondences["lines"])}')
+    return dict(correspondences, snapshot_id=logical_lines['snapshot_id'], runtime_id=logical_lines['runtime_id'], lines=completed)
+
+
+def compact_correspondences(record):
+    """Store shared token contexts and image fits once instead of per region."""
+    pairs, registrations, lines = {}, {}, []
+    for line in record['lines']:
+        item = {key:value for key,value in line.items() if key not in ('direct_tokens','context_tokens','registrations')}
+        for field in ('direct_tokens','context_tokens'):
+            identifiers = []
+            for pair in line[field]:
+                identifier = common.json_hash(pair)
+                pairs.setdefault(identifier,pair)
+                identifiers.append(identifier)
+            item[field+'_ids'] = identifiers
+        refs = []
+        for fit in line['registrations']:
+            base = {key:value for key,value in fit.items() if key not in ('projection_valid_for_line','evidence_type')}
+            identifier = fit.get('registration_id') or common.json_hash(base)
+            previous = registrations.setdefault(identifier,base)
+            if previous != base:
+                raise common.AuditError('Conflicting shared registration identities')
+            refs.append({'registration_id':identifier,'projection_valid_for_line':fit.get('projection_valid_for_line',False),
+                         'evidence_type':fit.get('evidence_type','unresolved')})
+        item['registration_refs'] = refs
+        lines.append(item)
+    return dict(record, storage_profile='shared_context_v1',lines=lines,token_pairs=pairs,registrations=registrations)
+
+
+def expand_correspondence_line(record, line):
+    if record.get('storage_profile') != 'shared_context_v1':
+        return line
+    return dict(line,direct_tokens=[record['token_pairs'][identifier] for identifier in line['direct_tokens_ids']],
+                context_tokens=[record['token_pairs'][identifier] for identifier in line['context_tokens_ids']],
+                registrations=[dict(record['registrations'][ref['registration_id']],**ref) for ref in line['registration_refs']])

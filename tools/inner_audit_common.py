@@ -462,3 +462,112 @@ def map_reader_occurrences(reader_inputs, expected_counts=None):
     return {"schema_version": 1, "adapter": "reader-map-folios-v1", "tomi": tomi,
             "body_pages": body_rows, "units": unit_summaries}
 
+
+def register_pixel_regions(source_gray, reader_gray, source_box_px, reader_box_px, settings, initial_scale=None):
+    """Register explicit regions in original-array coordinates with seeded RANSAC."""
+    import cv2
+    import numpy as np
+    sb, rb = source_box_px, reader_box_px
+    for box, gray in ((sb, source_gray), (rb, reader_gray)):
+        if (len(box) != 4 or any(isinstance(v, bool) or not isinstance(v, int) for v in box) or
+                not 0 <= box[0] < box[2] <= gray.shape[1] or not 0 <= box[1] < box[3] <= gray.shape[0]):
+            raise AuditError('Registration requires integer regions inside the original raster')
+    if initial_scale is not None and (not math.isfinite(initial_scale) or initial_scale <= 0):
+        raise AuditError('Initial registration scale must be positive and finite')
+    sift = cv2.SIFT_create(nfeatures=settings['features'])
+    sk, sd = sift.detectAndCompute(source_gray[sb[1]:sb[3], sb[0]:sb[2]], None)
+    rk, rd = sift.detectAndCompute(reader_gray[rb[1]:rb[3], rb[0]:rb[2]], None)
+    result = {'matched': False, 'reason': 'insufficient source/output image correspondences', 'matrix': None,
+              'validity_reasons': ['insufficient_features'], 'alternate_placements': []}
+    if sd is None or rd is None or len(sk) < 8 or len(rk) < 8:
+        return result
+    pairs = cv2.BFMatcher(cv2.NORM_L2).knnMatch(sd, rd, k=2)
+    good = [p[0] for p in pairs if len(p) == 2 and p[0].distance < settings['ratio'] * p[1].distance]
+    if len(good) < settings['minimum_inliers']:
+        return result
+    first = np.float32([[sk[p.queryIdx].pt[0] + sb[0], sk[p.queryIdx].pt[1] + sb[1]] for p in good])
+    second = np.float32([[rk[p.trainIdx].pt[0] + rb[0], rk[p.trainIdx].pt[1] + rb[1]] for p in good])
+    cv2.setRNGSeed(settings.get('seed', 0))
+    matrix, mask = cv2.estimateAffinePartial2D(first, second, method=cv2.RANSAC,
+        ransacReprojThreshold=settings['reprojection_px'], maxIters=settings.get('max_iters', 2000))
+    if matrix is None or mask is None or not np.isfinite(matrix).all():
+        return result
+    selected = mask.ravel().astype(bool)
+    count = int(selected.sum())
+    fraction = count / len(good)
+    scale = math.hypot(float(matrix[0, 0]), float(matrix[1, 0]))
+    rotation = math.degrees(math.atan2(float(matrix[1, 0]), float(matrix[0, 0])))
+    residuals = np.linalg.norm(np.column_stack((first, np.ones(len(first)))) @ matrix.T - second, axis=1)
+    reasons = []
+    if count < settings['minimum_inliers'] or fraction < settings['minimum_inlier_fraction']:
+        reasons.append('insufficient_inlier_support')
+    if not 0.2 <= scale <= 5:
+        reasons.append('scale_out_of_bounds')
+    if initial_scale is not None and abs(scale / initial_scale - 1) > settings.get('scale_tolerance', 0.10):
+        reasons.append('measured_scale_disagrees_with_glyph_scale')
+    if initial_scale is not None and abs(rotation) > settings.get('rotation_degrees', 3):
+        reasons.append('rotation_out_of_bounds')
+    if initial_scale is not None and count and float(np.max(residuals[selected])) > settings['reprojection_px']:
+        reasons.append('reprojection_residual')
+    extent = [float(first[selected, 0].min()), float(first[selected, 1].min()),
+              float(first[selected, 0].max()), float(first[selected, 1].max())] if count else None
+    if initial_scale is not None and extent and extent[2] - extent[0] < settings.get('minimum_width_fraction', 0.5) * (sb[2] - sb[0]):
+        reasons.append('insufficient_horizontal_extent')
+    metrics = {}
+    if initial_scale is not None and count:
+        glyph = settings['reader_glyph_height']
+        if len({int(x / max(glyph, 1)) for x in second[selected, 0]}) < 2:
+            reasons.append('insufficient_distinct_glyph_groups')
+        expected_translation = settings.get('expected_translation')
+        if expected_translation is not None:
+            center = np.asarray([(sb[0]+sb[2])/2, (sb[1]+sb[3])/2, 1])
+            predicted = center[:2] * initial_scale + np.asarray(expected_translation)
+            if np.linalg.norm(center @ matrix.T - predicted) > settings.get('translation_glyphs', 2) * glyph:
+                reasons.append('translation_outside_anchor_bounds')
+        corners = np.asarray([[sb[0],sb[1],1], [sb[2],sb[1],1], [sb[2],sb[3],1], [sb[0],sb[3],1]]) @ matrix.T
+        bounds = [int(math.floor(corners[:,0].min())), int(math.floor(corners[:,1].min())),
+                  int(math.ceil(corners[:,0].max())), int(math.ceil(corners[:,1].max()))]
+        if bounds[2] > bounds[0] and bounds[3] > bounds[1]:
+            local = matrix.copy()
+            local[:,2] += matrix[:,:2] @ np.asarray(sb[:2]) - np.asarray(bounds[:2])
+            template = cv2.warpAffine(source_gray[sb[1]:sb[3],sb[0]:sb[2]], local,
+                                     (bounds[2]-bounds[0],bounds[3]-bounds[1]), borderValue=255)
+            padding = int(math.ceil(settings.get('translation_glyphs',2) * glyph))
+            search = [max(rb[0],bounds[0]-padding), max(rb[1],bounds[1]-padding),
+                      min(rb[2],bounds[2]+padding), min(rb[3],bounds[3]+padding)]
+            observed = reader_gray[search[1]:search[3], search[0]:search[2]]
+            if (observed.shape[0] >= template.shape[0] and observed.shape[1] >= template.shape[1] and template.std() > 2):
+                responses = []
+                for view in ('grayscale', 'contrast'):
+                    first_view, second_view = image_views(observed)[view], image_views(template)[view]
+                    responses.append(cv2.matchTemplate(first_view, second_view, cv2.TM_CCOEFF_NORMED))
+                response = np.nan_to_num(sum(responses)/len(responses), nan=-1, posinf=-1, neginf=-1)
+                best_y, best_x = np.unravel_index(int(response.argmax()), response.shape)
+                best = float(response[best_y,best_x])
+                radius = max(1, int(round(glyph)))
+                alternate = response.copy()
+                alternate[max(0,best_y-radius):best_y+radius+1,max(0,best_x-radius):best_x+radius+1] = -1
+                runner_y, runner_x = np.unravel_index(int(alternate.argmax()), alternate.shape)
+                runner = float(alternate[runner_y,runner_x])
+                margin = best-runner if runner > -1 else 1.0
+                metrics = {'correlation': best, 'placement_margin': margin,
+                           'alternate_placements': [] if runner <= -1 else [{'reader_box_px':
+                               [search[0]+int(runner_x),search[1]+int(runner_y),
+                                search[0]+int(runner_x)+template.shape[1],search[1]+int(runner_y)+template.shape[0]],
+                                'correlation': runner}]}
+                if margin < settings.get('placement_margin',0.05):
+                    reasons.append('ambiguous_alternate_placement')
+                if math.hypot(search[0]+best_x-bounds[0], search[1]+best_y-bounds[1]) > glyph:
+                    reasons.append('pixel_peak_disagrees_with_feature_fit')
+            else:
+                reasons.append('placement_margin_unmeasurable')
+        else:
+            reasons.append('projected_region_empty')
+    result.update(matched=not reasons, reason='registered prose pixels' if not reasons else 'weak image registration',
+                  matrix=matrix.tolist(), inliers=count, inlier_fraction=fraction, source_inlier_box=extent,
+                  measured_scale=scale, rotation_degrees=rotation, validity_reasons=reasons,
+                  reprojection_residual=float(np.max(residuals[selected])) if count else None,
+                  inlier_pairs=[{'source': a.tolist(), 'reader': b.tolist(), 'residual': float(r)}
+                                for a, b, r in zip(first[selected], second[selected], residuals[selected])])
+    result.update(metrics)
+    return result

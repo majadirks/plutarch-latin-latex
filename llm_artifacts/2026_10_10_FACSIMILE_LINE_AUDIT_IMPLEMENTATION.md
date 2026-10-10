@@ -58,6 +58,28 @@ commits. Each completed required step receives its own commit and push.
   A partial alternate preserves the full required reference and unresolved status;
   contradictory order is rejected. Python compilation passes. Index adapters will
   consume the same logical/physical keys; tokenless observations remain expected.
+- 5.1: Added independent inventory/token adapters, a source-only index, explicit
+  tokenless/ambiguous queues, ordered reader neighborhoods, bounded local token
+  refinement and piecewise image registration. The shared SIFT/RANSAC primitive
+  preserves historical wrapper results; source-pixel probes confirm identical
+  matrices, inliers and match decisions. The strict local probe passes with a
+  placement margin of 0.626. Production-trim mutation still preserves raw source
+  objects. Completed localization covers 158 source pages, 284 reader occurrences
+  and 39,904 regions across Theseus, Pericles, Cato, Antonius and the Sertorius/
+  Eumenes comparison, with zero processing errors. Refinement increases ordered
+  token pairs from 16,608 to 33,975. Shared registries reduce correspondence output
+  from 13.96 GB to 1.97 GB without discarding context or inlier evidence. The
+  earlier diagnostic run remains intact. Authenticated reuse checks establish
+  unchanged raw source producer/settings/policy/tool identity and copy crop bytes;
+  no old comparison result is adopted. Final snapshot:
+  `e600f49f394f83b83325b7795078f5499f1b774b66b588eb7e8dac80ebb04d26`.
+  Source geometry/ownership remain unreviewed; localization is not coverage.
+  Final output contains 33,975 shared token pairs, 8,898 shared registrations,
+  33,188 bounded neighborhoods and 20,544 regions with registered context.
+  Exact-identity resume authenticates the completed record set and passes.
+  Empty-vocabulary, registry roundtrip and Python compilation checks pass. The
+  existing portable tracked-files Rust check passes 419 library and 9 CLI tests
+  and its required negative missing-evidence probe.
 - Repository regression gates: formatting and strict all-target Clippy pass;
   `cargo test` passes 419 library tests and 9 CLI tests with 76 existing ignored
   tests. Rust remains unchanged.
