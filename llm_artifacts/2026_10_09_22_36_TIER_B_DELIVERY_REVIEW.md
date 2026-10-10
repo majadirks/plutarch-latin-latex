@@ -1,10 +1,10 @@
 # Context
 
-All 20 promoted events / 43 measured missing lines are installed. The source
-checks pass, and the eight fresh readers embed the verified canvases. This
-worksheet provides actual rebuilt page locators for human acceptance. The user
-accepted small Greek edge fragments; that acceptance does not imply that every
-rebuilt line and seam has been read. Delivery remains `in_progress`.
+All 20 promoted events / 43 measured missing lines are installed and accepted
+by the user. Every event is marked `restored`, and delivery is `complete`. The
+eight reviewed reader PDFs retain their verified identities. The user accepted
+small Greek edge fragments and completed every delivered seam review on
+2026-10-10.
 
 # Machine verification
 
@@ -34,7 +34,7 @@ missing-archive negative probe. Its five Python unit tests also pass.
 The comparison and portable-checker changes affect test infrastructure. The
 production files and eight reader PDF hashes still match the fresh rebuild
 configuration. Model inspection of rendered repaired passages found no new
-layout defect; human acceptance remains pending below.
+layout defect. Human acceptance for every event is recorded below.
 
 Every locator below is found by matching the passing source-report canvas SHA-256
 against the PDF embedded grayscale samples. Physical pages and printed folios
@@ -46,7 +46,8 @@ Read each repaired passage and its adjacent page breaks against the original
 source. Confirm complete letters and punctuation, correct order, printed spacing,
 and intact neighboring prose. Check the later unit starts, recto placement,
 running folios, contents references, and signature padding in changed tomi.
-The final event statuses and full-delivery selector wait for this review.
+All delivered events have completed human review and are marked `restored`.
+The full-delivery selector verifies the complete accepted configuration.
 
 Review one tomus at a time, in rebuilt physical-page order. Event numbers retain
 their original identifiers. Tomus 1 has no Tier-B events to review.
@@ -55,15 +56,16 @@ their original identifiers. Tomus 1 has no Tier-B events to review.
 
 ## Tomus 2
 
-Open `tomus_2_inner.pdf`. The table and entries below use this reader.
+Open `tomus_2_inner.pdf`. All five events / six missing lines below were accepted
+by the user on 2026-10-10: “All tomus 2 events are complete and confirmed.”
 
 | Worksheet event | Unit / source pages | Lines | Rebuilt reader physical pages / folios | Neighbor pages to inspect | Human acceptance |
 | --- | --- | ---: | --- | --- | --- |
-| 3 | pericles — v1 p214, v1 p215 | 2 | T2 p49 / f41, T2 p50 / f42 | T2 p49, T2 p50 | Pending |
-| 16 | alcibiades — v1 p242 | 1 | T2 p108 / f100 | T2 p108 | Pending |
-| 15 | timoleon — v1 p318 | 1 | T2 p265 / f257 | T2 p265 | Pending |
-| 4 | aemilius_paulus — v1 p326 | 1 | T2 p282 / f274 | T2 p282 | Pending |
-| 12 | marcellus — v1 p377 | 1 | T2 p389 / f381 | T2 p389 | Pending |
+| 3 | pericles — v1 p214, v1 p215 | 2 | T2 p49 / f41, T2 p50 / f42 | T2 p49, T2 p50 | Accepted |
+| 16 | alcibiades — v1 p242 | 1 | T2 p108 / f100 | T2 p108 | Accepted |
+| 15 | timoleon — v1 p318 | 1 | T2 p265 / f257 | T2 p265 | Accepted |
+| 4 | aemilius_paulus — v1 p326 | 1 | T2 p282 / f274 | T2 p282 | Accepted |
+| 12 | marcellus — v1 p377 | 1 | T2 p389 / f381 | T2 p389 | Accepted |
 
 ### Event 3: miss_pericles_214_9084
 
@@ -71,11 +73,13 @@ Historical locator: tomus_2_inner.pdf physical page 49 (printed folio 41). Verif
 
 Rebuilt locators: tomus 2, physical 49, folio 41, tomus 2, physical 50, folio 42.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 16: miss_alcibiades_242_229
 
@@ -83,11 +87,13 @@ Historical locator: tomus_2_inner.pdf physical page 108 (folio 100), Alcibiades 
 
 Rebuilt locators: tomus 2, physical 108, folio 100.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 15: miss_timoleon_318_9879
 
@@ -95,11 +101,13 @@ Historical locator: tomus_2_inner.pdf physical page 265 (folio 257). Verified: r
 
 Rebuilt locators: tomus 2, physical 265, folio 257.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 4: miss_aemilius_paulus_326_3162
 
@@ -107,11 +115,13 @@ Historical locator: tomus_2_inner.pdf physical page 282 (folio 274). Verified: r
 
 Rebuilt locators: tomus 2, physical 282, folio 274.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 12: miss_marcellus_377_3280
 
@@ -119,20 +129,23 @@ Historical locator: tomus_2_inner.pdf physical page 389 (folio 381). Verified: r
 
 Rebuilt locators: tomus 2, physical 389, folio 381.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ## Tomus 3
 
-Open `tomus_3_inner.pdf`. The table and entries below use this reader.
+Open `tomus_3_inner.pdf`. All 2 events / 3 missing lines below were accepted
+by the user on 2026-10-10: “Tomus 2, 3, and 4 events are fully confirmed.”
 
 | Worksheet event | Unit / source pages | Lines | Rebuilt reader physical pages / folios | Neighbor pages to inspect | Human acceptance |
 | --- | --- | ---: | --- | --- | --- |
-| 7 | caius_marius — v1 p519 | 1 | T3 p272 / f264 | T3 p272 | Pending |
-| 2 | lysander — v1 p535 | 2 | T3 p305 / f297 | T3 p305 | Pending |
+| 7 | caius_marius — v1 p519 | 1 | T3 p272 / f264 | T3 p272 | Accepted |
+| 2 | lysander — v1 p535 | 2 | T3 p305 / f297 | T3 p305 | Accepted |
 
 ### Event 7: miss_caius_marius_519_9217
 
@@ -140,11 +153,13 @@ Historical locator: tomus_3_inner.pdf physical page 272 (folio 264). Verified: r
 
 Rebuilt locators: tomus 3, physical 272, folio 264.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 2: miss_lysander_535_1762
 
@@ -152,19 +167,22 @@ Historical locator: tomus_3_inner.pdf physical page 305 (printed folio 297). Ver
 
 Rebuilt locators: tomus 3, physical 305, folio 297.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ## Tomus 4
 
-Open `tomus_4_inner.pdf`. The table and entries below use this reader.
+Open `tomus_4_inner.pdf`. All 1 events / 1 missing lines below were accepted
+by the user on 2026-10-10: “Tomus 2, 3, and 4 events are fully confirmed.”
 
 | Worksheet event | Unit / source pages | Lines | Rebuilt reader physical pages / folios | Neighbor pages to inspect | Human acceptance |
 | --- | --- | ---: | --- | --- | --- |
-| 11 | lucullus — v1 p631 | 1 | T4 p104 / f96 | T4 p104 | Pending |
+| 11 | lucullus — v1 p631 | 1 | T4 p104 / f96 | T4 p104 | Accepted |
 
 ### Event 11: miss_lucullus_631_13150
 
@@ -172,21 +190,24 @@ Historical locator: tomus_4_inner.pdf physical page 104 (folio 96). Verified: re
 
 Rebuilt locators: tomus 4, physical 104, folio 96.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ## Tomus 5
 
-Open `tomus_5_inner.pdf`. The table and entries below use this reader.
+Open `tomus_5_inner.pdf`. All 3 events / 3 missing lines below were accepted
+by the user on 2026-10-10: “Tomus 5 events accepted.”
 
 | Worksheet event | Unit / source pages | Lines | Rebuilt reader physical pages / folios | Neighbor pages to inspect | Human acceptance |
 | --- | --- | ---: | --- | --- | --- |
-| 13 | nicias — v2 p25 | 1 | T5 p33 / f15 | T5 p32, T5 p33 | Pending |
-| 9 | crassus — v2 p44 | 1 | T5 p72 / f54 | T5 p72 | Pending |
-| 5 | agesilaus — v2 p110 | 1 | T5 p209 / f191 | T5 p209 | Pending |
+| 13 | nicias — v2 p25 | 1 | T5 p33 / f15 | T5 p32, T5 p33 | Accepted |
+| 9 | crassus — v2 p44 | 1 | T5 p72 / f54 | T5 p72 | Accepted |
+| 5 | agesilaus — v2 p110 | 1 | T5 p209 / f191 | T5 p209 | Accepted |
 
 ### Event 13: miss_nicias_25_2918
 
@@ -194,11 +215,13 @@ Historical locator: tomus_5_inner.pdf, seam at page boundary 32→33 (folios 14�
 
 Rebuilt locators: tomus 5, physical 33, folio 15.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 9: miss_crassus_44_1144
 
@@ -206,11 +229,13 @@ Historical locator: tomus_5_inner.pdf physical page 72 (folio 54). Verified: rea
 
 Rebuilt locators: tomus 5, physical 72, folio 54.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 5: miss_agesilaus_110_2063
 
@@ -218,21 +243,24 @@ Historical locator: tomus_5_inner.pdf physical page 209 (folio 191). Verified: r
 
 Rebuilt locators: tomus 5, physical 209, folio 191.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ## Tomus 6
 
-Open `tomus_6_inner.pdf`. The table and entries below use this reader.
+Open `tomus_6_inner.pdf`. All 3 events / 3 missing lines below were accepted
+by the user on 2026-10-10: “Tomus 6 accepted”
 
 | Worksheet event | Unit / source pages | Lines | Rebuilt reader physical pages / folios | Neighbor pages to inspect | Human acceptance |
 | --- | --- | ---: | --- | --- | --- |
-| 14 | phocion — v2 p291 | 1 | T6 p209 / f201 | T6 p209 | Pending |
-| 8 | cato_minor — v2 p329 | 1 | T6 p284 / f276 | T6 p283, T6 p284 | Pending |
-| 18 | cato_minor — v2 p352 | 1 | T6 p312 / f304 | T6 p312 | Pending |
+| 14 | phocion — v2 p291 | 1 | T6 p209 / f201 | T6 p209 | Accepted |
+| 8 | cato_minor — v2 p329 | 1 | T6 p284 / f276 | T6 p283, T6 p284 | Accepted |
+| 18 | cato_minor — v2 p352 | 1 | T6 p312 / f304 | T6 p312 | Accepted |
 
 ### Event 14: miss_phocion_291_2223
 
@@ -240,11 +268,13 @@ Historical locator: tomus_6_inner.pdf physical page 209 (folio 201). Verified: r
 
 Rebuilt locators: tomus 6, physical 209, folio 201.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 8: miss_cato_minor_329_8786
 
@@ -252,11 +282,13 @@ Historical locator: tomus_6_inner.pdf, seam at page boundary 283→284 (folios 2
 
 Rebuilt locators: tomus 6, physical 284, folio 276.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 18: miss_cato_minor_352_15055
 
@@ -264,23 +296,26 @@ Historical locator: tomus_6_inner.pdf physical page 312 (folio 304). Verified: r
 
 Rebuilt locators: tomus 6, physical 312, folio 304.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ## Tomus 7
 
-Open `tomus_7_inner.pdf`. The table and entries below use this reader.
+Open `tomus_7_inner.pdf`. All 5 events / 26 missing lines below were accepted
+by the user on 2026-10-10: “Tomus 7 confirmed”
 
 | Worksheet event | Unit / source pages | Lines | Rebuilt reader physical pages / folios | Neighbor pages to inspect | Human acceptance |
 | --- | --- | ---: | --- | --- | --- |
-| 10 | demosthenes — v2 p445 | 1 | T7 p41 / f33 | T7 p41 | Pending |
-| 1 | antonius — v2 p562 | 22 | T7 p277 / f269 | T7 p276, T7 p278 | Pending |
-| 19 | dio — v2 p566 | 1 | T7 p288 / f280 | T7 p288, T7 p289 | Pending |
-| 20 | dio — v2 p580 | 1 | T7 p317 / f309 | T7 p317 | Pending |
-| 6 | brutus — v2 p619 | 1 | T7 p395 / f387 | T7 p395, T7 p396 | Pending |
+| 10 | demosthenes — v2 p445 | 1 | T7 p41 / f33 | T7 p41 | Accepted |
+| 1 | antonius — v2 p562 | 22 | T7 p277 / f269 | T7 p276, T7 p278 | Accepted |
+| 19 | dio — v2 p566 | 1 | T7 p288 / f280 | T7 p288, T7 p289 | Accepted |
+| 20 | dio — v2 p580 | 1 | T7 p317 / f309 | T7 p317 | Accepted |
+| 6 | brutus — v2 p619 | 1 | T7 p395 / f387 | T7 p395, T7 p396 | Accepted |
 
 ### Event 10: miss_demosthenes_445_6929
 
@@ -288,11 +323,13 @@ Historical locator: tomus_7_inner.pdf physical page 41 (folio 33), Demosthenes' 
 
 Rebuilt locators: tomus 7, physical 41, folio 33.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 1: miss_antonius_562_20869
 
@@ -300,11 +337,13 @@ Historical locator: tomus_7_inner.pdf physical page 274 (printed folio 266), the
 
 Rebuilt locators: tomus 7, physical 277, folio 269.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 19: miss_dio_566_426
 
@@ -312,11 +351,13 @@ Historical locator: tomus_7_inner.pdf physical page 284 (folio 276), Dio ch. III
 
 Rebuilt locators: tomus 7, physical 288, folio 280.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 20: miss_dio_580_6654
 
@@ -324,11 +365,13 @@ Historical locator: tomus_7_inner.pdf physical page 313 (folio 305), Dio ch. XXI
 
 Rebuilt locators: tomus 7, physical 317, folio 309.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ### Event 6: miss_brutus_619_10158
 
@@ -336,19 +379,22 @@ Rebuilt reader locator: tomus 7, physical page 395, printed folio 387. Inspect p
 
 Pre-repair baseline locator: physical page 391, printed folio 383. At that location in the baseline reader, the text jumps `… præterito Cæsaris lævo cornu,` → `cissent, circumducto suo cornu castra Cæsaris adorti sunt.`; final split word `…d-`/`cissent` is orphaned. The omitted head line comes from v2 p619. These baseline page numbers do not locate the restored line in the rebuilt reader.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: The user confirmed on 2026-10-10 that the missing text beginning `quum leviter…` is restored on physical page 395 / printed folio 387. Full text and punctuation, the adjoining seam, and layout acceptance remain pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 ## Tomus 8
 
-Open `tomus_8_inner.pdf`. The table and entries below use this reader.
+Open `tomus_8_inner.pdf`. All 1 events / 1 missing lines below were accepted
+by the user on 2026-10-10: “And Tomus 8 confirmed. I think that's it!”
 
 | Worksheet event | Unit / source pages | Lines | Rebuilt reader physical pages / folios | Neighbor pages to inspect | Human acceptance |
 | --- | --- | ---: | --- | --- | --- |
-| 17 | artoxerxes — v2 p633 | 1 | T8 p19 / f11 | T8 p19 | Pending |
+| 17 | artoxerxes — v2 p633 | 1 | T8 p19 / f11 | T8 p19 | Accepted |
 
 ### Event 17: miss_artoxerxes_633_2282
 
@@ -356,13 +402,34 @@ Historical locator: tomus_8_inner.pdf physical page 19 (folio 11). Verified: rea
 
 Rebuilt locators: tomus 8, physical 19, folio 11.
 
-- [ ] Complete printed source text and punctuation confirmed.
-- [ ] Source order, neighboring text, and every touched page break confirmed.
-- [ ] Layout and source artifacts accepted.
+- [X] Complete printed source text and punctuation confirmed.
+- [X] Source order, neighboring text, and every touched page break confirmed.
+- [X] Layout and source artifacts accepted.
 
-Human decision: Pending.
+Human decision: Accepted by the user on 2026-10-10. Complete source text and
+punctuation, source order, neighboring text and page breaks, layout, and source
+artifacts are confirmed.
 
 # Evidence
+
+The [complete-delivery verification note](2026_10_10_08_22_TIER_B_COMPLETE_DELIVERY_VERIFICATION.md) records the
+passing final gates, exact delivered counts, PDF identities, and archived evidence.
+
+Accepted entries are preserved in immutable worksheet snapshots under
+`archive/tier_b_omission_repairs_2026_10_09/human-review/`:
+
+- `tomus-2-2026_10_10/worksheet.md`: Tomus 2 acceptance.
+- `tomus-3-2026_10_10/worksheet.md`: Tomus 3 acceptance.
+- `tomus-4-2026_10_10/worksheet.md`: Tomus 4 acceptance.
+- `tomus-5-2026_10_10/worksheet.md`: Tomus 5 acceptance.
+- `tomus-6-2026_10_10/worksheet.md`: Tomus 6 acceptance.
+- `tomus-7-2026_10_10/worksheet.md`: Tomus 7 acceptance.
+- `tomus-8-2026_10_10/worksheet.md`: Tomus 8 acceptance.
+
+Each acceptance archive contains fresh passing source reports, their canvases,
+the user acceptance record, and a manifest. Each accepted event’s `human_review`
+reference authenticates its snapshot, preserving evidence through later
+worksheet edits.
 
 The exact PDF identities, embedded image hashes, and page renders are recorded
 in `archive/tier_b_omission_repairs_2026_10_09/delivery-review/pdf-seam-locators.json`.

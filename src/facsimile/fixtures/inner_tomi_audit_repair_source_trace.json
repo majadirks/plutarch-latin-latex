@@ -47,10 +47,10 @@
           "sha256": "c6deb3f60828eb03446d37946db012201241c8d4a3a9759f453d1b350e2c428e"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 2 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -525,8 +525,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-head-corrected/aemilius_paulus/aemilius_paulus.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-2-2026_10_10/aemilius_paulus.json",
         "sha256": "97b88bd35abc4a49bed90625773e62f2701fa57991033767bd61fa00b2991b56"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-2-2026_10_10/worksheet.md",
+        "sha256": "de643e6f68bcfdc0fe900ddc7a9a6d708e4a0c05732a475be589bd65eb219638",
+        "event_section": "Event 4: miss_aemilius_paulus_326_3162",
+        "event_id": "miss_aemilius_paulus_326_3162",
+        "passing_report_sha256": "97b88bd35abc4a49bed90625773e62f2701fa57991033767bd61fa00b2991b56"
       }
     },
     {
@@ -945,10 +952,10 @@
           "sha256": "1686056931565ca63452329649ca1c25192bb8b567a977600a9b4ea86b428f29"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 5 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -1327,8 +1334,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-foot/agesilaus/agesilaus.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-5-2026_10_10/agesilaus.json",
         "sha256": "620f5de57f1f355f379b4736056f2ac2885f7ac04aa07159372461ea5b5da2a7"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-5-2026_10_10/worksheet.md",
+        "sha256": "9e22be4d6d03b191d7d845ab0a7a0d4ad8fdfc1e03158b3eaa6c7e5ee0bfeaf8",
+        "event_section": "Event 5: miss_agesilaus_110_2063",
+        "event_id": "miss_agesilaus_110_2063",
+        "passing_report_sha256": "620f5de57f1f355f379b4736056f2ac2885f7ac04aa07159372461ea5b5da2a7"
       }
     },
     {
@@ -1389,10 +1403,10 @@
           "sha256": "e4f00893d744cab2db15d26172e1888165b6f85bba57de7b6756ebc2c7ed82c3"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 2 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -1767,8 +1781,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-verse/alcibiades/alcibiades.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-2-2026_10_10/alcibiades.json",
         "sha256": "25a60de3d94db5db539c3f4e8227e966f02aa2211955d1bfb72d5e5e4645dab7"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-2-2026_10_10/worksheet.md",
+        "sha256": "de643e6f68bcfdc0fe900ddc7a9a6d708e4a0c05732a475be589bd65eb219638",
+        "event_section": "Event 16: miss_alcibiades_242_229",
+        "event_id": "miss_alcibiades_242_229",
+        "passing_report_sha256": "25a60de3d94db5db539c3f4e8227e966f02aa2211955d1bfb72d5e5e4645dab7"
       }
     },
     {
@@ -3079,10 +3100,10 @@
           "sha256": "a1529c7a62ecb81b88ea2877bc5635d45c58e24e86a39fcb8cf8801224ed15ca"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Complete original Latin, both approved annotations, and all remaining p562 body regions pass source/pixel/order/whole-canvas checks. Fresh permanent-reader PDF embeds the verified pixels. Small Greek fragments accepted; rebuilt-reader human review remains pending.",
+      "reason": "The user accepted the complete Tomus 7 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -6151,8 +6172,15 @@
         }
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-antonius/antonius.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-7-2026_10_10/antonius.json",
         "sha256": "76aaa871cf0fcd5b0f2670fe4e74da2ba3a7ff233eaad188005fa4a1f4eed604"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-7-2026_10_10/worksheet.md",
+        "sha256": "aa24ec3dfa96333dbad6a3de70fd33d0635f788021a4598f7e4459752c4cd598",
+        "event_section": "Event 1: miss_antonius_562_20869",
+        "event_id": "miss_antonius_562_20869",
+        "passing_report_sha256": "76aaa871cf0fcd5b0f2670fe4e74da2ba3a7ff233eaad188005fa4a1f4eed604"
       }
     },
     {
@@ -6197,10 +6225,10 @@
           "sha256": "a89f3f13d3efffb6e6f513fb9cd398763057ccf4a30691c9f90efd2c78d0cfd2"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 8 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -6667,8 +6695,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-foot/artoxerxes/artoxerxes.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-8-2026_10_10/artoxerxes.json",
         "sha256": "7128691cf37715d14745962a61e65cafef29d2890dddc416d6a92e73d396ad87"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-8-2026_10_10/worksheet.md",
+        "sha256": "02e9d01300186ada1d726e0cf122bf79517428d2175a52936a4267a27128f1e8",
+        "event_section": "Event 17: miss_artoxerxes_633_2282",
+        "event_id": "miss_artoxerxes_633_2282",
+        "passing_report_sha256": "7128691cf37715d14745962a61e65cafef29d2890dddc416d6a92e73d396ad87"
       }
     },
     {
@@ -6729,10 +6764,10 @@
           "sha256": "8d60afc73b93f70163c5113d9af030c28867606cf3fd5f50a260c4ad66ae2d12"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 7 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -7247,8 +7282,15 @@
         "crop_edge_measurement": "Native source inspection includes complete initial glyph; measured left crop extension preserves source pixels."
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-merged/brutus/brutus.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-7-2026_10_10/brutus.json",
         "sha256": "704af56aa4699ca80e546c6c5df6e27a59c74483f7c59b8199069174906ace7b"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-7-2026_10_10/worksheet.md",
+        "sha256": "aa24ec3dfa96333dbad6a3de70fd33d0635f788021a4598f7e4459752c4cd598",
+        "event_section": "Event 6: miss_brutus_619_10158",
+        "event_id": "miss_brutus_619_10158",
+        "passing_report_sha256": "704af56aa4699ca80e546c6c5df6e27a59c74483f7c59b8199069174906ace7b"
       }
     },
     {
@@ -10548,10 +10590,10 @@
           "sha256": "e5c671e9ada3ede9d397ca1a19d6b63a5418d8e9f857395c4bd3abd3832a3862"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 3 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -10842,8 +10884,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-head-corrected/caius_marius/caius_marius.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-3-2026_10_10/caius_marius.json",
         "sha256": "87ec1b9445bbab662b0aaaa736e5bd119f48b7df219e0c5d6644b4fff49a5e4a"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-3-2026_10_10/worksheet.md",
+        "sha256": "6f5587d5f507ed6758c3b480caf7e34ca79468af3d10e91cc26d5221c33a3cbc",
+        "event_section": "Event 7: miss_caius_marius_519_9217",
+        "event_id": "miss_caius_marius_519_9217",
+        "passing_report_sha256": "87ec1b9445bbab662b0aaaa736e5bd119f48b7df219e0c5d6644b4fff49a5e4a"
       }
     },
     {
@@ -11324,10 +11373,10 @@
           "sha256": "b06fef9df25a3c52bcb759cfbfa75de2f2920b056861665f5ee4e3c17f58c4f1"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 6 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -11801,8 +11850,15 @@
         }
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-merged/cato_minor/cato_minor.json",
-        "sha256": "ae29fcd20a0ea6925e17f5f12ae1773991bc162ab5b54b75fea1099cb98c1392"
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-6-2026_10_10/cato_minor.json",
+        "sha256": "478b4559db36e286d413a308f3375b0c90e6fe3c04ee289ce22dacb34f027290"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-6-2026_10_10/worksheet.md",
+        "sha256": "aa7c40c69fdb148df1131f9953ce4d8a89aaf2a569259b8e81bc91d49d1430f0",
+        "event_section": "Event 8: miss_cato_minor_329_8786",
+        "event_id": "miss_cato_minor_329_8786",
+        "passing_report_sha256": "478b4559db36e286d413a308f3375b0c90e6fe3c04ee289ce22dacb34f027290"
       }
     },
     {
@@ -12265,10 +12321,10 @@
           "sha256": "ebfaa6b3a3789609bd81bcf3d9f2a499b9848f3b3bf0fce7a5f5d9d4d4162925"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 6 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -12695,8 +12751,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-foot/cato_minor/cato_minor.json",
-        "sha256": "c7782c00af78ad27468e71cd5a64ef90e0e54c3573e4ca9c034644076f6ec6fb"
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-6-2026_10_10/cato_minor.json",
+        "sha256": "478b4559db36e286d413a308f3375b0c90e6fe3c04ee289ce22dacb34f027290"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-6-2026_10_10/worksheet.md",
+        "sha256": "aa7c40c69fdb148df1131f9953ce4d8a89aaf2a569259b8e81bc91d49d1430f0",
+        "event_section": "Event 18: miss_cato_minor_352_15055",
+        "event_id": "miss_cato_minor_352_15055",
+        "passing_report_sha256": "478b4559db36e286d413a308f3375b0c90e6fe3c04ee289ce22dacb34f027290"
       }
     },
     {
@@ -13503,10 +13566,10 @@
           "sha256": "f2f7ca7192ff373a160c107aff43ce28da8519eba665b69a54bd716c4fb294e4"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 5 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -13949,8 +14012,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-head-corrected/crassus/crassus.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-5-2026_10_10/crassus.json",
         "sha256": "d0f3f5c4aafe0ad90d6ada7a4372ef2c422850f32ae02e054e21ad7306f52a5b"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-5-2026_10_10/worksheet.md",
+        "sha256": "9e22be4d6d03b191d7d845ab0a7a0d4ad8fdfc1e03158b3eaa6c7e5ee0bfeaf8",
+        "event_section": "Event 9: miss_crassus_44_1144",
+        "event_id": "miss_crassus_44_1144",
+        "passing_report_sha256": "d0f3f5c4aafe0ad90d6ada7a4372ef2c422850f32ae02e054e21ad7306f52a5b"
       }
     },
     {
@@ -16071,10 +16141,10 @@
           "sha256": "e20d1ea017029cdfbc786c11ee7c8f88b3fc8f853ddce0acfb077160caeb0a99"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 7 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -16576,8 +16646,15 @@
         }
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-merged/demosthenes/demosthenes.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-7-2026_10_10/demosthenes.json",
         "sha256": "f5b04182970ed09b9a740829dcaed8873ef5679730d00cc68804769d6f2ed0d4"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-7-2026_10_10/worksheet.md",
+        "sha256": "aa24ec3dfa96333dbad6a3de70fd33d0635f788021a4598f7e4459752c4cd598",
+        "event_section": "Event 10: miss_demosthenes_445_6929",
+        "event_id": "miss_demosthenes_445_6929",
+        "passing_report_sha256": "f5b04182970ed09b9a740829dcaed8873ef5679730d00cc68804769d6f2ed0d4"
       }
     },
     {
@@ -16622,10 +16699,10 @@
           "sha256": "ccbde3fb76420716ba1bf74dac6757fb6fbe136a7b6d4e86d4e57030f0392320"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 7 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -17028,8 +17105,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-foot/dio/dio.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-7-2026_10_10/dio.json",
         "sha256": "0baa75a06a85ecababf9236f73584e1325fa68a904c306c4588d81e2ac6bcdb9"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-7-2026_10_10/worksheet.md",
+        "sha256": "aa24ec3dfa96333dbad6a3de70fd33d0635f788021a4598f7e4459752c4cd598",
+        "event_section": "Event 19: miss_dio_566_426",
+        "event_id": "miss_dio_566_426",
+        "passing_report_sha256": "0baa75a06a85ecababf9236f73584e1325fa68a904c306c4588d81e2ac6bcdb9"
       }
     },
     {
@@ -17882,10 +17966,10 @@
           "sha256": "3bca4c799e50b9cf16f4577f69dd25ad07d269287bba878654a380a66ffb52ee"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 7 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -18208,8 +18292,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-foot/dio/dio.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-7-2026_10_10/dio.json",
         "sha256": "0baa75a06a85ecababf9236f73584e1325fa68a904c306c4588d81e2ac6bcdb9"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-7-2026_10_10/worksheet.md",
+        "sha256": "aa24ec3dfa96333dbad6a3de70fd33d0635f788021a4598f7e4459752c4cd598",
+        "event_section": "Event 20: miss_dio_580_6654",
+        "event_id": "miss_dio_580_6654",
+        "passing_report_sha256": "0baa75a06a85ecababf9236f73584e1325fa68a904c306c4588d81e2ac6bcdb9"
       }
     },
     {
@@ -21989,10 +22080,10 @@
           "sha256": "608d60df407c361511167dc7f96a9a74f96f6a7dffd7333491d4ab93eb7def5f"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 4 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -22467,8 +22558,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-head-corrected/lucullus/lucullus.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-4-2026_10_10/lucullus.json",
         "sha256": "a83850caf48a44fac226a936b97abdadd11b4197d5a2b551ec5eedf964ca3b62"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-4-2026_10_10/worksheet.md",
+        "sha256": "3aeaa6ccee067d713176719781075b7c2134a44a61c0a61452a919b0c1528bf4",
+        "event_section": "Event 11: miss_lucullus_631_13150",
+        "event_id": "miss_lucullus_631_13150",
+        "passing_report_sha256": "a83850caf48a44fac226a936b97abdadd11b4197d5a2b551ec5eedf964ca3b62"
       }
     },
     {
@@ -22951,10 +23049,10 @@
           "sha256": "56aa6e4d734958495b921db39e3b41f0ec07d51a3c4550763689ba898b0f27f4"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 3 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -23868,8 +23966,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-head-corrected/lysander/lysander.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-3-2026_10_10/lysander.json",
         "sha256": "f5fc5285610c3edadf5c187d98182276b39140d871cf4e701e566b6d227e87d9"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-3-2026_10_10/worksheet.md",
+        "sha256": "6f5587d5f507ed6758c3b480caf7e34ca79468af3d10e91cc26d5221c33a3cbc",
+        "event_section": "Event 2: miss_lysander_535_1762",
+        "event_id": "miss_lysander_535_1762",
+        "passing_report_sha256": "f5fc5285610c3edadf5c187d98182276b39140d871cf4e701e566b6d227e87d9"
       }
     },
     {
@@ -23930,10 +24035,10 @@
           "sha256": "69c149e8f1d955a955eaccb42ec32e38afedea08d6221a11fc4b2334447f4e6d"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 2 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -24376,8 +24481,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-head-corrected/marcellus/marcellus.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-2-2026_10_10/marcellus.json",
         "sha256": "c796e08dd213f44206ef371a6bf48d98970288c847a285989dd56c5f9b893208"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-2-2026_10_10/worksheet.md",
+        "sha256": "de643e6f68bcfdc0fe900ddc7a9a6d708e4a0c05732a475be589bd65eb219638",
+        "event_section": "Event 12: miss_marcellus_377_3280",
+        "event_id": "miss_marcellus_377_3280",
+        "passing_report_sha256": "c796e08dd213f44206ef371a6bf48d98970288c847a285989dd56c5f9b893208"
       }
     },
     {
@@ -24935,10 +25047,10 @@
           "sha256": "18c38d2f8781b7af099a515667dac78e61a0853a0812c02826576fac87afb8f9"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 5 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -25333,8 +25445,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-head-corrected/nicias/nicias.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-5-2026_10_10/nicias.json",
         "sha256": "51865c85e80533df5b2246b215fd825b01ed5d1d156e38d9bdb897e170d226d9"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-5-2026_10_10/worksheet.md",
+        "sha256": "9e22be4d6d03b191d7d845ab0a7a0d4ad8fdfc1e03158b3eaa6c7e5ee0bfeaf8",
+        "event_section": "Event 13: miss_nicias_25_2918",
+        "event_id": "miss_nicias_25_2918",
+        "passing_report_sha256": "51865c85e80533df5b2246b215fd825b01ed5d1d156e38d9bdb897e170d226d9"
       }
     },
     {
@@ -26602,10 +26721,10 @@
           "sha256": "caf1d13c2ded8a02178be6314e21624ca97f6251b4071d42ca50572fff88c3f4"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 2 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -27519,8 +27638,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-verse/pericles/pericles.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-2-2026_10_10/pericles.json",
         "sha256": "abea45c0491a500986d1486bba3f8673cb1ed7373d5b7918a4a1625c88e45a08"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-2-2026_10_10/worksheet.md",
+        "sha256": "de643e6f68bcfdc0fe900ddc7a9a6d708e4a0c05732a475be589bd65eb219638",
+        "event_section": "Event 3: miss_pericles_214_9084",
+        "event_id": "miss_pericles_214_9084",
+        "passing_report_sha256": "abea45c0491a500986d1486bba3f8673cb1ed7373d5b7918a4a1625c88e45a08"
       }
     },
     {
@@ -27565,10 +27691,10 @@
           "sha256": "92a65435c59dbbf4c28ff4c2426f0ec1f4e7a96739a7e1a42e64cf1aaf6994b0"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 6 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -28071,8 +28197,15 @@
         }
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-merged/phocion/phocion.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-6-2026_10_10/phocion.json",
         "sha256": "8c62968e5f214dfce89ea0429925241551d99ca7ab3895cb2314d8b0e35becfc"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-6-2026_10_10/worksheet.md",
+        "sha256": "aa7c40c69fdb148df1131f9953ce4d8a89aaf2a569259b8e81bc91d49d1430f0",
+        "event_section": "Event 14: miss_phocion_291_2223",
+        "event_id": "miss_phocion_291_2223",
+        "passing_report_sha256": "8c62968e5f214dfce89ea0429925241551d99ca7ab3895cb2314d8b0e35becfc"
       }
     },
     {
@@ -35626,10 +35759,10 @@
           "sha256": "698fb2f4a23df76041fc4d0b38490e22dbbb8be32827cb65a3dc8bed540bfc43"
         }
       ],
-      "status": "installed",
+      "status": "restored",
       "responsible_step": "1.1C",
       "repair_read_status": "PROMOTE; Latin confirmed, still missing, boundary safe; human sign-off 2026-10-09",
-      "reason": "Measured source protection installed; original-pixel, unique strip retention, source order, and whole-line canvas checks pass. Rebuilt-reader visual review remains pending.",
+      "reason": "The user accepted the complete Tomus 2 reader review on 2026-10-10. Fresh original-pixel, unique strip-retention, source-order, and whole-line composition checks pass; rebuilt PDF canvas identities match the accepted reader.",
       "reviewed_lines": [],
       "promoted_tier": "A",
       "promotion": {
@@ -36048,8 +36181,15 @@
         "downstream_trial_loss_stage": "pending candidate composition verification"
       },
       "passing_evidence": {
-        "path": "archive/tier_b_omission_repairs_2026_10_09/installed-head-corrected/timoleon/timoleon.json",
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-2-2026_10_10/timoleon.json",
         "sha256": "80f125676c073be52064360729bab91dc4f1650f5d56811a570399a8579f930b"
+      },
+      "human_review": {
+        "path": "archive/tier_b_omission_repairs_2026_10_09/human-review/tomus-2-2026_10_10/worksheet.md",
+        "sha256": "de643e6f68bcfdc0fe900ddc7a9a6d708e4a0c05732a475be589bd65eb219638",
+        "event_section": "Event 15: miss_timoleon_318_9879",
+        "event_id": "miss_timoleon_318_9879",
+        "passing_report_sha256": "80f125676c073be52064360729bab91dc4f1650f5d56811a570399a8579f930b"
       }
     }
   ],
@@ -124210,9 +124350,9 @@
   },
   "restoration_stage": "step-4.2",
   "tier_b_delivery": {
-    "state": "in_progress",
-    "restored_event_count": 0,
-    "restored_line_count": 0,
+    "state": "complete",
+    "restored_event_count": 20,
+    "restored_line_count": 43,
     "unresolved_event_ids": [],
     "historical_event_count": 20,
     "historical_line_count": 44,
