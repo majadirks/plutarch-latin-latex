@@ -1035,6 +1035,15 @@ glyph-cut predicate across control scoring and general seam reporting; do not
 hard-code the two page numbers into the detector. Keep active-run comparison
 code immutable; any comparison-code revision requires a new capture/run.
 
+`facsimile_line_delivery.py glyph-cuts --run-dir <completed-run> --out <fresh.json>`
+provides separately identified general seam evidence from reviewed source
+regions and observed correspondence neighborhoods, using that shared predicate.
+Attach matching reader-body seam IDs and retain machine ink status alongside
+glyph-cut warnings. Record excluded/unlocalized source regions and failed fits;
+zero warnings with unevaluated regions cannot establish readable completeness.
+Targeted controls supplied with known page pairs do not establish automatic
+corpus localization of those same controls.
+
 **LLM verification:** Compile changed Python files, validate control input
 hashes and geometry, and score both controls through real visible PDF evidence.
 Require 2/2 specific findings with source and both reader-edge crops. Inspect a

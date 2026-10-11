@@ -376,9 +376,30 @@ The two fixed real controls pass this targeted mode; two intact neighboring rows
 produce no glyph-cut warnings. Targeted measurement supplies source geometry and
 page pairs; it does not establish automatic full-corpus localization. The
 comparison run may still be incomplete, which is recorded separately. This mode
-preserves the machine ledger and existing comparison caches. General seam
-integration remains acceptance work. Header, source text and production repair
-policy are unchanged.
+preserves the machine ledger and existing comparison caches. Header, source text
+and production repair policy are unchanged.
+
+The companion general seam command selects reviewed source regions and adjacent
+page pairs from a completed run's actual correspondence neighborhoods, without
+using fixed control page pairs:
+
+```powershell
+python tools/facsimile_line_delivery.py glyph-cuts --run-dir <completed-run> --out tmp/pdfs/facsimile_line_audit/runs/general-glyph-cuts.json
+```
+
+It applies the same registration and glyph-cut functions as control mode and
+writes separate JSON/HTML evidence. Completed seam runs also attach the matching
+reader-body seam IDs. Machine ink status remains alongside the supplemental
+glyph observation; a complete ink status cannot hide a detected glyph cut in
+this companion report. The command authenticates comparison records and records
+its own executed code. No comparison records or cached verdicts are overwritten.
+
+The report counts reviewed source regions, eligible page-pair measurements,
+unresolved registrations and regions outside this reviewed scope. Unreviewed
+geometry, unavailable two-page neighborhoods and failed fits remain uncertified.
+No glyph-cut finding is not a completeness certificate. The two fixed controls
+remain targeted validation; automatic corpus localization of those same defects
+is a separate check when their source geometry and neighborhoods are available.
 
 Scope and archive modes read authenticated completed comparison records.
 The delivery tool records its own code identity and the captured comparison

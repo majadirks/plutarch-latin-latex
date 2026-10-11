@@ -118,11 +118,11 @@ def observe_control(control, root, manifest, settings, args, prerequisites, evid
     raster, source_meta = common.render_page(source_pdf, source_record, control['source_page'], control['source_dpi'],
         work, repo, pdftoppm=prerequisites['tools']['pdftoppm']['path'], policy=common.AuditOutputPolicy('audit'))
     with Image.open(raster) as image:
-        if list(image.size) != control['source_raster_dimensions']:
+        if control.get('source_raster_dimensions') and list(image.size) != control['source_raster_dimensions']:
             raise common.AuditError('Acceptance source raster dimensions differ')
         source = np.asarray(image.convert('L')).copy()
     target = control['source_box_px']
-    coverage.validate_pixel_box(target, control['source_raster_dimensions'])
+    coverage.validate_pixel_box(target, [source.shape[1], source.shape[0]])
     height = coverage.anchor_glyph_height(source, [target])
     if height is None:
         return {'control_id': control['control_id'], 'detected': False, 'reason': 'source_glyph_scale_unresolved'}
@@ -160,6 +160,8 @@ def observe_control(control, root, manifest, settings, args, prerequisites, evid
             return {'control_id': control['control_id'], 'detected': False, 'reason': 'reader_glyph_scale_unresolved'}
         sy0, sy1 = (max(0, target[1]-6*height), target[1]-4) if index == 0 else (target[3]+4, min(source.shape[0], target[3]+6*height))
         sb = [target[0], math.floor(sy0), target[2], math.ceil(sy1)]
+        if not 0 <= sb[1] < sb[3] <= source.shape[0]:
+            return {'control_id': control['control_id'], 'detected': False, 'reason': 'source_edge_anchor_context_unavailable'}
         rb = [body[0], max(body[1], math.floor(body[3]-8*reader_height)), body[2], body[3]] if index == 0 else [body[0], body[1], body[2], min(body[3], math.ceil(body[1]+8*reader_height))]
         reader_ocr = ocr(reader_pdf, reader_record, page, settings['reader_dpi'], settings['ocr']['reader_psm'], row['body_box'])
         fit = register_edge(source, reader, source_ocr, reader_ocr, sb, rb, settings)
@@ -182,24 +184,65 @@ def observe_control(control, root, manifest, settings, args, prerequisites, evid
             'registrations': [{k: v for k, v in p.items() if k not in ('matrix', 'measurement')} for p in pieces]}
 
 
-def score_controls(args):
-    """Write independently identified observations without changing the machine ledger."""
-    import html
-    import json
+def output_paths(args):
+    """Reserve fresh JSON, HTML and image locations under the shared output policy."""
     repo, work = cli.paths(args)
     output = common.safe_write_path(args.out, work, repo, policy=common.AuditOutputPolicy('audit'))
     if output.suffix.lower() != '.json':
-        raise common.AuditError('Acceptance control output requires a .json filename')
+        raise common.AuditError('Glyph-cut output requires a .json filename')
     evidence = output.with_suffix('').with_name(output.stem+'_evidence')
     report = output.with_suffix('.html')
     if any(path.exists() for path in (output, evidence, report)):
-        raise common.AuditError('Acceptance control outputs must be fresh')
-    run = Path(args.run_dir).resolve()
-    run_record = cli.read_json(run/'run-manifest.json')
-    root, manifest = cli.resolve_run_snapshot(run_record, args)
+        raise common.AuditError('Glyph-cut outputs must be fresh')
+    return output, evidence, report
+
+
+def measurement_configuration(args, configuration=None):
+    """Authenticate comparison dependencies before independent pixel measurements."""
+    repo, _ = cli.paths(args)
+    if configuration:
+        run_record, root, manifest = configuration
+    else:
+        run_record = cli.read_json(Path(args.run_dir).resolve()/'run-manifest.json')
+        root, manifest = cli.resolve_run_snapshot(run_record, args)
     for name, digest in manifest['runtime']['code'].items():
         if common.hash_file(repo/common.relative_path(name)) != digest:
             raise common.AuditError('Captured comparison code changed')
+    settings_path, _ = cli.snapshot_input(root, manifest, 'settings')
+    settings = cli.read_json(settings_path)
+    prerequisites = cli.check_audit_prerequisites(args)
+    stable = dict(prerequisites, tools={name: {k: v for k, v in item.items() if k not in ('path', 'tessdata_dir')}
+        if isinstance(item, dict) else item for name, item in prerequisites['tools'].items()})
+    if stable != manifest['runtime']['prerequisites']:
+        raise common.AuditError('Glyph-cut tool/package/language identity differs from capture')
+    return run_record, root, manifest, settings, prerequisites
+
+
+def publish_observations(result, results, output, report, args, title):
+    """Present source/reader evidence before expandable measurement records."""
+    import html
+    import json
+    cli.write(output, result, args)
+    sections = []
+    for item in results:
+        status = 'Glyphs cut across pages' if item['detected'] else 'No glyph-cut finding' if item.get('reason') == 'no_persistent_supported_glyph_cut' else 'Detection not established'
+        sections.append('<article><h2>'+html.escape(item['control_id'])+'</h2><p><strong>'+status+'</strong></p>')
+        if 'user_excerpt' in item:
+            sections.append('<p>Source locator: '+html.escape(item['user_excerpt'])+'</p>')
+        for label, crop in item.get('crops', {}).items():
+            sections.append('<p>'+html.escape(label)+'</p><img src="'+html.escape(crop['path'], quote=True)+'">')
+        sections.append('<details><summary>Measurements and transforms</summary><pre>'+html.escape(json.dumps(item, indent=2, ensure_ascii=False))+'</pre></details>')
+        sections.append('</article>')
+    repo, work = cli.paths(args)
+    common.safe_write_path(report, work, repo, policy=common.AuditOutputPolicy('audit')).write_text(
+        '<!doctype html><meta charset="utf-8"><title>'+html.escape(title)+'</title><style>body{font-family:system-ui;max-width:1100px;margin:2em auto}img{max-width:100%}pre{white-space:pre-wrap}</style><h1>'+html.escape(title)+'</h1><p>Independent source-backed observations. Combined ink completeness does not certify readable glyphs. No finding is not a completeness certificate.</p><pre>'+html.escape(json.dumps({k:v for k,v in result.items() if k not in ('controls','regions')},indent=2))+'</pre>'+''.join(sections), encoding='utf8')
+
+
+def score_controls(args):
+    """Write independently identified observations without changing the machine ledger."""
+    repo, _ = cli.paths(args)
+    output, evidence, report = output_paths(args)
+    run_record, root, manifest, settings, prerequisites = measurement_configuration(args)
     code = cli.executed_code(repo)
     control_path = Path(args.controls) if args.controls else repo/'tools/facsimile-real-acceptance-controls.json'
     control_hash = common.hash_file(control_path)
@@ -210,13 +253,6 @@ def score_controls(args):
         raise common.AuditError('Repeated acceptance control identifier')
     if any(not re.fullmatch(r'[A-Za-z0-9_]+', c['control_id']) for c in controls['controls']):
         raise common.AuditError('Invalid acceptance control identifier')
-    settings_path, _ = cli.snapshot_input(root, manifest, 'settings')
-    settings = cli.read_json(settings_path)
-    prerequisites = cli.check_audit_prerequisites(args)
-    stable = dict(prerequisites, tools={name: {k: v for k, v in item.items() if k not in ('path', 'tessdata_dir')}
-        if isinstance(item, dict) else item for name, item in prerequisites['tools'].items()})
-    if stable != manifest['runtime']['prerequisites']:
-        raise common.AuditError('Control tool/package/language identity differs from capture')
     results = [observe_control(c, root, manifest, settings, args, prerequisites, evidence) for c in controls['controls']]
     if cli.executed_code(repo) != code or common.hash_file(control_path) != control_hash:
         raise common.AuditError('Control code or fixed geometry changed during measurement')
@@ -227,18 +263,67 @@ def score_controls(args):
         'passed': bool(results) and all(c['detected'] for c in results),
         'independent_control_measurement': True, 'machine_ledger_changed': False,
         'random_panel_denominator': controls['random_panel_denominator'], 'counted_separately_from_random_panel': True}
-    cli.write(output, result, args)
-    sections = []
-    for item in results:
-        status = 'Glyphs cut across pages' if item['detected'] else 'Detection not established'
-        sections.append('<article><h2>'+html.escape(item['control_id'])+'</h2><p><strong>'+status+'</strong></p>')
-        if 'user_excerpt' in item:
-            sections.append('<p>User locator: '+html.escape(item['user_excerpt'])+'</p>')
-        for label, crop in item.get('crops', {}).items():
-            sections.append('<p>'+html.escape(label)+'</p><img src="'+html.escape(crop['path'], quote=True)+'">')
-        sections.append('<details><summary>Measurements and transforms</summary><pre>'+html.escape(json.dumps(item, indent=2, ensure_ascii=False))+'</pre></details>')
-        sections.append('</article>')
-    common.safe_write_path(report, work, repo, policy=common.AuditOutputPolicy('audit')).write_text(
-        '<!doctype html><meta charset="utf-8"><title>Real glyph-cut controls</title><style>body{font-family:system-ui;max-width:1100px;margin:2em auto}img{max-width:100%}pre{white-space:pre-wrap}</style><h1>Real glyph-cut controls</h1><p>Independent source-backed observations. Combined ink completeness does not certify readable glyphs.</p>'+''.join(sections), encoding='utf8')
+    publish_observations(result, results, output, report, args, 'Real glyph-cut controls')
     common.progress(f'Real glyph-cut controls: {result["detected"]}/{len(results)}; {output}')
     return 0 if result['passed'] else 4
+
+
+def inspect_run_seams(args):
+    """Select reviewed source regions from observed neighborhoods, without fixed page pairs."""
+    import facsimile_line_delivery as delivery
+    repo, _ = cli.paths(args)
+    output, evidence, report = output_paths(args)
+    run, run_record, root, manifest = delivery.authenticated_run(args)
+    _, _, _, settings, prerequisites = measurement_configuration(args, (run_record, root, manifest))
+    code = cli.executed_code(repo)
+    ledger = cli.read_json(run/'coverage-ledger.json')
+    reviewed = {line['logical_line_id']: line for line in ledger['lines']
+                if line['required_geometry_reviewed'] and line['owner_reviewed'] and line['owner']}
+    candidates = []
+    for item in delivery.array_records(run/'correspondences.json', 'lines'):
+        line = reviewed.get(item['logical_line_id'])
+        pages = item['reader_pages']
+        if not line or len(pages) != 2 or pages[0][0] != pages[1][0] or pages[1][1] != pages[0][1]+1:
+            continue
+        tomus = pages[0][0]
+        rows = [next((r for r in manifest['reader_map']['body_pages'] if
+                      (r['tomus'], r['page'], r['unit_id']) == (tomus, page[1], line['owner'])), None) for page in pages]
+        if any(row is None for row in rows):
+            continue
+        _, sr = cli.snapshot_input(root, manifest, 'source_pdf', source_index=line['source_index'])
+        _, rr = cli.snapshot_input(root, manifest, 'reader_pdf', tomus=tomus)
+        control = {'control_id': 'region_'+line['logical_line_id']+'_pages_'+str(pages[0][1])+'_'+str(pages[1][1]),
+            'unit_id': line['owner'], 'user_excerpt': 'Reviewed source region '+line['logical_line_id'],
+            'source_index': line['source_index'], 'source_page': line['source_page'], 'source_dpi': settings['source_dpi'],
+            'source_box_px': line['source_box_px'], 'source_pdf': sr['path'], 'source_sha256': sr['sha256'],
+            'reader_pdf': rr['path'], 'reader_sha256': rr['sha256'], 'tomus': tomus,
+            'reader_pages': [p[1] for p in pages], 'reader_folios': [r['folio'] for r in rows],
+            'reader_edge_regions': ['bottom', 'top']}
+        candidates.append((line, control))
+    seam_links = {}
+    if run_record['completed_stage'] == 'seams':
+        for seam in delivery.array_records(run/'seam-inventory.json', 'seams'):
+            if seam['kind'] == 'reader_body':
+                seam_links.setdefault(tuple(tuple(page) for page in seam['reader_pages']), []).append(seam['seam_id'])
+    results = []
+    for line, control in candidates:
+        observed = observe_control(control, root, manifest, settings, args, prerequisites, evidence)
+        observed.update(logical_line_id=line['logical_line_id'], machine_coverage_status=line['status'])
+        if run_record['completed_stage'] == 'seams':
+            observed['seam_ids'] = seam_links.get(tuple((control['tomus'], p) for p in control['reader_pages']), [])
+        results.append(observed)
+    if cli.executed_code(repo) != code:
+        raise common.AuditError('Glyph-cut code changed during seam measurement')
+    result = {'schema_version': 1, 'snapshot_id': manifest['snapshot_id'], 'comparison_runtime_id': run_record['runtime_id'],
+        'observation_code': code, 'reviewed_source_regions': len(reviewed),
+        'comparison_record_sha256': run_record['record_sha256'],
+        'source_regions_outside_reviewed_scope': len(ledger['lines'])-len(reviewed),
+        'reviewed_regions_without_eligible_page_pairs': len(reviewed)-len({line['logical_line_id'] for line, _ in candidates}),
+        'evaluated_regions': len(results), 'detected': sum(r['detected'] for r in results),
+        'unresolved_measurements': sum(r['reason'] not in ('glyph_cut_across_reader_pages', 'no_persistent_supported_glyph_cut') for r in results),
+        'regions': results, 'automatic_reader_neighborhoods': True, 'fixed_control_page_pairs_used': False,
+        'machine_ledger_changed': False, 'complete_latin_coverage_certified': False,
+        'interpretation': 'Glyph-cut warnings supplement machine ink coverage; excluded or unlocalized regions remain uncertified.'}
+    publish_observations(result, results, output, report, args, 'Source-backed reader-page glyph cuts')
+    common.progress(f'General glyph-cut observations: {result["detected"]}/{len(results)}; {result["unresolved_measurements"]} unresolved; {output}')
+    return 0
