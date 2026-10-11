@@ -375,7 +375,17 @@ def apply_source_policy(inventory, policy, *, run=None, args=None, render_childr
     import copy
     result = copy.deepcopy(inventory)
     lookup = {o['occurrence_id']: o for p in result['pages'] for o in p['occurrences']}
-    for decision in policy.get('decisions', []):
+    def depth(decision):
+        ancestors = set()
+        item = lookup.get(decision['occurrence_id'])
+        while item and item.get('parent_ids'):
+            parent = item['parent_ids'][0]
+            if parent in ancestors:
+                raise common.AuditError('Cyclic source-review ancestry')
+            ancestors.add(parent)
+            item = lookup.get(parent)
+        return len(ancestors)
+    for decision in sorted(policy.get('decisions', []),key=depth):
         occurrence = lookup.get(decision['occurrence_id'])
         if occurrence is None:
             if any(p['source_index'] == decision['source_index'] and p['page'] == decision['page'] for p in inventory['pages']):
@@ -391,6 +401,9 @@ def apply_source_policy(inventory, policy, *, run=None, args=None, render_childr
                           unit_start=decision.get('unit_start', False), unit_end=decision.get('unit_end', False))
         occurrence['reviewed_scope_extension'] = bool(decision.get('owner') and decision['owner'] not in occurrence['possible_owners'])
         children = decision.get('children', [])
+        previous_children = {identifier for identifier in occurrence.get('child_ids',[])
+                             if lookup.get(identifier,{}).get('kind')=='reviewed_child'}
+        occurrence['child_ids'] = [identifier for identifier in occurrence.get('child_ids',[]) if identifier not in previous_children]
         if children and render_children and (run is None or args is None):
             raise common.AuditError('Measured source children require an owned run for their untouched crops')
         for child in children:
@@ -410,12 +423,15 @@ def apply_source_policy(inventory, policy, *, run=None, args=None, render_childr
                 raise common.AuditError('Reviewed body child requires one owner')
             from PIL import Image
             child_id = common.json_hash([occurrence['occurrence_id'], box, 'reviewed_source_child_v1'])
+            existing = lookup.get(child_id)
+            if existing and (existing.get('kind')!='reviewed_child' or existing.get('parent_ids')!=[occurrence['occurrence_id']]):
+                raise common.AuditError('Conflicting reviewed source-child identity')
             if render_children:
                 with Image.open(Path(run) / occurrence['crop']['path']) as image:
                     crop = save_crop(image, [box[0] - parent[0], box[1] - parent[1], box[2] - parent[0], box[3] - parent[1]],
                                      Path(run), args, child_id)
             else:
-                crop = dict(occurrence['crop'])
+                crop = dict(existing['crop'] if existing else occurrence['crop'])
             crop['box_px'] = box
             item = dict(occurrence, occurrence_id=child_id, box=box, crop=crop,
                         measured_box_px=measured_box,
@@ -424,9 +440,19 @@ def apply_source_policy(inventory, policy, *, run=None, args=None, render_childr
                         parent_ids=[occurrence['occurrence_id']], child_ids=[])
             for page in result['pages']:
                 if page['source_index'] == item['source_index'] and page['page'] == item['page']:
-                    page['occurrences'].append(item)
+                    if existing:
+                        page['occurrences'] = [item if obj['occurrence_id']==child_id else obj for obj in page['occurrences']]
+                    else:
+                        page['occurrences'].append(item)
                     break
+            lookup[child_id] = item
             occurrence['child_ids'].append(child_id)
+        superseded = previous_children-set(occurrence['child_ids'])
+        if superseded:
+            for page in result['pages']:
+                page['occurrences'] = [obj for obj in page['occurrences'] if obj['occurrence_id'] not in superseded]
+            for identifier in superseded:
+                lookup.pop(identifier,None)
         if children:
             # The parent retains all original member components and any unreviewed ink.
             occurrence['required_geometry_reviewed'] = False
@@ -1205,6 +1231,18 @@ def build_line_correspondences(logical_lines, locations, reader_map, settings):
     return {'schema_version': 1, 'lines': output}
 
 
+def anchor_glyph_height(gray, boxes):
+    """Screen corresponding anchor ink in the original page's coordinate frame."""
+    import numpy as np
+    scoped = np.full_like(gray,255)
+    for box in boxes:
+        x0,y0 = max(0,math.floor(box[0])),max(0,math.floor(box[1]))
+        x1,y1 = min(gray.shape[1],math.ceil(box[2])),min(gray.shape[0],math.ceil(box[3]))
+        if x1>x0 and y1>y0:
+            scoped[y0:y1,x0:x1] = gray[y0:y1,x0:x1]
+    return common.ink_line_height(scoped)
+
+
 def register_local_strips(correspondences, logical_lines, root, manifest, settings, run, args, prerequisites):
     """Fit each consistent local anchor strip independently in original pixels."""
     import cv2
@@ -1216,6 +1254,16 @@ def register_local_strips(correspondences, logical_lines, root, manifest, settin
     lines = {line['logical_line_id']: line for line in logical_lines['lines']}
     images = OrderedDict()
     fit_cache = OrderedDict()
+    glyph_cache = OrderedDict()
+
+    def glyphs(gray,boxes,identity):
+        key = common.json_hash([identity,boxes])
+        if key not in glyph_cache:
+            glyph_cache[key] = anchor_glyph_height(gray,boxes)
+            if len(glyph_cache)>4096:
+                glyph_cache.popitem(last=False)
+        glyph_cache.move_to_end(key)
+        return glyph_cache[key]
 
     def rendered(role, number, selector):
         key = (role, number, tuple(sorted(selector.items())))
@@ -1272,11 +1320,15 @@ def register_local_strips(correspondences, logical_lines, root, manifest, settin
                 tomus, page = strip[0]['key'][:2]
                 source, source_meta, source_height = rendered('source_pdf', line['page'], {'source_index': line['source_index']})
                 reader, reader_meta, reader_height = rendered('reader_pdf', page, {'tomus': tomus})
+                pairs = [p for anchor in strip for p in anchor['pairs']]
+                source_glyph_boxes = [pair['source']['source_box_px'] for pair in pairs]
+                reader_glyph_boxes = [pair['reader']['pixel_box'] for pair in pairs]
+                source_height = glyphs(source,source_glyph_boxes,source_meta)
+                reader_height = glyphs(reader,reader_glyph_boxes,reader_meta)
                 if source_height is None or reader_height is None:
                     fits.append({'matched': False, 'validity_reasons': ['glyph_scale_unresolved'], 'reader_page': page, 'tomus': tomus})
                     continue
                 scale = reader_height/source_height
-                pairs = [p for anchor in strip for p in anchor['pairs']]
                 word_scale = float(np.median([(p['reader']['pixel_box'][3]-p['reader']['pixel_box'][1]) /
                                              max(1,p['source']['source_box_px'][3]-p['source']['source_box_px'][1]) for p in pairs]))
                 raw_source = union_boxes([a['source_box'] for a in strip])
@@ -1297,6 +1349,7 @@ def register_local_strips(correspondences, logical_lines, root, manifest, settin
                 metadata = {'runtime_id': logical_lines['runtime_id'], 'caller': 'local_anchor_strip',
                             'source_render': source_meta, 'reader_render': reader_meta,
                             'source_box_px': source_box, 'reader_box_px': reader_box, 'settings': measured, 'initial_scale': scale,
+                            'glyph_scope':'paired_anchor_words','source_glyph_boxes':source_glyph_boxes,'reader_glyph_boxes':reader_glyph_boxes,
                             'anchor_line_ids':sorted({p['source']['logical_line_id'] for p in pairs})}
                 registration_id = common.json_hash(metadata)
                 cache = work / 'cache/line_registration' / (registration_id+'.json')
@@ -1312,6 +1365,7 @@ def register_local_strips(correspondences, logical_lines, root, manifest, settin
                                source_dimensions=[source.shape[1],source.shape[0]], reader_dimensions=[reader.shape[1],reader.shape[0]],
                                source_box_px=source_box, reader_box_px=reader_box, source_glyph_height=source_height,
                                reader_glyph_height=reader_height, word_box_scale=word_scale,
+                               glyph_scope='paired_anchor_words',source_glyph_boxes=source_glyph_boxes,reader_glyph_boxes=reader_glyph_boxes,
                                anchor_line_ids=sorted({p['source']['logical_line_id'] for p in pairs}),
                                evidence_type='direct_anchor_strip' if correspondence['direct_tokens'] else 'inherited_bounded_gap',
                                registration_id=common.json_hash(metadata))
@@ -1957,7 +2011,7 @@ def measure_coverage_run(logical, correspondences, reader_map, bundle, root, man
                     policy=common.AuditOutputPolicy('audit'))
                 expected_words = expected
                 observed_words = [historical.comparison_views([word['text']])[0] for word in obs['words']]
-                recovered = historical.align_tokens(expected_words,observed_words,mode='local') if expected_words and observed_words else None
+                recovered = historical.align_tokens(expected_words,observed_words,mode='local',settings=settings['source_index']) if expected_words and observed_words else None
                 fraction = len(recovered.get('covered_source',[]))/len(expected_words) if recovered and expected_words else 0
                 retry_recovery.append(fraction)
                 retries.append({'tomus':tomus,'reader_page':page,'box_px':box,'dpi':settings['ocr']['retry_dpi'],'psm':psm,'word_count':obs['word_count'],'recovery_fraction':fraction})

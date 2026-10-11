@@ -68,6 +68,11 @@ unreviewed ink. Optional `page_overrides` specify `source_index`, physical `page
 `full_crop_sha256`, `gutter_box_px`, `latin_left_px`, reason and reviewer.
 Reviews bind the source bytes and crop evidence; stale evidence is rejected.
 Reviewed ownership may extend the production table's candidate page interval.
+Applying a policy preserves one derived child per geometry identity and its
+untouched crop. Revised geometry removes superseded derived children while
+retaining the original parent components and unreviewed ink. Ancestor reviews
+are applied before descendant reviews, so repeated review imports retain a
+consistent source inventory.
 
 Adjudication preserves the old inventory and captured policy. Adopt the fresh
 policy through a new `capture --source-policy <policy-v2.json>` and inventory run;
@@ -121,8 +126,13 @@ or backward refinements remain ambiguous observations. Post-binding tokenless
 counts come from the token bundle; logical records mark OCR assignment as pending.
 
 Local image fits use the shared SIFT/RANSAC primitive with explicit pixel regions.
-Scale, word-box agreement, reprojection residual, inlier extent and alternate
-placements govern fit validity. Each changed source/reader gap or page starts a
+Glyph scale is measured from corresponding anchor-word ink on each original
+page, through the shared screened estimator. The page-sized measurement frame
+preserves its component-height screen while excluding unrelated typography;
+required reference ink remains complete and unchanged. Recorded word boxes bind
+this scope to each registration cache entry. Scale, word-box agreement,
+reprojection residual, inlier extent and alternate placements govern fit
+validity. Each changed source/reader gap or page starts a
 separate strip. A context fit outside the line's bounded projection is marked
 `changed_gap_context_only`; it cannot certify that line's ink. Source-region IDs
 depend on source detector settings, independently of reader matching settings.
