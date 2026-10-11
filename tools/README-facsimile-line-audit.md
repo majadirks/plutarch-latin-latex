@@ -33,6 +33,20 @@ remain under the run directory. A measured gutter is a source hypothesis;
 unresolved gutters, threshold disagreements and residual objects remain visible.
 Selected-ink accounting is distinct from reviewed source ownership and coverage.
 
+For targeted source review, `inventory --source-pages 0:38,0:214,0:215,0:535,1:580,1:562`
+restricts the inventory to those physical source pages (source indices are zero
+based). `--units` still controls the candidate ranges. The explicit page scope
+is authenticated and reported; this operation does not inventory the complete
+unit ranges. The same selector on `run` keeps the selected units' mapped reader
+pages while comparing the explicitly requested source pages. Such a run is a
+targeted control comparison and cannot certify omitted source pages.
+
+Source grouping measures parallel baselines within local vertical bands, using
+original component coordinates and a bounded rotation search. The source pixels
+remain unchanged. Glyphs, punctuation, faint components and unassigned ink remain
+in the inventory. Gutter and grouping estimates remain provisional until source
+geometry and ownership are reviewed.
+
 Source-only review sheets show the untouched page, annotated inventory and crop
 links before reader outcomes. Import source decisions into a fresh policy file:
 
@@ -179,6 +193,36 @@ directory. Aggregate records live in `results/<report-hash>/verification-results
 under the prepared root. Known losses that remain unresolved and incomplete
 retained controls fail verification with exit 4. `--stop-after coverage` scores
 coverage; the default full invocation includes seams, neutral tasks and reports.
+
+The scorer checks at least 80% required-source intersection, limits extra source
+line height, requires the independently expected reader page and gap/painted
+extent, and checks opening/ending rules. Known partial losses require a persistent
+connected deficit at both thresholds in the expected reader pixels. A generic
+page warning cannot pass this geometry check. Source-page and reader-body seam
+counts are checked against the independent builder placements. The sparse
+manual-localization subcase is excluded from automatic recall.
+
+Fix the real calibration panel before scoring detector revisions:
+
+```powershell
+python tools/facsimile_line_audit.py panel --snapshot <corpus-snapshot>
+```
+
+`panel.json` lives under `runs/calibration/<reader-input-identity>` unless
+`--run-dir` specifies another audit directory. It contains 25 distinct body pages
+per tomus, selected by sorting SHA-256(input identity, tomus, page): 200 pages in
+total. Its identity uses source PDFs, reader PDFs/TeX and the unit table, excluding
+code, settings and source-policy versions. Repeating the command for those same
+inputs requires the same saved panel. Six restored source-page controls and the
+numeric partial-duplicate opening pages are listed and counted separately; their
+presence in the panel does not approve ownership or equivalence. Previously
+observed pages and post-revision results remain regression evidence.
+
+Keep all earlier predictions and crops. Record misses, false alarms, processing
+failures and uncertainty against their actual page and required-region
+denominators. Freeze calibration identities after the seven cases and reviewed
+retained controls pass; pending ownership, equivalence and weak fits remain
+explicit uncertainty and cannot be promoted by a successful process exit.
 
 Generate a full audit or regenerate derived reports from an authenticated run:
 

@@ -97,27 +97,64 @@ def separate_source_columns(gray, settings):
                                        left_estimate + int(first['glyph_height'])] if left_estimate else None}
 
 
+def source_baseline_slope(components, glyph_height, latin_left, settings):
+    """Measure parallel text baselines from original source component coordinates."""
+    import numpy as np
+    seeds = [component for component in components if component['box'][0]>=latin_left and
+             .5*glyph_height<=component['box'][3]-component['box'][1]<=2.5*glyph_height and
+             component['box'][2]-component['box'][0]<=12*glyph_height]
+    if len(seeds)<30:
+        return 0.0
+    positions = np.asarray([[component['center'][0],component['box'][3]] for component in seeds])
+    weights = np.asarray([min(component['area'],glyph_height**2) for component in seeds])
+    limit = math.tan(math.radians(settings['grouping']['baseline_rotation_degrees']))
+    slopes = np.linspace(-limit,limit,settings['grouping']['baseline_rotation_samples'])
+    scores = []
+    for slope in slopes:
+        heights = positions[:,1]-slope*positions[:,0]
+        bins = np.rint((heights-heights.min())/max(1,glyph_height/4)).astype(int)
+        profile = np.bincount(bins,weights=weights)
+        smoothed = np.convolve(profile,[.25,.5,.25],mode='same')
+        scores.append(float(np.dot(smoothed,smoothed)))
+    best = max(range(len(slopes)),key=lambda index:(scores[index],-abs(slopes[index])))
+    middle = len(slopes)//2
+    return float(slopes[best]) if scores[best]>scores[middle]*1.05 else 0.0
+
+
 def assemble_source_lines(components, glyph_height, latin_left, settings):
     """Group against fitted baselines; preserve ambiguous marks as separate objects."""
     if not glyph_height:
         return [], components
     h = glyph_height
+    slope = source_baseline_slope(components,h,latin_left,settings)
+    pitch = settings['grouping']['baseline_band_glyphs']*h
+    local_slopes = {}
+    def measured_slope(component):
+        band = int(component['center'][1]//pitch)
+        if band not in local_slopes:
+            center = (band+.5)*pitch
+            nearby = [item for item in components if abs(item['center'][1]-center)<=pitch]
+            local_slopes[band] = source_baseline_slope(nearby,h,latin_left,settings)
+        return local_slopes[band]
+    def baseline(component, measured=slope):
+        return component['box'][3]-measured*(component['center'][0]-latin_left)
     seeds = [c for c in components if c['box'][0] >= latin_left
-             and 0.5 * h <= c['box'][3] - c['box'][1] <= 1.8 * h
+             and 0.5 * h <= c['box'][3] - c['box'][1] <= 2.5 * h
              and c['box'][2] - c['box'][0] <= 12 * h]
     groups = []
     used = set()
-    for component in sorted(seeds, key=lambda c: (c['center'][1], c['center'][0], c['component'])):
-        possible = [g for g in groups if abs(component['center'][1] - g['baseline']) <= settings['grouping']['vertical_glyphs'] * h
-                    and all(abs(c['center'][1] - component['center'][1]) <= h for c in g['members'])
+    for component in sorted(seeds, key=lambda c: (baseline(c), c['center'][0], c['component'])):
+        possible = [g for g in groups if abs(baseline(component,g['slope']) - g['baseline']) <= settings['grouping']['vertical_glyphs'] * h
+                    and all(abs(baseline(c,g['slope']) - baseline(component,g['slope'])) <= h for c in g['members'])
                     and min(max(c['box'][0] - component['box'][2], component['box'][0] - c['box'][2], 0)
                             for c in g['members']) <= settings['grouping']['horizontal_glyphs'] * h]
         if len(possible) == 1:
             group = possible[0]
             group['members'].append(component)
-            group['baseline'] = sum(c['center'][1] for c in group['members']) / len(group['members'])
+            group['baseline'] = sum(baseline(c,group['slope']) for c in group['members']) / len(group['members'])
         elif not possible:
-            groups.append({'baseline': component['center'][1], 'members': [component]})
+            local_slope = measured_slope(component)
+            groups.append({'baseline': baseline(component,local_slope), 'slope':local_slope, 'members': [component]})
         else:
             continue
         used.add(component['component'])
@@ -129,7 +166,7 @@ def assemble_source_lines(components, glyph_height, latin_left, settings):
         if len(possible) == 1:
             target = possible[0]
             target['members'].extend(group['members'])
-            target['baseline'] = sum(c['center'][1] for c in target['members']) / len(target['members'])
+            target['baseline'] = sum(baseline(c,target['slope']) for c in target['members']) / len(target['members'])
         else:
             merged.append(group)
     groups = merged
@@ -137,11 +174,11 @@ def assemble_source_lines(components, glyph_height, latin_left, settings):
     for component in components:
         if component['component'] in used or component['box'][0] < latin_left:
             continue
-        if component['box'][3] - component['box'][1] > 1.8 * h:
+        if component['box'][3] - component['box'][1] > 2.5 * h:
             continue
         parents = []
         for group in groups:
-            if abs(component['center'][1] - group['baseline']) > settings['grouping']['punctuation_vertical_glyphs'] * h:
+            if abs(baseline(component,group['slope']) - group['baseline']) > settings['grouping']['punctuation_vertical_glyphs'] * h:
                 continue
             gap = min(max(c['box'][0] - component['box'][2], component['box'][0] - c['box'][2], 0) for c in group['members'])
             if gap <= settings['grouping']['punctuation_horizontal_glyphs'] * h:
@@ -152,7 +189,7 @@ def assemble_source_lines(components, glyph_height, latin_left, settings):
     lines = []
     for group in groups:
         members = sorted(group['members'], key=lambda c: (c['box'][0], c['box'][1]))
-        lines.append({'box': union_boxes([c['box'] for c in members]), 'baseline': group['baseline'],
+        lines.append({'box': union_boxes([c['box'] for c in members]), 'baseline': group['baseline'], 'baseline_slope':group['slope'],
                       'components': [c['component'] for c in members]})
     return sorted(lines, key=lambda l: (l['baseline'], l['box'][0])), [c for c in components if c['component'] not in used]
 
@@ -194,7 +231,7 @@ def inventory_source_page(image, record, page, owners, settings, run, args):
                                                     'connectivity', 'grouping', 'gutter')}
     if settings.get('reviewed_gutter_override'):
         source_settings['reviewed_gutter_override'] = settings['reviewed_gutter_override']
-    detector = common.json_hash({'settings': source_settings, 'adapter': 'independent-source-components-v1'})
+    detector = common.json_hash({'settings': source_settings, 'adapter': 'independent-source-components-v2'})
     objects = []
     assigned = []
     for line in lines:
@@ -281,6 +318,11 @@ def inventory_source_units(root, manifest, all_units, selected, settings, run, a
         if group.get('owner') in {u['id'] for u in selected}:
             for mapping in group['region_maps']:
                 requested.add((mapping['source_index'], mapping['page']))
+    explicit = getattr(args,'source_page_scope',None)
+    if explicit:
+        if not set(explicit)<=requested:
+            raise common.AuditError('Explicit source-page scope escapes selected unit ranges and reviewed extensions')
+        requested = set(explicit)
     pages, errors = [], []
     for source_index, page in sorted(requested):
         record_path, record = cli.snapshot_input(root, manifest, 'source_pdf', source_index=source_index)
@@ -324,6 +366,7 @@ def inventory_source_units(root, manifest, all_units, selected, settings, run, a
             errors.append({'source_index': source_index, 'page': page, 'error': str(exc)})
     result = {'schema_version': 1, 'snapshot_id': manifest['snapshot_id'], 'pages': pages,
               'requested_pages': len(requested), 'completed_pages': len(pages), 'ranges': ranges,
+              'explicit_source_page_scope':explicit,'full_selected_unit_source_ranges':not bool(explicit),
               'raw_inventory_id': common.json_hash(pages)}
     return result, errors
 
@@ -2091,9 +2134,12 @@ def run_verification_cases(args):
         retained_failures = []
         if case['case_id'] in ('retained_control','redundant_copy_removed'):
             retained_failures = [line['logical_line_id'] for line in body if line['owner']=='fixture' and line['status']!='complete']
+        settings_path,_ = cli.snapshot_input(snapshot,manifest,'settings')
+        geometry = score_verification_geometry(expectation,cli.read_json(root/case['snapshot']/'inputs/policy.json'),ledger,
+            cli.read_json(run/'seam-inventory.json') if selected.stop_after=='seams' else None,cli.read_json(settings_path))
         summary = {'case_id':case['case_id'],'run':str(run.relative_to(root)),'completed_stage':selected.stop_after,
                    'processing_exit':code,'misses':misses,'false_losses':controls,'retained_failures':retained_failures,
-                   'counts':ledger.get('counts',{}),'passed':not(code or misses or controls or retained_failures)}
+                   'counts':ledger.get('counts',{}),'geometry':geometry,'passed':not(code or misses or controls or retained_failures or geometry['misses'])}
         summaries.append(summary)
         cli.write(run/'case-result.json',summary,args)
         common.progress(str(summary))
@@ -2557,3 +2603,144 @@ def adjudicate_losses(args):
     revised = dict(review,version=version+1,parent_review_sha256=common.hash_file(args.loss_reviews))
     revised['review_set_id'] = common.json_hash(revised)
     cli.write(args.reviews_out,revised,args)
+
+
+def write_calibration_panel(args):
+    """Fix reader pages by input-only identity before scoring evolving detectors."""
+    import hashlib
+    import facsimile_line_audit as cli
+    if not args.snapshot:
+        raise common.AuditError('Panel selection requires --snapshot')
+    root,manifest = cli.load_snapshot(args.snapshot)
+    if manifest['target_kind']!='corpus':
+        raise common.AuditError('The real calibration panel requires a corpus capture')
+    inputs = [{key:record[key] for key in ('role','path','sha256')} for record in manifest['inputs']
+              if record['role'] in ('source_pdf','reader_pdf','reader_tex','unit_table')]
+    identity = common.json_hash(sorted(inputs,key=lambda record:(record['role'],record['path'])))
+    pages = {}
+    for row in manifest['reader_map']['body_pages']:
+        pages.setdefault((row['tomus'],row['page']),[]).append(row)
+    selected = []
+    for tomus in range(1,9):
+        candidates = sorted((key for key in pages if key[0]==tomus),
+            key=lambda key:hashlib.sha256(f'{identity}:{key[0]}:{key[1]}'.encode()).hexdigest())
+        if len(candidates)<25:
+            raise common.AuditError('Each tomus requires 25 distinct mapped body pages')
+        for key in candidates[:25]:
+            selected.append({'tomus':key[0],'reader_page':key[1],'rank_sha256':hashlib.sha256(f'{identity}:{key[0]}:{key[1]}'.encode()).hexdigest(),
+                             'unit_ids':sorted({row['unit_id'] for row in pages[key]}),'reader_input_sha256':pages[key][0]['input_sha256']})
+    policy_path,_ = cli.snapshot_input(root,manifest,'source_policy')
+    policy = cli.read_json(policy_path)
+    targeted = [{'source_index':index,'source_page':page,'unit_id':unit,'kind':'restored_control'} for index,page,unit in
+                ((0,38,'romulus'),(0,214,'pericles'),(0,215,'pericles'),(0,535,'lysander'),(1,580,'dio'),(1,562,'antonius'))]
+    for seed in policy['duplicate_seeds']:
+        provenance = seed['numeric_provenance']
+        if not provenance.get('reviewed_lines'):
+            continue
+        source_pages = {row['source_page'] for row in provenance['reviewed_lines']}
+        source_pages.update(provenance['skip_pages'])
+        targeted.extend({'source_index':provenance['source'],'source_page':page,'unit_id':provenance['unit_id'],
+                         'kind':'partial_duplicate_opening','finding_ids':provenance['finding_ids']} for page in sorted(source_pages))
+    panel = {'schema_version':1,'reader_input_identity':identity,'identity_inputs':inputs,'selection_rule':'sha256(input-identity:tomus:page)',
+             'pages_per_tomus':25,'pages':selected,'targeted_source_controls':targeted,
+             'random_panel_denominator':len(selected),'targeted_controls_denominator':len(targeted),
+             'code_settings_policy_excluded_from_selection':True,'existing_observations_are_not_a_new_holdout':True}
+    repo,work = cli.paths(args)
+    directory = Path(args.run_dir) if args.run_dir else work/'runs/calibration'/identity
+    path = common.safe_write_path(directory/'panel.json',work,repo,policy=common.AuditOutputPolicy('audit'))
+    if path.exists():
+        if cli.read_json(path)!=panel:
+            raise common.AuditError('Existing fixed panel identity or selected pages changed')
+    else:
+        cli.write(path,panel,args)
+    common.progress(f'Fixed panel: {len(selected)} body pages, {len(targeted)} targeted source controls; {path}')
+    return panel
+
+
+def score_verification_geometry(expectation,policy,ledger,seams,settings):
+    """Score source membership, reader extents, endpoint rules and glyph deficits independently."""
+    import numpy as np
+    regions = {(region['source_page'],region['line']):region for region in expectation['source_regions']}
+    aliases = {}
+    for relation in policy.get('synthetic_duplicate_regions',[]):
+        first,other = relation['canonical'],relation['other']
+        aliases[(other['source_page'],other['line'])] = (first['source_page'],first['line'])
+    def canonical(key):
+        return aliases.get(key,key)
+    placed = {}
+    for placement in expectation['reader_placements']:
+        placed.setdefault(canonical((placement['source_page'],placement['source_line'])),[]).append(placement)
+    sequences = {}
+    for key,region in sorted(regions.items()):
+        if key not in aliases:
+            sequences.setdefault(region['owner'],[]).append(key)
+    ratio = settings['reader_dpi']/300
+    def scaled(box):
+        return [coordinate*ratio for coordinate in box]
+    misses,targets = [],[]
+    for target in expectation['omitted_source_lines']+expectation['partial_source_lines']:
+        key = (target['source_page'],target['source_line'])
+        region = regions[key]
+        required = region['source_box_px']
+        area = (required[2]-required[0])*(required[3]-required[1])
+        findings = [line for line in ledger['lines'] if line['source_page']==key[0] and line['required_geometry_reviewed'] and
+                    box_intersection(required,line['source_box_px'])/area>=settings['source_index']['localization_rule']['omission_source_coverage'] and
+                    (line['source_box_px'][3]-line['source_box_px'][1]) <= (required[3]-required[1])*(1+settings['source_index']['localization_rule']['maximum_extra_source_lines']) and
+                    line['status'] in ('partial','absent')]
+        order = sequences[region['owner']]
+        position = order.index(canonical(key))
+        earlier = [other for other in order[:position] if other in placed]
+        later = [other for other in order[position+1:] if other in placed]
+        placements = placed.get(canonical(key),[])
+        before = placed[earlier[-1]][-1] if earlier else None
+        after = placed[later[0]][0] if later else None
+        pages = {placement['reader_page'] for placement in placements} or {placement['reader_page'] for placement in (before,after) if placement}
+        context = 'opening' if not earlier and not placements and regions[order[0]]['unit_start'] else 'ending' if not later and not placements and regions[order[-1]]['unit_end'] else 'interior'
+        painted = [entry for entry in expectation['painted_reader_regions'] if (entry['source_page'],entry['source_line'])==key]
+        expected_boxes = [scaled(entry['reader_box_px']) for entry in painted]
+        if placements and not expected_boxes:
+            for placement in placements:
+                alternate = regions[(placement['source_page'],placement['source_line'])]
+                matrix = np.asarray(placement['builder_transform'])
+                prefix = [required[0],required[1],alternate['source_box_px'][0],required[3]]
+                if prefix[2]>prefix[0]:
+                    corners = np.asarray([[prefix[0],prefix[1],1],[prefix[2],prefix[3],1]]) @ matrix.T
+                    expected_boxes.append(scaled([*corners[0],*corners[1]]))
+        matched = []
+        for finding in findings:
+            extents = [(finding.get('reader_page'),finding.get('reader_box_px'))] if finding.get('reader_box_px') else []
+            extents += [(entry['reader_page'],entry['box_px']) for entry in finding.get('reader_extents',[])]
+            if not extents or not any(page in pages for page,box in extents):
+                continue
+            if not placements and finding['context_kind']!=context:
+                continue
+            if expected_boxes and not any(box_intersection(box,expected)>0 for page,box in extents if page in pages for expected in expected_boxes):
+                continue
+            if target in expectation['partial_source_lines']:
+                measurement = ledger['measurements'].get(finding.get('measurement_id'))
+                if not measurement:
+                    continue
+                persistent = all(any(component['largest_unsupported_component']>=settings['ink']['minimum_deficit_pixels'] and
+                                     component['unsupported_reader_box_px'] and any(box_intersection(component['unsupported_reader_box_px'],expected)>0 for expected in expected_boxes)
+                                     for component in observation['components']) for observation in measurement['observations'])
+                if not persistent:
+                    continue
+            elif not expected_boxes and before and after and before['reader_page']==after['reader_page']:
+                gap = scaled([0,before['reader_box_px'][3],expectation['reader_raster_dimensions'][0],after['reader_box_px'][1]])
+                if not any(page==before['reader_page'] and box_intersection(box,gap)>0 for page,box in extents):
+                    continue
+            matched.append(finding['logical_line_id'])
+        entry = dict(target,expected_reader_pages=sorted(pages),expected_reader_boxes_px=expected_boxes,
+                     expected_context=context,matched_line_ids=matched)
+        targets.append(entry)
+        if not matched:
+            misses.append(entry)
+    seam_counts = None
+    if seams is not None:
+        expected_source = len({region['source_page'] for region in regions.values()})-1
+        expected_reader = len({placement['reader_page'] for placement in expectation['reader_placements']})-1
+        seam_counts = {'source_pages':expected_source,'reader_body':expected_reader,'observed':seams['counts']}
+        if seams['counts'].get('source_page',0)!=expected_source or seams['counts'].get('reader_body',0)!=expected_reader:
+            misses.append({'reason':'independent_source_reader_transition_count_mismatch'})
+    return {'targets':targets,'misses':misses,'target_denominator':len(targets),'detected':sum(bool(target['matched_line_ids']) for target in targets),
+            'independent_geometry':True,'manual_sparse_evidence_excluded_from_automatic_recall':True,'seam_counts':seam_counts}

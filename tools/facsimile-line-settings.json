@@ -1,6 +1,9 @@
 {
   "connectivity": 8,
   "grouping": {
+    "baseline_band_glyphs": 20,
+    "baseline_rotation_degrees": 3,
+    "baseline_rotation_samples": 61,
     "baseline_glyphs": 0.25,
     "horizontal_glyphs": 2.5,
     "punctuation_horizontal_glyphs": 1.5,

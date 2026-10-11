@@ -284,8 +284,18 @@ def run_configuration(args):
         raise AuditError('Executed code differs from capture; create a new snapshot/run')
     unit_path, _ = snapshot_input(root, manifest, 'unit_table')
     units = select_units(read_json(unit_path), args.units)
+    scope = [u['id'] for u in units]
+    if getattr(args,'source_pages',None):
+        try:
+            pages = sorted({tuple(map(int,item.split(':'))) for item in args.source_pages.split(',')})
+        except ValueError as exc:
+            raise AuditError('Source pages require comma-separated source-index:physical-page pairs') from exc
+        if any(len(page)!=2 or page[0] not in (0,1) or page[1]<1 for page in pages):
+            raise AuditError('Invalid explicit source-page scope')
+        args.source_page_scope = pages
+        scope = {'units':scope,'source_pages':pages}
     runtime, prerequisites = compute_runtime_identity(args, snapshot=manifest, settings=settings,
-                                                     policy=policy, scope=[u['id'] for u in units])
+                                                     policy=policy, scope=scope)
     if runtime['prerequisites'] != manifest['runtime']['prerequisites']:
         raise AuditError('Tool/package/language identity differs from capture')
     return root, manifest, settings, policy, units, runtime, prerequisites
@@ -362,6 +372,7 @@ def capture_verification_runtime(builder_snapshot, args):
     defaults = read_json(repo/'tools/facsimile-line-settings.json')
     settings = dict(defaults,**settings)
     settings['registration'] = dict(defaults['registration'],**settings['registration'])
+    settings['grouping'] = dict(defaults['grouping'],**settings['grouping'])
     policy = read_json(policy_path)
     validate_source_policy(policy,target_kind='verification')
     runtime,prerequisites = compute_runtime_identity(args,settings=settings,policy=policy)
@@ -508,13 +519,15 @@ def resolve_run_snapshot(run_record, args):
 def make_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     subs = parser.add_subparsers(dest='command', required=True)
-    for command in ('check', 'capture', 'inventory', 'run', 'report', 'adjudicate', 'verify', 'inspect-trace'):
+    for command in ('check', 'capture', 'inventory', 'run', 'report', 'panel', 'adjudicate', 'verify', 'inspect-trace'):
         sub = subs.add_parser(command)
         sub.add_argument('--repo-root', default=str(Path(__file__).resolve().parent.parent))
         sub.add_argument('--work-dir', default=DEFAULT_WORK)
         for name in ('snapshot', 'run-dir', 'units', 'settings', 'source-policy', 'pdftoppm', 'tesseract', 'tessdata-dir', 'trace-dir'):
             sub.add_argument(f'--{name}')
         sub.add_argument('--resume', action='store_true')
+        if command in ('inventory','run'):
+            sub.add_argument('--source-pages',help='Explicit source-index:physical-page pairs for source review; excludes other pages')
         if command == 'capture':
             sub.add_argument('--reader-dir', default='build_facsimile')
             sub.add_argument('--snapshot-dir', required=True)
@@ -555,6 +568,9 @@ def main():
         elif args.command == 'report':
             import facsimile_line_coverage as coverage
             coverage.report(args)
+        elif args.command == 'panel':
+            import facsimile_line_coverage as coverage
+            coverage.write_calibration_panel(args)
         elif args.command == 'adjudicate':
             import facsimile_line_coverage as coverage
             if args.source_reviews and args.inventory_dir and args.policy_out and not args.duplicate_reviews and not args.loss_reviews:
