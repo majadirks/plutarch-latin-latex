@@ -1244,7 +1244,7 @@ def anchor_glyph_height(gray, boxes):
 
 
 def register_local_strips(correspondences, logical_lines, root, manifest, settings, run, args, prerequisites):
-    """Fit each consistent local anchor strip independently in original pixels."""
+    """Fit original-pixel strips on source pages that can support reviewed coverage."""
     import cv2
     import numpy as np
     from collections import OrderedDict
@@ -1252,6 +1252,15 @@ def register_local_strips(correspondences, logical_lines, root, manifest, settin
     import facsimile_line_audit as cli
     repo, work = cli.paths(args)
     lines = {line['logical_line_id']: line for line in logical_lines['lines']}
+    # Unreviewed neighbors can supply continuous fits for reviewed lines on the
+    # same physical source page. Preserve their registrations as well.
+    reviewed_pages = {(line['source_index'], line['page']) for line in logical_lines['lines']
+                      if line['geometry_reviewed']}
+    eligible_records = sum((lines[item['logical_line_id']]['source_index'],
+                            lines[item['logical_line_id']]['page']) in reviewed_pages
+                           for item in correspondences['lines'])
+    common.progress(f'Source-region registration scope: {eligible_records} eligible; '
+                    f'{len(correspondences["lines"])-eligible_records} deferred without reviewed page geometry')
     images = OrderedDict()
     fit_cache = OrderedDict()
     glyph_cache = OrderedDict()
@@ -1284,7 +1293,8 @@ def register_local_strips(correspondences, logical_lines, root, manifest, settin
     for count, correspondence in enumerate(correspondences['lines']):
         line = lines[correspondence['logical_line_id']]
         fits = []
-        if correspondence['localization_status'] == 'bounded':
+        deferred = (line['source_index'], line['page']) not in reviewed_pages
+        if not deferred and correspondence['localization_status'] == 'bounded':
             grouped = {}
             for pair in correspondence['context_tokens']:
                 source, reader = pair['source'], pair['reader']
@@ -1383,10 +1393,14 @@ def register_local_strips(correspondences, logical_lines, root, manifest, settin
                                  evidence_type='direct_anchor_strip' if line['logical_line_id'] in fit['anchor_line_ids'] else
                                  'inherited_bounded_gap' if within or endpoint_near else 'changed_gap_context_only'))
         completed.append(dict(correspondence, registrations=fits,
+                              registration_deferred_reason='source_page_has_no_reviewed_geometry' if deferred else None,
                               image_status='registered' if any(f.get('matched') for f in fits) else 'unresolved'))
         if count % 100 == 0:
-            common.progress(f'Local strip observations: {count+1}/{len(correspondences["lines"])}')
-    return dict(correspondences, snapshot_id=logical_lines['snapshot_id'], runtime_id=logical_lines['runtime_id'], lines=completed)
+            common.progress(f'Source-region registration records: {count+1}/{len(correspondences["lines"])}')
+    return dict(correspondences, snapshot_id=logical_lines['snapshot_id'], runtime_id=logical_lines['runtime_id'], lines=completed,
+                registration_scope={'reviewed_source_pages': len(reviewed_pages), 'eligible_records': eligible_records,
+                                    'deferred_records': len(completed)-eligible_records,
+                                    'deferred_reason': 'source_page_has_no_reviewed_geometry'})
 
 
 def compact_correspondences(record):

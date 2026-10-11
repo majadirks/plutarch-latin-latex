@@ -136,6 +136,15 @@ validity. Each changed source/reader gap or page starts a
 separate strip. A context fit outside the line's bounded projection is marked
 `changed_gap_context_only`; it cannot certify that line's ink. Source-region IDs
 depend on source detector settings, independently of reader matching settings.
+Image registrations are deferred on physical source pages without reviewed
+geometry: those fits cannot support a completeness verdict. All source regions,
+tokens and correspondence records remain present, with unresolved image status
+and `registration_deferred_reason=source_page_has_no_reviewed_geometry`. On a
+page containing reviewed geometry, every region remains eligible for fitting,
+including unreviewed neighbors that can supply a shared continuous fit. The
+`registration_scope` counts eligible/deferred records and reviewed physical
+source pages. Progress counts source-region records, not successful fits or
+confirmed Latin lines. Deferral does not change expected source ink or thresholds.
 Completed-stage resume requires the same code, tool, language, policy and settings
 identities and authenticates saved record hashes. Localization completion does
 not claim that coverage or seam processing has completed.

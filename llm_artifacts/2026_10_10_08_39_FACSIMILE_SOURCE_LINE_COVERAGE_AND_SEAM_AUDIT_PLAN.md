@@ -1056,6 +1056,33 @@ labels alone count as automatic detection.
 Confirm the findings identify the actual split characters, and distinguish
 surviving combined ink from readable Latin. Header leakage is outside scope.
 
+### 7.1b Bound registration to source pages that can support reviewed coverage
+
+In `tools/facsimile_line_coverage.py`, `register_local_strips` must retain all
+source-region correspondence records while deferring image fits on physical
+source pages containing no `geometry_reviewed` logical line. Deferred records
+have no registrations, unresolved image status and an explicit deferral reason.
+Register every region on pages containing reviewed geometry, including unreviewed
+neighbors: shared continuous fits used by coverage have the same source index
+and physical page as their reviewed target. Preserve source boxes, ink masks,
+ownership rules and registration thresholds. Report eligible/deferred record
+counts and reviewed physical-page counts, and label progress as source-region
+records rather than successful strip observations.
+
+**LLM verification:** Compile Python, run all seven existing full-path cases,
+and compare loss/control verdicts with the preceding captured implementation.
+Use a disposable real-input probe to check that unreviewed neighboring regions
+on reviewed pages retain their fits and wholly unreviewed pages retain all
+regions with unresolved, deferred registrations. Run `cargo fmt --all --check`,
+`cargo clippy --all-targets -- -D warnings`, and `cargo test`. Create a fresh
+capture for changed comparison code; retain the failed corpus capture/log and
+reuse authenticated raw renders/OCR rather than old verdicts.
+
+**Human verification:** Read the registration-scope counts alongside the source
+inventory. Confirm deferred pages remain unresolved and are not counted as
+preserved Latin. Inspect the existing controlled omission findings for unchanged
+source rectangles and reader-page evidence.
+
 ### 7.2 Execute all eight readers, verify identities and archive findings
 
 Finish the setup guide and update the existing README audit section in place.
