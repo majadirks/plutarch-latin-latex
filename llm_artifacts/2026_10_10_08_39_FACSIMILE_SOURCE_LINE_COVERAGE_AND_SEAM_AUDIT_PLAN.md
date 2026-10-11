@@ -1007,6 +1007,46 @@ trace diagnostics; this is the deferred integration comparison.
 then the fixed panel. Confirm source damage and weak observations remain visible.
 Do not change tolerances to suppress genuine endpoint deficits or unresolved maps.
 
+### 7.1a Verify two real horizontal-split acceptance controls
+
+Keep the two input-bound real defects in
+`tools/facsimile-real-acceptance-controls.json`, separate from both the seven
+constructed cases and the fixed random panel. They are Tomus I physical pages
+212–213 / folios 196–197 (source v1/105, Lycurgus–Numa comparison), and Tomus II
+physical pages 20–21 / folios 12–13 (source v1/200, Pericles). The latter's quoted
+text and folios identify pages 20–21 in the current authenticated PDF; retain
+the user's originally reported 21–22 as provenance. Source boxes come from
+independent visual inspection of intact source rows, never inferred reader cuts.
+
+Require a specific `glyph_cut_across_reader_pages` finding for each source row
+and both reader-page edges. A generic unresolved result, wrong page pair, or
+complete combined ink without an explicit glyph-cut warning is a missed control.
+An ordered union can establish surviving ink while glyphs remain unreadable as
+upper/lower halves on different pages. Report those two properties separately.
+Normal breaks between intact glyphs/words must not become glyph-cut findings.
+
+Use the existing source adjudication and visible-reader measurement helpers.
+Add a separately versioned `controls` command to
+`tools/facsimile_line_delivery.py`, accepting `--controls`, `--run-dir` and a
+fresh `--out`. Authenticate the control input hashes, source geometry, actual
+reader-page pair and measurement evidence. Preserve misses/unprocessed controls
+and exit 4 unless both controls are specifically detected. Reuse a shared
+glyph-cut predicate across control scoring and general seam reporting; do not
+hard-code the two page numbers into the detector. Keep active-run comparison
+code immutable; any comparison-code revision requires a new capture/run.
+
+**LLM verification:** Compile changed Python files, validate control input
+hashes and geometry, and score both controls through real visible PDF evidence.
+Require 2/2 specific findings with source and both reader-edge crops. Inspect a
+normal intact-line page join as a retained control. Reject changed input hashes
+and wrong page pairs. Rerun the seven complete cases if comparison predicates
+change, preserving earlier predictions. Neither unresolved results nor review
+labels alone count as automatic detection.
+
+**Human verification:** Compare the intact source rows with both reader halves.
+Confirm the findings identify the actual split characters, and distinguish
+surviving combined ink from readable Latin. Header leakage is outside scope.
+
 ### 7.2 Execute all eight readers, verify identities and archive findings
 
 Finish the setup guide and update the existing README audit section in place.

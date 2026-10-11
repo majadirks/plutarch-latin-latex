@@ -349,6 +349,15 @@ stages report unavailability until implemented.
 
 ## Scope verification and evidence archives
 
+Two real horizontal-split acceptance controls are fixed in
+`facsimile-real-acceptance-controls.json`, separately from synthetic cases and
+the random panel. They bind intact source rows to Tomus I pages 212–213 and
+Tomus II pages 20–21 in the current input PDFs. Their success criterion is an
+explicit glyph-cut finding at both reader edges. Generic uncertainty or combined
+ink completeness without that warning does not pass. The control scorer and
+general glyph-cut detection remain acceptance work until 2/2 findings have been
+verified. Header leakage is outside this source-Latin coverage task.
+
 The separate delivery tool reads authenticated completed comparison records.
 It records its own code identity and the captured comparison identities; it does
 not participate in comparison caches. Scope reporting independently counts
