@@ -302,15 +302,19 @@ def archive(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=('scope','archive','verify-archive'))
+    parser.add_argument('command',choices=('scope','archive','verify-archive','controls'))
     parser.add_argument('--repo-root',default=str(Path(__file__).resolve().parent.parent))
     parser.add_argument('--work-dir',default=cli.DEFAULT_WORK)
-    for name in ('run-dir','snapshot','out','panel','archive-dir','case-root','calibration-dir'):
+    for name in ('run-dir','snapshot','out','panel','archive-dir','case-root','calibration-dir','controls','pdftoppm','tesseract','tessdata-dir'):
         parser.add_argument('--'+name)
     args = parser.parse_args()
     args.delivery_code_sha256 = common.hash_file(__file__)
     try:
-        if args.command=='verify-archive':
+        if args.command=='controls':
+            if not args.run_dir or not args.out: raise common.AuditError('Controls require --run-dir and --out')
+            import facsimile_glyph_splits
+            return facsimile_glyph_splits.score_controls(args)
+        elif args.command=='verify-archive':
             if not args.archive_dir: raise common.AuditError('Archive verification requires --archive-dir')
             verify_archive(args.archive_dir)
         elif args.command=='archive':

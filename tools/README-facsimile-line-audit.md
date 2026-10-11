@@ -354,13 +354,35 @@ Two real horizontal-split acceptance controls are fixed in
 the random panel. They bind intact source rows to Tomus I pages 212–213 and
 Tomus II pages 20–21 in the current input PDFs. Their success criterion is an
 explicit glyph-cut finding at both reader edges. Generic uncertainty or combined
-ink completeness without that warning does not pass. The control scorer and
-general glyph-cut detection remain acceptance work until 2/2 findings have been
-verified. Header leakage is outside this source-Latin coverage task.
+ink completeness without that warning does not pass. Header leakage is outside
+this source-Latin coverage task.
 
-The separate delivery tool reads authenticated completed comparison records.
-It records its own code identity and the captured comparison identities; it does
-not participate in comparison caches. Scope reporting independently counts
+```powershell
+python tools/facsimile_line_delivery.py controls --run-dir <run-with-authenticated-capture> --out tmp/pdfs/facsimile_line_audit/runs/real-controls.json
+```
+
+This mode independently measures the fixed source boxes against visible reader
+edges, fitting intact neighboring words with the shared strict registration
+primitive. A shared glyph-cut predicate requires supported upper/lower portions
+of the same source components on consecutive pages at both captured thresholds.
+It records its executed code, fixed-control hash, input/render identities,
+transforms, component measurements and source/reader crops. Output JSON, HTML
+and evidence directories must be fresh. Component boxes are relative to the
+required source crop; each control's source box uses full-source coordinates.
+`--controls <file>` selects an explicitly
+versioned alternative control set; changed source/reader identities are rejected.
+
+The two fixed real controls pass this targeted mode; two intact neighboring rows
+produce no glyph-cut warnings. Targeted measurement supplies source geometry and
+page pairs; it does not establish automatic full-corpus localization. The
+comparison run may still be incomplete, which is recorded separately. This mode
+preserves the machine ledger and existing comparison caches. General seam
+integration remains acceptance work. Header, source text and production repair
+policy are unchanged.
+
+Scope and archive modes read authenticated completed comparison records.
+The delivery tool records its own code identity and the captured comparison
+identities; it does not participate in comparison caches. Scope reporting independently counts
 requested unit/source ranges and reader occurrences, checks actual processing
 counts, authenticates source/measurement/task crops and verifies report links.
 Large source-page and correspondence arrays are read incrementally.
@@ -395,7 +417,8 @@ recorded. Verification checks the exact file inventory and all hashes. Existing
 archives are never overwritten. Reports keep their relative evidence links;
 operational paths in captured records retain their historical provenance.
 
-Delivery exits are 0 for completed requested verification/copying and 2 for
-invalid, incomplete or changed evidence. Preserve incomplete diagnostic runs and
+Delivery exits are 0 for successful requested verification/copying, 2 for
+invalid, incomplete or changed evidence, and 4 for unmet real-control criteria.
+Preserve incomplete diagnostic runs and
 all earlier predictions. The archive's identities authenticate evidence without
 approving calibration, source ownership or proposed repairs.
