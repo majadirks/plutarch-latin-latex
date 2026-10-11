@@ -346,3 +346,47 @@ Exit codes are 0 for completed requested processing (including findings and
 uncertainty), 2 for invalid inputs/configuration, 3 for interrupted/incomplete
 processing, and 4 for failed explicitly requested calibration. Optional trace
 stages report unavailability until implemented.
+
+## Scope verification and evidence archives
+
+The separate delivery tool reads authenticated completed comparison records.
+It records its own code identity and the captured comparison identities; it does
+not participate in comparison caches. Scope reporting independently counts
+requested unit/source ranges and reader occurrences, checks actual processing
+counts, authenticates source/measurement/task crops and verifies report links.
+Large source-page and correspondence arrays are read incrementally.
+
+```powershell
+python tools/facsimile_line_delivery.py scope --run-dir <completed-run> --panel <fixed-panel-directory>/panel.json --out tmp/pdfs/facsimile_line_audit/runs/full-scope.json
+```
+
+The output requires a fresh filename. An optional panel must already have been
+fixed before detector scoring; delivery cannot create a retrospective panel.
+It records associated source-region observations for each of the 200 pages,
+unreviewed source counts and unlocalized uncertainty. Ground-truth misses and
+false alarms remain null until independently reviewed; OCR of a panel page is
+distinct from source coverage or independent panel validation. Calibration
+approval and complete Latin certification remain explicitly false in this
+diagnostic report.
+
+Archive an authenticated run and its capture into a fresh direct child of the
+work directory's snapshots folder:
+
+```powershell
+python tools/facsimile_line_delivery.py archive --run-dir <completed-run> --archive-dir tmp/pdfs/facsimile_line_audit/snapshots/archive_2026_10_10 --case-root tmp/pdfs/facsimile_line_audit/runs/verification/cases_5_1a --calibration-dir tmp/pdfs/facsimile_line_audit/runs/calibration
+python tools/facsimile_line_delivery.py verify-archive --archive-dir tmp/pdfs/facsimile_line_audit/snapshots/archive_2026_10_10
+```
+
+The optional supplementary directories must be existing audit-run directories.
+The archive copies original bytes, including source/reader PDFs, into its exact
+fresh snapshot root; it creates no new PDF content. Source and copy digests are
+checked before the final manifest makes the archive read-only under the shared
+output policy. Every archived file's relative path, byte count and SHA-256 is
+recorded. Verification checks the exact file inventory and all hashes. Existing
+archives are never overwritten. Reports keep their relative evidence links;
+operational paths in captured records retain their historical provenance.
+
+Delivery exits are 0 for completed requested verification/copying and 2 for
+invalid, incomplete or changed evidence. Preserve incomplete diagnostic runs and
+all earlier predictions. The archive's identities authenticate evidence without
+approving calibration, source ownership or proposed repairs.
