@@ -305,7 +305,7 @@ def main():
     parser.add_argument('command',choices=('scope','archive','verify-archive','controls','glyph-cuts'))
     parser.add_argument('--repo-root',default=str(Path(__file__).resolve().parent.parent))
     parser.add_argument('--work-dir',default=cli.DEFAULT_WORK)
-    for name in ('run-dir','snapshot','out','panel','archive-dir','case-root','calibration-dir','controls','pdftoppm','tesseract','tessdata-dir'):
+    for name in ('run-dir','snapshot','out','panel','archive-dir','case-root','calibration-dir','controls','observations','pdftoppm','tesseract','tessdata-dir'):
         parser.add_argument('--'+name)
     args = parser.parse_args()
     args.delivery_code_sha256 = common.hash_file(__file__)

@@ -379,6 +379,22 @@ comparison run may still be incomplete, which is recorded separately. This mode
 preserves the machine ledger and existing comparison caches. Header, source text
 and production repair policy are unchanged.
 
+To score locations chosen by the normal audit, supply a general companion
+observation file from the exact completed run:
+
+```powershell
+python tools/facsimile_line_delivery.py controls --run-dir <completed-run> --observations <general-glyph-cuts.json> --out tmp/pdfs/facsimile_line_audit/runs/automatic-real-controls.json
+```
+
+The scorer requires matching snapshot/runtime, comparison-record and executed
+observation-code identities. It selects the observed page pair by source-region
+membership, then remeasures the complete, fixed source-control box; reviewed
+subregions never shrink that reference. The expected page pair is used only to
+score the result. Missing, ambiguous or wrong automatic neighborhoods fail with
+exit 4; the known page pair is never substituted as a search location. A bounded
+source-context attempt currently scores 0/2 because matching post-line anchors
+are unavailable. Targeted 2/2 success does not clear those automatic misses.
+
 The companion general seam command selects reviewed source regions and adjacent
 page pairs from a completed run's actual correspondence neighborhoods, without
 using fixed control page pairs:

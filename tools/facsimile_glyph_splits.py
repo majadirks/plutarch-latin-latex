@@ -100,16 +100,22 @@ def measure_glyph_cut(source_gray, pieces, settings):
             'observations': observations, 'ink_completeness_is_separate': True}
 
 
-def observe_control(control, root, manifest, settings, args, prerequisites, evidence_dir):
-    """Measure fixed source geometry against independently registered visible page edges."""
-    import numpy as np
-    from PIL import Image
-    repo, work = cli.paths(args)
+def control_inputs(control, root, manifest):
+    """Bind source/reader identity before selecting or measuring a neighborhood."""
     source_pdf, source_record = cli.snapshot_input(root, manifest, 'source_pdf', source_index=control['source_index'])
     reader_pdf, reader_record = cli.snapshot_input(root, manifest, 'reader_pdf', tomus=control['tomus'])
     for name, record in (('source', source_record), ('reader', reader_record)):
         if record['path'] != control[name+'_pdf'] or record['sha256'] != control[name+'_sha256']:
             raise common.AuditError('Acceptance control input identity mismatch: '+control['control_id'])
+    return source_pdf, source_record, reader_pdf, reader_record
+
+
+def observe_control(control, root, manifest, settings, args, prerequisites, evidence_dir):
+    """Measure fixed source geometry against independently registered visible page edges."""
+    import numpy as np
+    from PIL import Image
+    repo, work = cli.paths(args)
+    source_pdf, source_record, reader_pdf, reader_record = control_inputs(control, root, manifest)
     if control['source_dpi'] != settings['source_dpi']:
         raise common.AuditError('Acceptance control source DPI differs from capture')
     pages = control['reader_pages']
@@ -253,15 +259,65 @@ def score_controls(args):
         raise common.AuditError('Repeated acceptance control identifier')
     if any(not re.fullmatch(r'[A-Za-z0-9_]+', c['control_id']) for c in controls['controls']):
         raise common.AuditError('Invalid acceptance control identifier')
-    results = [observe_control(c, root, manifest, settings, args, prerequisites, evidence) for c in controls['controls']]
+    results = []
+    observations = None
+    observations_hash = None
+    if args.observations:
+        observations_hash = common.hash_file(args.observations)
+        observations = cli.read_json(args.observations)
+        if (observations.get('automatic_reader_neighborhoods') is not True or
+                observations.get('fixed_control_page_pairs_used') is not False or
+                observations.get('snapshot_id') != manifest['snapshot_id'] or
+                observations.get('comparison_runtime_id') != run_record['runtime_id'] or
+                observations.get('comparison_record_sha256') != run_record['record_sha256'] or
+                not run_record.get('processing_complete')):
+            raise common.AuditError('Automatic control observations have stale or invalid run provenance')
+        for name, digest in observations['observation_code'].items():
+            if common.hash_file(repo/common.relative_path(name)) != digest:
+                raise common.AuditError('Automatic control observation code changed')
+    for control in controls['controls']:
+        control_inputs(control, root, manifest)
+        coverage.validate_pixel_box(control['source_box_px'], control['source_raster_dimensions'])
+        selected = dict(control)
+        if observations is not None:
+            target = control['source_box_px']
+            area = (target[2]-target[0])*(target[3]-target[1])
+            matches = [region for region in observations['regions'] if
+                (region.get('source_index'), region.get('source_page'), region.get('unit_id')) ==
+                (control['source_index'], control['source_page'], control['unit_id']) and
+                coverage.box_intersection(target, region['source_box_px'])/area >=
+                settings['source_index']['localization_rule']['omission_source_coverage']]
+            pairs = {(region['tomus'], tuple(region['reader_pages'])) for region in matches}
+            if len(pairs) != 1:
+                results.append({'control_id': control['control_id'], 'detected': False,
+                                'reason': 'automatic_reader_neighborhood_unavailable_or_ambiguous'})
+                continue
+            tomus, pages = next(iter(pairs))
+            if tomus != control['tomus']:
+                results.append({'control_id': control['control_id'], 'detected': False, 'reason': 'automatic_reader_tomus_mismatch'})
+                continue
+            selected['reader_pages'] = list(pages)
+            selected['reader_folios'] = [next(r['folio'] for r in manifest['reader_map']['body_pages'] if
+                (r['tomus'], r['page'], r['unit_id']) == (tomus, page, control['unit_id'])) for page in pages]
+        measured = observe_control(selected, root, manifest, settings, args, prerequisites, evidence)
+        if observations is not None:
+            measured['expected_reader_pages'] = control['reader_pages']
+            if selected['reader_pages'] != control['reader_pages']:
+                measured.update(detected=False, reason='automatic_reader_page_pair_mismatch')
+        results.append(measured)
     if cli.executed_code(repo) != code or common.hash_file(control_path) != control_hash:
         raise common.AuditError('Control code or fixed geometry changed during measurement')
+    if observations_hash and common.hash_file(args.observations) != observations_hash:
+        raise common.AuditError('Automatic control observations changed during measurement')
     result = {'schema_version': 1, 'snapshot_id': manifest['snapshot_id'], 'comparison_runtime_id': run_record['runtime_id'],
         'comparison_processing_complete': run_record.get('processing_complete', False),
         'observation_code': code, 'controls_sha256': control_hash, 'control_set': controls['control_set'],
         'denominator': len(results), 'detected': sum(c['detected'] for c in results), 'controls': results,
         'passed': bool(results) and all(c['detected'] for c in results),
         'independent_control_measurement': True, 'machine_ledger_changed': False,
+        'automatic_reader_neighborhoods': observations is not None,
+        'fixed_control_page_pairs_used_for_search': observations is None,
+        'observations_sha256': observations_hash,
         'random_panel_denominator': controls['random_panel_denominator'], 'counted_separately_from_random_panel': True}
     publish_observations(result, results, output, report, args, 'Real glyph-cut controls')
     common.progress(f'Real glyph-cut controls: {result["detected"]}/{len(results)}; {output}')
@@ -308,7 +364,8 @@ def inspect_run_seams(args):
     results = []
     for line, control in candidates:
         observed = observe_control(control, root, manifest, settings, args, prerequisites, evidence)
-        observed.update(logical_line_id=line['logical_line_id'], machine_coverage_status=line['status'])
+        observed.update(logical_line_id=line['logical_line_id'], machine_coverage_status=line['status'],
+            **{key: control[key] for key in ('unit_id','source_index','source_page','source_box_px','tomus','reader_pages')})
         if run_record['completed_stage'] == 'seams':
             observed['seam_ids'] = seam_links.get(tuple((control['tomus'], p) for p in control['reader_pages']), [])
         results.append(observed)
