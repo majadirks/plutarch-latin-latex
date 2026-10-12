@@ -3199,6 +3199,12 @@ fn backlog_theseus_orphan_line_rejoins_body() {
     assert_backlog_gap_cases(&["I1"]);
 }
 
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn theseus_page_17_followup_trace() {
+    audit_save_unit_trace("theseus", &std::collections::BTreeSet::from([17]), "theseus_followup");
+}
+
 fn assert_backlog_gap_cases(ids: &[&str]) {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "fixtures/backlog_artifact_source_trace.json"
