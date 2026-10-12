@@ -2974,6 +2974,85 @@ fn backlog_short_ending_canvas_fingerprints() {
     }
 }
 
+fn assert_backlog_whole_lines(ids: &[&str]) {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "fixtures/backlog_artifact_source_trace.json"
+    ))
+    .unwrap();
+    let mut units = std::collections::BTreeMap::<&str, Vec<ReviewedSourceLine>>::new();
+    for record in fixture["repairs"].as_array().unwrap() {
+        let id = record["backlog_id"].as_str().unwrap();
+        if ids.contains(&id) {
+            let unit = record["unit_id"].as_str().unwrap();
+            let lines: Vec<ReviewedSourceLine> =
+                serde_json::from_value(record["reviewed_lines"].clone()).unwrap();
+            assert!(!lines.is_empty(), "{id}");
+            units.entry(unit).or_default().extend(lines);
+        }
+    }
+    for (unit, lines) in units {
+        let (pages, metrics, traces) = audit_traced_unit(unit);
+        let originals = lines
+            .iter()
+            .map(|line| {
+                (
+                    (line.source, line.source_page),
+                    real_source_image(line.source, line.source_page),
+                )
+            })
+            .collect();
+        let context = ReviewedLineContext {
+            traces: &traces,
+            originals: &originals,
+            pages: &pages,
+            metrics: &metrics,
+            scale: production_body_scale(),
+            geom: TrimGeom::default(),
+        };
+        assert_reviewed_source_lines_survive(&lines, &context, true);
+    }
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_lycurgus_pericles_lines_compose_whole() {
+    assert_backlog_whole_lines(&["I3", "II1"]);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_marius_two_seams_compose_whole() {
+    assert_backlog_whole_lines(&["III1", "III2"]);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_dio_edge_lines_compose_whole() {
+    assert_backlog_whole_lines(&["VII2", "VII3", "VII4"]);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_shared_source_neighbors_preserve_latin() {
+    let (preceding, _, preceding_traces) =
+        audit_traced_unit("comparatio_demetrii_et_antonii");
+    let (dio, _, dio_traces) = audit_traced_unit("dio");
+    let previous = preceding_traces
+        .iter()
+        .find(|trace| trace.source == 1 && trace.page == 566)
+        .expect("shared source page is represented in the preceding unit");
+    let opening = dio_traces
+        .iter()
+        .find(|trace| trace.source == 1 && trace.page == 566)
+        .expect("shared source page is represented in Dio");
+    assert!(opening.retained_index.is_some());
+    if let Some(index) = previous.retained_index {
+        assert!(preceding[index].1.is_empty(), "the preceding unit has no Latin on source page 566");
+    }
+    assert!(!dio[opening.retained_index.unwrap()].1.is_empty());
+    assert_backlog_whole_lines(&["VII2"]);
+}
+
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn backlog_artifact_source_trace() {

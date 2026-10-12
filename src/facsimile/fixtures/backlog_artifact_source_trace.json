@@ -1626,7 +1626,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 1,
         "physical_page": 212,
@@ -1764,7 +1764,26 @@
           "role": "reported complete Latin line"
         }
       ],
-      "adjacent_prose_locator": "ita potissimum et corpus ... et mores castos incor-"
+      "adjacent_prose_locator": "ita potissimum et corpus ... et mores castos incor-",
+      "disposition": "whole_strip",
+      "mechanism_decision": {
+        "helper": "is_known_whole_source_strip",
+        "column_dimensions": [
+          825,
+          3033
+        ],
+        "source_band": [
+          2188,
+          2613
+        ],
+        "full_strip_raw_sha256": "65a1b23e165f1eb2809bcc25df57424a00c0918c608dc6e4965bd0611bb0e80a",
+        "scaled_height": 511,
+        "baseline_crossed_canvas_stream_boundary": 8111,
+        "acceptance": "reviewed source glyph rows survive once on one composed canvas at production scale"
+      },
+      "regression_commands": [
+        "cargo test --release backlog_lycurgus_pericles_lines_compose_whole -- --ignored"
+      ]
     },
     {
       "backlog_id": "I4",
@@ -1982,7 +2001,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 20,
@@ -2132,7 +2151,26 @@
           "role": "reported complete Latin line"
         }
       ],
-      "adjacent_prose_locator": "moniorum fautor ... urbe"
+      "adjacent_prose_locator": "moniorum fautor ... urbe",
+      "disposition": "whole_strip",
+      "mechanism_decision": {
+        "helper": "is_known_whole_source_strip",
+        "column_dimensions": [
+          793,
+          2986
+        ],
+        "source_band": [
+          2542,
+          2620
+        ],
+        "full_strip_raw_sha256": "3db7429f26c774e70220d15ceb87c8fc52ab583b4426d19b90e305fa63062202",
+        "scaled_height": 94,
+        "baseline_crossed_canvas_stream_boundary": 16260,
+        "acceptance": "reviewed source glyph rows survive once on one composed canvas at production scale"
+      },
+      "regression_commands": [
+        "cargo test --release backlog_lycurgus_pericles_lines_compose_whole -- --ignored"
+      ]
     },
     {
       "backlog_id": "II2",
@@ -4853,7 +4891,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 3,
         "physical_page": 273,
@@ -5177,7 +5215,26 @@
           "role": "reported complete Latin line"
         }
       ],
-      "adjacent_prose_locator": "occopitia intueri ausos ... Ad extremum"
+      "adjacent_prose_locator": "occopitia intueri ausos ... Ad extremum",
+      "disposition": "whole_strip",
+      "mechanism_decision": {
+        "helper": "is_known_whole_source_strip",
+        "column_dimensions": [
+          818,
+          2973
+        ],
+        "source_band": [
+          1633,
+          1727
+        ],
+        "full_strip_raw_sha256": "98e0c26eb64b4981e4d963ca5b260c9832224f0d1cbad15665b46777b2a41eab",
+        "scaled_height": 113,
+        "baseline_crossed_canvas_stream_boundary": 61351,
+        "acceptance": "reviewed source glyph rows survive once on one composed canvas at production scale"
+      },
+      "regression_commands": [
+        "cargo test --release backlog_marius_two_seams_compose_whole -- --ignored"
+      ]
     },
     {
       "backlog_id": "III2",
@@ -5195,7 +5252,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 3,
         "physical_page": 274,
@@ -5579,7 +5636,26 @@
           "role": "reported complete Latin line"
         }
       ],
-      "adjacent_prose_locator": "nibus atque contentionibus"
+      "adjacent_prose_locator": "nibus atque contentionibus",
+      "disposition": "whole_strip",
+      "mechanism_decision": {
+        "helper": "is_known_whole_source_strip",
+        "column_dimensions": [
+          813,
+          3008
+        ],
+        "source_band": [
+          467,
+          563
+        ],
+        "full_strip_raw_sha256": "fe2a11f9446ea81ff88a8f37a429edbff020e6eee0ca567239a63589d40af4ac",
+        "scaled_height": 115,
+        "baseline_crossed_canvas_stream_boundary": 62728,
+        "acceptance": "reviewed source glyph rows survive once on one composed canvas at production scale"
+      },
+      "regression_commands": [
+        "cargo test --release backlog_marius_two_seams_compose_whole -- --ignored"
+      ]
     },
     {
       "backlog_id": "V1",
@@ -5965,7 +6041,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 7,
         "physical_page": 287,
@@ -6423,7 +6499,26 @@
           "role": "reported complete Latin line"
         }
       ],
-      "adjacent_prose_locator": "quem multis et prae-"
+      "adjacent_prose_locator": "quem multis et prae-",
+      "disposition": "whole_strip",
+      "mechanism_decision": {
+        "helper": "is_known_whole_source_strip",
+        "column_dimensions": [
+          809,
+          2838
+        ],
+        "source_band": [
+          1411,
+          1586
+        ],
+        "full_strip_raw_sha256": "4b9ddbc1990b9144c0952250b144c8260a3e5c723ecfca6e979f642d0e47b3c8",
+        "scaled_height": 210,
+        "baseline_crossed_canvas_stream_boundary": 1251,
+        "acceptance": "reviewed source glyph rows survive once on one composed canvas at production scale"
+      },
+      "regression_commands": [
+        "cargo test --release backlog_dio_edge_lines_compose_whole -- --ignored"
+      ]
     },
     {
       "backlog_id": "VII3",
@@ -6441,7 +6536,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 7,
         "physical_page": 291,
@@ -6887,7 +6982,26 @@
           "role": "reported complete Latin line"
         }
       ],
-      "adjacent_prose_locator": "risum"
+      "adjacent_prose_locator": "risum",
+      "disposition": "whole_strip",
+      "mechanism_decision": {
+        "helper": "is_known_whole_source_strip",
+        "column_dimensions": [
+          807,
+          2836
+        ],
+        "source_band": [
+          1254,
+          1573
+        ],
+        "full_strip_raw_sha256": "304aedc23f1d463a5ecd9028f26c5594b2b6187b7a33db64629b18be7a13ef6c",
+        "scaled_height": 384,
+        "baseline_crossed_canvas_stream_boundary": 6709,
+        "acceptance": "reviewed source glyph rows survive once on one composed canvas at production scale"
+      },
+      "regression_commands": [
+        "cargo test --release backlog_dio_edge_lines_compose_whole -- --ignored"
+      ]
     },
     {
       "backlog_id": "VII4",
@@ -6905,7 +7019,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 7,
         "physical_page": 344,
@@ -7351,7 +7465,26 @@
           "role": "reported complete Latin line"
         }
       ],
-      "adjacent_prose_locator": "cusas sit ingressus"
+      "adjacent_prose_locator": "cusas sit ingressus",
+      "disposition": "whole_strip",
+      "mechanism_decision": {
+        "helper": "is_known_whole_source_strip",
+        "column_dimensions": [
+          808,
+          2838
+        ],
+        "source_band": [
+          2002,
+          2132
+        ],
+        "full_strip_raw_sha256": "081fc41d7d05be508e5b112e7659a3c920586066d459fff679de81d3b4e145aa",
+        "scaled_height": 156,
+        "baseline_crossed_canvas_stream_boundary": 77879,
+        "acceptance": "reviewed source glyph rows survive once on one composed canvas at production scale"
+      },
+      "regression_commands": [
+        "cargo test --release backlog_dio_edge_lines_compose_whole -- --ignored"
+      ]
     }
   ]
 }

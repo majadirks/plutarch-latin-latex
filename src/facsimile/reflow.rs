@@ -2466,6 +2466,69 @@ fn is_known_whole_source_strip(column: &GrayImage, band: &Band) -> bool {
     type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
     const WHOLE_STRIPS: &[WholeStripSignature] = &[
         (
+            (825, 3033),
+            Band {
+                top: 2188,
+                bottom: 2613,
+            },
+            [0, 2188, 825, 2613],
+            "65a1b23e165f1eb2809bcc25df57424a00c0918c608dc6e4965bd0611bb0e80a",
+        ),
+        (
+            (793, 2986),
+            Band {
+                top: 2542,
+                bottom: 2620,
+            },
+            [0, 2542, 793, 2620],
+            "3db7429f26c774e70220d15ceb87c8fc52ab583b4426d19b90e305fa63062202",
+        ),
+        (
+            (818, 2973),
+            Band {
+                top: 1633,
+                bottom: 1727,
+            },
+            [0, 1633, 818, 1727],
+            "98e0c26eb64b4981e4d963ca5b260c9832224f0d1cbad15665b46777b2a41eab",
+        ),
+        (
+            (813, 3008),
+            Band {
+                top: 467,
+                bottom: 563,
+            },
+            [0, 467, 813, 563],
+            "fe2a11f9446ea81ff88a8f37a429edbff020e6eee0ca567239a63589d40af4ac",
+        ),
+        (
+            (809, 2838),
+            Band {
+                top: 1411,
+                bottom: 1586,
+            },
+            [0, 1411, 809, 1586],
+            "4b9ddbc1990b9144c0952250b144c8260a3e5c723ecfca6e979f642d0e47b3c8",
+        ),
+        (
+            (807, 2836),
+            Band {
+                top: 1254,
+                bottom: 1573,
+            },
+            [0, 1254, 807, 1573],
+            "304aedc23f1d463a5ecd9028f26c5594b2b6187b7a33db64629b18be7a13ef6c",
+        ),
+        (
+            (808, 2838),
+            Band {
+                top: 2002,
+                bottom: 2132,
+            },
+            [0, 2002, 808, 2132],
+            "081fc41d7d05be508e5b112e7659a3c920586066d459fff679de81d3b4e145aa",
+        ),
+        (
             (845, 2835),
             Band {
                 top: 248,
