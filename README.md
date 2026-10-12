@@ -2,8 +2,8 @@
 
 Generates a Loeb-size (10.5 × 16 cm), Latin-only reader of Plutarch's *Lives* in
 the Didot bilingual recension (Dœhner, Paris 1857) from the two Google Books scans,
-and imposes it onto US Letter PDFs ready to print double-sided, fold into 32-page
-signatures, sew, and trim to pocket size.
+and imposes it onto US Letter PDFs, or A4 PDFs on the facsimile path, ready to
+print double-sided, fold into 32-page signatures, sew, and trim to pocket size.
 
 There are **two build paths**, sharing the same imposition, signatures, fold/sew/cut
 marks, and two-stage compile:
@@ -19,8 +19,9 @@ marks, and two-stage compile:
 
 Use **facsimile** when you want the verbatim pixels of the 1857 edition at near-zero
 body cost and don't need to search or copy the text; use **transcription** when you
-want re-typeset, selectable Latin and the budget allows. Both emit per-volume LaTeX
-and imposed US Letter PDFs.
+want re-typeset, selectable Latin and the budget allows. Both emit per-volume LaTeX.
+The transcription path imposes on US Letter; the facsimile path uses US Letter by
+default and accepts A4 with `--paper-size a4`.
 
 ---
 
@@ -41,7 +42,8 @@ Get-ChildItem build_facsimile/tomus*.pdf
 ```
 
 The completed build produces `tomus_1_inner.pdf` through `tomus_8_inner.pdf` (book
-pages) and `tomus_1.pdf` through `tomus_8.pdf` (imposed US Letter printing PDFs).
+pages) and `tomus_1.pdf` through `tomus_8.pdf` (imposed US Letter printing PDFs
+by default).
 If MiKTeX is installed elsewhere, change `PLUTARCH_LUALATEX` accordingly. When
 running through Codex's restricted filesystem sandbox, allow the build access to
 the MiKTeX installation and its package/font caches. If LuaLaTeX cannot be invoked,
@@ -57,6 +59,9 @@ cargo run --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_
 
 # Full build (auto-detects the table on first run if it is absent).
 cargo run --release --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_v2.pdf --out build_facsimile/
+
+# Impose the same trim-size inner pages on A4 sheets.
+cargo run --release --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_v2.pdf --out build_facsimile/ --offline --paper-size a4
 
 # Full offline build with a personalized ownership plate.
 cargo run --release --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_v2.pdf --out build_facsimile/ --offline --exlibris "Alex Smith"
@@ -80,6 +85,12 @@ For the facsimile command, `--exlibris "Alex Smith"` adds a bordered
 converted to uppercase; empty or whitespace-only names are rejected. Omit the
 argument to print no ownership plate. Restricted `--unit` / `--pages` builds omit
 the title pages and therefore the plate.
+
+Omitting `--paper-size` selects US Letter. `--paper-size a4` changes only the
+facsimile printing wrappers: both options keep the 10.5 × 16 cm inner pages and
+the same 21 × 16 cm cut border. Print the landscape `tomus_N.pdf` sheets at
+actual size (100%, without fit-to-page scaling) and flip on the short edge when
+duplex printing. Cut to the marked trim border after folding and sewing.
 
 **Body.** Each page's Latin column is detected, sliced at inter-line whitespace, and
 reflowed (whole source lines repaginated at one **global** scale) into the trim text
@@ -312,7 +323,8 @@ result across models, and re-typesets it as selectable text.
    output volumes on pair-group boundaries (a hard break is forced at the v1→v2
    source boundary), and emits each volume's inner `.tex` and imposition wrapper.
 5. **Compiles** two stages with lualatex: the trim-size inner, then the two-up US
-   Letter wrapper carrying fold lines, sew marks, and cut borders.
+   Letter wrapper carrying fold lines, sew marks, and cut borders. The facsimile
+   command alone can select A4 for that wrapper.
 
 Transcription and escalation run as asynchronous batches: each is submitted, then
 polled to completion (most finish within an hour; the cap is 24 h), with a progress
@@ -393,7 +405,8 @@ See `secrets.example.json`. This file is **local only** — it is not shared.
 For each volume both paths write, into `--out`:
 
 - `tomus_N_inner.tex` — the trim-size inner book pages.
-- `tomus_N.tex` — the US Letter imposition wrapper.
+- `tomus_N.tex` — the imposition wrapper: US Letter for transcription and, by
+  default, facsimile; A4 when facsimile uses `--paper-size a4`.
 
 With lualatex available they compile both: the inner once (it self-pads to a whole
 32-page signature), reads the real page count from the lualatex log, then emits and

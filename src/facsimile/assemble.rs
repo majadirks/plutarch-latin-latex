@@ -1038,7 +1038,7 @@ pub(in crate::facsimile) mod tests {
             vec![unit("theseus", &["facsimile_theseus_1.png"])],
         );
         let doc = inner_document(&vol, &Fonts::default(), None);
-        let title = doc.find("PLUTARCHI VITÆ").unwrap();
+        let title = doc.find("PLVTARCHI").unwrap();
         let qr = doc.find("front_qr_s0.png").unwrap();
         let volumen = doc.find("front_volumen_s0.png").unwrap();
         let colophon = doc.find("front_colophon.png").unwrap();
