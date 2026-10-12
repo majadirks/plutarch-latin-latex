@@ -618,6 +618,53 @@ fn render_blocks(blocks: &[Block]) -> String {
 
 // ---- Imposition wrapper --------------------------------------------------
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PaperSize {
+    Letter,
+    A4,
+}
+
+struct WrapperGeometry {
+    paper_width: &'static str,
+    paper_height: &'static str,
+    bounding_width: &'static str,
+    bounding_height: &'static str,
+    lx: &'static str,
+    mx: &'static str,
+    rx: &'static str,
+    by: &'static str,
+    ty: &'static str,
+}
+
+impl PaperSize {
+    fn geometry(self) -> WrapperGeometry {
+        match self {
+            Self::Letter => WrapperGeometry {
+                paper_width: "11in",
+                paper_height: "8.5in",
+                bounding_width: "27.94",
+                bounding_height: "21.59",
+                lx: "3.47",
+                mx: "13.97",
+                rx: "24.47",
+                by: "2.795",
+                ty: "18.795",
+            },
+            Self::A4 => WrapperGeometry {
+                paper_width: "29.7cm",
+                paper_height: "21cm",
+                bounding_width: "29.7",
+                bounding_height: "21",
+                lx: "4.35",
+                mx: "14.85",
+                rx: "25.35",
+                by: "2.5",
+                ty: "18.5",
+            },
+        }
+    }
+}
+
 /// Write one imposition wrapper `.tex` per volume into `out_dir`.
 /// `inner_page_counts[i]` is volume *i*'s inner PDF page count.
 pub fn write_imposition_wrappers(
@@ -625,13 +672,22 @@ pub fn write_imposition_wrappers(
     inner_page_counts: &[u32],
     out_dir: &Path,
 ) -> Result<Vec<PathBuf>> {
+    write_imposition_wrappers_for_paper(n_volumes, inner_page_counts, out_dir, PaperSize::Letter)
+}
+
+pub fn write_imposition_wrappers_for_paper(
+    n_volumes: usize,
+    inner_page_counts: &[u32],
+    out_dir: &Path,
+    paper_size: PaperSize,
+) -> Result<Vec<PathBuf>> {
     fs::create_dir_all(out_dir)
         .with_context(|| format!("creating output dir {}", out_dir.display()))?;
     let mut paths = Vec::with_capacity(n_volumes);
     for i in 0..n_volumes {
         let tomus = i + 1;
         let inner_count = inner_page_counts.get(i).copied().unwrap_or(0);
-        let doc = wrapper_document(tomus, inner_count);
+        let doc = wrapper_document_for_paper(tomus, inner_count, paper_size);
         let path = out_dir.join(format!("tomus_{tomus}.tex"));
         fs::write(&path, doc).with_context(|| format!("writing {}", path.display()))?;
         paths.push(path);
@@ -678,21 +734,40 @@ fn sheet_sides(num_signatures: u32) -> Vec<Side> {
 
 /// Generate the full imposition wrapper `.tex` for one volume.
 pub fn wrapper_document(tomus: usize, inner_count: u32) -> String {
+    wrapper_document_for_paper(tomus, inner_count, PaperSize::Letter)
+}
+
+pub fn wrapper_document_for_paper(tomus: usize, inner_count: u32, paper_size: PaperSize) -> String {
     let signatures = inner_count.div_ceil(PAGES_PER_SIGNATURE).max(1);
     let sides = sheet_sides(signatures);
     let pdf = format!("tomus_{tomus}_inner.pdf");
+    let geometry = paper_size.geometry();
 
     let mut doc = String::new();
-    doc.push_str(WRAPPER_HEAD);
+    doc.push_str(&format!(
+        "% Imposition wrapper: landscape, two book pages per sheet side in\n\
+         % 32-page-signature folding order. Compile once with lualatex after the inner\n\
+         % PDF exists.\n\
+         \\documentclass{{article}}\n\
+         \\usepackage[paperwidth={},paperheight={},margin=0pt]{{geometry}}\n\
+         \\usepackage{{graphicx}}\n\
+         \\usepackage{{tikz}}\n\
+         \\pagestyle{{empty}}\n\
+         \\setlength{{\\parindent}}{{0pt}}\n",
+        geometry.paper_width, geometry.paper_height
+    ));
     doc.push_str(&format!("\\newcommand{{\\innercount}}{{{inner_count}}}\n"));
-    doc.push_str(WRAPPER_GEOMETRY);
+    doc.push_str(&format!(
+        "\\def\\Lx{{{}}}\n\\def\\Mx{{{}}}\n\\def\\Rx{{{}}}\n\\def\\By{{{}}}\n\\def\\Ty{{{}}}\n\\def\\sewdot{{0.06}}\n",
+        geometry.lx, geometry.mx, geometry.rx, geometry.by, geometry.ty
+    ));
     doc.push_str(&format!(
         "\\def\\sewmargin{{{SEW_MARGIN_CM}}}\n\
          \\def\\sewtapes{{{SEW_TAPES}}}\n\
          \\def\\sewhalftape{{{SEW_HALFTAPE_CM}}}\n"
     ));
     doc.push_str(WRAPPER_SEWMACRO);
-    doc.push_str(&wrapper_sheet_macro(&pdf));
+    doc.push_str(&wrapper_sheet_macro(&pdf, &geometry));
     doc.push_str("\\begin{document}\n\n");
     for side in &sides {
         doc.push_str(&format!(
@@ -707,12 +782,12 @@ pub fn wrapper_document(tomus: usize, inner_count: u32) -> String {
     doc
 }
 
-fn wrapper_sheet_macro(pdf: &str) -> String {
+fn wrapper_sheet_macro(pdf: &str, geometry: &WrapperGeometry) -> String {
     format!(
         "% #1 left book page, #2 right book page, #3 cut flag, #4 fold flag\n\
          \\newcommand{{\\imposedsheetside}}[4]{{%\n\
          \x20 \\begin{{tikzpicture}}[x=1cm,y=1cm]\n\
-         \x20   \\useasboundingbox (0,0) rectangle (27.94,21.59);\n\
+         \x20   \\useasboundingbox (0,0) rectangle ({},{});\n\
          \x20   \\ifnum#1>\\innercount\\else\n\
          \x20     \\node[anchor=south west,inner sep=0] at (\\Lx,\\By)\n\
          \x20       {{\\includegraphics[page=#1]{{{pdf}}}}};\n\
@@ -731,27 +806,9 @@ fn wrapper_sheet_macro(pdf: &str) -> String {
          \x20 \\end{{tikzpicture}}%\n\
          \x20 \\clearpage\n\
          }}\n\n",
+        geometry.bounding_width, geometry.bounding_height
     )
 }
-
-const WRAPPER_HEAD: &str = "\
-% Imposition wrapper: US Letter, landscape, two book pages per sheet side in\n\
-% 32-page-signature folding order. Compile once with lualatex after the inner\n\
-% PDF exists.\n\
-\\documentclass{article}\n\
-\\usepackage[paperwidth=11in,paperheight=8.5in,margin=0pt]{geometry}\n\
-\\usepackage{graphicx}\n\
-\\usepackage{tikz}\n\
-\\pagestyle{empty}\n\
-\\setlength{\\parindent}{0pt}\n";
-
-const WRAPPER_GEOMETRY: &str = "\
-\\def\\Lx{3.47}\n\
-\\def\\Mx{13.97}\n\
-\\def\\Rx{24.47}\n\
-\\def\\By{2.795}\n\
-\\def\\Ty{18.795}\n\
-\\def\\sewdot{0.06}\n";
 
 const WRAPPER_SEWMACRO: &str = "\
 \\newcommand{\\drawsewmarks}{%\n\
@@ -1621,6 +1678,75 @@ mod tests {
     fn wrapper_references_volume_inner_pdf() {
         let doc = wrapper_document(3, 32);
         assert!(doc.contains("tomus_3_inner.pdf"));
+    }
+
+    #[test]
+    fn wrapper_letter_retains_existing_sheet_geometry() {
+        let doc = wrapper_document_for_paper(1, 32, PaperSize::Letter);
+        for expected in [
+            "paperwidth=11in,paperheight=8.5in",
+            "\\useasboundingbox (0,0) rectangle (27.94,21.59)",
+            "\\def\\Lx{3.47}",
+            "\\def\\Mx{13.97}",
+            "\\def\\Rx{24.47}",
+            "\\def\\By{2.795}",
+            "\\def\\Ty{18.795}",
+        ] {
+            assert!(doc.contains(expected), "missing {expected}");
+        }
+    }
+
+    #[test]
+    fn wrapper_a4_centers_unchanged_trim_rectangles() {
+        let doc = wrapper_document_for_paper(1, 32, PaperSize::A4);
+        for expected in [
+            "paperwidth=29.7cm,paperheight=21cm",
+            "\\useasboundingbox (0,0) rectangle (29.7,21)",
+            "\\def\\Lx{4.35}",
+            "\\def\\Mx{14.85}",
+            "\\def\\Rx{25.35}",
+            "\\def\\By{2.5}",
+            "\\def\\Ty{18.5}",
+        ] {
+            assert!(doc.contains(expected), "missing {expected}");
+        }
+        let g = PaperSize::A4.geometry();
+        let cm = |value: &str| (value.parse::<f64>().unwrap() * 1000.0).round() as i32;
+        assert_eq!(cm(g.mx) - cm(g.lx), 10_500);
+        assert_eq!(cm(g.rx) - cm(g.mx), 10_500);
+        assert_eq!(cm(g.ty) - cm(g.by), 16_000);
+    }
+
+    #[test]
+    fn wrapper_paper_size_keeps_signature_order_and_marks() {
+        let letter = wrapper_document_for_paper(2, 33, PaperSize::Letter);
+        let a4 = wrapper_document_for_paper(2, 33, PaperSize::A4);
+        for expected in [
+            "\\imposedsheetside{32}{1}{1}{1}",
+            "\\imposedsheetside{2}{31}{0}{0}",
+            "\\imposedsheetside{64}{33}{1}{1}",
+            "\\drawsewmarks",
+            "\\draw[dotted,thick] (\\Mx,\\By) -- (\\Mx,\\Ty)",
+            "\\draw[dotted,thick] (\\Lx,\\By) rectangle (\\Rx,\\Ty)",
+            "\\includegraphics[page=#1]",
+        ] {
+            assert!(letter.contains(expected), "Letter missing {expected}");
+            assert!(a4.contains(expected), "A4 missing {expected}");
+        }
+    }
+
+    #[test]
+    fn legacy_wrapper_api_remains_letter() {
+        assert_eq!(
+            wrapper_document(1, 32),
+            wrapper_document_for_paper(1, 32, PaperSize::Letter)
+        );
+        let dir = tempfile::tempdir().unwrap();
+        let paths = write_imposition_wrappers(1, &[32], dir.path()).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(&paths[0]).unwrap(),
+            wrapper_document_for_paper(1, 32, PaperSize::Letter)
+        );
     }
 
     #[test]
