@@ -1245,7 +1245,7 @@
         "baseline_retained_band_count": 1,
         "current_retained_band_count": 10,
         "acceptance": {
-          "min_canvas_height": 400
+          "min_canvas_height": 1200
         }
       },
       "regression_commands": [
@@ -1291,8 +1291,13 @@
         "baseline_page_png_sha256_at_150dpi": ["a445d05ddc62ee248dda3a9407b1cff58d3bcd8b2e847153bb359363f8bcabee", "ef308c9e40a3d074a7613e204eaeb49c7b4bd9325e5493a6571fc16d48d79355"],
         "prose_anchors": ["in somniis", "gesta ejus occurrebant"],
         "source_row_bands": [[673, 707], [717, 750], [761, 795]],
-        "source_row_boxes": [[1091, 673, 1890, 707], [1091, 717, 1890, 750], [1091, 761, 1890, 795]],
+        "source_row_boxes": [[1091, 673, 1865, 707], [1091, 717, 1865, 750], [1091, 761, 1865, 795]],
         "source_row_roles": ["in somniis", "gesta ejus occurrebant", "following Latin row"],
+        "reviewed_lines": [
+          {"source": 0, "source_page": 17, "region": [1091, 673, 1865, 707], "role": "in somniis"},
+          {"source": 0, "source_page": 17, "region": [1091, 717, 1865, 750], "role": "gesta ejus occurrebant"},
+          {"source": 0, "source_page": 17, "region": [1091, 761, 1865, 795], "role": "following Latin row"}
+        ],
         "current_pass_a_bands": [[274, 311], [319, 355], [362, 397], [406, 440], [451, 485], [496, 532], [539, 575], [584, 621], [628, 662], [672, 2651]],
         "full_crop_raw_band_count": 11,
         "analysis_crop_raw_band_count": 51,
@@ -1306,6 +1311,16 @@
         "current_long_strip_scaled_rows": [8421, 10807],
         "prior_acceptance_min_canvas_height": 400,
         "target_min_canvas_height": 1200,
+        "result": {
+          "body_canvas_count": 40,
+          "body_canvas_7_height": 1348,
+          "physical_page_23_contains_both_prose_anchors": true,
+          "inner_tex_sha256": "ebc24fe9e13f04c3b3052f216e768c507fc6be4a18fe4fa819fb1e50027fbfe9",
+          "inner_pdf_sha256": "3e819c98fb2301421a691d24f70a3fc5440066a95739465da17a797c00560739",
+          "inner_pdf_page_count": 416,
+          "page_png_sha256_at_150dpi": ["a79132a9b2dcc645ab29c49dad8adbea42122bd46732e178e5412f91f7ca8b81", "451461f0364b30871b440d699ed2e3a5d70544d22c1d24433ddfe0ddbf48d95f"],
+          "following_unit_opening_physical_page": 59
+        },
         "following_unit": "romulus",
         "following_unit_opening_physical_page": 59,
         "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/theseus_followup/theseus/trace.json",
@@ -8684,46 +8699,16 @@
         1891
       ],
       "expected_pass_a_bands": [
-        [
-          274,
-          311
-        ],
-        [
-          319,
-          355
-        ],
-        [
-          362,
-          397
-        ],
-        [
-          406,
-          440
-        ],
-        [
-          451,
-          485
-        ],
-        [
-          496,
-          532
-        ],
-        [
-          539,
-          575
-        ],
-        [
-          584,
-          621
-        ],
-        [
-          628,
-          662
-        ],
-        [
-          672,
-          2651
-        ]
+        [274, 309], [319, 355], [362, 397], [406, 440], [451, 485],
+        [496, 531], [539, 575], [584, 618], [628, 662], [673, 707],
+        [717, 750], [761, 795], [807, 840], [875, 877], [893, 928],
+        [938, 973], [983, 1017], [1027, 1061], [1074, 1106], [1117, 1150],
+        [1161, 1195], [1204, 1239], [1248, 1282], [1293, 1328], [1337, 1371],
+        [1383, 1414], [1510, 1545], [1556, 1590], [1599, 1636], [1646, 1683],
+        [1692, 1728], [1739, 1775], [1788, 1824], [1834, 1869], [1882, 1919],
+        [1931, 1968], [1980, 2016], [2028, 2066], [2077, 2115], [2125, 2164],
+        [2173, 2214], [2221, 2263], [2271, 2308], [2321, 2358], [2367, 2408],
+        [2416, 2457], [2464, 2503], [2514, 2554], [2560, 2602], [2608, 2645]
       ]
     },
     {

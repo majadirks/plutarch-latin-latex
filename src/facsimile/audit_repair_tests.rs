@@ -3205,6 +3205,39 @@ fn theseus_page_17_followup_trace() {
     audit_save_unit_trace("theseus", &std::collections::BTreeSet::from([17]), "theseus_followup");
 }
 
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn theseus_p17_analysis_keeps_original_latin_pixels() {
+    let mut source = real_source_image(0, 17);
+    mask_known_source_furniture(0, 17, &mut source);
+    let column = production_source_column(0, 17, &source).unwrap();
+    let baseline_crop = crop_column(&source, &column);
+    assert_eq!(baseline_crop.dimensions(), (840, 2975));
+    let (emitted_crop, kept) = render_and_band(0, 17, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    assert_eq!(emitted_crop, baseline_crop);
+
+    let (raw, _) = band_source_column(0, 17, &emitted_crop);
+    assert_eq!(raw.len(), 51);
+    assert!(raw.iter().all(|band| band.bottom - band.top <= 44));
+    assert!(!raw.contains(&Band { top: 672, bottom: 2651 }));
+    for [top, bottom] in [[673, 707], [717, 750], [761, 795]] {
+        assert!(
+            kept.iter().any(|band| band.top <= top && band.bottom >= bottom),
+            "source Latin row [{top},{bottom}) was dropped"
+        );
+    }
+
+    for (source, page) in [(1, 17), (0, 18)] {
+        let (ordinary, _) = band_source_column(source, page, &emitted_crop);
+        assert!(ordinary.contains(&Band { top: 672, bottom: 2651 }));
+    }
+    let mut changed = emitted_crop;
+    let old = changed.get_pixel(0, 700)[0];
+    changed.put_pixel(0, 700, image::Luma([if old == 0 { 255 } else { 0 }]));
+    let (ordinary, _) = band_source_column(0, 17, &changed);
+    assert!(ordinary.contains(&Band { top: 672, bottom: 2651 }));
+}
+
 fn assert_backlog_gap_cases(ids: &[&str]) {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "fixtures/backlog_artifact_source_trace.json"
@@ -3217,9 +3250,21 @@ fn assert_backlog_gap_cases(ids: &[&str]) {
         }
     }
     for (unit, records) in units {
-        let lines: Vec<ReviewedSourceLine> = records.iter()
-            .flat_map(|record| serde_json::from_value::<Vec<ReviewedSourceLine>>(
-                record["reviewed_lines"].clone()).unwrap())
+        let lines: Vec<ReviewedSourceLine> = records
+            .iter()
+            .flat_map(|record| {
+                let mut lines: Vec<ReviewedSourceLine> =
+                    serde_json::from_value(record["reviewed_lines"].clone()).unwrap();
+                if let Some(followup) = record["followup"]["reviewed_lines"].as_array() {
+                    lines.extend(
+                        serde_json::from_value::<Vec<ReviewedSourceLine>>(
+                            serde_json::Value::Array(followup.clone()),
+                        )
+                        .unwrap(),
+                    );
+                }
+                lines
+            })
             .collect();
         let originals = lines.iter()
             .map(|line| ((line.source, line.source_page),
@@ -3235,6 +3280,18 @@ fn assert_backlog_gap_cases(ids: &[&str]) {
             geom: TrimGeom::default(),
         };
         let composition = assert_reviewed_source_lines_survive(&lines, &context, true);
+        if ids.contains(&"I1") {
+            let owners = |top| {
+                composition
+                    .line_coverage
+                    .iter()
+                    .find(|entry| entry["region"][1] == top)
+                    .expect("Theseus prose row was reviewed")["canvas_owners"]
+                    .clone()
+            };
+            assert_eq!(owners(673), serde_json::json!([7]));
+            assert_eq!(owners(717), owners(673));
+        }
         for record in records {
             let id = record["backlog_id"].as_str().unwrap();
             let decision = &record["mechanism_decision"];
