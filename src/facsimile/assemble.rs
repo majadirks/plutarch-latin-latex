@@ -153,7 +153,7 @@ fn unit_block(unit: &PlacedUnit) -> String {
 }
 
 #[cfg(test)]
-mod tests {
+pub(in crate::facsimile) mod tests {
     use super::*;
 
     fn fixture_image(dir: &Path, name: &str, w: u32, h: u32) {
@@ -168,7 +168,10 @@ mod tests {
         .unwrap();
     }
 
-    fn compiled_fixture(dir: &Path, tomus: usize) -> (Vec<String>, Vec<(u32, u32, u32)>) {
+    pub(in crate::facsimile) fn compiled_fixture(
+        dir: &Path,
+        tomus: usize,
+    ) -> (Vec<String>, Vec<(u32, u32, u32)>) {
         use crate::{compile, render};
         assert!(compile::lualatex_available(), "MiKTeX/LuaLaTeX required");
         assert!(render::pdftotext_available(), "Poppler required");
@@ -518,7 +521,7 @@ mod tests {
         println!("Real Praefatio preview: {}", dir.display());
     }
 
-    fn assert_blank(
+    pub(in crate::facsimile) fn assert_blank(
         dir: &Path,
         tomus: usize,
         page: u32,

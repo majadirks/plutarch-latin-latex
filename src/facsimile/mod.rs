@@ -184,7 +184,7 @@ pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
         let (pages, metrics) = reflow::unit_body_strips(range, render)?;
         // Every unit opens with an inline chapter header, so its first page gets a
         // reduced budget to fit the header above the first image.
-        let composed = reflow::compose_pages(
+        let mut composed = reflow::compose_pages(
             &pages,
             scale,
             &geom,
@@ -192,6 +192,7 @@ pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
             geom.body_budget(),
             &metrics,
         );
+        reflow::merge_reviewed_short_ending(&range.unit.id, &mut composed, &geom);
         let mut image_names = Vec::with_capacity(composed.len());
         for (i, img) in composed.iter().enumerate() {
             let name = reflow::body_image_name(&range.unit.id, i + 1);

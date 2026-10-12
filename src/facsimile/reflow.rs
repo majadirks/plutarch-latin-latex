@@ -34,6 +34,89 @@ struct SourceFurnitureMask {
 }
 
 const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
+    // Source-side vertical rules connect the Latin rows on these two pages.
+    SourceFurnitureMask {
+        source: 0,
+        page: 17,
+        left: 1043.0 / 2006.0,
+        top: 270.0 / 2975.0,
+        right: 1053.0 / 2006.0,
+        bottom: 2655.0 / 2975.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 59,
+        left: 1018.0 / 2002.0,
+        top: 410.0 / 3005.0,
+        right: 1028.0 / 2002.0,
+        bottom: 2120.0 / 3005.0,
+    },
+    // The Themistocles source running head and folio sit above the first body row.
+    SourceFurnitureMask {
+        source: 0,
+        page: 166,
+        left: 900.0 / 1988.0,
+        top: 210.0 / 2993.0,
+        right: 1750.0 / 1988.0,
+        bottom: 280.0 / 2993.0,
+    },
+    // Narrow right scan edges join unrelated Latin rows on these source pages.
+    SourceFurnitureMask {
+        source: 0,
+        page: 229,
+        left: 1932.0 / 1947.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 257,
+        left: 1995.0 / 2010.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 276,
+        left: 1971.0 / 1986.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 292,
+        left: 1979.0 / 1994.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 297,
+        left: 1885.0 / 1900.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 310,
+        left: 1975.0 / 1990.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 329,
+        left: 1864.0 / 1879.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
     // Pale digitization watermark below the final Latin line.
     SourceFurnitureMask {
         source: 0,
@@ -2466,6 +2549,69 @@ fn is_known_whole_source_strip(column: &GrayImage, band: &Band) -> bool {
     type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
     const WHOLE_STRIPS: &[WholeStripSignature] = &[
         (
+            (825, 3033),
+            Band {
+                top: 2188,
+                bottom: 2613,
+            },
+            [0, 2188, 825, 2613],
+            "65a1b23e165f1eb2809bcc25df57424a00c0918c608dc6e4965bd0611bb0e80a",
+        ),
+        (
+            (793, 2986),
+            Band {
+                top: 2542,
+                bottom: 2620,
+            },
+            [0, 2542, 793, 2620],
+            "3db7429f26c774e70220d15ceb87c8fc52ab583b4426d19b90e305fa63062202",
+        ),
+        (
+            (818, 2973),
+            Band {
+                top: 1633,
+                bottom: 1727,
+            },
+            [0, 1633, 818, 1727],
+            "98e0c26eb64b4981e4d963ca5b260c9832224f0d1cbad15665b46777b2a41eab",
+        ),
+        (
+            (813, 3008),
+            Band {
+                top: 467,
+                bottom: 563,
+            },
+            [0, 467, 813, 563],
+            "fe2a11f9446ea81ff88a8f37a429edbff020e6eee0ca567239a63589d40af4ac",
+        ),
+        (
+            (809, 2838),
+            Band {
+                top: 1411,
+                bottom: 1586,
+            },
+            [0, 1411, 809, 1586],
+            "4b9ddbc1990b9144c0952250b144c8260a3e5c723ecfca6e979f642d0e47b3c8",
+        ),
+        (
+            (807, 2836),
+            Band {
+                top: 1254,
+                bottom: 1573,
+            },
+            [0, 1254, 807, 1573],
+            "304aedc23f1d463a5ecd9028f26c5594b2b6187b7a33db64629b18be7a13ef6c",
+        ),
+        (
+            (808, 2838),
+            Band {
+                top: 2002,
+                bottom: 2132,
+            },
+            [0, 2002, 808, 2132],
+            "081fc41d7d05be508e5b112e7659a3c920586066d459fff679de81d3b4e145aa",
+        ),
+        (
             (845, 2835),
             Band {
                 top: 248,
@@ -2572,6 +2718,67 @@ pub fn compose_pages(
     let mut canvases = compose_body_canvases(pages, scale, geom, first_budget, budget, metrics);
     retain_body_canvases(&mut canvases, scale, metrics);
     canvases
+}
+
+const REVIEWED_SHORT_ENDINGS: &[(&str, (u32, u32), &str)] = &[
+    (
+        "comparatio_sertorii_et_eumenis",
+        (1004, 44),
+        "32e396d2a30dbd00d3ac909411ab6cc63e61e1f8483d7c69d38d19c77328ed15",
+    ),
+    (
+        "demosthenes",
+        (1004, 44),
+        "955b6c7d39a181531f864b54468abc20092dc54536691e4f9a39bd94a132ac59",
+    ),
+];
+
+/// Stack a reviewed, complete final line with its preceding body canvas when
+/// both images fit within the trim text block.
+pub(crate) fn merge_reviewed_short_ending(
+    unit_id: &str,
+    canvases: &mut Vec<GrayImage>,
+    geom: &TrimGeom,
+) -> bool {
+    let Some(&(_, expected_dimensions, fingerprint)) = REVIEWED_SHORT_ENDINGS
+        .iter()
+        .find(|(reviewed_id, _, _)| *reviewed_id == unit_id)
+    else {
+        return false;
+    };
+    if canvases.len() < 3 || geom.pad_x != 0 || geom.pad_y != 0 || geom.tb_w != 1004 {
+        return false;
+    }
+    let last = &canvases[canvases.len() - 1];
+    let previous = &canvases[canvases.len() - 2];
+    if last.dimensions() != expected_dimensions
+        || previous.width() != geom.tb_w
+        || !matches_source_region_fingerprint(
+            last,
+            [0, 0, last.width(), last.height()],
+            fingerprint,
+        )
+        || previous
+            .height()
+            .checked_add(last.height())
+            .is_none_or(|height| height > geom.content_height())
+    {
+        return false;
+    }
+
+    let candidate = place_line_images(&[previous.clone(), last.clone()], geom);
+    if candidate.dimensions() != (geom.tb_w, previous.height() + last.height())
+        || image::imageops::crop_imm(&candidate, 0, 0, geom.tb_w, previous.height()).to_image()
+            != *previous
+        || image::imageops::crop_imm(&candidate, 0, previous.height(), geom.tb_w, last.height())
+            .to_image()
+            != *last
+    {
+        return false;
+    }
+    canvases.truncate(canvases.len() - 2);
+    canvases.push(candidate);
+    true
 }
 
 /// Pack the source strips before applying the final canvas ink floor.
@@ -3651,7 +3858,7 @@ mod tests {
     }
     #[test]
     fn known_source_furniture_masks_only_matching_page() {
-        let img = GrayImage::from_pixel(100, 100, Luma([200]));
+        let img = GrayImage::from_pixel(512, 512, Luma([200]));
         for (source, page) in [(1, 233), (0, 232)] {
             let mut cleaned = img.clone();
             mask_known_source_furniture(source, page, &mut cleaned);
@@ -4283,13 +4490,19 @@ mod tests {
         serde_json::from_str(include_str!("fixtures/inner_tomi_repair_source_trace.json")).unwrap()
     }
 
+    fn backlog_repair_ledger() -> serde_json::Value {
+        serde_json::from_str(include_str!("fixtures/backlog_artifact_source_trace.json")).unwrap()
+    }
+
     /// Reviewed rectangles grouped by source identity, including separate repairs on one page.
     fn reviewed_page_masks(
         ledger: &serde_json::Value,
     ) -> std::collections::BTreeMap<(usize, u32), Vec<[f64; 4]>> {
         let mut pages = std::collections::BTreeMap::new();
         for repair in ledger["repairs"].as_array().unwrap() {
-            if repair["disposition"] != "mask" {
+            if repair["disposition"] != "mask"
+                || (repair["status"].is_string() && repair["status"] != "repaired")
+            {
                 continue;
             }
             let identity = (
@@ -4302,6 +4515,184 @@ mod tests {
             }
         }
         pages
+    }
+
+    fn all_reviewed_page_masks(
+        ledgers: &[&serde_json::Value],
+    ) -> std::collections::BTreeMap<(usize, u32), Vec<[f64; 4]>> {
+        let mut pages = std::collections::BTreeMap::new();
+        let mut rasters = std::collections::BTreeMap::new();
+        for ledger in ledgers {
+            for repair in ledger["repairs"].as_array().unwrap() {
+                if repair["disposition"] != "mask"
+                    || (repair["status"].is_string() && repair["status"] != "repaired")
+                {
+                    continue;
+                }
+                let identity = (
+                    repair["source"].as_u64().unwrap() as usize,
+                    repair["source_page"].as_u64().unwrap() as u32,
+                );
+                let raster = [
+                    repair["raster"][0].as_u64().unwrap(),
+                    repair["raster"][1].as_u64().unwrap(),
+                ];
+                if let Some(previous) = rasters.insert(identity, raster) {
+                    assert_eq!(
+                        previous, raster,
+                        "conflicting reviewed raster for {identity:?}"
+                    );
+                }
+                if repair["status"] == "repaired" {
+                    assert!(repair["preserved_latin_regions"]
+                        .as_array()
+                        .is_some_and(|regions| !regions.is_empty()));
+                }
+            }
+            for (identity, rectangles) in reviewed_page_masks(ledger) {
+                let entry: &mut Vec<[f64; 4]> = pages.entry(identity).or_default();
+                for rectangle in rectangles {
+                    if !entry.contains(&rectangle) {
+                        entry.push(rectangle);
+                    }
+                }
+            }
+        }
+        pages
+    }
+
+    #[test]
+    fn backlog_mask_union_includes_shared_page_repairs() {
+        let historical = serde_json::json!({"repairs":[
+            {"source":0,"source_page":17,"raster":[100,200],"disposition":"mask",
+             "mask_rectangles":[[0.1,0.1,0.2,0.2]]}
+        ]});
+        let backlog = serde_json::json!({"repairs":[
+            {"source":0,"source_page":17,"raster":[100,200],"disposition":"mask",
+             "status":"repaired","preserved_latin_regions":[[30,30,40,40]],
+             "mask_rectangles":[[0.1,0.1,0.2,0.2],[0.3,0.3,0.4,0.4]]},
+            {"source":1,"source_page":4,"raster":[50,60],"disposition":"mask",
+             "status":"repaired","preserved_latin_regions":[[10,10,20,20]],
+             "mask_rectangles":[[0.5,0.5,0.6,0.6]]}
+        ]});
+        let masks = all_reviewed_page_masks(&[&historical, &backlog]);
+        assert_eq!(masks[&(0, 17)].len(), 2);
+        assert_eq!(masks[&(1, 4)].len(), 1);
+        let conflict = serde_json::json!({"repairs":[
+            {"source":0,"source_page":17,"raster":[101,200],"disposition":"mask",
+             "status":"repaired","preserved_latin_regions":[[30,30,40,40]],
+             "mask_rectangles":[[0.3,0.3,0.4,0.4]]}
+        ]});
+        assert!(
+            std::panic::catch_unwind(|| all_reviewed_page_masks(&[&historical, &conflict]))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn backlog_mask_union_excludes_uninstalled_repairs() {
+        let backlog = serde_json::json!({"repairs":[
+            {"source":0,"source_page":17,"raster":[100,200],"disposition":"mask",
+             "status":"planned","mask_rectangles":[[0.1,0.1,0.2,0.2]]},
+            {"source":0,"source_page":18,"raster":[100,200],"disposition":"mask",
+             "status":"unresolved","mask_rectangles":[[0.1,0.1,0.2,0.2]]}
+        ]});
+        assert!(all_reviewed_page_masks(&[&backlog]).is_empty());
+        let missing_preservation = serde_json::json!({"repairs":[
+            {"source":0,"source_page":17,"raster":[100,200],"disposition":"mask",
+             "status":"repaired","mask_rectangles":[[0.1,0.1,0.2,0.2]]}
+        ]});
+        assert!(
+            std::panic::catch_unwind(|| all_reviewed_page_masks(&[&missing_preservation])).is_err()
+        );
+    }
+
+    fn current_reviewed_page_expectation(
+        backlog: &serde_json::Value,
+        source: usize,
+        page: u32,
+        historical: &serde_json::Value,
+        field: &str,
+    ) -> serde_json::Value {
+        let entries: Vec<_> = backlog["current_page_expectations"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|entry| {
+                entry["source"].as_u64() == Some(source as u64)
+                    && entry["source_page"].as_u64() == Some(page as u64)
+            })
+            .collect();
+        assert!(
+            entries.len() <= 1,
+            "conflicting current expectations for {source}:{page}"
+        );
+        let installed = backlog["repairs"].as_array().unwrap().iter().any(|repair| {
+            repair["source"].as_u64() == Some(source as u64)
+                && repair["source_page"].as_u64() == Some(page as u64)
+                && repair["disposition"] == "mask"
+                && repair["status"] == "repaired"
+        });
+        if installed {
+            let entry = entries
+                .first()
+                .expect("installed mask needs current page expectations");
+            assert!(entry["expected_crop_edges"].is_array());
+            assert!(entry["expected_pass_a_bands"].is_array());
+        }
+        entries
+            .first()
+            .map(|entry| &entry[field])
+            .filter(|value| !value.is_null())
+            .cloned()
+            .unwrap_or_else(|| historical[field].clone())
+    }
+
+    #[test]
+    fn backlog_page_expectations_reject_conflicts() {
+        let historical = serde_json::json!({"expected_crop_edges":[10,90],
+            "expected_pass_a_bands":[[20,30]],"expected_first_band":[20,30]});
+        let current = serde_json::json!({"repairs":[{"source":0,"source_page":17,
+            "disposition":"mask","status":"repaired"}],
+            "current_page_expectations":[{"source":0,"source_page":17,
+            "expected_crop_edges":[11,90],"expected_pass_a_bands":[[21,31]],
+            "expected_first_band":[21,31]}]});
+        assert_eq!(
+            current_reviewed_page_expectation(&current, 0, 17, &historical, "expected_crop_edges"),
+            serde_json::json!([11, 90])
+        );
+        assert_eq!(
+            current_reviewed_page_expectation(&current, 0, 17, &historical, "expected_first_band"),
+            serde_json::json!([21, 31])
+        );
+        assert_eq!(
+            current_reviewed_page_expectation(&current, 0, 18, &historical, "expected_first_band"),
+            serde_json::json!([20, 30])
+        );
+        let duplicate = serde_json::json!({"repairs":[],"current_page_expectations":[
+            {"source":0,"source_page":17},{"source":0,"source_page":17}]});
+        assert!(
+            std::panic::catch_unwind(|| current_reviewed_page_expectation(
+                &duplicate,
+                0,
+                17,
+                &historical,
+                "expected_first_band"
+            ))
+            .is_err()
+        );
+        let missing = serde_json::json!({"repairs":[{"source":0,"source_page":17,
+            "disposition":"mask","status":"repaired"}],"current_page_expectations":[]});
+        assert!(
+            std::panic::catch_unwind(|| current_reviewed_page_expectation(
+                &missing,
+                0,
+                17,
+                &historical,
+                "expected_first_band"
+            ))
+            .is_err()
+        );
     }
 
     #[test]
@@ -4331,12 +4722,12 @@ mod tests {
 
     #[test]
     fn inner_tomi_masks_match_reviewed_ledger() {
-        let ledger = repair_ledger();
-        for ((source, page), rectangles) in reviewed_page_masks(&ledger) {
-            let record = ledger["repairs"]
-                .as_array()
-                .unwrap()
-                .iter()
+        let historical = repair_ledger();
+        let backlog = backlog_repair_ledger();
+        for ((source, page), rectangles) in all_reviewed_page_masks(&[&historical, &backlog]) {
+            let record = [&historical, &backlog]
+                .into_iter()
+                .flat_map(|ledger| ledger["repairs"].as_array().unwrap())
                 .find(|r| {
                     r["disposition"] == "mask"
                         && r["source"].as_u64() == Some(source as u64)
@@ -4497,14 +4888,11 @@ mod tests {
         );
         for (index, (&page, (column, bands))) in sequence.iter().zip(&pages).enumerate() {
             let raw = real_source_image(range.unit.source, page);
-            // Detect the column on the masked image so the crop matches production on
-            // pages that carry a furniture mask (e.g. the retained Cato folio-934 header
-            // on 337 and the right-rule margin on 361). The retained body bands lie
-            // outside those rectangles, so each still compares byte-identical to the raw
-            // source Latin here.
+            // Compare retained bands at the source coordinates used by production,
+            // including reviewed crop edges that preserve marginal glyphs.
             let mut masked = raw.clone();
             mask_known_source_furniture(range.unit.source, page, &mut masked);
-            let crop = detect_latin_column(&masked).unwrap();
+            let crop = production_source_column(range.unit.source, page, &masked).unwrap();
             let trace = RetainedSourcePageTrace {
                 source: range.unit.source,
                 page,
@@ -4761,17 +5149,24 @@ mod tests {
     #[test]
     #[ignore = "requires source PDFs and production-DPI renders"]
     fn inner_tomi_known_masks_preserve_latin() {
-        let ledger = repair_ledger();
-        let page_masks = reviewed_page_masks(&ledger);
+        let historical = repair_ledger();
+        let backlog = backlog_repair_ledger();
+        let page_masks = all_reviewed_page_masks(&[&historical, &backlog]);
         let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/masks");
         std::fs::create_dir_all(dir).unwrap();
         let mut measurements = Vec::new();
-        for repair in ledger["repairs"].as_array().unwrap() {
-            if repair["disposition"] != "mask" {
-                continue;
-            }
-            let source = repair["source"].as_u64().unwrap() as usize;
-            let page = repair["source_page"].as_u64().unwrap() as u32;
+        for &(source, page) in page_masks.keys() {
+            let records: Vec<_> = [&historical, &backlog]
+                .into_iter()
+                .flat_map(|ledger| ledger["repairs"].as_array().unwrap())
+                .filter(|repair| {
+                    repair["disposition"] == "mask"
+                        && repair["source"].as_u64() == Some(source as u64)
+                        && repair["source_page"].as_u64() == Some(page as u64)
+                        && (!repair["status"].is_string() || repair["status"] == "repaired")
+                })
+                .collect();
+            let repair = records[0];
             let original = real_source_image(source, page);
             assert_eq!(
                 [original.width() as u64, original.height() as u64],
@@ -4816,25 +5211,41 @@ mod tests {
                 &cleaned,
                 detect_latin_column(&cleaned).unwrap(),
             );
-            if let Some(expected) = repair["expected_crop_edges"].as_array() {
-                assert_eq!(
-                    vec![crop.left as u64, crop.right as u64],
-                    expected
+            for repair in records {
+                let expected_crop = current_reviewed_page_expectation(
+                    &backlog,
+                    source,
+                    page,
+                    repair,
+                    "expected_crop_edges",
+                );
+                let expected_bands = current_reviewed_page_expectation(
+                    &backlog,
+                    source,
+                    page,
+                    repair,
+                    "expected_pass_a_bands",
+                );
+                if let Some(expected) = expected_crop.as_array() {
+                    assert_eq!(
+                        vec![crop.left as u64, crop.right as u64],
+                        expected
+                            .iter()
+                            .map(|v| v.as_u64().unwrap())
+                            .collect::<Vec<_>>()
+                    );
+                    let expected: Vec<_> = expected_bands
+                        .as_array()
+                        .unwrap()
                         .iter()
-                        .map(|v| v.as_u64().unwrap())
-                        .collect::<Vec<_>>()
-                );
-                let expected: Vec<_> = repair["expected_pass_a_bands"]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .map(ledger_band)
-                    .collect();
-                assert_eq!(
-                    band_source_column(source, page, &crop_column(&cleaned, &crop)).1,
-                    expected,
-                    "source {source} page {page}: independently reviewed Pass A"
-                );
+                        .map(ledger_band)
+                        .collect();
+                    assert_eq!(
+                        band_source_column(source, page, &crop_column(&cleaned, &crop)).1,
+                        expected,
+                        "source {source} page {page}: independently reviewed Pass A"
+                    );
+                }
                 let trace = RetainedSourcePageTrace {
                     source,
                     page,
@@ -4843,7 +5254,14 @@ mod tests {
                     bands: vec![],
                     deleted_rows: vec![],
                 };
-                for region in repair["preserved_latin_regions"].as_array().unwrap() {
+                if expected_crop.is_array() {
+                    assert!(repair["preserved_latin_regions"].is_array());
+                }
+                for region in repair["preserved_latin_regions"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                {
                     assert_source_region_pixels_survive(
                         &original,
                         &cleaned,
@@ -4851,18 +5269,29 @@ mod tests {
                         std::array::from_fn(|i| region[i].as_u64().unwrap() as u32),
                     );
                 }
-                if repair["finding_ids"].as_array().unwrap().iter().any(|id| {
-                    ["H1", "H2", "MARIUS_HEAD", "CATO_MAJOR_FOLIO"]
-                        .iter()
-                        .any(|name| id == name)
-                }) {
+                if repair["finding_ids"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .any(|id| {
+                        ["H1", "H2", "MARIUS_HEAD", "CATO_MAJOR_FOLIO"]
+                            .iter()
+                            .any(|name| id == name)
+                    })
+                {
                     let (pages, metrics, traces) =
                         audit_traced_unit(repair["unit_id"].as_str().unwrap());
                     let index = retained_page(&traces, source, page)
                         .unwrap()
                         .retained_index
                         .unwrap();
-                    let first = ledger_band(&repair["expected_first_band"]);
+                    let first = ledger_band(&current_reviewed_page_expectation(
+                        &backlog,
+                        source,
+                        page,
+                        repair,
+                        "expected_first_band",
+                    ));
                     assert_eq!(
                         pages[index].1.first(),
                         Some(&first),

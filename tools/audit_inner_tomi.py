@@ -22,6 +22,35 @@ from urllib.parse import quote
 from contextlib import contextmanager
 
 
+from inner_audit_common import (
+    AuditError,
+    BODY_ASSET,
+    CalibrationError,
+    contained,
+    enumerate_image_occurrences,
+    hash_file,
+    image_views,
+    ink_line_height,
+    json_hash,
+    map_reader_occurrences,
+    normalized_pdf_box,
+    page_geometry,
+    parse_tex_refs,
+    pixel_bounds,
+    progress,
+    progress_heartbeat,
+    read_footer_folio,
+    register_pixel_regions,
+    relative_path,
+    render_page,
+    reusable_entry,
+    run_directory,
+    run_external,
+    safe_write_path,
+    validate_box,
+    write_json,
+)
+
 PACKAGES = {
     "numpy": "numpy", "Pillow": "PIL", "opencv-python-headless": "cv2",
     "scikit-learn": "sklearn", "RapidFuzz": "rapidfuzz", "PyMuPDF": "pymupdf",
@@ -58,17 +87,10 @@ RELATIONS = {
 }
 
 
-class AuditError(Exception):
-    """An actionable configuration or tool failure."""
 
 
-class CalibrationError(AuditError):
-    """An explicitly requested calibration gate failed."""
 
 
-def json_hash(data):
-    return hashlib.sha256(json.dumps(data, ensure_ascii=False, sort_keys=True,
-                                     separators=(",", ":"), allow_nan=False).encode()).hexdigest()
 
 
 def load_benchmark(root, manifest, work, *, include_labels=True):
@@ -1047,13 +1069,6 @@ def cached_source_index(root, manifest, work, repo):
     return data
 
 
-def validate_box(box):
-    if (not isinstance(box, list) or len(box) != 4
-            or any(isinstance(n, bool) or not isinstance(n, (int, float))
-                   or not math.isfinite(n) for n in box)
-            or not 0 <= box[0] < box[2] <= 1 or not 0 <= box[1] < box[3] <= 1):
-        raise AuditError(f"Invalid normalized box: {box}")
-    return box
 
 
 def snapshot_input(root, manifest, *, role, tomus=None, source_index=None):
@@ -1070,45 +1085,14 @@ def snapshot_input(root, manifest, *, role, tomus=None, source_index=None):
     return path, record
 
 
-def page_geometry(page):
-    return {"mediabox": list(page.mediabox), "cropbox": list(page.cropbox),
-            "rotation": page.rotation, "render_box_policy": "mediabox"}
 
 
-def normalized_pdf_box(page, box):
-    """Map unrotated PyMuPDF points to displayed MediaBox coordinates."""
-    import pymupdf
-    mx0, my0, mx1, my1 = page.mediabox
-    inverse = ~page.transformation_matrix
-    corners = []
-    for x, y in ((box[0], box[1]), (box[2], box[1]), (box[2], box[3]), (box[0], box[3])):
-        point = pymupdf.Point(x, y) * inverse
-        u, v = (point.x - mx0) / (mx1 - mx0), (my1 - point.y) / (my1 - my0)
-        rotated = {0: (u, v), 90: (1 - v, u), 180: (1 - u, 1 - v), 270: (v, 1 - u)}
-        if page.rotation not in rotated:
-            raise AuditError("Unsupported page rotation")
-        corners.append(rotated[page.rotation])
-    return [min(p[0] for p in corners), min(p[1] for p in corners),
-            max(p[0] for p in corners), max(p[1] for p in corners)]
 
 
-def pixel_bounds(box, size):
-    validate_box(box)
-    width, height = size
-    return (math.floor(box[0] * width), math.floor(box[1] * height),
-            math.ceil(box[2] * width), math.ceil(box[3] * height))
 
 
-def parse_tex_refs(path):
-    text = re.sub(r"(?<!\\)%[^\n]*", "", Path(path).read_text(encoding="utf-8"))
-    text = text.split(r"\begin{document}", 1)[1].split(r"\end{document}", 1)[0]
-    return re.findall(r"\\includegraphics(?:\s*\[[^\]]*\])?\s*\{([^{}]+\.png)\}", text)
 
 
-def enumerate_image_occurrences(page):
-    """Enumerate displayed image occurrences, including repeated uses of one object."""
-    return [{"xref": image["xref"], "box": normalized_pdf_box(page, image["bbox"])}
-            for image in page.get_image_info(xrefs=True)]
 
 
 def benchmark_inventory(root, manifest):
@@ -1144,132 +1128,22 @@ def benchmark_inventory(root, manifest):
     return rows, geometry
 
 
-BODY_ASSET = re.compile(r"facsimile_(.+)_(\d+)\.png")
 
 
-def read_footer_folio(page):
-    """Return every generated Arabic folio printed in the bottom margin of a page.
-
-    The reader's `folio` page style prints `\\thepage` (body folio = physical page -
-    body-first page + 1) in the bottom margin; unit openings suppress it with an empty
-    page style, so a body opening carries no footer word and its folio is inferred."""
-    found = []
-    for x0, y0, x1, y1, text, *_ in page.get_text("words"):
-        label = text.strip()
-        if label.isdigit():
-            box = normalized_pdf_box(page, [x0, y0, x1, y1])
-            if box[1] >= 0.9:
-                found.append({"folio": int(label), "box": box})
-    return found
 
 
 def map_reader_pages(root, manifest):
-    """Map ordered TeX image references to displayed reader pages, folios and units.
-
-    Only actual ordered `\\includegraphics` occurrences are mapped, not unique image
-    objects; front-matter scans, blank recto separators and signature padding are kept
-    distinct from numbered body images. Printed folios come from the generated footer;
-    suppressed unit openings are inferred from the tomus's single page/folio offset."""
-    import pymupdf
-    expected = manifest["expected_counts"]
-    tomi, body_rows, unit_summaries = [], [], []
+    readers = []
     for tomus in range(1, 9):
-        tex, _ = snapshot_input(root, manifest, role="reader_tex", tomus=tomus)
+        tex, tex_record = snapshot_input(root, manifest, role="reader_tex", tomus=tomus)
         pdf, record = snapshot_input(root, manifest, role="reader_pdf", tomus=tomus)
-        refs = parse_tex_refs(tex)
-        with pymupdf.open(pdf) as document:
-            scanned, occurrences = [], []
-            for number, page in enumerate(document, 1):
-                occ = enumerate_image_occurrences(page)
-                scanned.append({"page": number, "occurrences": occ,
-                                "folios": read_footer_folio(page),
-                                "word_count": len(page.get_text("words"))})
-                occurrences.extend((number, o) for o in occ)
-            if len(refs) != len(occurrences):
-                raise AuditError(f"Ambiguous tomus {tomus} image inventory: {len(refs)} TeX refs / {len(occurrences)} occurrences")
-            placements = {number: [] for number in range(1, len(document) + 1)}
-            for asset, (number, occ) in zip(refs, occurrences):
-                match = BODY_ASSET.fullmatch(Path(asset).name)
-                placements[number].append({"asset": asset, "box": occ["box"],
-                                           "unit_id": match[1] if match else None,
-                                           "ordinal": int(match[2]) if match else None})
-            body_numbers = [n for n, items in placements.items() if any(i["unit_id"] for i in items)]
-            if any(sum(1 for i in placements[n] if i["unit_id"]) > 1 for n in body_numbers):
-                raise AuditError(f"Multiple body occurrences on one tomus {tomus} page need manual mapping")
-            first_body, last_body = (min(body_numbers), max(body_numbers)) if body_numbers else (None, None)
-            offsets = {scan["page"] - scan["folios"][0]["folio"]
-                       for scan, number in zip(scanned, placements)
-                       if len(scan["folios"]) == 1 and any(i["unit_id"] for i in placements[scan["page"]])}
-            offset = next(iter(offsets)) if len(offsets) == 1 else None
-            pages, anomalies = [], []
-            for scan in scanned:
-                number = scan["page"]
-                items = placements[number]
-                body = next((i for i in items if i["unit_id"]), None)
-                front_assets = [Path(i["asset"]).name for i in items if not i["unit_id"]]
-                if body:
-                    kind = "body"
-                elif number < (first_body or 0):
-                    kind = "frontmatter"
-                elif last_body is not None and number > last_body:
-                    kind = "padding"
-                else:
-                    kind = "separator"
-                entry = {"page": number, "kind": kind, "has_image": bool(items),
-                         "image_assets": front_assets, "word_count": scan["word_count"]}
-                if body:
-                    validate_box(body["box"])
-                    is_opening = body["ordinal"] == 1
-                    printed = scan["folios"]
-                    if len(printed) == 1:
-                        folio, provenance = printed[0]["folio"], "printed"
-                        if offset is not None and number - offset != folio:
-                            anomalies.append({"page": number, "printed": folio, "offset": offset})
-                    elif offset is not None:
-                        folio, provenance = number - offset, "inferred"
-                    else:
-                        folio, provenance = None, "unknown"
-                    entry.update({"unit_id": body["unit_id"], "ordinal": body["ordinal"],
-                                  "asset": body["asset"], "body_box": body["box"],
-                                  "is_opening": is_opening, "folio": folio,
-                                  "folio_provenance": provenance})
-                    body_rows.append({"tomus": tomus, "page": number, "unit_id": body["unit_id"],
-                                      "ordinal": body["ordinal"], "asset": body["asset"],
-                                      "input_sha256": record["sha256"], "body_box": body["box"],
-                                      "folio": folio, "folio_provenance": provenance,
-                                      "is_opening": is_opening})
-                pages.append(entry)
-            tomus_body = [p for p in pages if p["kind"] == "body"]
-            if len(document) != expected["physical_by_tomus"][tomus - 1] or len(tomus_body) != expected["body_by_tomus"][tomus - 1]:
-                raise AuditError(f"Pinned page count mismatch in tomus {tomus}")
-            order, grouped = [], {}
-            for row in tomus_body:
-                grouped.setdefault(row["unit_id"], []).append(row)
-                if row["unit_id"] not in order:
-                    order.append(row["unit_id"])
-            units = []
-            for unit_id in order:
-                rows = grouped[unit_id]
-                ordinals = [r["ordinal"] for r in rows]
-                if sorted(ordinals) != list(range(1, len(rows) + 1)):
-                    raise AuditError(f"Non-contiguous body ordinals for {unit_id} in tomus {tomus}")
-                opening, closing = rows[0], rows[-1]
-                units.append({"unit_id": unit_id, "tomus": tomus, "page_count": len(rows),
-                              "opening_page": opening["page"], "opening_folio": opening["folio"],
-                              "opening_folio_provenance": opening["folio_provenance"],
-                              "closing_page": closing["page"], "closing_folio": closing["folio"]})
-            unit_summaries.extend(units)
-            tomi.append({"tomus": tomus, "input_sha256": record["sha256"],
-                         "physical_pages": len(document), "body_pages": len(tomus_body),
-                         "first_body_page": first_body, "last_body_page": last_body,
-                         "folio_offset": offset, "offset_candidates": sorted(offsets),
-                         "folio_anomalies": anomalies, "units": units, "pages": pages})
-            progress(f"Reader map: tomus {tomus}, {len(document)} physical / {len(tomus_body)} body / "
-                     f"{len(units)} units, folio offset {offset}")
-    if len(body_rows) != expected["body_pages"] or len(unit_summaries) != expected["units"]:
-        raise AuditError(f"Reader map totals {len(body_rows)} body / {len(unit_summaries)} units differ from pinned corpus counts")
-    return {"schema_version": 1, "adapter": "reader-map-folios-v1", "tomi": tomi,
-            "body_pages": body_rows, "units": unit_summaries}
+        readers.append({"tomus": tomus, "tex_path": tex, "pdf_path": pdf,
+                        "pdf_sha256": record["sha256"], "tex_sha256": tex_record["sha256"],
+                        "body_assets": {}})
+    result = map_reader_occurrences(readers, manifest["expected_counts"])
+    for row in result["body_pages"]:
+        row.pop("image_occurrence", None)
+    return result
 
 
 SOURCE_LATIN_X0 = 0.44  # Broad right-column/gutter start before source-word consensus.
@@ -2370,25 +2244,8 @@ def find_missing_occurrences(reader, source_unit, anchors, path, settings, *, al
     return omissions
 
 
-def image_views(gray):
-    """Keep faint grayscale ink and a local-contrast view as separately scored observations."""
-    import cv2
-    return {"grayscale": gray, "contrast": cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)}
 
 
-def ink_line_height(gray):
-    """Estimate character height from the same dark-ink components in source and reader.
-
-    The upper quartile excludes small punctuation and interlinear scraps; long rules
-    and page-spanning components do not supply the typography scale.
-    """
-    import cv2
-    import numpy as np
-    _, _, stats, _ = cv2.connectedComponentsWithStats((gray < 120).astype(np.uint8), 8)
-    heights = sorted(int(s[3]) for s in stats[1:] if
-                     max(4, 0.002 * gray.shape[0]) <= s[3] <= 0.06 * gray.shape[0]
-                     and 2 <= s[2] <= 3 * s[3] and s[4] >= 5)
-    return float(heights[3 * len(heights) // 4]) if len(heights) >= 8 else None
 
 
 def make_templates(spec, source_regions, root, manifest, work, repo, settings, pdftoppm):
@@ -3135,31 +2992,14 @@ def match_source_image(row, source_index, source_page, root, manifest, work, rep
         source = np.asarray(image.convert("L"))
     rb = pixel_bounds(row["body_box"], reader_meta["raster_dimensions"])
     sb = pixel_bounds([SOURCE_LATIN_X0, 0.10, 1.0, 0.94], source_meta["raster_dimensions"])
-    sift = cv2.SIFT_create(nfeatures=th["features"])
-    sk, sd = sift.detectAndCompute(source[sb[1]:sb[3], sb[0]:sb[2]], None)
-    rk, rd = sift.detectAndCompute(target[rb[1]:rb[3], rb[0]:rb[2]], None)
-    result = {"matched": False, "reason": "insufficient source/output image correspondences", "matrix": None,
-              "source_dimensions": source_meta["raster_dimensions"], "reader_dimensions": reader_meta["raster_dimensions"],
-              "source_page": source_page, "source_index": source_index, "reader_page": row["page"], "tomus": row["tomus"]}
-    if sd is not None and rd is not None and len(sk) >= 8 and len(rk) >= 8:
-        pairs = cv2.BFMatcher(cv2.NORM_L2).knnMatch(sd, rd, k=2)
-        good = [p[0] for p in pairs if len(p) == 2 and p[0].distance < th["ratio"] * p[1].distance]
-        if len(good) >= th["minimum_inliers"]:
-            first = np.float32([[sk[p.queryIdx].pt[0] + sb[0], sk[p.queryIdx].pt[1] + sb[1]] for p in good])
-            second = np.float32([[rk[p.trainIdx].pt[0] + rb[0], rk[p.trainIdx].pt[1] + rb[1]] for p in good])
-            cv2.setRNGSeed(0)
-            matrix, mask = cv2.estimateAffinePartial2D(first, second, method=cv2.RANSAC,
-                ransacReprojThreshold=th["reprojection_px"], maxIters=2000)
-            if matrix is not None and mask is not None and np.isfinite(matrix).all():
-                selected = mask.ravel().astype(bool)
-                count = int(selected.sum())
-                fraction = count / len(good)
-                scale = math.hypot(float(matrix[0, 0]), float(matrix[1, 0]))
-                valid = count >= th["minimum_inliers"] and fraction >= th["minimum_inlier_fraction"] and 0.2 <= scale <= 5
-                result.update({"matched": valid, "reason": "registered prose pixels" if valid else "weak image registration",
-                    "matrix": matrix.tolist(), "inliers": count, "inlier_fraction": fraction,
-                    "source_inlier_box": [float(first[selected, 0].min()), float(first[selected, 1].min()),
-                                          float(first[selected, 0].max()), float(first[selected, 1].max())] if count else None})
+    registered = register_pixel_regions(source, target, sb, rb, th)
+    result = {"source_dimensions": source_meta["raster_dimensions"],
+              "reader_dimensions": reader_meta["raster_dimensions"],
+              "source_page": source_page, "source_index": source_index,
+              "reader_page": row["page"], "tomus": row["tomus"]}
+    for key in ("matched", "reason", "matrix", "inliers", "inlier_fraction", "source_inlier_box"):
+        if key in registered:
+            result[key] = registered[key]
     write_json(cache, {"schema_version": 1, "complete": True, "metadata": metadata, "data": result}, work, repo)
     return result
 
@@ -4547,60 +4387,6 @@ def validate_benchmark(data, manifest, units, *, splits=None):
     return data
 
 
-def render_page(pdf, record, page_number, dpi, work, repo, *, pdftoppm=None):
-    """Render the full MediaBox with Poppler; cache only verified completed rasters."""
-    import pymupdf
-    from PIL import Image
-    executable = pdftoppm or shutil.which("pdftoppm")
-    if not executable or not isinstance(dpi, int) or not 45 <= dpi <= 600:
-        raise AuditError("Poppler must be available and DPI must be between 45 and 600")
-    version = run_external([executable, "-v"]).splitlines()[0]
-    with pymupdf.open(pdf) as document:
-        if not 1 <= page_number <= len(document):
-            raise AuditError("Render page outside input PDF bounds")
-        geometry = page_geometry(document[page_number - 1])
-    metadata = {"input_sha256": record["sha256"], "page": page_number, "dpi": dpi,
-                "poppler_version": version, **geometry}
-    key = hashlib.sha256(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
-    folder = safe_write_path(Path(work) / "cache" / "renders" / key, work, repo)
-    raster, sidecar = folder / "page.png", folder / "metadata.json"
-    cached = reusable_entry(sidecar, metadata, work, repo)
-    if cached and raster.exists() and hash_file(raster) == cached.get("raster_sha256"):
-        return raster, cached
-    folder.mkdir(parents=True, exist_ok=True)
-    lock = folder / "render.lock"
-    waited = time.monotonic()
-    while True:
-        try:
-            descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            break
-        except FileExistsError as exc:
-            cached = reusable_entry(sidecar, metadata, work, repo)
-            if cached and raster.exists() and hash_file(raster) == cached.get('raster_sha256'):
-                return raster, cached
-            if time.monotonic() - waited >= 180:
-                raise AuditError(f"Render lock did not complete within 180 seconds; inspect the owning invocation: {lock}") from exc
-            time.sleep(.25)
-    os.close(descriptor)
-    try:
-        with tempfile.TemporaryDirectory(dir=folder) as temporary:
-            prefix = Path(temporary) / "page"
-            with progress_heartbeat(f"Rendering {record['path']} page {page_number}"):
-                run_external([executable, "-png", "-f", str(page_number), "-l", str(page_number),
-                              "-r", str(dpi), "-singlefile", str(pdf), str(prefix)], timeout=180)
-            rendered = prefix.with_suffix(".png")
-            with Image.open(rendered) as image:
-                image.load()
-                dimensions = list(image.size)
-            os.replace(rendered, safe_write_path(raster, work, repo))
-        data = {**metadata, "raster_dimensions": dimensions, "raster_sha256": hash_file(raster),
-                "unusual_coordinate_status": "requires independently inspected overlay" if
-                geometry["rotation"] or geometry["cropbox"] != geometry["mediabox"] else "standard corpus geometry"}
-        write_json(sidecar, {"schema_version": 1, "complete": True, "metadata": metadata, "data": data}, work, repo)
-        progress(f"Rendered {record['path']} page {page_number} at {dpi} DPI")
-        return raster, data
-    finally:
-        lock.unlink()
 
 
 SOURCE_OCR_DPI = 300   # Source columns read at full resolution.
@@ -4639,13 +4425,15 @@ def parse_tesseract_tsv(tsv):
     return rows
 
 
-def run_tesseract_tsv(image_path, *, psm, lang, tesseract, timeout=240):
+def run_tesseract_tsv(image_path, *, psm, lang, tesseract, timeout=240, tessdata_dir=None):
     """Run Tesseract once in TSV mode, preserving per-word boxes and confidence."""
     with tempfile.TemporaryDirectory() as temporary:
         base = Path(temporary) / "ocr"
         with progress_heartbeat(f"OCR {Path(image_path).name} psm {psm}"):
-            run_external([tesseract, str(image_path), str(base), "--psm", str(psm),
-                          "-l", lang, "tsv"], timeout=timeout)
+            arguments = [tesseract, str(image_path), str(base), "--psm", str(psm), "-l", lang]
+            if tessdata_dir:
+                arguments.extend(["--tessdata-dir", str(tessdata_dir)])
+            run_external(arguments + ["tsv"], timeout=timeout)
         return parse_tesseract_tsv(base.with_suffix(".tsv").read_text(encoding="utf-8"))
 
 
@@ -4675,7 +4463,8 @@ def group_ocr_lines(words):
 
 
 def ocr_page_region(pdf, record, page_number, dpi, psm, lang, work, repo, *,
-                    box=None, tesseract=None, pdftoppm=None, timeout=240):
+                    box=None, tesseract=None, pdftoppm=None, timeout=240,
+                    tessdata_dir=None, policy=None):
     """Raster-OCR a full MediaBox page or a cropped region; boxes map to the full raster.
 
     Reuse is keyed on the rendered pixels plus OCR settings, never a bare filename. Blank
@@ -4685,14 +4474,17 @@ def ocr_page_region(pdf, record, page_number, dpi, psm, lang, work, repo, *,
     executable = tesseract or shutil.which("tesseract")
     if not executable:
         raise AuditError("Tesseract must be available; supply --tesseract PATH.")
-    raster, render_meta = render_page(pdf, record, page_number, dpi, work, repo, pdftoppm=pdftoppm)
+    raster, render_meta = render_page(pdf, record, page_number, dpi, work, repo, pdftoppm=pdftoppm, policy=policy)
     dimensions = render_meta["raster_dimensions"]
     version = tesseract_version(executable)
     metadata = {"adapter": OCR_ADAPTER, "raster_sha256": render_meta["raster_sha256"],
                 "dpi": dpi, "psm": psm, "lang": lang, "tesseract_version": version,
                 "crop": [round(value, 6) for value in box] if box else None}
+    if tessdata_dir:
+        metadata['language_sha256'] = hash_file(Path(tessdata_dir) / f'{lang}.traineddata')
+        metadata['adapter_sha256'] = hash_file(Path(__file__))
     path = Path(work) / "cache" / "ocr" / f"{json_hash(metadata)}.json"
-    cached = reusable_entry(path, metadata, work, repo)
+    cached = reusable_entry(path, metadata, work, repo, policy=policy)
     if cached:
         return cached
     clipped = False
@@ -4705,10 +4497,10 @@ def ocr_page_region(pdf, record, page_number, dpi, psm, lang, work, repo, *,
             with tempfile.TemporaryDirectory() as temporary:
                 region_path = Path(temporary) / "region.png"
                 crop.save(region_path)
-                rows = run_tesseract_tsv(region_path, psm=psm, lang=lang, tesseract=executable, timeout=timeout)
+                rows = run_tesseract_tsv(region_path, psm=psm, lang=lang, tesseract=executable, timeout=timeout, tessdata_dir=tessdata_dir)
     else:
         offset = (0, 0)
-        rows = run_tesseract_tsv(raster, psm=psm, lang=lang, tesseract=executable, timeout=timeout)
+        rows = run_tesseract_tsv(raster, psm=psm, lang=lang, tesseract=executable, timeout=timeout, tessdata_dir=tessdata_dir)
     words = []
     for row in rows:
         normalized = normalize_tsv_box(row["pixel_box"], offset, dimensions)
@@ -4722,7 +4514,7 @@ def ocr_page_region(pdf, record, page_number, dpi, psm, lang, work, repo, *,
             "raster_dimensions": dimensions, "box": box, "clipped": clipped,
             "word_count": len(words), "readable": bool(words),
             "words": words, "lines": group_ocr_lines(words)}
-    write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata, "data": data}, work, repo)
+    write_json(path, {"schema_version": 1, "complete": True, "metadata": metadata, "data": data}, work, repo, policy=policy)
     progress(f"OCR {record['path']} page {page_number} ({'region' if box else 'full'}) "
              f"dpi {dpi} psm {psm}: {len(words)} words{' [unreadable]' if not words else ''}")
     return data
@@ -4735,20 +4527,6 @@ def ocr_region_retry(pdf, record, page_number, box, work, repo, *,
                            box=box, tesseract=tesseract, pdftoppm=pdftoppm)
 
 
-@contextmanager
-def run_directory(path, work, repo):
-    run = safe_write_path(path, work, repo)
-    run.mkdir(parents=True, exist_ok=True)
-    lock = safe_write_path(run / "run.lock", work, repo)
-    try:
-        descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except FileExistsError as exc:
-        raise AuditError(f"Another invocation owns {lock}; inspect before removing a stale lock") from exc
-    os.close(descriptor)
-    try:
-        yield run
-    finally:
-        lock.unlink()
 
 
 def annotate_regions(args):
@@ -4813,75 +4591,14 @@ def annotate_regions(args):
         progress(f"Annotation review: {page}")
 
 
-def hash_file(path):
-    digest = hashlib.sha256()
-    last = time.monotonic()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-            if time.monotonic() - last >= 30:
-                progress(f"Hashing {path}")
-                last = time.monotonic()
-    return digest.hexdigest()
 
 
-def relative_path(value):
-    path = Path(value)
-    if path.is_absolute() or path.drive or ".." in path.parts or not path.parts:
-        raise AuditError(f"Expected a relative path without traversal: {value}")
-    return path
 
 
-def contained(path, root):
-    return path == root or root in path.parents
 
 
-def safe_write_path(destination, work_dir, repo_root, *, capture_root=None):
-    """Authorize actual resolved destinations, including junction/symlink targets."""
-    destination = Path(destination).resolve()
-    work = Path(work_dir).resolve()
-    repo = Path(repo_root).resolve()
-    protected = [repo / name for name in (
-        "src", "build_facsimile", "cache", "transcription_cache", "transcriptions",
-    )]
-    protected.extend([work / "spec"])
-    protected.extend(path.resolve() for path in repo.glob("*.pdf"))
-    protected.append((repo / "facsimile_units.json").resolve())
-    if any(contained(destination, path.resolve()) for path in protected):
-        raise AuditError(f"Protected input/spec destination: {destination}")
-    if capture_root is None:
-        roots = [(work / "cache").resolve(), (work / "runs").resolve()]
-        snapshot = (work / "snapshots").resolve()
-        if contained(destination, snapshot):
-            raise AuditError(f"Snapshot destination is read-only: {destination}")
-    else:
-        root = Path(capture_root).resolve()
-        snapshots = work / "snapshots"
-        if root.parent != snapshots or not contained(root, work):
-            raise AuditError("Capture root must be a direct, non-redirected snapshot child.")
-        if (root / "manifest.json").exists():
-            raise AuditError(f"Completed snapshot cannot be overwritten: {root}")
-        roots = [root]
-    if not any(contained(destination, root) and contained(root, work) for root in roots):
-        raise AuditError(f"Destination is outside the authorized output directories: {destination}")
-    if destination.suffix.lower() == ".pdf" and capture_root is None:
-        raise AuditError("Ordinary processing cannot write PDF inputs.")
-    return destination
 
 
-def write_json(path, data, work, repo, *, capture_root=None):
-    path = safe_write_path(path, work, repo, capture_root=capture_root)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
-                                     suffix=".tmp", delete=False) as stream:
-        temporary = Path(stream.name)
-        json.dump(data, stream, ensure_ascii=False, indent=2)
-        stream.write("\n")
-    try:
-        safe_write_path(path, work, repo, capture_root=capture_root)
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
 
 
 def validate_data(data):
@@ -4984,53 +4701,12 @@ def capture_inputs(args):
     progress(f"Completed read-only snapshot: {root}")
 
 
-def progress(message):
-    print(message, flush=True)
 
 
-@contextmanager
-def progress_heartbeat(message):
-    stopped = threading.Event()
-
-    def report():
-        while not stopped.wait(30):
-            progress(message)
-
-    worker = threading.Thread(target=report, daemon=True)
-    worker.start()
-    try:
-        yield
-    finally:
-        stopped.set()
-        worker.join()
 
 
-def reusable_entry(path, metadata, work_dir, repo_root):
-    """Return completed JSON diagnostic data only when all identity/settings match."""
-    path = safe_write_path(path, work_dir, repo_root)
-    try:
-        entry = json.loads(path.read_text(encoding="utf-8"))
-        if (entry.get("schema_version") == 1 and entry.get("complete") is True
-                and entry.get("metadata") == metadata and "data" in entry):
-            return entry["data"]
-    except (OSError, ValueError, AttributeError):
-        pass
-    return None
 
 
-def run_external(arguments, timeout=30):
-    """Execute an argument list without a shell or a visible Windows window."""
-    try:
-        result = subprocess.run(
-            arguments, shell=False, capture_output=True, text=True,
-            encoding="utf-8", errors="replace", timeout=timeout,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise AuditError(f"Cannot run {arguments[0]}: {exc}") from exc
-    if result.returncode:
-        raise AuditError(f"{arguments[0]} exited {result.returncode}: {result.stderr.strip()}")
-    return (result.stdout + result.stderr).strip()
 
 
 def check_prerequisites(args):

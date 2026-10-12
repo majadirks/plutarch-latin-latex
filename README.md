@@ -141,6 +141,17 @@ corrections and candidate evidence.
 
 ## Inspecting the facsimile inner PDFs
 
+[`tools/facsimile_line_audit.py`](tools/facsimile_line_audit.py) audits source-line
+ink coverage and source, unit, duplicate and reader seams against immutable
+captures of the accepted readers. Source-only geometry and ownership reviews,
+controlled duplicate equivalence, visible-PDF pixel measurements and neutral
+review evidence govern its observations. Unreviewed source regions, weak fits
+and small projected components remain explicit uncertainty. Follow
+[`tools/README-facsimile-line-audit.md`](tools/README-facsimile-line-audit.md) for
+capture, adjudication, calibration, full offline runs, capped optional review,
+scope verification and immutable archiving. Processing completion does not
+certify complete Latin coverage.
+
 [`tools/audit_inner_tomi.py`](tools/audit_inner_tomi.py) inspects the eight
 facsimile inner PDFs against the original bilingual scans and reports suspected
 **duplicated passages, unique missing source occurrences, displaced or reversed
@@ -149,9 +160,9 @@ running heads and folios, Google watermark fragments, neighboring Greek-column
 scraps, copied page-margin gaps and divider rules, prose-free (blank) body
 regions, lateral glyph clipping, and lines sliced across output pages**. Every
 finding carries localized source/reader evidence and its confidence conditions.
-The audit **only inspects**: it writes diagnostic files and leaves the Latin,
-the production PDFs, the LaTeX, and the repair policy unchanged — it never
-repairs or normalizes the source Latin.
+The audits write diagnostic files and leave the Latin,
+the production PDFs, the LaTeX, and the repair policy unchanged — they never
+repair or normalize the source Latin.
 
 Run commands from the repository root in PowerShell with a Python 3.10+
 interpreter. Poppler (`pdftoppm`) and Tesseract must be available; the
