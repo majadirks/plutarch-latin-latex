@@ -454,7 +454,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 1,
@@ -465,7 +465,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 1,
@@ -476,7 +476,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 1,
@@ -487,7 +487,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 1,
@@ -498,7 +498,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 1,
@@ -509,7 +509,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 1,
@@ -520,7 +520,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -531,7 +531,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -542,7 +542,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -553,7 +553,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -564,7 +564,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -575,7 +575,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -586,7 +586,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -597,7 +597,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -608,7 +608,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -619,7 +619,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -630,7 +630,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -641,7 +641,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 2,
@@ -652,7 +652,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 3,
@@ -663,7 +663,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 3,
@@ -674,7 +674,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 3,
@@ -685,7 +685,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 5,
@@ -696,7 +696,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 5,
@@ -707,7 +707,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 5,
@@ -718,7 +718,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 5,
@@ -729,7 +729,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 7,
@@ -740,7 +740,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 7,
@@ -751,7 +751,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 7,
@@ -762,7 +762,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 7,
@@ -773,7 +773,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 7,
@@ -784,7 +784,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 7,
@@ -795,7 +795,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       },
       {
         "tomus": 7,
@@ -806,7 +806,7 @@
           1241,
           1890
         ],
-        "command": "python tmp/render_backlog_baseline_pages.py"
+        "command": "python tools/render_backlog_baseline_pages.py"
       }
     ],
     "baseline_body_images": [
@@ -1252,7 +1252,29 @@
         "cargo test --release backlog_theseus_orphan_line_rejoins_body -- --ignored",
         "cargo test inner_tomi_masks_match_reviewed_ledger",
         "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 1,
+        "physical_pages": [
+          23
+        ],
+        "folios": [
+          7
+        ],
+        "body_canvas_indices": [
+          7
+        ],
+        "rendered_page_sha256": [
+          "97c0bb3797da9e036bfec09246e691c3d209b6649a4f888f74d429e65c116184"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/I1-tomus1-page23.png"
+        ],
+        "page_png_sha256": [
+          "ad86e958b2c8db137bec2b3c7073d2a2dcea7d72b1ad07f94c14acef0dc349ab"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "I2",
@@ -1714,7 +1736,29 @@
         "cargo test --release backlog_reported_gaps_preserve_continuous_latin -- --ignored",
         "cargo test inner_tomi_masks_match_reviewed_ledger",
         "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 1,
+        "physical_pages": [
+          113
+        ],
+        "folios": [
+          97
+        ],
+        "body_canvas_indices": [
+          5
+        ],
+        "rendered_page_sha256": [
+          "2b470802cfdae4f437cca90db12067787814d1c720bfe96d1a040160a7e58902"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/I2-tomus1-page113.png"
+        ],
+        "page_png_sha256": [
+          "5c9653f0da07225ea14cb1f1399fbe107ab3d267a7274ffa2949257baa3c93e1"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "I3",
@@ -1889,7 +1933,29 @@
       },
       "regression_commands": [
         "cargo test --release backlog_lycurgus_pericles_lines_compose_whole -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 1,
+        "physical_pages": [
+          213
+        ],
+        "folios": [
+          197
+        ],
+        "body_canvas_indices": [
+          7
+        ],
+        "rendered_page_sha256": [
+          "096c9935bba02b0e8b476476d44f7f7ccf7d292d1a722fd94c502149f73f1221"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/I3-tomus1-page213.png"
+        ],
+        "page_png_sha256": [
+          "ba099a6e524be9c5c81dcff874a79c3c2cfde12d82fe7aa9e5fb9180d4d83185"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "I4",
@@ -2141,7 +2207,29 @@
       ],
       "affected_units": [
         "themistocles"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 1,
+        "physical_pages": [
+          340
+        ],
+        "folios": [
+          324
+        ],
+        "body_canvas_indices": [
+          40
+        ],
+        "rendered_page_sha256": [
+          "e7e82ebea86b6a676c974f231afdf0cc9a9d82d7284b36aecf0ce411a5f133ea"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/I4-tomus1-page340.png"
+        ],
+        "page_png_sha256": [
+          "88ace573a1491224e5a3cc35a17032cfb0e193c1673d23e697b42b94b89a4acc"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "II1",
@@ -2328,7 +2416,29 @@
       },
       "regression_commands": [
         "cargo test --release backlog_lycurgus_pericles_lines_compose_whole -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 2,
+        "physical_pages": [
+          21
+        ],
+        "folios": [
+          13
+        ],
+        "body_canvas_indices": [
+          13
+        ],
+        "rendered_page_sha256": [
+          "eb98a746a6768a61c3e15adec6f201b6df05340a1d163ff36f371b8dea5e2ffc"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/II1-tomus2-page21.png"
+        ],
+        "page_png_sha256": [
+          "caefcacc344b4d5ebea04b095768ac3c593c4005671faad5013d077b7862a7b4"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "II2",
@@ -2861,7 +2971,29 @@
             ]
           }
         ],
-        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+        "reviewed_bounds_source": "tools/measure_backlog_latin_row_bounds.py"
+      },
+      "final_reader": {
+        "tomus": 2,
+        "physical_pages": [
+          81
+        ],
+        "folios": [
+          73
+        ],
+        "body_canvas_indices": [
+          19
+        ],
+        "rendered_page_sha256": [
+          "750fc9a4f4de96262cab4c1eba8f8592f7b19281e49abb59e3df92a9a5b5e12e"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/II2-tomus2-page81.png"
+        ],
+        "page_png_sha256": [
+          "ce4db11b1d162f1ee9f5db01c0075ad56f75ed8a8f7e567cffaee3c5a3fdc20b"
+        ],
+        "render_scale": 2
       }
     },
     {
@@ -3323,7 +3455,29 @@
             ]
           }
         ],
-        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+        "reviewed_bounds_source": "tools/measure_backlog_latin_row_bounds.py"
+      },
+      "final_reader": {
+        "tomus": 2,
+        "physical_pages": [
+          138
+        ],
+        "folios": [
+          130
+        ],
+        "body_canvas_indices": [
+          32
+        ],
+        "rendered_page_sha256": [
+          "f307ee36655b9f81fa3fcb792f5c042a1691ef5db32165e1c8b024755b15069b"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/II3-tomus2-page138.png"
+        ],
+        "page_png_sha256": [
+          "456fc23e229357b3a89d67012a617195bc3737cde8fec1cf47db1266fd48592e"
+        ],
+        "render_scale": 2
       }
     },
     {
@@ -3639,7 +3793,29 @@
             ]
           }
         ],
-        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+        "reviewed_bounds_source": "tools/measure_backlog_latin_row_bounds.py"
+      },
+      "final_reader": {
+        "tomus": 2,
+        "physical_pages": [
+          177
+        ],
+        "folios": [
+          169
+        ],
+        "body_canvas_indices": [
+          17
+        ],
+        "rendered_page_sha256": [
+          "53ae4cbe8e4c8f43c99e5713b17b0cdda00cb96885a322d3d71c7bd0914da764"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/II4-tomus2-page177.png"
+        ],
+        "page_png_sha256": [
+          "33f905bc6235fdc163613eff77f705afc33085f6695d826797462277aa002d5f"
+        ],
+        "render_scale": 2
       }
     },
     {
@@ -3985,7 +4161,29 @@
             ]
           }
         ],
-        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+        "reviewed_bounds_source": "tools/measure_backlog_latin_row_bounds.py"
+      },
+      "final_reader": {
+        "tomus": 2,
+        "physical_pages": [
+          209
+        ],
+        "folios": [
+          null
+        ],
+        "body_canvas_indices": [
+          1
+        ],
+        "rendered_page_sha256": [
+          "53fc8bb8b9dd943d1f6576d9094de3916ee1fcb443e27b0367e20613f61cbcab"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/II5-tomus2-page209.png"
+        ],
+        "page_png_sha256": [
+          "fa76f971590544d47db8d48702598e9024b9b562d1e41ab405360febafb361a3"
+        ],
+        "render_scale": 2
       }
     },
     {
@@ -4553,7 +4751,29 @@
             ]
           }
         ],
-        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+        "reviewed_bounds_source": "tools/measure_backlog_latin_row_bounds.py"
+      },
+      "final_reader": {
+        "tomus": 2,
+        "physical_pages": [
+          221
+        ],
+        "folios": [
+          213
+        ],
+        "body_canvas_indices": [
+          7
+        ],
+        "rendered_page_sha256": [
+          "2ac54176e8207bbacb12d9f496ab7fb5d3ff21c0a696f377edbd31e94ca73a73"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/II6-tomus2-page221.png"
+        ],
+        "page_png_sha256": [
+          "adbb1172690f326274db39e8fb273fe0cc8c2c09d4349422c85481a39eccb2cd"
+        ],
+        "render_scale": 2
       }
     },
     {
@@ -5113,7 +5333,29 @@
             ]
           }
         ],
-        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+        "reviewed_bounds_source": "tools/measure_backlog_latin_row_bounds.py"
+      },
+      "final_reader": {
+        "tomus": 2,
+        "physical_pages": [
+          246
+        ],
+        "folios": [
+          238
+        ],
+        "body_canvas_indices": [
+          32
+        ],
+        "rendered_page_sha256": [
+          "88db8049a2f7f1da76a1cdcd410c1e890e181f1cff2f6a6d5e993466b1a68ce7"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/II7-tomus2-page246.png"
+        ],
+        "page_png_sha256": [
+          "54fedb54d0cc271685e09ffa2f43d79d9769be1aac6b86c05b225f43b7b6130c"
+        ],
+        "render_scale": 2
       }
     },
     {
@@ -5571,7 +5813,29 @@
             ]
           }
         ],
-        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+        "reviewed_bounds_source": "tools/measure_backlog_latin_row_bounds.py"
+      },
+      "final_reader": {
+        "tomus": 2,
+        "physical_pages": [
+          288
+        ],
+        "folios": [
+          280
+        ],
+        "body_canvas_indices": [
+          24
+        ],
+        "rendered_page_sha256": [
+          "4fd4ee265578d4cdf172db7cbc8856325476afcec6434a6ff2bca3c6bdd8b685"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/II8-tomus2-page288.png"
+        ],
+        "page_png_sha256": [
+          "f6a3cfb5e98776ab297384e8add153d9431f74b65c9258dd872e68c949a0dc84"
+        ],
+        "render_scale": 2
       }
     },
     {
@@ -5933,7 +6197,29 @@
       },
       "regression_commands": [
         "cargo test --release backlog_marius_two_seams_compose_whole -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 3,
+        "physical_pages": [
+          274
+        ],
+        "folios": [
+          266
+        ],
+        "body_canvas_indices": [
+          46
+        ],
+        "rendered_page_sha256": [
+          "b5222eb9299d7e86c5b04ef5a17ff0c642d94e3d65a8b6954178647a63faaade"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/III1-tomus3-page274.png"
+        ],
+        "page_png_sha256": [
+          "1ccda21cef1e7f0ae9ed23a794524ff612d94cde40682d3b685c49a118f357ae"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "III2",
@@ -6354,7 +6640,29 @@
       },
       "regression_commands": [
         "cargo test --release backlog_marius_two_seams_compose_whole -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 3,
+        "physical_pages": [
+          275
+        ],
+        "folios": [
+          267
+        ],
+        "body_canvas_indices": [
+          47
+        ],
+        "rendered_page_sha256": [
+          "82bb9838ba6c2f82dcd8810607a5f179e090ed72e9bbb737dfb0ce941cddfd0f"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/III2-tomus3-page275.png"
+        ],
+        "page_png_sha256": [
+          "8f4a40e748824f2f26180af91351e2f6f6939b20a0a5bf741af805ea483b726f"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "V1",
@@ -6551,7 +6859,29 @@
         "cargo test --release backlog_short_ending_merge_is_identity_scoped",
         "cargo test --release backlog_short_endings_keep_following_rectos -- --ignored",
         "cargo test --release backlog_eumenes_comparison_short_ending_merges -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 5,
+        "physical_pages": [
+          196
+        ],
+        "folios": [
+          178
+        ],
+        "body_canvas_indices": [
+          2
+        ],
+        "rendered_page_sha256": [
+          "180550139864a7ef588ccf61183804e0f20c1f5258b439d56e8cd5f9e79b4622"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/V1-tomus5-page196.png"
+        ],
+        "page_png_sha256": [
+          "7772250e2424a710cce4ceb95598b91afc131fd8ed8e556bc97826ddafb46db0"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "VII1",
@@ -6756,7 +7086,29 @@
         "cargo test --release backlog_short_ending_merge_is_identity_scoped",
         "cargo test --release backlog_short_endings_keep_following_rectos -- --ignored",
         "cargo test --release backlog_demosthenes_short_ending_merges -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 7,
+        "physical_pages": [
+          44
+        ],
+        "folios": [
+          36
+        ],
+        "body_canvas_indices": [
+          36
+        ],
+        "rendered_page_sha256": [
+          "80abead3b7eb585b48a802968549eb743e95cb67815ae0682283bff7681e8586"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/VII1-tomus7-page44.png"
+        ],
+        "page_png_sha256": [
+          "2a5a77d9341fc3574964079d7f1855e6368962170afac9c2f9149ad088ddc133"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "VII2",
@@ -7251,7 +7603,29 @@
       },
       "regression_commands": [
         "cargo test --release backlog_dio_edge_lines_compose_whole -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 7,
+        "physical_pages": [
+          286
+        ],
+        "folios": [
+          278
+        ],
+        "body_canvas_indices": [
+          2
+        ],
+        "rendered_page_sha256": [
+          "46ced8085fb4115c5b2d56320a423050481b73245c01cbf02d44d76d7aaf807c"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/VII2-tomus7-page286.png"
+        ],
+        "page_png_sha256": [
+          "dc70e15bb78faedba2b7dff42ec0cb16af8ea8586b240fc10ff9e6bc03f55000"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "VII3",
@@ -7734,7 +8108,29 @@
       },
       "regression_commands": [
         "cargo test --release backlog_dio_edge_lines_compose_whole -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 7,
+        "physical_pages": [
+          290
+        ],
+        "folios": [
+          282
+        ],
+        "body_canvas_indices": [
+          6
+        ],
+        "rendered_page_sha256": [
+          "7c94ea2a6c01e50a4b29bfc945d0814fa54157d1f7d0d3775c45b7859e2e2051"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/VII3-tomus7-page290.png"
+        ],
+        "page_png_sha256": [
+          "efbaf08b3c6a94d01f1814562e8fc8eabadc9b4f00da196d6fb11fcea15430d9"
+        ],
+        "render_scale": 2
+      }
     },
     {
       "backlog_id": "VII4",
@@ -8217,7 +8613,29 @@
       },
       "regression_commands": [
         "cargo test --release backlog_dio_edge_lines_compose_whole -- --ignored"
-      ]
+      ],
+      "final_reader": {
+        "tomus": 7,
+        "physical_pages": [
+          342
+        ],
+        "folios": [
+          334
+        ],
+        "body_canvas_indices": [
+          58
+        ],
+        "rendered_page_sha256": [
+          "52d65360872ff5ba00d794088bca8de8397247534ccfba112ba3100f380bae80"
+        ],
+        "page_png_paths": [
+          "tmp/pdfs/backlog_artifacts/final/VII4-tomus7-page342.png"
+        ],
+        "page_png_sha256": [
+          "eab5fb31d095f6ce0f7b1080b3044b099dd5508621e43c89e041f6a4a76322cb"
+        ],
+        "render_scale": 2
+      }
     }
   ],
   "current_page_expectations": [
@@ -10069,5 +10487,521 @@
         ]
       ]
     }
-  ]
+  ],
+  "final_build": {
+    "date": "2026-10-12",
+    "build_code_revision": "910a158481e79a44a88ff6df69fbd76d7d14132e",
+    "build_command": "cargo run --release --bin facsimile --target-dir target -- --v1 Ploutarchou_Bioi_v1.pdf --v2 Ploutarchou_Bioi_v2.pdf --out build_facsimile/ --offline",
+    "latex_compiler": "C:/Users/majad/AppData/Local/Programs/MiKTeX/miktex/bin/x64/lualatex.exe",
+    "latex_version": "LuaHBTeX 1.24.0 (MiKTeX 25.12)",
+    "source_pdf_sha256": [
+      "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+      "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684"
+    ],
+    "unit_table_sha256": "7098d39e6c1a83c0de4333e17a09bbebed59c2bf19a33b0339d79cfe74e11949",
+    "production_body_scale": 1.2023952,
+    "inner_volume_manifest": [
+      {
+        "tomus": 1,
+        "units": [
+          {
+            "unit_id": "theseus",
+            "body_image_count": 41,
+            "opening_physical_page": 17
+          },
+          {
+            "unit_id": "romulus",
+            "body_image_count": 49,
+            "opening_physical_page": 59
+          },
+          {
+            "unit_id": "comparatio_thesei_et_romuli",
+            "body_image_count": 7,
+            "opening_physical_page": 109
+          },
+          {
+            "unit_id": "lycurgus",
+            "body_image_count": 50,
+            "opening_physical_page": 117
+          },
+          {
+            "unit_id": "numa",
+            "body_image_count": 39,
+            "opening_physical_page": 167
+          },
+          {
+            "unit_id": "comparatio_lycurgi_et_numae",
+            "body_image_count": 9,
+            "opening_physical_page": 207
+          },
+          {
+            "unit_id": "solon",
+            "body_image_count": 46,
+            "opening_physical_page": 217
+          },
+          {
+            "unit_id": "poplicola",
+            "body_image_count": 31,
+            "opening_physical_page": 263
+          },
+          {
+            "unit_id": "comparatio_solonis_et_poplicolae",
+            "body_image_count": 6,
+            "opening_physical_page": 295
+          },
+          {
+            "unit_id": "themistocles",
+            "body_image_count": 42,
+            "opening_physical_page": 301
+          },
+          {
+            "unit_id": "camillus",
+            "body_image_count": 58,
+            "opening_physical_page": 343
+          }
+        ],
+        "inner_pdf_pages": 416,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 12,
+        "tex_path": "build_facsimile/tomus_1_inner.tex",
+        "tex_sha256": "422b963854771b1aa5a15e62ce6fba3f75d81b4902cbee90d62004b4357ddca1",
+        "pdf_path": "build_facsimile/tomus_1_inner.pdf",
+        "pdf_sha256": "4b1a25f5404a07f660de080e01674ce94e3f6073119895d6ea3f2c7d82a776ec"
+      },
+      {
+        "tomus": 2,
+        "units": [
+          {
+            "unit_id": "pericles",
+            "body_image_count": 54,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "fabius_maximus",
+            "body_image_count": 40,
+            "opening_physical_page": 63
+          },
+          {
+            "unit_id": "comparatio_periclis_et_fabii",
+            "body_image_count": 4,
+            "opening_physical_page": 103
+          },
+          {
+            "unit_id": "alcibiades",
+            "body_image_count": 54,
+            "opening_physical_page": 107
+          },
+          {
+            "unit_id": "marcius_coriolanus",
+            "body_image_count": 47,
+            "opening_physical_page": 161
+          },
+          {
+            "unit_id": "comparatio_alcibiadis_et_coriolani",
+            "body_image_count": 6,
+            "opening_physical_page": 209
+          },
+          {
+            "unit_id": "timoleon",
+            "body_image_count": 49,
+            "opening_physical_page": 215
+          },
+          {
+            "unit_id": "aemilius_paulus",
+            "body_image_count": 51,
+            "opening_physical_page": 265
+          },
+          {
+            "unit_id": "comparatio_timoleontis_et_aemilii",
+            "body_image_count": 3,
+            "opening_physical_page": 317
+          },
+          {
+            "unit_id": "pelopidas",
+            "body_image_count": 50,
+            "opening_physical_page": 321
+          },
+          {
+            "unit_id": "marcellus",
+            "body_image_count": 45,
+            "opening_physical_page": 371
+          },
+          {
+            "unit_id": "comparatio_pelopidae_et_marcelli",
+            "body_image_count": 5,
+            "opening_physical_page": 417
+          }
+        ],
+        "inner_pdf_pages": 448,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 23,
+        "tex_path": "build_facsimile/tomus_2_inner.tex",
+        "tex_sha256": "3cb1ddbfc613fa8c774c116e1144731092e78368fadbcf24e67c5f36dd103423",
+        "pdf_path": "build_facsimile/tomus_2_inner.pdf",
+        "pdf_sha256": "3d5c6f1adebee840c4963dc8bb2c1dcd6e66b9c3b59e691fcc71563198948646"
+      },
+      {
+        "tomus": 3,
+        "units": [
+          {
+            "unit_id": "aristides",
+            "body_image_count": 43,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "cato_major",
+            "body_image_count": 42,
+            "opening_physical_page": 53
+          },
+          {
+            "unit_id": "comparatio_aristidis_et_catonis",
+            "body_image_count": 8,
+            "opening_physical_page": 95
+          },
+          {
+            "unit_id": "philopoemen",
+            "body_image_count": 31,
+            "opening_physical_page": 103
+          },
+          {
+            "unit_id": "flamininus",
+            "body_image_count": 31,
+            "opening_physical_page": 135
+          },
+          {
+            "unit_id": "comparatio_philopoemenis_et_flaminini",
+            "body_image_count": 3,
+            "opening_physical_page": 167
+          },
+          {
+            "unit_id": "pyrrhus",
+            "body_image_count": 57,
+            "opening_physical_page": 171
+          },
+          {
+            "unit_id": "caius_marius",
+            "body_image_count": 67,
+            "opening_physical_page": 229
+          },
+          {
+            "unit_id": "lysander",
+            "body_image_count": 44,
+            "opening_physical_page": 297
+          },
+          {
+            "unit_id": "sylla",
+            "body_image_count": 61,
+            "opening_physical_page": 341
+          },
+          {
+            "unit_id": "comparatio_lysandri_et_syllae",
+            "body_image_count": 7,
+            "opening_physical_page": 403
+          }
+        ],
+        "inner_pdf_pages": 416,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 3,
+        "tex_path": "build_facsimile/tomus_3_inner.tex",
+        "tex_sha256": "a271bb0ca974c2e741bd6c979b23f2822163ee99e60ec8d8cf1abb31f2524514",
+        "pdf_path": "build_facsimile/tomus_3_inner.pdf",
+        "pdf_sha256": "db9dc84849c696d65041ab7e83c58f19601c373520cdeac45ed8640292befa5a"
+      },
+      {
+        "tomus": 4,
+        "units": [
+          {
+            "unit_id": "cimon",
+            "body_image_count": 31,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "lucullus",
+            "body_image_count": 72,
+            "opening_physical_page": 41
+          },
+          {
+            "unit_id": "comparatio_cimonis_et_luculli",
+            "body_image_count": 6,
+            "opening_physical_page": 113
+          }
+        ],
+        "inner_pdf_pages": 128,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 6,
+        "tex_path": "build_facsimile/tomus_4_inner.tex",
+        "tex_sha256": "ecfe9ce6f18f50b862784304fa2c53c5982bbf061aacfd77e9bd45bd1a0d9228",
+        "pdf_path": "build_facsimile/tomus_4_inner.pdf",
+        "pdf_sha256": "2718c833adf2ca8f10aa39f1b1d92b1f7fbbbb25ef4cab3bc81270383a5a9776"
+      },
+      {
+        "tomus": 5,
+        "units": [
+          {
+            "unit_id": "nicias",
+            "body_image_count": 48,
+            "opening_physical_page": 19
+          },
+          {
+            "unit_id": "crassus",
+            "body_image_count": 54,
+            "opening_physical_page": 67
+          },
+          {
+            "unit_id": "comparatio_niciae_et_crassi",
+            "body_image_count": 7,
+            "opening_physical_page": 121
+          },
+          {
+            "unit_id": "sertorius",
+            "body_image_count": 36,
+            "opening_physical_page": 129
+          },
+          {
+            "unit_id": "eumenes",
+            "body_image_count": 30,
+            "opening_physical_page": 165
+          },
+          {
+            "unit_id": "comparatio_sertorii_et_eumenis",
+            "body_image_count": 2,
+            "opening_physical_page": 195
+          },
+          {
+            "unit_id": "agesilaus",
+            "body_image_count": 56,
+            "opening_physical_page": 197
+          },
+          {
+            "unit_id": "pompeius",
+            "body_image_count": 106,
+            "opening_physical_page": 253
+          },
+          {
+            "unit_id": "comparatio_agesilai_et_pompeii",
+            "body_image_count": 6,
+            "opening_physical_page": 359
+          }
+        ],
+        "inner_pdf_pages": 384,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 16,
+        "tex_path": "build_facsimile/tomus_5_inner.tex",
+        "tex_sha256": "1751bcad9e4102e3faa4491412fb2f0165108b0412fe9d3def45601c449dfee1",
+        "pdf_path": "build_facsimile/tomus_5_inner.pdf",
+        "pdf_sha256": "3be0bf665cfb20e73af8652cae4863740c522786f0169fff14d990d270f13f14"
+      },
+      {
+        "tomus": 6,
+        "units": [
+          {
+            "unit_id": "alexander",
+            "body_image_count": 105,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "iulius_caesar",
+            "body_image_count": 84,
+            "opening_physical_page": 115
+          },
+          {
+            "unit_id": "phocion",
+            "body_image_count": 43,
+            "opening_physical_page": 199
+          },
+          {
+            "unit_id": "cato_minor",
+            "body_image_count": 87,
+            "opening_physical_page": 243
+          },
+          {
+            "unit_id": "agis",
+            "body_image_count": 24,
+            "opening_physical_page": 331
+          },
+          {
+            "unit_id": "cleomenes",
+            "body_image_count": 48,
+            "opening_physical_page": 355
+          },
+          {
+            "unit_id": "tiberius_gracchus",
+            "body_image_count": 26,
+            "opening_physical_page": 403
+          },
+          {
+            "unit_id": "caius_gracchus",
+            "body_image_count": 22,
+            "opening_physical_page": 429
+          },
+          {
+            "unit_id": "comparatio_agidis_cleomenis_et_gracchorum",
+            "body_image_count": 6,
+            "opening_physical_page": 451
+          }
+        ],
+        "inner_pdf_pages": 480,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 20,
+        "tex_path": "build_facsimile/tomus_6_inner.tex",
+        "tex_sha256": "5abc688cc003d0f12d21572a7aacf71e9187d314a37a2c4d76bd51dec93c68dd",
+        "pdf_path": "build_facsimile/tomus_6_inner.pdf",
+        "pdf_sha256": "395eea6bc93f93355cebc0d44daf92412e995e6b3af28901dadb8f8b78331e82"
+      },
+      {
+        "tomus": 7,
+        "units": [
+          {
+            "unit_id": "demosthenes",
+            "body_image_count": 36,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "cicero",
+            "body_image_count": 62,
+            "opening_physical_page": 45
+          },
+          {
+            "unit_id": "comparatio_demosthenis_et_ciceronis",
+            "body_image_count": 6,
+            "opening_physical_page": 107
+          },
+          {
+            "unit_id": "demetrius",
+            "body_image_count": 65,
+            "opening_physical_page": 113
+          },
+          {
+            "unit_id": "antonius",
+            "body_image_count": 99,
+            "opening_physical_page": 179
+          },
+          {
+            "unit_id": "comparatio_demetrii_et_antonii",
+            "body_image_count": 5,
+            "opening_physical_page": 279
+          },
+          {
+            "unit_id": "dio",
+            "body_image_count": 63,
+            "opening_physical_page": 285
+          },
+          {
+            "unit_id": "brutus",
+            "body_image_count": 62,
+            "opening_physical_page": 349
+          },
+          {
+            "unit_id": "comparatio_dionis_et_bruti",
+            "body_image_count": 5,
+            "opening_physical_page": 411
+          }
+        ],
+        "inner_pdf_pages": 448,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 29,
+        "tex_path": "build_facsimile/tomus_7_inner.tex",
+        "tex_sha256": "416be3b52f3c624edca8b49c4c21b7ecaaad5ade5cd7ea2b6b81f7544bdbabcd",
+        "pdf_path": "build_facsimile/tomus_7_inner.pdf",
+        "pdf_sha256": "04aee02ebed3cf1aeae341cab7a10f7bd195ed53d8adcc6d2348a1d2e7a2ad30"
+      },
+      {
+        "tomus": 8,
+        "units": [
+          {
+            "unit_id": "artoxerxes",
+            "body_image_count": 38,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "aratus",
+            "body_image_count": 62,
+            "opening_physical_page": 47
+          },
+          {
+            "unit_id": "galba",
+            "body_image_count": 33,
+            "opening_physical_page": 109
+          },
+          {
+            "unit_id": "otho",
+            "body_image_count": 22,
+            "opening_physical_page": 143
+          }
+        ],
+        "inner_pdf_pages": 192,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 24,
+        "tex_path": "build_facsimile/tomus_8_inner.tex",
+        "tex_sha256": "303ed9cc08e8bd25a03bc2132b54bfc79984b0b3cd0c0c28dc2afc5e739114b1",
+        "pdf_path": "build_facsimile/tomus_8_inner.pdf",
+        "pdf_sha256": "662aa4f58d4fe06bc438f1e2c801593082eb7bb8ac3c4ef23cad5dd4bcfa5d2b"
+      }
+    ],
+    "imposed_pdfs": [
+      {
+        "tomus": 1,
+        "pdf_path": "build_facsimile/tomus_1.pdf",
+        "pdf_sha256": "82a513a9255bb26bc82567f4cb741e673e9b155009605d8858f11d6e76b480ba",
+        "pages": 208,
+        "size_bytes": 147963957
+      },
+      {
+        "tomus": 2,
+        "pdf_path": "build_facsimile/tomus_2.pdf",
+        "pdf_sha256": "53d8bcfbdd39185b63639c6c446199081514d95141d4fa23dcb63c6a03d15b80",
+        "pages": 224,
+        "size_bytes": 157561932
+      },
+      {
+        "tomus": 3,
+        "pdf_path": "build_facsimile/tomus_3.pdf",
+        "pdf_sha256": "5487044eba961f14510789f1d53f5274b8f664834f035248c931074a92cf7f04",
+        "pages": 208,
+        "size_bytes": 151661910
+      },
+      {
+        "tomus": 4,
+        "pdf_path": "build_facsimile/tomus_4.pdf",
+        "pdf_sha256": "cfe1762434bae2ce7f53426d03291848d8dd2d4ef7eb78702da1639240ea14b2",
+        "pages": 64,
+        "size_bytes": 42067484
+      },
+      {
+        "tomus": 5,
+        "pdf_path": "build_facsimile/tomus_5.pdf",
+        "pdf_sha256": "aea291a53ad36963d4611c820d024a3f492ef59c02d63eb2779fdda12972723d",
+        "pages": 192,
+        "size_bytes": 132135919
+      },
+      {
+        "tomus": 6,
+        "pdf_path": "build_facsimile/tomus_6.pdf",
+        "pdf_sha256": "aadd64c505a22bb919207b220df91b4cb9eecf60bb088acc39737eee5d903ee0",
+        "pages": 240,
+        "size_bytes": 167586427
+      },
+      {
+        "tomus": 7,
+        "pdf_path": "build_facsimile/tomus_7.pdf",
+        "pdf_sha256": "d030b4d51e18c7e62737eb584fd1c5a56ae5fe24ee69e19f7b099fe9642b49ea",
+        "pages": 224,
+        "size_bytes": 152659588
+      },
+      {
+        "tomus": 8,
+        "pdf_path": "build_facsimile/tomus_8.pdf",
+        "pdf_sha256": "eee8acf5235d379eb01a3c70a57a332b06e7da0a042a3a6bf475f9483cd394ac",
+        "pages": 96,
+        "size_bytes": 59068245
+      }
+    ],
+    "source_trace_commands": [
+      "cargo test --release backlog_furniture_masks_source_trace -- --ignored --nocapture",
+      "cargo test --release backlog_gap_masks_source_trace -- --ignored --nocapture",
+      "cargo test --release backlog_whole_strip_final_source_trace -- --ignored --nocapture"
+    ],
+    "locator_command": "python tools/map_backlog_final_locators.py",
+    "manifest_command": "python tools/collect_backlog_final.py"
+  }
 }

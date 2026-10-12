@@ -3127,6 +3127,12 @@ fn backlog_gap_masks_source_trace() {
                 .entry(record["unit_id"].as_str().unwrap())
                 .or_default()
                 .insert(record["source_page"].as_u64().unwrap() as u32);
+            for line in record["reviewed_lines"].as_array().unwrap() {
+                selected
+                    .entry(record["unit_id"].as_str().unwrap())
+                    .or_default()
+                    .insert(line["source_page"].as_u64().unwrap() as u32);
+            }
         }
     }
     for (id, pages) in selected {
@@ -3136,10 +3142,37 @@ fn backlog_gap_masks_source_trace() {
 
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
-fn backlog_left_rule_masks_source_trace() {
-    let selected = [("theseus", 17), ("comparatio_thesei_et_romuli", 59)];
+fn backlog_furniture_masks_source_trace() {
+    let selected = [
+        ("theseus", 17),
+        ("comparatio_thesei_et_romuli", 59),
+        ("themistocles", 166),
+    ];
     for (unit, page) in selected {
         audit_save_unit_trace(unit, &[page].into_iter().collect(), "backlog_artifacts_after_masks");
+    }
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_whole_strip_final_source_trace() {
+    use std::collections::BTreeMap;
+
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "fixtures/backlog_artifact_source_trace.json"
+    ))
+    .unwrap();
+    let mut selected = BTreeMap::<&str, std::collections::BTreeSet<u32>>::new();
+    for record in fixture["repairs"].as_array().unwrap() {
+        if record["disposition"] == "whole_strip" {
+            selected
+                .entry(record["unit_id"].as_str().unwrap())
+                .or_default()
+                .insert(record["source_page"].as_u64().unwrap() as u32);
+        }
+    }
+    for (unit, pages) in selected {
+        audit_save_unit_trace(unit, &pages, "backlog_artifacts_final");
     }
 }
 
