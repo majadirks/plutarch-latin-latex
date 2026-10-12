@@ -2948,6 +2948,363 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
     (pages, metrics, traces)
 }
 
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_short_ending_canvas_fingerprints() {
+    use sha2::Digest;
+
+    let geom = TrimGeom::default();
+    let scale = production_body_scale();
+    for id in ["comparatio_sertorii_et_eumenis", "demosthenes"] {
+        let (pages, metrics, _) = audit_traced_unit(id);
+        let canvases = compose_pages(
+            &pages,
+            scale,
+            &geom,
+            geom.first_body_budget(),
+            geom.body_budget(),
+            &metrics,
+        );
+        let last = canvases.last().expect("unit has body canvases");
+        assert_eq!(last.dimensions(), (1004, 44), "{id}");
+        let digest = format!("{:x}", sha2::Sha256::digest(last.as_raw()));
+        println!("{id}: scale={scale:?}, canvas={}, dimensions={:?}, sha256={digest}", canvases.len(), last.dimensions());
+        let dir = std::path::Path::new("tmp/pdfs/backlog_artifacts/baseline");
+        last.save(dir.join(format!("{id}-final-unmerged.png"))).unwrap();
+    }
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_artifact_candidate_source_trace() {
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "fixtures/backlog_artifact_source_trace.json"
+    ))
+    .unwrap();
+    let mut selected: BTreeMap<&str, BTreeSet<u32>> = BTreeMap::new();
+    for record in fixture["repairs"].as_array().unwrap() {
+        let id = record["unit_id"].as_str().unwrap();
+        let pages = selected.entry(id).or_default();
+        for page in record["source_page_candidates"].as_array().unwrap() {
+            pages.insert(page.as_u64().unwrap() as u32);
+        }
+    }
+    for (id, pages) in selected {
+        audit_save_unit_trace(id, &pages, "backlog_artifacts");
+    }
+}
+
+#[test]
+fn backlog_artifact_fixture_has_expected_shape() {
+    use std::collections::BTreeSet;
+
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "fixtures/backlog_artifact_source_trace.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["schema_version"], 1);
+    let repairs = fixture["repairs"].as_array().unwrap();
+    let ids: BTreeSet<_> = repairs
+        .iter()
+        .map(|record| record["backlog_id"].as_str().unwrap())
+        .collect();
+    assert_eq!(repairs.len(), 19);
+    assert_eq!(ids.len(), 19);
+    assert_eq!(
+        ids,
+        BTreeSet::from([
+            "I1", "I2", "I3", "I4", "II1", "II2", "II3", "II4", "II5", "II6", "II7",
+            "II8", "III1", "III2", "V1", "VII1", "VII2", "VII3", "VII4",
+        ])
+    );
+    for record in repairs {
+        assert!(matches!(record["source"].as_u64(), Some(0 | 1)));
+        assert!(record["unit_id"].as_str().is_some_and(|id| !id.is_empty()));
+        assert!(matches!(
+            record["status"].as_str(),
+            Some("planned" | "repaired" | "source_spacing_retained" | "unresolved")
+        ));
+        assert!(record["baseline_reader"]["tomus"].as_u64().is_some());
+        assert!(record["baseline_reader"]["physical_page"]
+            .as_u64()
+            .is_some());
+        assert!(record["source_page_candidates"].as_array().is_some());
+    }
+    let baseline = &fixture["baseline"];
+    for digest in baseline["source_pdf_sha256"].as_array().unwrap() {
+        assert_eq!(digest.as_str().unwrap().len(), 64);
+    }
+    assert_eq!(baseline["unit_table_sha256"].as_str().unwrap().len(), 64);
+    assert_eq!(baseline["dpi"], 300);
+    assert_eq!(baseline["geometry"]["tb_w"], 1004);
+    let manifest = baseline["baseline_volume_manifest"].as_array().unwrap();
+    assert_eq!(manifest.len(), 8);
+    for (index, volume) in manifest.iter().enumerate() {
+        assert_eq!(volume["tomus"], index + 1);
+        assert!(!volume["units"].as_array().unwrap().is_empty());
+        assert_eq!(volume["tex_sha256"].as_str().unwrap().len(), 64);
+        assert_eq!(volume["pdf_sha256"].as_str().unwrap().len(), 64);
+        assert_eq!(volume["inner_pdf_pages"].as_u64().unwrap() % 32, 0);
+        assert!(volume["trailing_signature_blank_count"]
+            .as_u64()
+            .unwrap()
+            < 32);
+    }
+    assert!(baseline["baseline_reader_pages"].as_array().unwrap().len() >= 19);
+    assert!(baseline["baseline_body_images"].as_array().unwrap().len() >= 19);
+    for id in ["V1", "VII1"] {
+        let record = repairs.iter().find(|record| record["backlog_id"] == id).unwrap();
+        assert_eq!(record["unmerged_final_canvas"]["dimensions"], serde_json::json!([1004, 44]));
+        assert_eq!(
+            record["unmerged_final_canvas"]["raw_grayscale_sha256"]
+                .as_str()
+                .unwrap()
+                .len(),
+            64
+        );
+    }
+}
+
+#[test]
+fn backlog_short_ending_merge_is_identity_scoped() {
+    let geom = TrimGeom::default();
+    let blank = |height| GrayImage::from_pixel(1004, height, Luma([255]));
+    let cases = [
+        ("other_unit", vec![blank(100), blank(100), blank(44)], geom),
+        ("demosthenes", vec![blank(100), blank(44)], geom),
+        ("demosthenes", vec![blank(100), blank(100), blank(43)], geom),
+        (
+            "demosthenes",
+            vec![blank(100), blank(100), blank(44)],
+            TrimGeom { pad_x: 1, ..geom },
+        ),
+        (
+            "demosthenes",
+            vec![blank(100), blank(100), blank(44)],
+            TrimGeom { pad_y: 1, ..geom },
+        ),
+        (
+            "demosthenes",
+            vec![blank(100), blank(geom.content_height()), blank(44)],
+            geom,
+        ),
+    ];
+    for (id, mut canvases, geometry) in cases {
+        let original = canvases.clone();
+        assert!(!merge_reviewed_short_ending(id, &mut canvases, &geometry));
+        assert_eq!(canvases, original, "rejected case {id}");
+    }
+}
+
+fn assert_backlog_short_ending_merges(id: &str) {
+    use sha2::Digest;
+
+    let geom = TrimGeom::default();
+    let scale = production_body_scale();
+    let (pages, metrics, _) = audit_traced_unit(id);
+    let mut canvases = compose_pages(
+        &pages,
+        scale,
+        &geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
+        &metrics,
+    );
+    let original = canvases.clone();
+    let last = original.last().unwrap();
+    let expected = REVIEWED_SHORT_ENDINGS
+        .iter()
+        .find(|(reviewed_id, _, _)| *reviewed_id == id)
+        .unwrap();
+    assert_eq!(last.dimensions(), expected.1);
+    assert_eq!(
+        format!("{:x}", sha2::Sha256::digest(last.as_raw())),
+        expected.2
+    );
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "fixtures/backlog_artifact_source_trace.json"
+    ))
+    .unwrap();
+    let record = fixture["repairs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|record| record["unit_id"] == id)
+        .unwrap();
+    assert_eq!(
+        record["unmerged_final_canvas"]["raw_grayscale_sha256"]
+            .as_str()
+            .unwrap(),
+        expected.2
+    );
+    assert!(merge_reviewed_short_ending(id, &mut canvases, &geom));
+    assert_eq!(canvases.len() + 1, original.len());
+    assert_eq!(&canvases[..canvases.len() - 1], &original[..original.len() - 2]);
+    let previous = &original[original.len() - 2];
+    let merged = canvases.last().unwrap();
+    assert_eq!(merged.height(), previous.height() + last.height());
+    assert!(merged.height() <= geom.content_height());
+    assert_eq!(
+        image::imageops::crop_imm(merged, 0, 0, merged.width(), previous.height()).to_image(),
+        *previous
+    );
+    assert_eq!(
+        image::imageops::crop_imm(
+            merged,
+            0,
+            previous.height(),
+            merged.width(),
+            last.height()
+        )
+        .to_image(),
+        *last
+    );
+    let (_, before_ranges, _) =
+        ranges_for_composed_canvases(&pages, &metrics, scale, &geom, original);
+    let (_, after_ranges, _) =
+        ranges_for_composed_canvases(&pages, &metrics, scale, &geom, canvases);
+    assert_eq!(before_ranges.last().unwrap().2, after_ranges.last().unwrap().2);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_eumenes_comparison_short_ending_merges() {
+    assert_backlog_short_ending_merges("comparatio_sertorii_et_eumenis");
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_demosthenes_short_ending_merges() {
+    assert_backlog_short_ending_merges("demosthenes");
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_short_ending_merge_rejects_changed_source_identity() {
+    let geom = TrimGeom::default();
+    let scale = production_body_scale();
+    let (pages, metrics, _) = audit_traced_unit("demosthenes");
+    let mut canvases = compose_pages(
+        &pages,
+        scale,
+        &geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
+        &metrics,
+    );
+    let last = canvases.last_mut().unwrap();
+    let pixel = last.get_pixel_mut(0, 0);
+    pixel[0] ^= 1;
+    let original = canvases.clone();
+    assert!(!merge_reviewed_short_ending(
+        "demosthenes",
+        &mut canvases,
+        &geom
+    ));
+    assert_eq!(canvases, original);
+}
+
+#[test]
+#[ignore = "requires source PDFs, MiKTeX/LuaLaTeX, and Poppler"]
+fn backlog_short_endings_keep_following_rectos() {
+    use crate::facsimile::assemble::{self, FacsimileVolume, PlacedUnit};
+    use crate::latex::Fonts;
+
+    let geom = TrimGeom::default();
+    let scale = production_body_scale();
+    for (tomus, prior_id, following_id, pair_id) in [
+        (
+            5,
+            "comparatio_sertorii_et_eumenis",
+            "agesilaus",
+            "eumenes_agesilaus",
+        ),
+        (7, "demosthenes", "cicero", "demosthenes_cicero"),
+    ] {
+        let compose = |id| {
+            let (pages, metrics, _) = audit_traced_unit(id);
+            compose_pages(
+                &pages,
+                scale,
+                &geom,
+                geom.first_body_budget(),
+                geom.body_budget(),
+                &metrics,
+            )
+        };
+        let before_prior = compose(prior_id);
+        let mut after_prior = before_prior.clone();
+        assert!(merge_reviewed_short_ending(
+            prior_id,
+            &mut after_prior,
+            &geom
+        ));
+        let following = compose(following_id);
+        let mut openings = Vec::new();
+        for (variant, prior) in [("before", &before_prior), ("after", &after_prior)] {
+            let dir = std::path::Path::new("tmp/pdfs/backlog_artifacts/short_endings")
+                .join(pair_id)
+                .join(variant);
+            std::fs::create_dir_all(&dir).unwrap();
+            let mut units = Vec::new();
+            for (id, canvases) in [(prior_id, prior), (following_id, &following)] {
+                let range = operational_range(id);
+                let image_names: Vec<_> = canvases
+                    .iter()
+                    .enumerate()
+                    .map(|(index, image)| {
+                        let name = body_image_name(id, index + 1);
+                        image.save(dir.join(&name)).unwrap();
+                        name
+                    })
+                    .collect();
+                units.push(PlacedUnit {
+                    id: id.to_owned(),
+                    latin_title: range.unit.latin_title,
+                    kind: range.unit.kind,
+                    image_names,
+                });
+            }
+            let following_title = units[1].latin_title.clone();
+            let volume = FacsimileVolume {
+                tomus,
+                source: 1,
+                is_first_of_source: false,
+                units,
+                prose: String::new(),
+                praefatio_errata_images: Vec::new(),
+                emit_front_matter: false,
+            };
+            assemble::write_inner(&volume, &dir, &Fonts::default(), None).unwrap();
+            let (texts, images) = assemble::tests::compiled_fixture(&dir, tomus);
+            assert_eq!(images.len(), prior.len() + following.len());
+            let opening = images[prior.len()].0;
+            assert_eq!(opening % 2, 1);
+            assert!(
+                texts[(opening - 1) as usize]
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ")
+                    .contains(&following_title),
+                "{pair_id}/{variant}: following title on page {opening}"
+            );
+            openings.push((opening, dir, texts, images));
+        }
+        assert_eq!(before_prior.len(), after_prior.len() + 1);
+        assert_eq!(openings[0].0, openings[1].0 + 2);
+        let (before_opening, before_dir, before_texts, before_images) = &openings[0];
+        assemble::tests::assert_blank(
+            before_dir,
+            tomus,
+            *before_opening - 1,
+            before_texts,
+            before_images,
+        );
+    }
+}
+
 /// Save diagnostic stage measurements; normalized detector boxes remain locators.
 fn audit_save_unit_trace(id: &str, selected: &std::collections::BTreeSet<u32>, group: &str) {
     let (pages, metrics, traces) = audit_traced_unit(id);

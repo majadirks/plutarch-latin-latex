@@ -1,0 +1,1583 @@
+{
+  "schema_version": 1,
+  "baseline": {
+    "source_pdf_sha256": [
+      "e094258e4cae19c5589af1f843f021eab662e086c5071f274118dde4667e5e15",
+      "fc0924f2d8e45fe632fa6c8a97711b33d92ee59f5453ed8bf90e3ec99f8b6684"
+    ],
+    "unit_table_sha256": "7098d39e6c1a83c0de4333e17a09bbebed59c2bf19a33b0339d79cfe74e11949",
+    "baseline_volume_manifest": [
+      {
+        "tomus": 1,
+        "units": [
+          {
+            "unit_id": "theseus",
+            "body_image_count": 41,
+            "opening_physical_page": 17
+          },
+          {
+            "unit_id": "romulus",
+            "body_image_count": 49,
+            "opening_physical_page": 59
+          },
+          {
+            "unit_id": "comparatio_thesei_et_romuli",
+            "body_image_count": 7,
+            "opening_physical_page": 109
+          },
+          {
+            "unit_id": "lycurgus",
+            "body_image_count": 50,
+            "opening_physical_page": 117
+          },
+          {
+            "unit_id": "numa",
+            "body_image_count": 39,
+            "opening_physical_page": 167
+          },
+          {
+            "unit_id": "comparatio_lycurgi_et_numae",
+            "body_image_count": 9,
+            "opening_physical_page": 207
+          },
+          {
+            "unit_id": "solon",
+            "body_image_count": 46,
+            "opening_physical_page": 217
+          },
+          {
+            "unit_id": "poplicola",
+            "body_image_count": 31,
+            "opening_physical_page": 263
+          },
+          {
+            "unit_id": "comparatio_solonis_et_poplicolae",
+            "body_image_count": 6,
+            "opening_physical_page": 295
+          },
+          {
+            "unit_id": "themistocles",
+            "body_image_count": 42,
+            "opening_physical_page": 301
+          },
+          {
+            "unit_id": "camillus",
+            "body_image_count": 58,
+            "opening_physical_page": 343
+          }
+        ],
+        "inner_pdf_pages": 416,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 12,
+        "tex_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_1_inner.tex",
+        "tex_sha256": "422b963854771b1aa5a15e62ce6fba3f75d81b4902cbee90d62004b4357ddca1",
+        "pdf_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_1_inner.pdf",
+        "pdf_sha256": "ac292246f591874d1d0615e23b452f93efb87467575741d9c25bcd8d7001fd88"
+      },
+      {
+        "tomus": 2,
+        "units": [
+          {
+            "unit_id": "pericles",
+            "body_image_count": 54,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "fabius_maximus",
+            "body_image_count": 40,
+            "opening_physical_page": 63
+          },
+          {
+            "unit_id": "comparatio_periclis_et_fabii",
+            "body_image_count": 4,
+            "opening_physical_page": 103
+          },
+          {
+            "unit_id": "alcibiades",
+            "body_image_count": 54,
+            "opening_physical_page": 107
+          },
+          {
+            "unit_id": "marcius_coriolanus",
+            "body_image_count": 48,
+            "opening_physical_page": 161
+          },
+          {
+            "unit_id": "comparatio_alcibiadis_et_coriolani",
+            "body_image_count": 7,
+            "opening_physical_page": 209
+          },
+          {
+            "unit_id": "timoleon",
+            "body_image_count": 50,
+            "opening_physical_page": 217
+          },
+          {
+            "unit_id": "aemilius_paulus",
+            "body_image_count": 52,
+            "opening_physical_page": 267
+          },
+          {
+            "unit_id": "comparatio_timoleontis_et_aemilii",
+            "body_image_count": 3,
+            "opening_physical_page": 319
+          },
+          {
+            "unit_id": "pelopidas",
+            "body_image_count": 50,
+            "opening_physical_page": 323
+          },
+          {
+            "unit_id": "marcellus",
+            "body_image_count": 45,
+            "opening_physical_page": 373
+          },
+          {
+            "unit_id": "comparatio_pelopidae_et_marcelli",
+            "body_image_count": 5,
+            "opening_physical_page": 419
+          }
+        ],
+        "inner_pdf_pages": 448,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 21,
+        "tex_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_inner.tex",
+        "tex_sha256": "4a7ad9e99aef45069b3e9239c24bcb690c4f68bc4e3e523f0b46e56c375af84a",
+        "pdf_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_inner.pdf",
+        "pdf_sha256": "019f0ddc1411dc60e93fca9ac3d70acb1197e6cc3b959fba2b766cd51635de51"
+      },
+      {
+        "tomus": 3,
+        "units": [
+          {
+            "unit_id": "aristides",
+            "body_image_count": 43,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "cato_major",
+            "body_image_count": 42,
+            "opening_physical_page": 53
+          },
+          {
+            "unit_id": "comparatio_aristidis_et_catonis",
+            "body_image_count": 8,
+            "opening_physical_page": 95
+          },
+          {
+            "unit_id": "philopoemen",
+            "body_image_count": 31,
+            "opening_physical_page": 103
+          },
+          {
+            "unit_id": "flamininus",
+            "body_image_count": 31,
+            "opening_physical_page": 135
+          },
+          {
+            "unit_id": "comparatio_philopoemenis_et_flaminini",
+            "body_image_count": 3,
+            "opening_physical_page": 167
+          },
+          {
+            "unit_id": "pyrrhus",
+            "body_image_count": 57,
+            "opening_physical_page": 171
+          },
+          {
+            "unit_id": "caius_marius",
+            "body_image_count": 67,
+            "opening_physical_page": 229
+          },
+          {
+            "unit_id": "lysander",
+            "body_image_count": 44,
+            "opening_physical_page": 297
+          },
+          {
+            "unit_id": "sylla",
+            "body_image_count": 61,
+            "opening_physical_page": 341
+          },
+          {
+            "unit_id": "comparatio_lysandri_et_syllae",
+            "body_image_count": 7,
+            "opening_physical_page": 403
+          }
+        ],
+        "inner_pdf_pages": 416,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 3,
+        "tex_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_3_inner.tex",
+        "tex_sha256": "a271bb0ca974c2e741bd6c979b23f2822163ee99e60ec8d8cf1abb31f2524514",
+        "pdf_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_3_inner.pdf",
+        "pdf_sha256": "494357a99eb3d68aa436b10659597ead27b70ec6f2287bcb1f4515a01cddb6a5"
+      },
+      {
+        "tomus": 4,
+        "units": [
+          {
+            "unit_id": "cimon",
+            "body_image_count": 31,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "lucullus",
+            "body_image_count": 72,
+            "opening_physical_page": 41
+          },
+          {
+            "unit_id": "comparatio_cimonis_et_luculli",
+            "body_image_count": 6,
+            "opening_physical_page": 113
+          }
+        ],
+        "inner_pdf_pages": 128,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 6,
+        "tex_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_4_inner.tex",
+        "tex_sha256": "ecfe9ce6f18f50b862784304fa2c53c5982bbf061aacfd77e9bd45bd1a0d9228",
+        "pdf_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_4_inner.pdf",
+        "pdf_sha256": "d59877867d46ef776708b96a539b569aaa6a95a4c956be33023c2206b3be3d00"
+      },
+      {
+        "tomus": 5,
+        "units": [
+          {
+            "unit_id": "nicias",
+            "body_image_count": 48,
+            "opening_physical_page": 19
+          },
+          {
+            "unit_id": "crassus",
+            "body_image_count": 54,
+            "opening_physical_page": 67
+          },
+          {
+            "unit_id": "comparatio_niciae_et_crassi",
+            "body_image_count": 7,
+            "opening_physical_page": 121
+          },
+          {
+            "unit_id": "sertorius",
+            "body_image_count": 36,
+            "opening_physical_page": 129
+          },
+          {
+            "unit_id": "eumenes",
+            "body_image_count": 30,
+            "opening_physical_page": 165
+          },
+          {
+            "unit_id": "comparatio_sertorii_et_eumenis",
+            "body_image_count": 3,
+            "opening_physical_page": 195
+          },
+          {
+            "unit_id": "agesilaus",
+            "body_image_count": 56,
+            "opening_physical_page": 199
+          },
+          {
+            "unit_id": "pompeius",
+            "body_image_count": 106,
+            "opening_physical_page": 255
+          },
+          {
+            "unit_id": "comparatio_agesilai_et_pompeii",
+            "body_image_count": 6,
+            "opening_physical_page": 361
+          }
+        ],
+        "inner_pdf_pages": 384,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 14,
+        "tex_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_5_inner.tex",
+        "tex_sha256": "ac91b5c59b72c8968603e01e4fab7286494f1b92ea2533b841678474351df4d0",
+        "pdf_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_5_inner.pdf",
+        "pdf_sha256": "5394d877ed61d54a4e1fac51ac0f3538d2fa9e8ef0c9b563b926205eef8cb3d6"
+      },
+      {
+        "tomus": 6,
+        "units": [
+          {
+            "unit_id": "alexander",
+            "body_image_count": 105,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "iulius_caesar",
+            "body_image_count": 84,
+            "opening_physical_page": 115
+          },
+          {
+            "unit_id": "phocion",
+            "body_image_count": 43,
+            "opening_physical_page": 199
+          },
+          {
+            "unit_id": "cato_minor",
+            "body_image_count": 87,
+            "opening_physical_page": 243
+          },
+          {
+            "unit_id": "agis",
+            "body_image_count": 24,
+            "opening_physical_page": 331
+          },
+          {
+            "unit_id": "cleomenes",
+            "body_image_count": 48,
+            "opening_physical_page": 355
+          },
+          {
+            "unit_id": "tiberius_gracchus",
+            "body_image_count": 26,
+            "opening_physical_page": 403
+          },
+          {
+            "unit_id": "caius_gracchus",
+            "body_image_count": 22,
+            "opening_physical_page": 429
+          },
+          {
+            "unit_id": "comparatio_agidis_cleomenis_et_gracchorum",
+            "body_image_count": 6,
+            "opening_physical_page": 451
+          }
+        ],
+        "inner_pdf_pages": 480,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 20,
+        "tex_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_6_inner.tex",
+        "tex_sha256": "5abc688cc003d0f12d21572a7aacf71e9187d314a37a2c4d76bd51dec93c68dd",
+        "pdf_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_6_inner.pdf",
+        "pdf_sha256": "e4834c276366d4b15b35f04eb992f1c7fd102a7c9157bf8319b352f475aa563e"
+      },
+      {
+        "tomus": 7,
+        "units": [
+          {
+            "unit_id": "demosthenes",
+            "body_image_count": 37,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "cicero",
+            "body_image_count": 62,
+            "opening_physical_page": 47
+          },
+          {
+            "unit_id": "comparatio_demosthenis_et_ciceronis",
+            "body_image_count": 6,
+            "opening_physical_page": 109
+          },
+          {
+            "unit_id": "demetrius",
+            "body_image_count": 65,
+            "opening_physical_page": 115
+          },
+          {
+            "unit_id": "antonius",
+            "body_image_count": 99,
+            "opening_physical_page": 181
+          },
+          {
+            "unit_id": "comparatio_demetrii_et_antonii",
+            "body_image_count": 5,
+            "opening_physical_page": 281
+          },
+          {
+            "unit_id": "dio",
+            "body_image_count": 62,
+            "opening_physical_page": 287
+          },
+          {
+            "unit_id": "brutus",
+            "body_image_count": 62,
+            "opening_physical_page": 349
+          },
+          {
+            "unit_id": "comparatio_dionis_et_bruti",
+            "body_image_count": 5,
+            "opening_physical_page": 411
+          }
+        ],
+        "inner_pdf_pages": 448,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 29,
+        "tex_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_7_inner.tex",
+        "tex_sha256": "8f7ccaad6f2bfdb9431e0d7fc21c5f0e6bde3c4f83e6cf65eba61c0ab9c9ca67",
+        "pdf_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_7_inner.pdf",
+        "pdf_sha256": "bfefb3605fb474f8e93944c6a7ce5536bf2f3006dd436b4c64216c2296428e82"
+      },
+      {
+        "tomus": 8,
+        "units": [
+          {
+            "unit_id": "artoxerxes",
+            "body_image_count": 38,
+            "opening_physical_page": 9
+          },
+          {
+            "unit_id": "aratus",
+            "body_image_count": 62,
+            "opening_physical_page": 47
+          },
+          {
+            "unit_id": "galba",
+            "body_image_count": 33,
+            "opening_physical_page": 109
+          },
+          {
+            "unit_id": "otho",
+            "body_image_count": 22,
+            "opening_physical_page": 143
+          }
+        ],
+        "inner_pdf_pages": 192,
+        "back_flyleaf_pages": 4,
+        "trailing_signature_blank_count": 24,
+        "tex_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_8_inner.tex",
+        "tex_sha256": "303ed9cc08e8bd25a03bc2132b54bfc79984b0b3cd0c0c28dc2afc5e739114b1",
+        "pdf_path": "tmp/pdfs/backlog_artifacts/baseline/tomus_8_inner.pdf",
+        "pdf_sha256": "b2573fde4a5b2f32e5661fa0bf8a00e4f70b9bfbdb02538cdca6772c4a15bc17"
+      }
+    ],
+    "baseline_reader_pages": [
+      {
+        "tomus": 1,
+        "physical_page": 22,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_1_physical_022.png",
+        "sha256": "28124b17614502781d1fcf9c7e79274b8ed93c22c706d863349b654bcb221c40",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 23,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_1_physical_023.png",
+        "sha256": "06968938419b3f0f34af0e0227286cdb02de3b03fd6aa9b86e9109b5ccd1e389",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 24,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_1_physical_024.png",
+        "sha256": "9b606643dd67fc7eca108591859dd7748af4de344ab82a80275a5c94615d34fd",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 113,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_1_physical_113.png",
+        "sha256": "dc92fd493a0de025f05c9d191ce18942228f2b3833b7411ded5e5971990ebc3e",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 212,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_1_physical_212.png",
+        "sha256": "794ccb8166af0ff141f505ade40b845c112c6f4ebe0db572ccccb99055e39131",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 213,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_1_physical_213.png",
+        "sha256": "cd0a70b605c525954a325a4980fafbd7dee189275b877df345b80e522dc34173",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 340,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_1_physical_340.png",
+        "sha256": "b202ad47569c6e417977d2f1fe31f1ea084eb54ca2f12068760406b0ee64b0fe",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 20,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_020.png",
+        "sha256": "03e8526329b6513a407c300e895fc6b9946494f9444e5e55d21c8beebdf18a99",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 21,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_021.png",
+        "sha256": "f16951ac7e406a254a42d47f26f8b0f81360a9d60459b8814906ae8ca20ebac1",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 81,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_081.png",
+        "sha256": "06b1e321cbc8acc48758f35f6e631e551c65eb04318a247f116bbde30ecc4a58",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 139,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_139.png",
+        "sha256": "28f96b23e2771d507f9edde37c53fcf1b32f09a0a8f0171d89da89d026164d99",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 177,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_177.png",
+        "sha256": "755741534d571e352e2de2a28bf22fb115fc0044b8c3c57988d131f3318b9114",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 178,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_178.png",
+        "sha256": "01758d5a424f19af8d622e59a63c5895f9a5e72c668ded7b4154783fdb621cf8",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 209,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_209.png",
+        "sha256": "fc43179c9b6ba40f58175e431a121e40489f3171200299eebdf75a8c241fe352",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 210,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_210.png",
+        "sha256": "9dd35d7da385bb5ede5ca4066170f47e5e6c936b08ad3b42f4a61abc1bdf3b6c",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 223,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_223.png",
+        "sha256": "a1a06e4bdb8e9c822efbdcfd18d9d9f1381c7bdaf84abc98b351d514003c8c56",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 248,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_248.png",
+        "sha256": "382de55b13153f927416f7b7a942374673e1b4c223fd0c417c70c64716efd80c",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 249,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_249.png",
+        "sha256": "5901e8e517c601b5d36673ea5a488702b6530427a9355d60fabd7e8f26366609",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 290,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_2_physical_290.png",
+        "sha256": "f4a2c74dd6f84a1a76d42d0b830ed480f1097df65c6f431f1b9f31a596a27311",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 3,
+        "physical_page": 273,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_3_physical_273.png",
+        "sha256": "7c8177d71ea2cf1e387452e39a96b0a36742c3860f6495f31ce8494cbb89c638",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 3,
+        "physical_page": 274,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_3_physical_274.png",
+        "sha256": "00c55eac4706a7e1782747a1c673d33f15dcc5169015de444c129eb8016a2cee",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 3,
+        "physical_page": 275,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_3_physical_275.png",
+        "sha256": "55149198422707fe9b8aa24a3df5e57c61e3ed0a77be1bd4cadb889b65492e4a",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 5,
+        "physical_page": 196,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_5_physical_196.png",
+        "sha256": "cf0dc4043489ddb53b7fc5c3729d500b01f6d2d531059a1286a7959cb42d80de",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 5,
+        "physical_page": 197,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_5_physical_197.png",
+        "sha256": "05c3505197233a8d33a20e7677ebfa2830b05f6bde186da0db78d1e763f9552f",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 5,
+        "physical_page": 198,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_5_physical_198.png",
+        "sha256": "25e3e0f6d7d8e9b09918a8345b82d9ff58fac070faadd648327041420191b65b",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 5,
+        "physical_page": 199,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_5_physical_199.png",
+        "sha256": "bef7682023aa9fa3698d243edcacfea5a625d2090e5cec7d1dfa03fbfe5ef1be",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 44,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_7_physical_044.png",
+        "sha256": "986893bd06065952ca4e04efd63f15f71a1f02a6871541c1e8ecd82e107ddc62",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 45,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_7_physical_045.png",
+        "sha256": "bdc4020ad770706f8124f674255b5f600375ff8b94e524016ffbac0f71a31ba0",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 46,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_7_physical_046.png",
+        "sha256": "25e3e0f6d7d8e9b09918a8345b82d9ff58fac070faadd648327041420191b65b",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 47,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_7_physical_047.png",
+        "sha256": "fd576f771e3487dd8c547ff54984b0f0060f1374fc9e785440524675e54d2899",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 287,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_7_physical_287.png",
+        "sha256": "89bfe66b0d8c525c3240b903a754240606bed46f75f1e79e0be393521947b36c",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 291,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_7_physical_291.png",
+        "sha256": "d16c3613b04b2088700fcdcebe6d1302ba028918ed996138d50516f6eeca19e1",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 344,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/tomus_7_physical_344.png",
+        "sha256": "c30ff6f41bc34da3d92317eb03cc80a4274ff48ba490e0416d398a144ce7ae9e",
+        "raster": [
+          1241,
+          1890
+        ],
+        "command": "python tmp/render_backlog_baseline_pages.py"
+      }
+    ],
+    "baseline_body_images": [
+      {
+        "tomus": 1,
+        "physical_page": 22,
+        "unit_id": "theseus",
+        "canvas_index": 6,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_theseus_6.png",
+        "sha256": "6fb1f643abef55ea7061aaeb8064746dda031e0e009a0d8ba6ad461b2cb94531"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 23,
+        "unit_id": "theseus",
+        "canvas_index": 7,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_theseus_7.png",
+        "sha256": "e3ad257d8ed4d08ebacdcf8e87a4f0a3d2169ea967a87a007b32bfca8e436171"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 24,
+        "unit_id": "theseus",
+        "canvas_index": 8,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_theseus_8.png",
+        "sha256": "48a9b64993ebc81abe084816ca0fac1ef02bab62af71a353d703a6741602ac61"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 113,
+        "unit_id": "comparatio_thesei_et_romuli",
+        "canvas_index": 5,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_comparatio_thesei_et_romuli_5.png",
+        "sha256": "3d4f1a2918166a8f7fcede5cb14ab52f6f596b064e4e2f01f60ea43510c1c3d9"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 212,
+        "unit_id": "comparatio_lycurgi_et_numae",
+        "canvas_index": 6,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_comparatio_lycurgi_et_numae_6.png",
+        "sha256": "557a91f46262cacd9fd22d70777694867b53a60c8866ecb72cf552b90e0e0345"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 213,
+        "unit_id": "comparatio_lycurgi_et_numae",
+        "canvas_index": 7,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_comparatio_lycurgi_et_numae_7.png",
+        "sha256": "624ad21ad6d29665c9a3f960c58a5c95779c1397c545099932428fc91bd4ddfa"
+      },
+      {
+        "tomus": 1,
+        "physical_page": 340,
+        "unit_id": "themistocles",
+        "canvas_index": 40,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_themistocles_40.png",
+        "sha256": "c5038dfc9646e001315505395d51cc22f5d85f7b7f737ddbb6f76ff9d40da1ae"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 20,
+        "unit_id": "pericles",
+        "canvas_index": 12,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_pericles_12.png",
+        "sha256": "965a46c6ba564bb0e2568bb41a4a314a645a34fc6697f2d02f7525b1be0c59c5"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 21,
+        "unit_id": "pericles",
+        "canvas_index": 13,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_pericles_13.png",
+        "sha256": "39fc48fd5d84101c28ff6ca09f4194d69d3f0e1c077c947db4473f3ea6cc2871"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 81,
+        "unit_id": "fabius_maximus",
+        "canvas_index": 19,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_fabius_maximus_19.png",
+        "sha256": "0869459a00e9a03da55c91f1b1a5950bec7cc3a21aefc492a7b36a5aef2f9d5c"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 139,
+        "unit_id": "alcibiades",
+        "canvas_index": 33,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_alcibiades_33.png",
+        "sha256": "f01b450c59b3a57dbf956f43869fed6f1d3d2bc311b963857839b70980cd88d7"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 177,
+        "unit_id": "marcius_coriolanus",
+        "canvas_index": 17,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_marcius_coriolanus_17.png",
+        "sha256": "5bb15fea367c4e82b884269c990df392a1f009cbdd8547b805221d4dd04843b4"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 178,
+        "unit_id": "marcius_coriolanus",
+        "canvas_index": 18,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_marcius_coriolanus_18.png",
+        "sha256": "a56cbdca66f448707948cd8b9ec232a1563039a49b9460186f38e51baf8e4715"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 209,
+        "unit_id": "comparatio_alcibiadis_et_coriolani",
+        "canvas_index": 1,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_comparatio_alcibiadis_et_coriolani_1.png",
+        "sha256": "c636c1c13a76069359e96ff596bee7d2744c0823073548a5612602472e59f32c"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 210,
+        "unit_id": "comparatio_alcibiadis_et_coriolani",
+        "canvas_index": 2,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_comparatio_alcibiadis_et_coriolani_2.png",
+        "sha256": "f65dda41dda472bc0c1e70d78174a4fbdfb04ecdab2a3f36df475ef8c60f1eb0"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 223,
+        "unit_id": "timoleon",
+        "canvas_index": 7,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_timoleon_7.png",
+        "sha256": "3b32250e209e5b226ceb30bdedf0a5edac2c2d02c0b175d57a2e305339bc51a5"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 248,
+        "unit_id": "timoleon",
+        "canvas_index": 32,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_timoleon_32.png",
+        "sha256": "d61c549acd26f0441da909e23651ab6b9d9b078e24d08eee8859ed51bdfc4121"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 249,
+        "unit_id": "timoleon",
+        "canvas_index": 33,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_timoleon_33.png",
+        "sha256": "ae4dffba69114389de2bd426b5f0e3d6c140d6832b0c1df035394be74a9f9fe1"
+      },
+      {
+        "tomus": 2,
+        "physical_page": 290,
+        "unit_id": "aemilius_paulus",
+        "canvas_index": 24,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_aemilius_paulus_24.png",
+        "sha256": "35b7a2e99be40e1a36e16a860771faa3d1d55dd6bc4cd72c13d32550f59cc3d1"
+      },
+      {
+        "tomus": 3,
+        "physical_page": 273,
+        "unit_id": "caius_marius",
+        "canvas_index": 45,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_caius_marius_45.png",
+        "sha256": "19f982091d276a7338d5c341f4436df2667212f89556ea76a52d4095eaf1ba22"
+      },
+      {
+        "tomus": 3,
+        "physical_page": 274,
+        "unit_id": "caius_marius",
+        "canvas_index": 46,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_caius_marius_46.png",
+        "sha256": "3105806a1ec52c412aec13ad22b48b45c4cd1b3f96def196516e54b4af9f460d"
+      },
+      {
+        "tomus": 3,
+        "physical_page": 275,
+        "unit_id": "caius_marius",
+        "canvas_index": 47,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_caius_marius_47.png",
+        "sha256": "1aed1d4f55c300ca5b5c9ed739840c10312cceefbc00ed70016c5bb0bce2243f"
+      },
+      {
+        "tomus": 5,
+        "physical_page": 196,
+        "unit_id": "comparatio_sertorii_et_eumenis",
+        "canvas_index": 2,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_comparatio_sertorii_et_eumenis_2.png",
+        "sha256": "1b93e68655490f961246a1ad480302188f5d1bdd6ee805e311f0c62968843fd5"
+      },
+      {
+        "tomus": 5,
+        "physical_page": 197,
+        "unit_id": "comparatio_sertorii_et_eumenis",
+        "canvas_index": 3,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_comparatio_sertorii_et_eumenis_3.png",
+        "sha256": "9cf33a911f6d6a80b79c76109375483f656bbf811774c58c1e7a6b625161d74f"
+      },
+      {
+        "tomus": 5,
+        "physical_page": 199,
+        "unit_id": "agesilaus",
+        "canvas_index": 1,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_agesilaus_1.png",
+        "sha256": "a02dd96b5c7339c565022dece1cc55a5f28b1d41c6777e64c43bfc26ba842def"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 44,
+        "unit_id": "demosthenes",
+        "canvas_index": 36,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_demosthenes_36.png",
+        "sha256": "6f5c56d7bf0433ab67b9a1a15ba6ce4e23c628441fa7175a69f99bcad15810a8"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 45,
+        "unit_id": "demosthenes",
+        "canvas_index": 37,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_demosthenes_37.png",
+        "sha256": "93ddfe6374d1ebcb723fb615eae7b5f216122bbcd55d9c15beb2bedc8416af3e"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 47,
+        "unit_id": "cicero",
+        "canvas_index": 1,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_cicero_1.png",
+        "sha256": "0f84d0ab7b09aa50f6b58f2e2c5c2587441926a0377431d42698ce3dad4d0f04"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 287,
+        "unit_id": "dio",
+        "canvas_index": 1,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_dio_1.png",
+        "sha256": "900383bf920589ee2d970eda030b5422f28bb8635d4c2871450c7bf85b6d618b"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 291,
+        "unit_id": "dio",
+        "canvas_index": 5,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_dio_5.png",
+        "sha256": "43c34083397d5d6cc1c6e1a2879561b73a359d26dff76d9b538c185db110b742"
+      },
+      {
+        "tomus": 7,
+        "physical_page": 344,
+        "unit_id": "dio",
+        "canvas_index": 58,
+        "path": "tmp/pdfs/backlog_artifacts/baseline/facsimile_dio_58.png",
+        "sha256": "9cbe05d9a41db251bfbbe22cdd5ebc7ce8a42557fc858b605e6cc57731db4bc4"
+      }
+    ],
+    "dpi": 300,
+    "geometry": {
+      "tb_w": 1004,
+      "tb_h": 1429,
+      "pad_x": 0,
+      "pad_y": 0
+    },
+    "capture_code_revision": "69109d2",
+    "baseline_build_code_revision": null,
+    "baseline_code_identity_note": "The preserved 2026-10-09 build predates the capture revision; its exact source commit was not recorded with the output.",
+    "build_options": "full eight-volume offline facsimile build with both source PDFs and facsimile_units.json",
+    "production_body_scale": 1.2023952,
+    "renderer": "Poppler source render; PyMuPDF 1.27.2 baseline PDF crops",
+    "baseline_origin": "2026-10-09 build_facsimile output preserved before branch implementation",
+    "manifest_command": "python tools/collect_backlog_baseline.py",
+    "reader_crop_command": "python tools/render_backlog_baseline_pages.py",
+    "body_image_command": "python tools/copy_backlog_baseline_body_images.py"
+  },
+  "repairs": [
+    {
+      "backlog_id": "I1",
+      "unit_id": "theseus",
+      "source": 0,
+      "source_page_candidates": [
+        17
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 17,
+          "raster": [
+            2006,
+            2975
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 1,
+        "physical_page": 23,
+        "body_canvas_index": 7
+      }
+    },
+    {
+      "backlog_id": "I2",
+      "unit_id": "comparatio_thesei_et_romuli",
+      "source": 0,
+      "source_page_candidates": [
+        58,
+        59
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 58,
+          "raster": [
+            1997,
+            2974
+          ]
+        },
+        {
+          "source_page": 59,
+          "raster": [
+            2002,
+            3005
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 1,
+        "physical_page": 113,
+        "body_canvas_index": 5
+      }
+    },
+    {
+      "backlog_id": "I3",
+      "unit_id": "comparatio_lycurgi_et_numae",
+      "source": 0,
+      "source_page_candidates": [
+        105
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 105,
+          "raster": [
+            2004,
+            3033
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 1,
+        "physical_page": 212,
+        "body_canvas_index": 6
+      }
+    },
+    {
+      "backlog_id": "I4",
+      "unit_id": "themistocles",
+      "source": 0,
+      "source_page_candidates": [
+        166
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 166,
+          "raster": [
+            1988,
+            2993
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 1,
+        "physical_page": 340,
+        "body_canvas_index": 40
+      }
+    },
+    {
+      "backlog_id": "II1",
+      "unit_id": "pericles",
+      "source": 0,
+      "source_page_candidates": [
+        200
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 200,
+          "raster": [
+            1970,
+            2986
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 2,
+        "physical_page": 20,
+        "body_canvas_index": 12
+      }
+    },
+    {
+      "backlog_id": "II2",
+      "unit_id": "fabius_maximus",
+      "source": 0,
+      "source_page_candidates": [
+        229,
+        230
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 229,
+          "raster": [
+            1947,
+            2990
+          ]
+        },
+        {
+          "source_page": 230,
+          "raster": [
+            1968,
+            2985
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 2,
+        "physical_page": 81,
+        "body_canvas_index": 19
+      }
+    },
+    {
+      "backlog_id": "II3",
+      "unit_id": "alcibiades",
+      "source": 0,
+      "source_page_candidates": [
+        257,
+        258
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 257,
+          "raster": [
+            2010,
+            2976
+          ]
+        },
+        {
+          "source_page": 258,
+          "raster": [
+            1990,
+            2992
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 2,
+        "physical_page": 139,
+        "body_canvas_index": 33
+      }
+    },
+    {
+      "backlog_id": "II4",
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page_candidates": [
+        276
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 276,
+          "raster": [
+            1986,
+            2986
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 2,
+        "physical_page": 177,
+        "body_canvas_index": 17
+      }
+    },
+    {
+      "backlog_id": "II5",
+      "unit_id": "comparatio_alcibiadis_et_coriolani",
+      "source": 0,
+      "source_page_candidates": [
+        292
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 292,
+          "raster": [
+            1994,
+            2994
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 2,
+        "physical_page": 209,
+        "body_canvas_index": 1
+      }
+    },
+    {
+      "backlog_id": "II6",
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page_candidates": [
+        297,
+        298
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 297,
+          "raster": [
+            1900,
+            2964
+          ]
+        },
+        {
+          "source_page": 298,
+          "raster": [
+            1990,
+            2982
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 2,
+        "physical_page": 223,
+        "body_canvas_index": 7
+      }
+    },
+    {
+      "backlog_id": "II7",
+      "unit_id": "timoleon",
+      "source": 0,
+      "source_page_candidates": [
+        310
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 310,
+          "raster": [
+            1990,
+            2992
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 2,
+        "physical_page": 248,
+        "body_canvas_index": 32
+      }
+    },
+    {
+      "backlog_id": "II8",
+      "unit_id": "aemilius_paulus",
+      "source": 0,
+      "source_page_candidates": [
+        329,
+        330
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 329,
+          "raster": [
+            1879,
+            2957
+          ]
+        },
+        {
+          "source_page": 330,
+          "raster": [
+            1947,
+            2980
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 2,
+        "physical_page": 290,
+        "body_canvas_index": 24
+      }
+    },
+    {
+      "backlog_id": "III1",
+      "unit_id": "caius_marius",
+      "source": 0,
+      "source_page_candidates": [
+        519
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 519,
+          "raster": [
+            1964,
+            2973
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 3,
+        "physical_page": 273,
+        "body_canvas_index": 45
+      }
+    },
+    {
+      "backlog_id": "III2",
+      "unit_id": "caius_marius",
+      "source": 0,
+      "source_page_candidates": [
+        520
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 520,
+          "raster": [
+            1963,
+            3008
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 3,
+        "physical_page": 274,
+        "body_canvas_index": 46
+      }
+    },
+    {
+      "backlog_id": "V1",
+      "unit_id": "comparatio_sertorii_et_eumenis",
+      "source": 1,
+      "source_page_candidates": [
+        105
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 105,
+          "raster": [
+            1879,
+            2834
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 5,
+        "physical_page": 197,
+        "body_canvas_index": 3
+      },
+      "unmerged_final_canvas": {
+        "dimensions": [
+          1004,
+          44
+        ],
+        "raw_grayscale_sha256": "32e396d2a30dbd00d3ac909411ab6cc63e61e1f8483d7c69d38d19c77328ed15",
+        "baseline_saved_png_path": "build_facsimile/facsimile_comparatio_sertorii_et_eumenis_3.png",
+        "direct_compose_pages_verified": true,
+        "canvas_index": 3,
+        "production_body_scale": 1.2023952,
+        "direct_measurement_command": "cargo test --release backlog_short_ending_canvas_fingerprints -- --ignored --nocapture"
+      }
+    },
+    {
+      "backlog_id": "VII1",
+      "unit_id": "demosthenes",
+      "source": 1,
+      "source_page_candidates": [
+        446
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 446,
+          "raster": [
+            1836,
+            2861
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 7,
+        "physical_page": 45,
+        "body_canvas_index": 37
+      },
+      "unmerged_final_canvas": {
+        "dimensions": [
+          1004,
+          44
+        ],
+        "raw_grayscale_sha256": "955b6c7d39a181531f864b54468abc20092dc54536691e4f9a39bd94a132ac59",
+        "baseline_saved_png_path": "build_facsimile/facsimile_demosthenes_37.png",
+        "direct_compose_pages_verified": true,
+        "canvas_index": 37,
+        "production_body_scale": 1.2023952,
+        "direct_measurement_command": "cargo test --release backlog_short_ending_canvas_fingerprints -- --ignored --nocapture"
+      }
+    },
+    {
+      "backlog_id": "VII2",
+      "unit_id": "dio",
+      "source": 1,
+      "source_page_candidates": [
+        566
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 566,
+          "raster": [
+            1813,
+            2838
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 7,
+        "physical_page": 287,
+        "body_canvas_index": 1
+      }
+    },
+    {
+      "backlog_id": "VII3",
+      "unit_id": "dio",
+      "source": 1,
+      "source_page_candidates": [
+        568
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 568,
+          "raster": [
+            1844,
+            2836
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 7,
+        "physical_page": 291,
+        "body_canvas_index": 5
+      }
+    },
+    {
+      "backlog_id": "VII4",
+      "unit_id": "dio",
+      "source": 1,
+      "source_page_candidates": [
+        593
+      ],
+      "candidate_rasters": [
+        {
+          "source_page": 593,
+          "raster": [
+            1820,
+            2838
+          ]
+        }
+      ],
+      "status": "planned",
+      "baseline_reader": {
+        "tomus": 7,
+        "physical_page": 344,
+        "body_canvas_index": 58
+      }
+    }
+  ]
+}

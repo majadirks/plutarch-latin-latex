@@ -2574,6 +2574,67 @@ pub fn compose_pages(
     canvases
 }
 
+const REVIEWED_SHORT_ENDINGS: &[(&str, (u32, u32), &str)] = &[
+    (
+        "comparatio_sertorii_et_eumenis",
+        (1004, 44),
+        "32e396d2a30dbd00d3ac909411ab6cc63e61e1f8483d7c69d38d19c77328ed15",
+    ),
+    (
+        "demosthenes",
+        (1004, 44),
+        "955b6c7d39a181531f864b54468abc20092dc54536691e4f9a39bd94a132ac59",
+    ),
+];
+
+/// Stack a reviewed, complete final line with its preceding body canvas when
+/// both images fit within the trim text block.
+pub(crate) fn merge_reviewed_short_ending(
+    unit_id: &str,
+    canvases: &mut Vec<GrayImage>,
+    geom: &TrimGeom,
+) -> bool {
+    let Some(&(_, expected_dimensions, fingerprint)) = REVIEWED_SHORT_ENDINGS
+        .iter()
+        .find(|(reviewed_id, _, _)| *reviewed_id == unit_id)
+    else {
+        return false;
+    };
+    if canvases.len() < 3 || geom.pad_x != 0 || geom.pad_y != 0 || geom.tb_w != 1004 {
+        return false;
+    }
+    let last = &canvases[canvases.len() - 1];
+    let previous = &canvases[canvases.len() - 2];
+    if last.dimensions() != expected_dimensions
+        || previous.width() != geom.tb_w
+        || !matches_source_region_fingerprint(
+            last,
+            [0, 0, last.width(), last.height()],
+            fingerprint,
+        )
+        || previous
+            .height()
+            .checked_add(last.height())
+            .is_none_or(|height| height > geom.content_height())
+    {
+        return false;
+    }
+
+    let candidate = place_line_images(&[previous.clone(), last.clone()], geom);
+    if candidate.dimensions() != (geom.tb_w, previous.height() + last.height())
+        || image::imageops::crop_imm(&candidate, 0, 0, geom.tb_w, previous.height()).to_image()
+            != *previous
+        || image::imageops::crop_imm(&candidate, 0, previous.height(), geom.tb_w, last.height())
+            .to_image()
+            != *last
+    {
+        return false;
+    }
+    canvases.truncate(canvases.len() - 2);
+    canvases.push(candidate);
+    true
+}
+
 /// Pack the source strips before applying the final canvas ink floor.
 fn compose_body_canvases(
     pages: &[(GrayImage, Vec<Band>)],
