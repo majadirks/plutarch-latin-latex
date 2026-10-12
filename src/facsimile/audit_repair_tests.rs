@@ -3034,6 +3034,24 @@ fn backlog_dio_edge_lines_compose_whole() {
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn backlog_shared_source_neighbors_preserve_latin() {
+    let shared_line = ReviewedSourceLine {
+        source: 0,
+        source_page: 292,
+        region: [969, 608, 1738, 640],
+        role: "Marcius Coriolanus line on the shared source page".to_owned(),
+    };
+    let (shared_pages, shared_metrics, shared_traces) = audit_traced_unit("marcius_coriolanus");
+    let shared_originals = [((0, 292), real_source_image(0, 292))].into_iter().collect();
+    let shared_context = ReviewedLineContext {
+        traces: &shared_traces,
+        originals: &shared_originals,
+        pages: &shared_pages,
+        metrics: &shared_metrics,
+        scale: production_body_scale(),
+        geom: TrimGeom::default(),
+    };
+    assert_reviewed_source_lines_survive(&[shared_line], &shared_context, true);
+
     let (preceding, _, preceding_traces) =
         audit_traced_unit("comparatio_demetrii_et_antonii");
     let (dio, _, dio_traces) = audit_traced_unit("dio");
@@ -3051,6 +3069,148 @@ fn backlog_shared_source_neighbors_preserve_latin() {
     }
     assert!(!dio[opening.retained_index.unwrap()].1.is_empty());
     assert_backlog_whole_lines(&["VII2"]);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_themistocles_source_header_is_excluded() {
+    let original = real_source_image(0, 166);
+    let mut masked = original.clone();
+    mask_known_source_furniture(0, 166, &mut masked);
+    for y in 210..280 {
+        for x in 900..1750 {
+            assert_eq!(masked.get_pixel(x, y), &Luma([255]));
+        }
+    }
+    let crop = production_source_column(0, 166, &masked).unwrap();
+    let (_, pass_a) = band_source_column(0, 166, &crop_column(&masked, &crop));
+    println!("Themistocles current crop [{},{}], Pass A {:?}", crop.left, crop.right,
+        pass_a.iter().map(|band| [band.top, band.bottom]).collect::<Vec<_>>());
+    assert!(pass_a.first().is_some_and(|band| band.top >= 290));
+
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "fixtures/backlog_artifact_source_trace.json"
+    ))
+    .unwrap();
+    let record = fixture["repairs"].as_array().unwrap().iter()
+        .find(|record| record["backlog_id"] == "I4").unwrap();
+    let lines: Vec<ReviewedSourceLine> =
+        serde_json::from_value(record["reviewed_lines"].clone()).unwrap();
+    let (pages, metrics, traces) = audit_traced_unit("themistocles");
+    let originals = [((0, 166), original)].into_iter().collect();
+    let context = ReviewedLineContext {
+        traces: &traces,
+        originals: &originals,
+        pages: &pages,
+        metrics: &metrics,
+        scale: production_body_scale(),
+        geom: TrimGeom::default(),
+    };
+    assert_reviewed_source_lines_survive(&lines, &context, false);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_gap_masks_source_trace() {
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "fixtures/backlog_artifact_source_trace.json"
+    ))
+    .unwrap();
+    let mut selected: BTreeMap<&str, BTreeSet<u32>> = BTreeMap::new();
+    for record in fixture["repairs"].as_array().unwrap() {
+        if ["II2", "II3", "II4", "II5", "II6", "II7", "II8"]
+            .contains(&record["backlog_id"].as_str().unwrap())
+        {
+            selected
+                .entry(record["unit_id"].as_str().unwrap())
+                .or_default()
+                .insert(record["source_page"].as_u64().unwrap() as u32);
+        }
+    }
+    for (id, pages) in selected {
+        audit_save_unit_trace(id, &pages, "backlog_artifacts_after_masks");
+    }
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_left_rule_masks_source_trace() {
+    let selected = [("theseus", 17), ("comparatio_thesei_et_romuli", 59)];
+    for (unit, page) in selected {
+        audit_save_unit_trace(unit, &[page].into_iter().collect(), "backlog_artifacts_after_masks");
+    }
+}
+
+fn max_internal_blank_rows(canvas: &GrayImage) -> u32 {
+    let rows = ink_profile_rows(canvas, INK_THRESHOLD);
+    let active: Vec<_> = rows.iter().enumerate()
+        .filter_map(|(index, count)| (*count > 3).then_some(index as u32))
+        .collect();
+    active.windows(2)
+        .map(|pair| pair[1] - pair[0] - 1)
+        .max()
+        .unwrap_or(0)
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_reported_gaps_preserve_continuous_latin() {
+    assert_backlog_gap_cases(&["I2", "II2", "II3", "II4", "II5", "II6", "II7", "II8"]);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_theseus_orphan_line_rejoins_body() {
+    assert_backlog_gap_cases(&["I1"]);
+}
+
+fn assert_backlog_gap_cases(ids: &[&str]) {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "fixtures/backlog_artifact_source_trace.json"
+    ))
+    .unwrap();
+    let mut units = std::collections::BTreeMap::<&str, Vec<&serde_json::Value>>::new();
+    for record in fixture["repairs"].as_array().unwrap() {
+        if ids.contains(&record["backlog_id"].as_str().unwrap()) {
+            units.entry(record["unit_id"].as_str().unwrap()).or_default().push(record);
+        }
+    }
+    for (unit, records) in units {
+        let lines: Vec<ReviewedSourceLine> = records.iter()
+            .flat_map(|record| serde_json::from_value::<Vec<ReviewedSourceLine>>(
+                record["reviewed_lines"].clone()).unwrap())
+            .collect();
+        let originals = lines.iter()
+            .map(|line| ((line.source, line.source_page),
+                real_source_image(line.source, line.source_page)))
+            .collect();
+        let (pages, metrics, traces) = audit_traced_unit(unit);
+        let context = ReviewedLineContext {
+            traces: &traces,
+            originals: &originals,
+            pages: &pages,
+            metrics: &metrics,
+            scale: production_body_scale(),
+            geom: TrimGeom::default(),
+        };
+        let composition = assert_reviewed_source_lines_survive(&lines, &context, true);
+        for record in records {
+            let id = record["backlog_id"].as_str().unwrap();
+            let decision = &record["mechanism_decision"];
+            let index = decision["target_canvas_index"].as_u64().unwrap() as usize;
+            let canvas = composition.canvases.get(index-1).unwrap_or_else(|| panic!("{id} canvas {index}"));
+            if let Some(maximum) = decision["acceptance"]["max_internal_blank_rows"].as_u64() {
+                assert!(max_internal_blank_rows(canvas) <= maximum as u32,
+                    "{id}: interior gap exceeds {maximum} rows");
+            }
+            if let Some(minimum) = decision["acceptance"]["min_canvas_height"].as_u64() {
+                assert!(canvas.height() >= minimum as u32,
+                    "{id}: body canvas closes before {minimum} rows");
+            }
+        }
+    }
 }
 
 #[test]

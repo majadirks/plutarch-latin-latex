@@ -34,6 +34,89 @@ struct SourceFurnitureMask {
 }
 
 const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
+    // Source-side vertical rules connect the Latin rows on these two pages.
+    SourceFurnitureMask {
+        source: 0,
+        page: 17,
+        left: 1043.0 / 2006.0,
+        top: 270.0 / 2975.0,
+        right: 1053.0 / 2006.0,
+        bottom: 2655.0 / 2975.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 59,
+        left: 1018.0 / 2002.0,
+        top: 410.0 / 3005.0,
+        right: 1028.0 / 2002.0,
+        bottom: 2120.0 / 3005.0,
+    },
+    // The Themistocles source running head and folio sit above the first body row.
+    SourceFurnitureMask {
+        source: 0,
+        page: 166,
+        left: 900.0 / 1988.0,
+        top: 210.0 / 2993.0,
+        right: 1750.0 / 1988.0,
+        bottom: 280.0 / 2993.0,
+    },
+    // Narrow right scan edges join unrelated Latin rows on these source pages.
+    SourceFurnitureMask {
+        source: 0,
+        page: 229,
+        left: 1932.0 / 1947.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 257,
+        left: 1995.0 / 2010.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 276,
+        left: 1971.0 / 1986.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 292,
+        left: 1979.0 / 1994.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 297,
+        left: 1885.0 / 1900.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 310,
+        left: 1975.0 / 1990.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 329,
+        left: 1864.0 / 1879.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
     // Pale digitization watermark below the final Latin line.
     SourceFurnitureMask {
         source: 0,
@@ -3775,7 +3858,7 @@ mod tests {
     }
     #[test]
     fn known_source_furniture_masks_only_matching_page() {
-        let img = GrayImage::from_pixel(100, 100, Luma([200]));
+        let img = GrayImage::from_pixel(512, 512, Luma([200]));
         for (source, page) in [(1, 233), (0, 232)] {
             let mut cleaned = img.clone();
             mask_known_source_furniture(source, page, &mut cleaned);

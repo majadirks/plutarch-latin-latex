@@ -1098,7 +1098,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 1,
         "physical_page": 23,
@@ -1182,9 +1182,9 @@
           "source_page": 17,
           "region": [
             1053,
-            404,
+            406,
             1881,
-            439
+            440
           ],
           "role": "isolated Latin row"
         },
@@ -1193,12 +1193,65 @@
           "source_page": 17,
           "region": [
             1053,
-            449,
+            451,
             1881,
-            487
+            485
           ],
           "role": "following Latin row"
         }
+      ],
+      "disposition": "mask",
+      "mask_pixel_rectangles": [
+        [
+          1043,
+          270,
+          1053,
+          2655
+        ]
+      ],
+      "mask_rectangles": [
+        [
+          0.5199401794616152,
+          0.0907563025210084,
+          0.5249252243270189,
+          0.892436974789916
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          1053,
+          406,
+          1881,
+          440
+        ],
+        [
+          1053,
+          451,
+          1881,
+          485
+        ]
+      ],
+      "affected_units": [
+        "theseus"
+      ],
+      "mechanism_decision": {
+        "table": "SOURCE_FURNITURE_MASKS",
+        "root_cause": "the Greek/Latin column divider connected distinct Latin rows into one tall source band",
+        "baseline_body_canvas_count": 41,
+        "current_body_canvas_count": 41,
+        "target_canvas_index": 7,
+        "baseline_target_canvas_height": 54,
+        "current_target_canvas_height": 432,
+        "baseline_retained_band_count": 1,
+        "current_retained_band_count": 10,
+        "acceptance": {
+          "min_canvas_height": 400
+        }
+      },
+      "regression_commands": [
+        "cargo test --release backlog_theseus_orphan_line_rejoins_body -- --ignored",
+        "cargo test inner_tomi_masks_match_reviewed_ledger",
+        "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
       ]
     },
     {
@@ -1225,7 +1278,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 1,
         "physical_page": 113,
@@ -1591,9 +1644,9 @@
           "source_page": 59,
           "region": [
             1028,
-            455,
+            457,
             1843,
-            490
+            494
           ],
           "role": "Latin before divider"
         },
@@ -1602,12 +1655,65 @@
           "source_page": 59,
           "region": [
             1028,
-            499,
+            501,
             1843,
-            532
+            536
           ],
           "role": "Latin after divider"
         }
+      ],
+      "disposition": "mask",
+      "mask_pixel_rectangles": [
+        [
+          1018,
+          410,
+          1028,
+          2120
+        ]
+      ],
+      "mask_rectangles": [
+        [
+          0.5084915084915085,
+          0.13643926788685523,
+          0.5134865134865135,
+          0.7054908485856906
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          1028,
+          457,
+          1843,
+          494
+        ],
+        [
+          1028,
+          501,
+          1843,
+          536
+        ]
+      ],
+      "affected_units": [
+        "comparatio_thesei_et_romuli"
+      ],
+      "mechanism_decision": {
+        "table": "SOURCE_FURNITURE_MASKS",
+        "root_cause": "the Greek/Latin column divider connected distinct Latin rows into one tall source band",
+        "baseline_body_canvas_count": 7,
+        "current_body_canvas_count": 7,
+        "target_canvas_index": 5,
+        "baseline_target_canvas_height": 779,
+        "current_target_canvas_height": 1304,
+        "baseline_retained_band_count": 11,
+        "current_retained_band_count": 19,
+        "acceptance": {
+          "min_canvas_height": 1200
+        }
+      },
+      "regression_commands": [
+        "cargo test --release backlog_reported_gaps_preserve_continuous_latin -- --ignored",
+        "cargo test inner_tomi_masks_match_reviewed_ledger",
+        "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
       ]
     },
     {
@@ -1801,7 +1907,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 1,
         "physical_page": 340,
@@ -1983,6 +2089,58 @@
           ],
           "role": "first body Latin row beneath source header"
         }
+      ],
+      "disposition": "mask",
+      "mask_pixel_rectangles": [
+        [
+          900,
+          210,
+          1750,
+          280
+        ]
+      ],
+      "mask_rectangles": [
+        [
+          0.45271629778672035,
+          0.0701637153357835,
+          0.8802816901408451,
+          0.09355162044771133
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          972,
+          294,
+          1738,
+          322
+        ],
+        [
+          972,
+          337,
+          1738,
+          365
+        ]
+      ],
+      "mechanism_decision": {
+        "table": "SOURCE_FURNITURE_MASKS",
+        "root_cause": "source running head and folio at rows 220-260 survived furniture filtering as a body band",
+        "baseline_header_band": [
+          226,
+          255
+        ],
+        "first_body_band_after_mask": [
+          294,
+          326
+        ],
+        "acceptance": "no retained source band before row 294; first and second Latin rows retain original pixels"
+      },
+      "regression_commands": [
+        "cargo test --release backlog_themistocles_source_header_is_excluded -- --ignored",
+        "cargo test inner_tomi_masks_match_reviewed_ledger",
+        "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
+      ],
+      "affected_units": [
+        "themistocles"
       ]
     },
     {
@@ -2196,7 +2354,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 81,
@@ -2609,10 +2767,10 @@
           "source": 0,
           "source_page": 229,
           "region": [
-            1046,
-            2092,
-            1937,
-            2129
+            1036,
+            2095,
+            1826,
+            2127
           ],
           "role": "Latin before copied gap"
         },
@@ -2620,14 +2778,91 @@
           "source": 0,
           "source_page": 229,
           "region": [
-            1046,
-            2151,
-            1937,
-            2180
+            1036,
+            2148,
+            1826,
+            2179
           ],
           "role": "Latin after copied gap"
         }
-      ]
+      ],
+      "disposition": "mask",
+      "mask_pixel_rectangles": [
+        [
+          1932,
+          0,
+          1947,
+          2990
+        ]
+      ],
+      "mask_rectangles": [
+        [
+          0.9922958397534669,
+          0.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          1036,
+          2095,
+          1826,
+          2127
+        ],
+        [
+          1036,
+          2148,
+          1826,
+          2179
+        ]
+      ],
+      "affected_units": [
+        "fabius_maximus"
+      ],
+      "mechanism_decision": {
+        "table": "SOURCE_FURNITURE_MASKS",
+        "root_cause": "the right scan-edge rule connected separate body lines or contributed a non-Latin footer strip",
+        "baseline_body_canvas_count": 40,
+        "current_body_canvas_count": 40,
+        "target_canvas_index": 19,
+        "baseline_target_canvas_height": 1386,
+        "current_target_canvas_height": 1393,
+        "baseline_retained_band_count": 47,
+        "current_retained_band_count": 47,
+        "acceptance": {
+          "max_internal_blank_rows": 50
+        }
+      },
+      "regression_commands": [
+        "cargo test --release backlog_reported_gaps_preserve_continuous_latin -- --ignored",
+        "cargo test inner_tomi_masks_match_reviewed_ledger",
+        "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
+      ],
+      "source_row_box_review": {
+        "method": "original 300-DPI source row ink span excluding the detached scan-edge rule; full current Latin column included",
+        "prior_locator_boxes": [
+          {
+            "source_page": 229,
+            "locator_region": [
+              1046,
+              2092,
+              1937,
+              2129
+            ]
+          },
+          {
+            "source_page": 229,
+            "locator_region": [
+              1046,
+              2151,
+              1937,
+              2180
+            ]
+          }
+        ],
+        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+      }
     },
     {
       "backlog_id": "II3",
@@ -2653,7 +2888,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 139,
@@ -2994,10 +3229,10 @@
           "source": 0,
           "source_page": 257,
           "region": [
-            1083,
-            2462,
-            2000,
-            2494
+            1073,
+            2464,
+            1865,
+            2496
           ],
           "role": "Latin before copied gap"
         },
@@ -3005,14 +3240,91 @@
           "source": 0,
           "source_page": 257,
           "region": [
-            1083,
-            2505,
-            2000,
-            2537
+            1073,
+            2507,
+            1865,
+            2540
           ],
           "role": "Latin after copied gap"
         }
-      ]
+      ],
+      "disposition": "mask",
+      "mask_pixel_rectangles": [
+        [
+          1995,
+          0,
+          2010,
+          2976
+        ]
+      ],
+      "mask_rectangles": [
+        [
+          0.9925373134328358,
+          0.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          1073,
+          2464,
+          1865,
+          2496
+        ],
+        [
+          1073,
+          2507,
+          1865,
+          2540
+        ]
+      ],
+      "affected_units": [
+        "alcibiades"
+      ],
+      "mechanism_decision": {
+        "table": "SOURCE_FURNITURE_MASKS",
+        "root_cause": "the right scan-edge rule connected separate body lines or contributed a non-Latin footer strip",
+        "baseline_body_canvas_count": 54,
+        "current_body_canvas_count": 54,
+        "target_canvas_index": 33,
+        "baseline_target_canvas_height": 1340,
+        "current_target_canvas_height": 1383,
+        "baseline_retained_band_count": 51,
+        "current_retained_band_count": 57,
+        "acceptance": {
+          "max_internal_blank_rows": 50
+        }
+      },
+      "regression_commands": [
+        "cargo test --release backlog_reported_gaps_preserve_continuous_latin -- --ignored",
+        "cargo test inner_tomi_masks_match_reviewed_ledger",
+        "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
+      ],
+      "source_row_box_review": {
+        "method": "original 300-DPI source row ink span excluding the detached scan-edge rule; full current Latin column included",
+        "prior_locator_boxes": [
+          {
+            "source_page": 257,
+            "locator_region": [
+              1083,
+              2462,
+              2000,
+              2494
+            ]
+          },
+          {
+            "source_page": 257,
+            "locator_region": [
+              1083,
+              2505,
+              2000,
+              2537
+            ]
+          }
+        ],
+        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+      }
     },
     {
       "backlog_id": "II4",
@@ -3030,7 +3342,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 177,
@@ -3233,10 +3545,10 @@
           "source": 0,
           "source_page": 276,
           "region": [
-            954,
+            943,
             1485,
-            1976,
-            1515
+            1729,
+            1519
           ],
           "role": "Latin before deferred tall strip"
         },
@@ -3244,14 +3556,91 @@
           "source": 0,
           "source_page": 276,
           "region": [
-            954,
-            1530,
-            1976,
-            1560
+            943,
+            1531,
+            1729,
+            1563
           ],
           "role": "following Latin row"
         }
-      ]
+      ],
+      "disposition": "mask",
+      "mask_pixel_rectangles": [
+        [
+          1971,
+          0,
+          1986,
+          2986
+        ]
+      ],
+      "mask_rectangles": [
+        [
+          0.9924471299093656,
+          0.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          943,
+          1485,
+          1729,
+          1519
+        ],
+        [
+          943,
+          1531,
+          1729,
+          1563
+        ]
+      ],
+      "affected_units": [
+        "marcius_coriolanus"
+      ],
+      "mechanism_decision": {
+        "table": "SOURCE_FURNITURE_MASKS",
+        "root_cause": "the right scan-edge rule connected separate body lines or contributed a non-Latin footer strip",
+        "baseline_body_canvas_count": 48,
+        "current_body_canvas_count": 47,
+        "target_canvas_index": 17,
+        "baseline_target_canvas_height": 541,
+        "current_target_canvas_height": 1359,
+        "baseline_retained_band_count": 30,
+        "current_retained_band_count": 51,
+        "acceptance": {
+          "min_canvas_height": 1300
+        }
+      },
+      "regression_commands": [
+        "cargo test --release backlog_reported_gaps_preserve_continuous_latin -- --ignored",
+        "cargo test inner_tomi_masks_match_reviewed_ledger",
+        "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
+      ],
+      "source_row_box_review": {
+        "method": "original 300-DPI source row ink span excluding the detached scan-edge rule; full current Latin column included",
+        "prior_locator_boxes": [
+          {
+            "source_page": 276,
+            "locator_region": [
+              954,
+              1485,
+              1976,
+              1515
+            ]
+          },
+          {
+            "source_page": 276,
+            "locator_region": [
+              954,
+              1530,
+              1976,
+              1560
+            ]
+          }
+        ],
+        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+      }
     },
     {
       "backlog_id": "II5",
@@ -3269,7 +3658,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 209,
@@ -3500,10 +3889,10 @@
           "source": 0,
           "source_page": 292,
           "region": [
-            969,
-            1413,
-            1984,
-            1443
+            955,
+            1414,
+            1747,
+            1446
           ],
           "role": "Latin before page-end gap"
         },
@@ -3511,14 +3900,93 @@
           "source": 0,
           "source_page": 292,
           "region": [
-            969,
-            1455,
-            1984,
-            1486
+            955,
+            1457,
+            1747,
+            1489
           ],
           "role": "following Latin row"
         }
-      ]
+      ],
+      "disposition": "mask",
+      "mask_pixel_rectangles": [
+        [
+          1979,
+          0,
+          1994,
+          2994
+        ]
+      ],
+      "mask_rectangles": [
+        [
+          0.9924774322968907,
+          0.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          955,
+          1414,
+          1747,
+          1446
+        ],
+        [
+          955,
+          1457,
+          1747,
+          1489
+        ]
+      ],
+      "affected_units": [
+        "marcius_coriolanus",
+        "comparatio_alcibiadis_et_coriolani"
+      ],
+      "mechanism_decision": {
+        "table": "SOURCE_FURNITURE_MASKS",
+        "root_cause": "the right scan-edge rule connected separate body lines or contributed a non-Latin footer strip",
+        "baseline_body_canvas_count": 7,
+        "current_body_canvas_count": 6,
+        "target_canvas_index": 1,
+        "baseline_target_canvas_height": 578,
+        "current_target_canvas_height": 1247,
+        "baseline_retained_band_count": 27,
+        "current_retained_band_count": 38,
+        "acceptance": {
+          "min_canvas_height": 1200
+        }
+      },
+      "regression_commands": [
+        "cargo test --release backlog_reported_gaps_preserve_continuous_latin -- --ignored",
+        "cargo test inner_tomi_masks_match_reviewed_ledger",
+        "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored",
+        "cargo test --release backlog_shared_source_neighbors_preserve_latin -- --ignored"
+      ],
+      "source_row_box_review": {
+        "method": "original 300-DPI source row ink span excluding the detached scan-edge rule; full current Latin column included",
+        "prior_locator_boxes": [
+          {
+            "source_page": 292,
+            "locator_region": [
+              969,
+              1413,
+              1984,
+              1443
+            ]
+          },
+          {
+            "source_page": 292,
+            "locator_region": [
+              969,
+              1455,
+              1984,
+              1486
+            ]
+          }
+        ],
+        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+      }
     },
     {
       "backlog_id": "II6",
@@ -3544,7 +4012,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 223,
@@ -3991,10 +4459,10 @@
           "source": 0,
           "source_page": 297,
           "region": [
-            1072,
-            2538,
-            1890,
-            2573
+            1062,
+            2537,
+            1820,
+            2575
           ],
           "role": "Latin before source gap"
         },
@@ -4002,14 +4470,91 @@
           "source": 0,
           "source_page": 298,
           "region": [
-            959,
+            949,
             267,
-            1731,
+            1740,
             301
           ],
           "role": "Latin after source gap"
         }
-      ]
+      ],
+      "disposition": "mask",
+      "mask_pixel_rectangles": [
+        [
+          1885,
+          0,
+          1900,
+          2964
+        ]
+      ],
+      "mask_rectangles": [
+        [
+          0.9921052631578947,
+          0.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          1062,
+          2537,
+          1820,
+          2575
+        ],
+        [
+          949,
+          267,
+          1740,
+          301
+        ]
+      ],
+      "affected_units": [
+        "timoleon"
+      ],
+      "mechanism_decision": {
+        "table": "SOURCE_FURNITURE_MASKS",
+        "root_cause": "the right scan-edge rule connected separate body lines or contributed a non-Latin footer strip",
+        "baseline_body_canvas_count": 50,
+        "current_body_canvas_count": 49,
+        "target_canvas_index": 7,
+        "baseline_target_canvas_height": 1379,
+        "current_target_canvas_height": 1350,
+        "baseline_retained_band_count": 55,
+        "current_retained_band_count": 52,
+        "acceptance": {
+          "max_internal_blank_rows": 50
+        }
+      },
+      "regression_commands": [
+        "cargo test --release backlog_reported_gaps_preserve_continuous_latin -- --ignored",
+        "cargo test inner_tomi_masks_match_reviewed_ledger",
+        "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
+      ],
+      "source_row_box_review": {
+        "method": "original 300-DPI source row ink span excluding the detached scan-edge rule; full current Latin column included",
+        "prior_locator_boxes": [
+          {
+            "source_page": 297,
+            "locator_region": [
+              1072,
+              2538,
+              1890,
+              2573
+            ]
+          },
+          {
+            "source_page": 298,
+            "locator_region": [
+              959,
+              267,
+              1731,
+              301
+            ]
+          }
+        ],
+        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+      }
     },
     {
       "backlog_id": "II7",
@@ -4027,7 +4572,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 248,
@@ -4474,10 +5019,10 @@
           "source": 0,
           "source_page": 310,
           "region": [
-            943,
-            649,
-            1980,
-            690
+            931,
+            648,
+            1723,
+            689
           ],
           "role": "Latin before page-end gap"
         },
@@ -4485,14 +5030,91 @@
           "source": 0,
           "source_page": 310,
           "region": [
-            943,
+            931,
             694,
-            1980,
-            738
+            1723,
+            737
           ],
           "role": "following Latin row"
         }
-      ]
+      ],
+      "disposition": "mask",
+      "mask_pixel_rectangles": [
+        [
+          1975,
+          0,
+          1990,
+          2992
+        ]
+      ],
+      "mask_rectangles": [
+        [
+          0.992462311557789,
+          0.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          931,
+          648,
+          1723,
+          689
+        ],
+        [
+          931,
+          694,
+          1723,
+          737
+        ]
+      ],
+      "affected_units": [
+        "timoleon"
+      ],
+      "mechanism_decision": {
+        "table": "SOURCE_FURNITURE_MASKS",
+        "root_cause": "the right scan-edge rule connected separate body lines or contributed a non-Latin footer strip",
+        "baseline_body_canvas_count": 50,
+        "current_body_canvas_count": 49,
+        "target_canvas_index": 32,
+        "baseline_target_canvas_height": 491,
+        "current_target_canvas_height": 1355,
+        "baseline_retained_band_count": 27,
+        "current_retained_band_count": 43,
+        "acceptance": {
+          "min_canvas_height": 1300
+        }
+      },
+      "regression_commands": [
+        "cargo test --release backlog_reported_gaps_preserve_continuous_latin -- --ignored",
+        "cargo test inner_tomi_masks_match_reviewed_ledger",
+        "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
+      ],
+      "source_row_box_review": {
+        "method": "original 300-DPI source row ink span excluding the detached scan-edge rule; full current Latin column included",
+        "prior_locator_boxes": [
+          {
+            "source_page": 310,
+            "locator_region": [
+              943,
+              649,
+              1980,
+              690
+            ]
+          },
+          {
+            "source_page": 310,
+            "locator_region": [
+              943,
+              694,
+              1980,
+              738
+            ]
+          }
+        ],
+        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+      }
     },
     {
       "backlog_id": "II8",
@@ -4518,7 +5140,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 290,
@@ -4855,10 +5477,10 @@
           "source": 0,
           "source_page": 329,
           "region": [
-            1076,
+            1066,
             2527,
-            1869,
-            2564
+            1816,
+            2568
           ],
           "role": "Latin before scan rule"
         },
@@ -4866,14 +5488,91 @@
           "source": 0,
           "source_page": 330,
           "region": [
-            940,
+            930,
             264,
-            1707,
+            1716,
             296
           ],
           "role": "Latin after scan rule"
         }
-      ]
+      ],
+      "disposition": "mask",
+      "mask_pixel_rectangles": [
+        [
+          1864,
+          0,
+          1879,
+          2957
+        ]
+      ],
+      "mask_rectangles": [
+        [
+          0.9920170303352848,
+          0.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          1066,
+          2527,
+          1816,
+          2568
+        ],
+        [
+          930,
+          264,
+          1716,
+          296
+        ]
+      ],
+      "affected_units": [
+        "aemilius_paulus"
+      ],
+      "mechanism_decision": {
+        "table": "SOURCE_FURNITURE_MASKS",
+        "root_cause": "the right scan-edge rule connected separate body lines or contributed a non-Latin footer strip",
+        "baseline_body_canvas_count": 52,
+        "current_body_canvas_count": 51,
+        "target_canvas_index": 24,
+        "baseline_target_canvas_height": 1369,
+        "current_target_canvas_height": 1380,
+        "baseline_retained_band_count": 58,
+        "current_retained_band_count": 54,
+        "acceptance": {
+          "max_internal_blank_rows": 50
+        }
+      },
+      "regression_commands": [
+        "cargo test --release backlog_reported_gaps_preserve_continuous_latin -- --ignored",
+        "cargo test inner_tomi_masks_match_reviewed_ledger",
+        "cargo test --release inner_tomi_known_masks_preserve_latin -- --ignored"
+      ],
+      "source_row_box_review": {
+        "method": "original 300-DPI source row ink span excluding the detached scan-edge rule; full current Latin column included",
+        "prior_locator_boxes": [
+          {
+            "source_page": 329,
+            "locator_region": [
+              1076,
+              2527,
+              1869,
+              2564
+            ]
+          },
+          {
+            "source_page": 330,
+            "locator_region": [
+              940,
+              264,
+              1707,
+              296
+            ]
+          }
+        ],
+        "reviewed_bounds_source": "tmp/measure_backlog_latin_row_bounds.py"
+      }
     },
     {
       "backlog_id": "III1",
@@ -5673,7 +6372,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 5,
         "physical_page": 197,
@@ -5835,7 +6534,24 @@
           "role": "reported complete Latin line"
         }
       ],
-      "adjacent_prose_locator": "potemque fecit."
+      "adjacent_prose_locator": "potemque fecit.",
+      "disposition": "short_ending_merge",
+      "mechanism_decision": {
+        "helper": "merge_reviewed_short_ending",
+        "final_canvas_dimensions": [
+          1004,
+          44
+        ],
+        "unmerged_predecessor_height": 1368,
+        "merged_height": 1412,
+        "maximum_text_block_height": 1429,
+        "acceptance": "one fewer body canvas; complete final line stacked once; following unit remains on a recto"
+      },
+      "regression_commands": [
+        "cargo test --release backlog_short_ending_merge_is_identity_scoped",
+        "cargo test --release backlog_short_endings_keep_following_rectos -- --ignored",
+        "cargo test --release backlog_eumenes_comparison_short_ending_merges -- --ignored"
+      ]
     },
     {
       "backlog_id": "VII1",
@@ -5853,7 +6569,7 @@
           ]
         }
       ],
-      "status": "planned",
+      "status": "repaired",
       "baseline_reader": {
         "tomus": 7,
         "physical_page": 45,
@@ -6023,7 +6739,24 @@
           "role": "reported complete Latin line"
         }
       ],
-      "adjacent_prose_locator": "accepimus conscriptam."
+      "adjacent_prose_locator": "accepimus conscriptam.",
+      "disposition": "short_ending_merge",
+      "mechanism_decision": {
+        "helper": "merge_reviewed_short_ending",
+        "final_canvas_dimensions": [
+          1004,
+          44
+        ],
+        "unmerged_predecessor_height": 1376,
+        "merged_height": 1420,
+        "maximum_text_block_height": 1429,
+        "acceptance": "one fewer body canvas; complete final line stacked once; following unit remains on a recto"
+      },
+      "regression_commands": [
+        "cargo test --release backlog_short_ending_merge_is_identity_scoped",
+        "cargo test --release backlog_short_endings_keep_following_rectos -- --ignored",
+        "cargo test --release backlog_demosthenes_short_ending_merges -- --ignored"
+      ]
     },
     {
       "backlog_id": "VII2",
@@ -7484,6 +8217,1856 @@
       },
       "regression_commands": [
         "cargo test --release backlog_dio_edge_lines_compose_whole -- --ignored"
+      ]
+    }
+  ],
+  "current_page_expectations": [
+    {
+      "source": 0,
+      "source_page": 17,
+      "expected_crop_edges": [
+        1051,
+        1891
+      ],
+      "expected_pass_a_bands": [
+        [
+          274,
+          311
+        ],
+        [
+          319,
+          355
+        ],
+        [
+          362,
+          397
+        ],
+        [
+          406,
+          440
+        ],
+        [
+          451,
+          485
+        ],
+        [
+          496,
+          532
+        ],
+        [
+          539,
+          575
+        ],
+        [
+          584,
+          621
+        ],
+        [
+          628,
+          662
+        ],
+        [
+          672,
+          2651
+        ]
+      ]
+    },
+    {
+      "source": 0,
+      "source_page": 59,
+      "expected_crop_edges": [
+        1026,
+        1853
+      ],
+      "expected_pass_a_bands": [
+        [
+          282,
+          318
+        ],
+        [
+          326,
+          362
+        ],
+        [
+          370,
+          407
+        ],
+        [
+          413,
+          445
+        ],
+        [
+          457,
+          494
+        ],
+        [
+          501,
+          536
+        ],
+        [
+          544,
+          576
+        ],
+        [
+          589,
+          621
+        ],
+        [
+          633,
+          667
+        ],
+        [
+          676,
+          709
+        ],
+        [
+          720,
+          755
+        ],
+        [
+          761,
+          762
+        ],
+        [
+          763,
+          2117
+        ],
+        [
+          2120,
+          2131
+        ],
+        [
+          2137,
+          2139
+        ],
+        [
+          2145,
+          2151
+        ],
+        [
+          2154,
+          2156
+        ],
+        [
+          2384,
+          2387
+        ],
+        [
+          2501,
+          2509
+        ],
+        [
+          2523,
+          2540
+        ]
+      ]
+    },
+    {
+      "source": 0,
+      "source_page": 166,
+      "expected_crop_edges": [
+        962,
+        1748
+      ],
+      "expected_pass_a_bands": [
+        [
+          294,
+          326
+        ],
+        [
+          337,
+          369
+        ],
+        [
+          381,
+          413
+        ],
+        [
+          425,
+          455
+        ],
+        [
+          468,
+          499
+        ],
+        [
+          512,
+          542
+        ],
+        [
+          556,
+          586
+        ],
+        [
+          598,
+          629
+        ],
+        [
+          641,
+          667
+        ],
+        [
+          668,
+          669
+        ],
+        [
+          685,
+          715
+        ],
+        [
+          728,
+          758
+        ],
+        [
+          771,
+          803
+        ],
+        [
+          815,
+          845
+        ],
+        [
+          858,
+          889
+        ],
+        [
+          901,
+          931
+        ],
+        [
+          944,
+          976
+        ],
+        [
+          988,
+          1017
+        ],
+        [
+          1030,
+          1062
+        ],
+        [
+          1073,
+          1105
+        ],
+        [
+          1118,
+          1148
+        ],
+        [
+          1161,
+          1191
+        ],
+        [
+          1202,
+          1234
+        ],
+        [
+          1246,
+          1278
+        ],
+        [
+          1288,
+          1321
+        ],
+        [
+          1332,
+          1364
+        ],
+        [
+          1375,
+          1406
+        ],
+        [
+          1418,
+          1448
+        ],
+        [
+          1462,
+          1494
+        ],
+        [
+          1506,
+          1537
+        ],
+        [
+          1549,
+          1581
+        ],
+        [
+          1593,
+          1626
+        ],
+        [
+          1636,
+          1669
+        ],
+        [
+          1680,
+          1712
+        ],
+        [
+          1723,
+          1755
+        ],
+        [
+          1766,
+          1800
+        ],
+        [
+          1810,
+          1840
+        ],
+        [
+          1854,
+          1885
+        ],
+        [
+          1897,
+          1928
+        ],
+        [
+          1940,
+          1971
+        ],
+        [
+          1984,
+          2014
+        ],
+        [
+          2027,
+          2057
+        ],
+        [
+          2070,
+          2101
+        ],
+        [
+          2113,
+          2144
+        ],
+        [
+          2156,
+          2187
+        ],
+        [
+          2200,
+          2231
+        ],
+        [
+          2242,
+          2271
+        ],
+        [
+          2286,
+          2315
+        ],
+        [
+          2330,
+          2353
+        ],
+        [
+          2425,
+          2452
+        ],
+        [
+          2464,
+          2491
+        ],
+        [
+          2502,
+          2530
+        ],
+        [
+          2542,
+          2565
+        ],
+        [
+          2589,
+          2619
+        ]
+      ]
+    },
+    {
+      "source": 0,
+      "source_page": 229,
+      "expected_crop_edges": [
+        1036,
+        1827
+      ],
+      "expected_pass_a_bands": [
+        [
+          253,
+          285
+        ],
+        [
+          302,
+          333
+        ],
+        [
+          350,
+          382
+        ],
+        [
+          398,
+          431
+        ],
+        [
+          444,
+          476
+        ],
+        [
+          490,
+          521
+        ],
+        [
+          537,
+          567
+        ],
+        [
+          584,
+          613
+        ],
+        [
+          632,
+          664
+        ],
+        [
+          679,
+          711
+        ],
+        [
+          724,
+          756
+        ],
+        [
+          772,
+          804
+        ],
+        [
+          819,
+          851
+        ],
+        [
+          866,
+          897
+        ],
+        [
+          913,
+          945
+        ],
+        [
+          962,
+          995
+        ],
+        [
+          1010,
+          1042
+        ],
+        [
+          1059,
+          1090
+        ],
+        [
+          1108,
+          1139
+        ],
+        [
+          1158,
+          1190
+        ],
+        [
+          1206,
+          1238
+        ],
+        [
+          1258,
+          1283
+        ],
+        [
+          1311,
+          1343
+        ],
+        [
+          1364,
+          1396
+        ],
+        [
+          1418,
+          1449
+        ],
+        [
+          1472,
+          1505
+        ],
+        [
+          1524,
+          1554
+        ],
+        [
+          1576,
+          1608
+        ],
+        [
+          1627,
+          1658
+        ],
+        [
+          1680,
+          1711
+        ],
+        [
+          1731,
+          1763
+        ],
+        [
+          1783,
+          1814
+        ],
+        [
+          1835,
+          1866
+        ],
+        [
+          1887,
+          1919
+        ],
+        [
+          1939,
+          1971
+        ],
+        [
+          1991,
+          2022
+        ],
+        [
+          2043,
+          2074
+        ],
+        [
+          2095,
+          2127
+        ],
+        [
+          2148,
+          2179
+        ],
+        [
+          2200,
+          2232
+        ],
+        [
+          2252,
+          2285
+        ],
+        [
+          2306,
+          2337
+        ],
+        [
+          2357,
+          2391
+        ],
+        [
+          2409,
+          2442
+        ],
+        [
+          2461,
+          2494
+        ],
+        [
+          2513,
+          2546
+        ],
+        [
+          2566,
+          2599
+        ]
+      ]
+    },
+    {
+      "source": 0,
+      "source_page": 257,
+      "expected_crop_edges": [
+        1073,
+        1866
+      ],
+      "expected_pass_a_bands": [
+        [
+          246,
+          248
+        ],
+        [
+          256,
+          288
+        ],
+        [
+          295,
+          329
+        ],
+        [
+          336,
+          370
+        ],
+        [
+          377,
+          410
+        ],
+        [
+          418,
+          450
+        ],
+        [
+          461,
+          490
+        ],
+        [
+          500,
+          532
+        ],
+        [
+          539,
+          573
+        ],
+        [
+          582,
+          615
+        ],
+        [
+          622,
+          656
+        ],
+        [
+          663,
+          697
+        ],
+        [
+          704,
+          738
+        ],
+        [
+          749,
+          781
+        ],
+        [
+          792,
+          824
+        ],
+        [
+          832,
+          858
+        ],
+        [
+          875,
+          909
+        ],
+        [
+          918,
+          951
+        ],
+        [
+          962,
+          993
+        ],
+        [
+          1006,
+          1037
+        ],
+        [
+          1048,
+          1080
+        ],
+        [
+          1092,
+          1123
+        ],
+        [
+          1135,
+          1168
+        ],
+        [
+          1178,
+          1211
+        ],
+        [
+          1222,
+          1254
+        ],
+        [
+          1265,
+          1296
+        ],
+        [
+          1309,
+          1339
+        ],
+        [
+          1352,
+          1384
+        ],
+        [
+          1385,
+          1388
+        ],
+        [
+          1395,
+          1427
+        ],
+        [
+          1438,
+          1470
+        ],
+        [
+          1477,
+          1509
+        ],
+        [
+          1515,
+          1547
+        ],
+        [
+          1552,
+          1584
+        ],
+        [
+          1596,
+          1627
+        ],
+        [
+          1639,
+          1672
+        ],
+        [
+          1683,
+          1714
+        ],
+        [
+          1726,
+          1757
+        ],
+        [
+          1770,
+          1802
+        ],
+        [
+          1813,
+          1846
+        ],
+        [
+          1857,
+          1889
+        ],
+        [
+          1901,
+          1931
+        ],
+        [
+          1944,
+          1976
+        ],
+        [
+          1988,
+          2020
+        ],
+        [
+          2031,
+          2064
+        ],
+        [
+          2075,
+          2106
+        ],
+        [
+          2118,
+          2150
+        ],
+        [
+          2160,
+          2193
+        ],
+        [
+          2204,
+          2236
+        ],
+        [
+          2247,
+          2280
+        ],
+        [
+          2290,
+          2322
+        ],
+        [
+          2334,
+          2367
+        ],
+        [
+          2376,
+          2410
+        ],
+        [
+          2419,
+          2454
+        ],
+        [
+          2464,
+          2496
+        ],
+        [
+          2507,
+          2540
+        ],
+        [
+          2550,
+          2583
+        ]
+      ]
+    },
+    {
+      "source": 0,
+      "source_page": 276,
+      "expected_crop_edges": [
+        943,
+        1730
+      ],
+      "expected_pass_a_bands": [
+        [
+          290,
+          328
+        ],
+        [
+          339,
+          376
+        ],
+        [
+          390,
+          427
+        ],
+        [
+          439,
+          478
+        ],
+        [
+          489,
+          524
+        ],
+        [
+          539,
+          577
+        ],
+        [
+          589,
+          627
+        ],
+        [
+          640,
+          671
+        ],
+        [
+          688,
+          726
+        ],
+        [
+          737,
+          772
+        ],
+        [
+          787,
+          823
+        ],
+        [
+          836,
+          871
+        ],
+        [
+          885,
+          919
+        ],
+        [
+          932,
+          967
+        ],
+        [
+          981,
+          1006
+        ],
+        [
+          1026,
+          1054
+        ],
+        [
+          1071,
+          1104
+        ],
+        [
+          1116,
+          1148
+        ],
+        [
+          1161,
+          1193
+        ],
+        [
+          1207,
+          1242
+        ],
+        [
+          1254,
+          1288
+        ],
+        [
+          1300,
+          1333
+        ],
+        [
+          1348,
+          1381
+        ],
+        [
+          1393,
+          1425
+        ],
+        [
+          1439,
+          1473
+        ],
+        [
+          1485,
+          1519
+        ],
+        [
+          1531,
+          1563
+        ],
+        [
+          1577,
+          1610
+        ],
+        [
+          1622,
+          1654
+        ],
+        [
+          1669,
+          1701
+        ],
+        [
+          1716,
+          1746
+        ],
+        [
+          1762,
+          1794
+        ],
+        [
+          1805,
+          1837
+        ],
+        [
+          1849,
+          1880
+        ],
+        [
+          1893,
+          1924
+        ],
+        [
+          1936,
+          1968
+        ],
+        [
+          1979,
+          2012
+        ],
+        [
+          2023,
+          2055
+        ],
+        [
+          2067,
+          2098
+        ],
+        [
+          2110,
+          2141
+        ],
+        [
+          2154,
+          2185
+        ],
+        [
+          2197,
+          2229
+        ],
+        [
+          2241,
+          2272
+        ],
+        [
+          2285,
+          2316
+        ],
+        [
+          2329,
+          2359
+        ],
+        [
+          2372,
+          2403
+        ],
+        [
+          2416,
+          2447
+        ],
+        [
+          2459,
+          2490
+        ],
+        [
+          2502,
+          2534
+        ],
+        [
+          2547,
+          2578
+        ],
+        [
+          2591,
+          2622
+        ]
+      ]
+    },
+    {
+      "source": 0,
+      "source_page": 292,
+      "expected_crop_edges": [
+        955,
+        1748
+      ],
+      "expected_pass_a_bands": [
+        [
+          279,
+          312
+        ],
+        [
+          335,
+          368
+        ],
+        [
+          391,
+          423
+        ],
+        [
+          443,
+          476
+        ],
+        [
+          499,
+          531
+        ],
+        [
+          554,
+          588
+        ],
+        [
+          608,
+          640
+        ],
+        [
+          664,
+          695
+        ],
+        [
+          748,
+          754
+        ],
+        [
+          796,
+          840
+        ],
+        [
+          862,
+          904
+        ],
+        [
+          965,
+          996
+        ],
+        [
+          1005,
+          1038
+        ],
+        [
+          1045,
+          1077
+        ],
+        [
+          1089,
+          1120
+        ],
+        [
+          1131,
+          1161
+        ],
+        [
+          1171,
+          1204
+        ],
+        [
+          1212,
+          1244
+        ],
+        [
+          1253,
+          1285
+        ],
+        [
+          1293,
+          1326
+        ],
+        [
+          1333,
+          1366
+        ],
+        [
+          1374,
+          1407
+        ],
+        [
+          1414,
+          1446
+        ],
+        [
+          1457,
+          1489
+        ],
+        [
+          1498,
+          1530
+        ],
+        [
+          1540,
+          1572
+        ],
+        [
+          1581,
+          1612
+        ],
+        [
+          1621,
+          1652
+        ],
+        [
+          1662,
+          1694
+        ],
+        [
+          1702,
+          1734
+        ],
+        [
+          1747,
+          1778
+        ],
+        [
+          1787,
+          1818
+        ],
+        [
+          1830,
+          1863
+        ],
+        [
+          1874,
+          1904
+        ],
+        [
+          1914,
+          1948
+        ],
+        [
+          1958,
+          1990
+        ],
+        [
+          2013,
+          2047
+        ],
+        [
+          2069,
+          2104
+        ],
+        [
+          2125,
+          2159
+        ],
+        [
+          2181,
+          2215
+        ],
+        [
+          2233,
+          2265
+        ],
+        [
+          2289,
+          2318
+        ],
+        [
+          2346,
+          2379
+        ],
+        [
+          2397,
+          2430
+        ],
+        [
+          2455,
+          2486
+        ],
+        [
+          2495,
+          2538
+        ],
+        [
+          2539,
+          2548
+        ],
+        [
+          2563,
+          2602
+        ],
+        [
+          2603,
+          2606
+        ]
+      ]
+    },
+    {
+      "source": 0,
+      "source_page": 297,
+      "expected_crop_edges": [
+        1062,
+        1821
+      ],
+      "expected_pass_a_bands": [
+        [
+          251,
+          283
+        ],
+        [
+          294,
+          326
+        ],
+        [
+          341,
+          371
+        ],
+        [
+          383,
+          414
+        ],
+        [
+          428,
+          459
+        ],
+        [
+          479,
+          510
+        ],
+        [
+          528,
+          560
+        ],
+        [
+          574,
+          608
+        ],
+        [
+          628,
+          659
+        ],
+        [
+          678,
+          709
+        ],
+        [
+          728,
+          759
+        ],
+        [
+          779,
+          810
+        ],
+        [
+          829,
+          860
+        ],
+        [
+          880,
+          911
+        ],
+        [
+          930,
+          961
+        ],
+        [
+          981,
+          1012
+        ],
+        [
+          1030,
+          1062
+        ],
+        [
+          1079,
+          1112
+        ],
+        [
+          1130,
+          1161
+        ],
+        [
+          1181,
+          1212
+        ],
+        [
+          1231,
+          1262
+        ],
+        [
+          1281,
+          1313
+        ],
+        [
+          1331,
+          1362
+        ],
+        [
+          1380,
+          1413
+        ],
+        [
+          1430,
+          1463
+        ],
+        [
+          1479,
+          1513
+        ],
+        [
+          1528,
+          1562
+        ],
+        [
+          1580,
+          1614
+        ],
+        [
+          1628,
+          1664
+        ],
+        [
+          1678,
+          1715
+        ],
+        [
+          1728,
+          1763
+        ],
+        [
+          1778,
+          1815
+        ],
+        [
+          1828,
+          1864
+        ],
+        [
+          1878,
+          1913
+        ],
+        [
+          1921,
+          1960
+        ],
+        [
+          1970,
+          2010
+        ],
+        [
+          2017,
+          2054
+        ],
+        [
+          2059,
+          2060
+        ],
+        [
+          2065,
+          2094
+        ],
+        [
+          2104,
+          2105
+        ],
+        [
+          2109,
+          2142
+        ],
+        [
+          2150,
+          2184
+        ],
+        [
+          2187,
+          2189
+        ],
+        [
+          2193,
+          2229
+        ],
+        [
+          2232,
+          2273
+        ],
+        [
+          2276,
+          2316
+        ],
+        [
+          2320,
+          2360
+        ],
+        [
+          2365,
+          2402
+        ],
+        [
+          2404,
+          2443
+        ],
+        [
+          2453,
+          2489
+        ],
+        [
+          2492,
+          2532
+        ],
+        [
+          2537,
+          2575
+        ]
+      ]
+    },
+    {
+      "source": 0,
+      "source_page": 310,
+      "expected_crop_edges": [
+        931,
+        1724
+      ],
+      "expected_pass_a_bands": [
+        [
+          285,
+          327
+        ],
+        [
+          329,
+          416
+        ],
+        [
+          419,
+          462
+        ],
+        [
+          464,
+          504
+        ],
+        [
+          509,
+          552
+        ],
+        [
+          555,
+          597
+        ],
+        [
+          600,
+          645
+        ],
+        [
+          648,
+          689
+        ],
+        [
+          694,
+          737
+        ],
+        [
+          740,
+          923
+        ],
+        [
+          924,
+          969
+        ],
+        [
+          971,
+          1012
+        ],
+        [
+          1019,
+          1061
+        ],
+        [
+          1066,
+          1154
+        ],
+        [
+          1155,
+          1201
+        ],
+        [
+          1205,
+          1251
+        ],
+        [
+          1252,
+          1296
+        ],
+        [
+          1299,
+          1335
+        ],
+        [
+          1342,
+          1381
+        ],
+        [
+          1391,
+          1434
+        ],
+        [
+          1440,
+          1472
+        ],
+        [
+          1489,
+          1527
+        ],
+        [
+          1542,
+          1582
+        ],
+        [
+          1596,
+          1635
+        ],
+        [
+          1646,
+          1685
+        ],
+        [
+          1699,
+          1740
+        ],
+        [
+          1750,
+          1791
+        ],
+        [
+          1803,
+          1841
+        ],
+        [
+          1855,
+          1894
+        ],
+        [
+          1908,
+          1939
+        ],
+        [
+          1960,
+          1995
+        ],
+        [
+          2011,
+          2046
+        ],
+        [
+          2064,
+          2097
+        ],
+        [
+          2117,
+          2152
+        ],
+        [
+          2167,
+          2201
+        ],
+        [
+          2219,
+          2253
+        ],
+        [
+          2270,
+          2305
+        ],
+        [
+          2321,
+          2357
+        ],
+        [
+          2373,
+          2408
+        ],
+        [
+          2423,
+          2459
+        ],
+        [
+          2475,
+          2507
+        ],
+        [
+          2528,
+          2562
+        ],
+        [
+          2570,
+          2604
+        ]
+      ]
+    },
+    {
+      "source": 0,
+      "source_page": 329,
+      "expected_crop_edges": [
+        1066,
+        1817
+      ],
+      "expected_pass_a_bands": [
+        [
+          242,
+          276
+        ],
+        [
+          286,
+          329
+        ],
+        [
+          331,
+          359
+        ],
+        [
+          374,
+          408
+        ],
+        [
+          418,
+          450
+        ],
+        [
+          462,
+          494
+        ],
+        [
+          506,
+          536
+        ],
+        [
+          548,
+          582
+        ],
+        [
+          592,
+          616
+        ],
+        [
+          639,
+          671
+        ],
+        [
+          683,
+          715
+        ],
+        [
+          730,
+          762
+        ],
+        [
+          776,
+          809
+        ],
+        [
+          821,
+          854
+        ],
+        [
+          868,
+          902
+        ],
+        [
+          915,
+          947
+        ],
+        [
+          961,
+          992
+        ],
+        [
+          1008,
+          1039
+        ],
+        [
+          1052,
+          1084
+        ],
+        [
+          1099,
+          1130
+        ],
+        [
+          1147,
+          1179
+        ],
+        [
+          1195,
+          1228
+        ],
+        [
+          1240,
+          1271
+        ],
+        [
+          1286,
+          1319
+        ],
+        [
+          1332,
+          1363
+        ],
+        [
+          1377,
+          1410
+        ],
+        [
+          1423,
+          1455
+        ],
+        [
+          1467,
+          1501
+        ],
+        [
+          1514,
+          1547
+        ],
+        [
+          1561,
+          1593
+        ],
+        [
+          1606,
+          1640
+        ],
+        [
+          1656,
+          1688
+        ],
+        [
+          1697,
+          1734
+        ],
+        [
+          1741,
+          1779
+        ],
+        [
+          1793,
+          1824
+        ],
+        [
+          1834,
+          1870
+        ],
+        [
+          1882,
+          1912
+        ],
+        [
+          1930,
+          1954
+        ],
+        [
+          1962,
+          1999
+        ],
+        [
+          2009,
+          2049
+        ],
+        [
+          2059,
+          2100
+        ],
+        [
+          2108,
+          2147
+        ],
+        [
+          2151,
+          2154
+        ],
+        [
+          2156,
+          2194
+        ],
+        [
+          2198,
+          2202
+        ],
+        [
+          2204,
+          2240
+        ],
+        [
+          2242,
+          2246
+        ],
+        [
+          2247,
+          2287
+        ],
+        [
+          2291,
+          2333
+        ],
+        [
+          2340,
+          2373
+        ],
+        [
+          2384,
+          2385
+        ],
+        [
+          2387,
+          2428
+        ],
+        [
+          2432,
+          2474
+        ],
+        [
+          2475,
+          2568
+        ]
       ]
     }
   ]
