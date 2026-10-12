@@ -1066,7 +1066,6 @@
       "pad_x": 0,
       "pad_y": 0
     },
-    "capture_code_revision": "69109d2",
     "baseline_build_code_revision": null,
     "baseline_code_identity_note": "The preserved 2026-10-09 build predates the capture revision; its exact source commit was not recorded with the output.",
     "build_options": "full eight-volume offline facsimile build with both source PDFs and facsimile_units.json",
@@ -1075,7 +1074,12 @@
     "baseline_origin": "2026-10-09 build_facsimile output preserved before branch implementation",
     "manifest_command": "python tools/collect_backlog_baseline.py",
     "reader_crop_command": "python tools/render_backlog_baseline_pages.py",
-    "body_image_command": "python tools/copy_backlog_baseline_body_images.py"
+    "body_image_command": "python tools/copy_backlog_baseline_body_images.py",
+    "baseline_copy_checkout_revision": "8e1e731",
+    "trace_code_revision": "45beb2a80de550e4d6fb905c2d8be92e312b14fc",
+    "source_renderer": "pdftoppm 25.12.0 (Poppler), 300 DPI grayscale cache",
+    "baseline_pdf_inspector": "PyMuPDF 1.27.2",
+    "latex_compiler": "LuaHBTeX 1.24.0 (MiKTeX 25.12)"
   },
   "repairs": [
     {
@@ -1098,8 +1102,104 @@
       "baseline_reader": {
         "tomus": 1,
         "physical_page": 23,
-        "body_canvas_index": 7
-      }
+        "body_canvas_index": 7,
+        "folio": 7,
+        "canvas_boundary": [
+          7,
+          8106,
+          8160
+        ]
+      },
+      "source_page": 17,
+      "raster": [
+        2006,
+        2975
+      ],
+      "source_evidence": [
+        {
+          "source_page": 17,
+          "raster": [
+            2006,
+            2975
+          ],
+          "raw_crop_edges": [
+            1043,
+            1891
+          ],
+          "crop_edges": [
+            1043,
+            1891
+          ],
+          "raw_band_count": 2,
+          "raw_bands_near_defect": [
+            [
+              203,
+              247
+            ],
+            [
+              274,
+              2651
+            ]
+          ],
+          "pass_a_band_count": 1,
+          "pass_a_bands_near_defect": [
+            [
+              274,
+              2651
+            ]
+          ],
+          "retained_band_count": 1,
+          "retained_bands_near_defect": [
+            [
+              274,
+              2651
+            ]
+          ],
+          "retained_index": 3,
+          "strip_count": 1,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              274,
+              2651
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              7948,
+              10806
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/theseus/trace.json",
+          "trace_sha256": "397f229de09c9b32c763b497a99dedcc91d61d8bb56be7141e4b0346704da24c",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "adjacent_prose_locator": "physical page 23 single line; sentence resumes on page 24",
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 17,
+          "region": [
+            1053,
+            404,
+            1881,
+            439
+          ],
+          "role": "isolated Latin row"
+        },
+        {
+          "source": 0,
+          "source_page": 17,
+          "region": [
+            1053,
+            449,
+            1881,
+            487
+          ],
+          "role": "following Latin row"
+        }
+      ]
     },
     {
       "backlog_id": "I2",
@@ -1129,8 +1229,386 @@
       "baseline_reader": {
         "tomus": 1,
         "physical_page": 113,
-        "body_canvas_index": 5
-      }
+        "body_canvas_index": 5,
+        "folio": 97,
+        "canvas_boundary": [
+          5,
+          5242,
+          6021
+        ]
+      },
+      "source_page": 59,
+      "raster": [
+        2002,
+        3005
+      ],
+      "source_evidence": [
+        {
+          "source_page": 58,
+          "raster": [
+            1997,
+            2974
+          ],
+          "raw_crop_edges": [
+            951,
+            1736
+          ],
+          "crop_edges": [
+            951,
+            1736
+          ],
+          "raw_band_count": 51,
+          "raw_bands_near_defect": [
+            [
+              2165,
+              2199
+            ],
+            [
+              2210,
+              2243
+            ],
+            [
+              2252,
+              2286
+            ],
+            [
+              2297,
+              2330
+            ],
+            [
+              2341,
+              2374
+            ],
+            [
+              2475,
+              2507
+            ],
+            [
+              2520,
+              2551
+            ],
+            [
+              2563,
+              2595
+            ]
+          ],
+          "pass_a_band_count": 49,
+          "pass_a_bands_near_defect": [
+            [
+              2165,
+              2199
+            ],
+            [
+              2210,
+              2243
+            ],
+            [
+              2252,
+              2286
+            ],
+            [
+              2297,
+              2330
+            ],
+            [
+              2341,
+              2374
+            ],
+            [
+              2475,
+              2507
+            ],
+            [
+              2520,
+              2551
+            ],
+            [
+              2563,
+              2595
+            ]
+          ],
+          "retained_band_count": 49,
+          "retained_bands_near_defect": [
+            [
+              2165,
+              2199
+            ],
+            [
+              2210,
+              2243
+            ],
+            [
+              2252,
+              2286
+            ],
+            [
+              2297,
+              2330
+            ],
+            [
+              2341,
+              2374
+            ],
+            [
+              2475,
+              2507
+            ],
+            [
+              2520,
+              2551
+            ],
+            [
+              2563,
+              2595
+            ]
+          ],
+          "retained_index": 2,
+          "strip_count": 49,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              2247,
+              2291
+            ],
+            [
+              2291,
+              2335
+            ],
+            [
+              2335,
+              2424
+            ],
+            [
+              2424,
+              2513
+            ],
+            [
+              2513,
+              2557
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              5347,
+              5400
+            ],
+            [
+              5400,
+              5453
+            ],
+            [
+              5453,
+              5560
+            ],
+            [
+              5560,
+              5667
+            ],
+            [
+              5667,
+              5720
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/comparatio_thesei_et_romuli/trace.json",
+          "trace_sha256": "fcd5ddf6807260c98033e136dd17e57316762b10b6f539fab51cd6e1e7151246",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 59,
+          "raster": [
+            2002,
+            3005
+          ],
+          "raw_crop_edges": [
+            1018,
+            1853
+          ],
+          "crop_edges": [
+            1018,
+            1853
+          ],
+          "raw_band_count": 15,
+          "raw_bands_near_defect": [
+            [
+              216,
+              252
+            ],
+            [
+              282,
+              318
+            ],
+            [
+              326,
+              362
+            ],
+            [
+              370,
+              407
+            ],
+            [
+              411,
+              412
+            ],
+            [
+              413,
+              2117
+            ],
+            [
+              2120,
+              2131
+            ],
+            [
+              2137,
+              2139
+            ],
+            [
+              2145,
+              2151
+            ],
+            [
+              2154,
+              2156
+            ]
+          ],
+          "pass_a_band_count": 12,
+          "pass_a_bands_near_defect": [
+            [
+              282,
+              318
+            ],
+            [
+              326,
+              362
+            ],
+            [
+              370,
+              407
+            ],
+            [
+              411,
+              412
+            ],
+            [
+              413,
+              2117
+            ],
+            [
+              2120,
+              2131
+            ],
+            [
+              2137,
+              2139
+            ],
+            [
+              2145,
+              2151
+            ],
+            [
+              2154,
+              2156
+            ]
+          ],
+          "retained_band_count": 11,
+          "retained_bands_near_defect": [
+            [
+              282,
+              318
+            ],
+            [
+              326,
+              362
+            ],
+            [
+              370,
+              407
+            ],
+            [
+              411,
+              412
+            ],
+            [
+              413,
+              2117
+            ],
+            [
+              2120,
+              2131
+            ],
+            [
+              2137,
+              2139
+            ],
+            [
+              2145,
+              2151
+            ],
+            [
+              2154,
+              2156
+            ]
+          ],
+          "retained_index": 3,
+          "strip_count": 4,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              322,
+              366
+            ],
+            [
+              366,
+              409
+            ],
+            [
+              412,
+              2118
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              5814,
+              5867
+            ],
+            [
+              5867,
+              5919
+            ],
+            [
+              5919,
+              7970
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/comparatio_thesei_et_romuli/trace.json",
+          "trace_sha256": "fcd5ddf6807260c98033e136dd17e57316762b10b6f539fab51cd6e1e7151246",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "adjacent_prose_locator": "continuous comparison prose around physical page 113 divider",
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 59,
+          "region": [
+            1028,
+            455,
+            1843,
+            490
+          ],
+          "role": "Latin before divider"
+        },
+        {
+          "source": 0,
+          "source_page": 59,
+          "region": [
+            1028,
+            499,
+            1843,
+            532
+          ],
+          "role": "Latin after divider"
+        }
+      ]
     },
     {
       "backlog_id": "I3",
@@ -1152,8 +1630,141 @@
       "baseline_reader": {
         "tomus": 1,
         "physical_page": 212,
-        "body_canvas_index": 6
-      }
+        "body_canvas_index": 6,
+        "folio": 196,
+        "canvas_boundary": [
+          6,
+          6720,
+          8111
+        ]
+      },
+      "source_page": 105,
+      "raster": [
+        2004,
+        3033
+      ],
+      "source_evidence": [
+        {
+          "source_page": 105,
+          "raster": [
+            2004,
+            3033
+          ],
+          "raw_crop_edges": [
+            1051,
+            1876
+          ],
+          "crop_edges": [
+            1051,
+            1876
+          ],
+          "raw_band_count": 29,
+          "raw_bands_near_defect": [
+            [
+              1593,
+              1688
+            ],
+            [
+              1694,
+              1744
+            ],
+            [
+              1758,
+              2188
+            ],
+            [
+              2189,
+              2613
+            ]
+          ],
+          "pass_a_band_count": 27,
+          "pass_a_bands_near_defect": [
+            [
+              1593,
+              1688
+            ],
+            [
+              1694,
+              1744
+            ],
+            [
+              1758,
+              2188
+            ],
+            [
+              2189,
+              2613
+            ]
+          ],
+          "retained_band_count": 27,
+          "retained_bands_near_defect": [
+            [
+              1593,
+              1688
+            ],
+            [
+              1694,
+              1744
+            ],
+            [
+              1758,
+              2188
+            ],
+            [
+              2189,
+              2613
+            ]
+          ],
+          "retained_index": 3,
+          "strip_count": 26,
+          "strip_selection": "reviewed glyph row and neighboring strips",
+          "strip_cut_intervals_near_defect": [
+            [
+              1691,
+              1751
+            ],
+            [
+              1751,
+              2188
+            ],
+            [
+              2188,
+              2613
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              7492,
+              7564
+            ],
+            [
+              7564,
+              8089
+            ],
+            [
+              8089,
+              8600
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/comparatio_lycurgi_et_numae/trace.json",
+          "trace_sha256": "37ed23b739597fc83eae4ccd47cb4631e341c8f5d0d2c75038a64883accd4eac",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 105,
+          "region": [
+            1083,
+            2189,
+            1875,
+            2235
+          ],
+          "role": "reported complete Latin line"
+        }
+      ],
+      "adjacent_prose_locator": "ita potissimum et corpus ... et mores castos incor-"
     },
     {
       "backlog_id": "I4",
@@ -1175,8 +1786,185 @@
       "baseline_reader": {
         "tomus": 1,
         "physical_page": 340,
-        "body_canvas_index": 40
-      }
+        "body_canvas_index": 40,
+        "folio": 324,
+        "canvas_boundary": [
+          40,
+          53218,
+          54607
+        ]
+      },
+      "source_page": 166,
+      "raster": [
+        1988,
+        2993
+      ],
+      "source_evidence": [
+        {
+          "source_page": 166,
+          "raster": [
+            1988,
+            2993
+          ],
+          "raw_crop_edges": [
+            962,
+            1748
+          ],
+          "crop_edges": [
+            962,
+            1748
+          ],
+          "raw_band_count": 56,
+          "raw_bands_near_defect": [
+            [
+              225,
+              257
+            ],
+            [
+              273,
+              274
+            ],
+            [
+              294,
+              326
+            ],
+            [
+              337,
+              369
+            ],
+            [
+              381,
+              413
+            ],
+            [
+              425,
+              455
+            ],
+            [
+              468,
+              499
+            ]
+          ],
+          "pass_a_band_count": 56,
+          "pass_a_bands_near_defect": [
+            [
+              225,
+              257
+            ],
+            [
+              273,
+              274
+            ],
+            [
+              294,
+              326
+            ],
+            [
+              337,
+              369
+            ],
+            [
+              381,
+              413
+            ],
+            [
+              425,
+              455
+            ],
+            [
+              468,
+              499
+            ]
+          ],
+          "retained_band_count": 56,
+          "retained_bands_near_defect": [
+            [
+              225,
+              257
+            ],
+            [
+              273,
+              274
+            ],
+            [
+              294,
+              326
+            ],
+            [
+              337,
+              369
+            ],
+            [
+              381,
+              413
+            ],
+            [
+              425,
+              455
+            ],
+            [
+              468,
+              499
+            ]
+          ],
+          "retained_index": 20,
+          "strip_count": 53,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              225,
+              265
+            ],
+            [
+              284,
+              331
+            ],
+            [
+              331,
+              375
+            ],
+            [
+              375,
+              419
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              54396,
+              54444
+            ],
+            [
+              54444,
+              54501
+            ],
+            [
+              54501,
+              54554
+            ],
+            [
+              54554,
+              54607
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/themistocles/trace.json",
+          "trace_sha256": "71a0ea77d1997f9e14d369abf8de8922733e3182cf24547a1ce26c283a65a456",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "adjacent_prose_locator": "detached source running head OCLES. 153",
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 166,
+          "region": [
+            972,
+            294,
+            1738,
+            322
+          ],
+          "role": "first body Latin row beneath source header"
+        }
+      ]
     },
     {
       "backlog_id": "II1",
@@ -1198,8 +1986,153 @@
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 20,
-        "body_canvas_index": 12
-      }
+        "body_canvas_index": 12,
+        "folio": 12,
+        "canvas_boundary": [
+          12,
+          14870,
+          16260
+        ]
+      },
+      "source_page": 200,
+      "raster": [
+        1970,
+        2986
+      ],
+      "source_evidence": [
+        {
+          "source_page": 200,
+          "raster": [
+            1970,
+            2986
+          ],
+          "raw_crop_edges": [
+            924,
+            1717
+          ],
+          "crop_edges": [
+            924,
+            1717
+          ],
+          "raw_band_count": 52,
+          "raw_bands_near_defect": [
+            [
+              2384,
+              2416
+            ],
+            [
+              2425,
+              2457
+            ],
+            [
+              2466,
+              2498
+            ],
+            [
+              2505,
+              2539
+            ],
+            [
+              2545,
+              2620
+            ]
+          ],
+          "pass_a_band_count": 51,
+          "pass_a_bands_near_defect": [
+            [
+              2384,
+              2416
+            ],
+            [
+              2425,
+              2457
+            ],
+            [
+              2466,
+              2498
+            ],
+            [
+              2505,
+              2539
+            ],
+            [
+              2545,
+              2620
+            ]
+          ],
+          "retained_band_count": 51,
+          "retained_bands_near_defect": [
+            [
+              2384,
+              2416
+            ],
+            [
+              2425,
+              2457
+            ],
+            [
+              2466,
+              2498
+            ],
+            [
+              2505,
+              2539
+            ],
+            [
+              2545,
+              2620
+            ]
+          ],
+          "retained_index": 5,
+          "strip_count": 51,
+          "strip_selection": "reviewed glyph row and neighboring strips",
+          "strip_cut_intervals_near_defect": [
+            [
+              2461,
+              2501
+            ],
+            [
+              2501,
+              2542
+            ],
+            [
+              2542,
+              2620
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              16140,
+              16188
+            ],
+            [
+              16188,
+              16237
+            ],
+            [
+              16237,
+              16331
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/pericles/trace.json",
+          "trace_sha256": "a35a2bb218bc66a670b16a95db21b66d8a3797ceb4d5d27e2aadef4a0ed40e07",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 200,
+          "region": [
+            928,
+            2545,
+            1716,
+            2578
+          ],
+          "role": "reported complete Latin line"
+        }
+      ],
+      "adjacent_prose_locator": "moniorum fautor ... urbe"
     },
     {
       "backlog_id": "II2",
@@ -1229,8 +2162,434 @@
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 81,
-        "body_canvas_index": 19
-      }
+        "body_canvas_index": 19,
+        "folio": 73,
+        "canvas_boundary": [
+          19,
+          24503,
+          25889
+        ]
+      },
+      "source_page": 229,
+      "raster": [
+        1947,
+        2990
+      ],
+      "source_evidence": [
+        {
+          "source_page": 229,
+          "raster": [
+            1947,
+            2990
+          ],
+          "raw_crop_edges": [
+            1036,
+            1947
+          ],
+          "crop_edges": [
+            1036,
+            1947
+          ],
+          "raw_band_count": 51,
+          "raw_bands_near_defect": [
+            [
+              1783,
+              1815
+            ],
+            [
+              1835,
+              1867
+            ],
+            [
+              1887,
+              1919
+            ],
+            [
+              1939,
+              1971
+            ],
+            [
+              1981,
+              1985
+            ],
+            [
+              1988,
+              2187
+            ],
+            [
+              2190,
+              2304
+            ],
+            [
+              2306,
+              2337
+            ],
+            [
+              2339,
+              2342
+            ],
+            [
+              2357,
+              2391
+            ],
+            [
+              2409,
+              2442
+            ]
+          ],
+          "pass_a_band_count": 47,
+          "pass_a_bands_near_defect": [
+            [
+              1783,
+              1815
+            ],
+            [
+              1835,
+              1867
+            ],
+            [
+              1887,
+              1919
+            ],
+            [
+              1939,
+              1971
+            ],
+            [
+              1981,
+              1985
+            ],
+            [
+              1988,
+              2187
+            ],
+            [
+              2190,
+              2304
+            ],
+            [
+              2306,
+              2337
+            ],
+            [
+              2339,
+              2342
+            ],
+            [
+              2357,
+              2391
+            ],
+            [
+              2409,
+              2442
+            ]
+          ],
+          "retained_band_count": 47,
+          "retained_bands_near_defect": [
+            [
+              1783,
+              1815
+            ],
+            [
+              1835,
+              1867
+            ],
+            [
+              1887,
+              1919
+            ],
+            [
+              1939,
+              1971
+            ],
+            [
+              1981,
+              1985
+            ],
+            [
+              1988,
+              2187
+            ],
+            [
+              2190,
+              2304
+            ],
+            [
+              2306,
+              2337
+            ],
+            [
+              2339,
+              2342
+            ],
+            [
+              2357,
+              2391
+            ],
+            [
+              2409,
+              2442
+            ]
+          ],
+          "retained_index": 8,
+          "strip_count": 38,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              1877,
+              1929
+            ],
+            [
+              1929,
+              1976
+            ],
+            [
+              1986,
+              2188
+            ],
+            [
+              2188,
+              2305
+            ],
+            [
+              2305,
+              2338
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              24206,
+              24269
+            ],
+            [
+              24269,
+              24326
+            ],
+            [
+              24326,
+              24569
+            ],
+            [
+              24569,
+              24710
+            ],
+            [
+              24710,
+              24750
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/fabius_maximus/trace.json",
+          "trace_sha256": "72f60a9a71b9ba8051d1a1f2bb2a10bdc22ba2bdf54b45b5821d6b8caec28649",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 230,
+          "raster": [
+            1968,
+            2985
+          ],
+          "raw_crop_edges": [
+            918,
+            1712
+          ],
+          "crop_edges": [
+            918,
+            1712
+          ],
+          "raw_band_count": 49,
+          "raw_bands_near_defect": [
+            [
+              353,
+              385
+            ],
+            [
+              402,
+              435
+            ],
+            [
+              454,
+              485
+            ],
+            [
+              503,
+              535
+            ],
+            [
+              554,
+              587
+            ],
+            [
+              608,
+              638
+            ],
+            [
+              660,
+              693
+            ],
+            [
+              711,
+              744
+            ],
+            [
+              762,
+              794
+            ]
+          ],
+          "pass_a_band_count": 48,
+          "pass_a_bands_near_defect": [
+            [
+              353,
+              385
+            ],
+            [
+              402,
+              435
+            ],
+            [
+              454,
+              485
+            ],
+            [
+              503,
+              535
+            ],
+            [
+              554,
+              587
+            ],
+            [
+              608,
+              638
+            ],
+            [
+              660,
+              693
+            ],
+            [
+              711,
+              744
+            ],
+            [
+              762,
+              794
+            ]
+          ],
+          "retained_band_count": 47,
+          "retained_bands_near_defect": [
+            [
+              353,
+              385
+            ],
+            [
+              402,
+              435
+            ],
+            [
+              454,
+              485
+            ],
+            [
+              503,
+              535
+            ],
+            [
+              554,
+              587
+            ],
+            [
+              608,
+              638
+            ],
+            [
+              660,
+              693
+            ],
+            [
+              711,
+              744
+            ],
+            [
+              762,
+              794
+            ]
+          ],
+          "retained_index": 9,
+          "strip_count": 47,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              444,
+              494
+            ],
+            [
+              494,
+              544
+            ],
+            [
+              544,
+              597
+            ],
+            [
+              597,
+              649
+            ],
+            [
+              649,
+              702
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              25457,
+              25517
+            ],
+            [
+              25517,
+              25577
+            ],
+            [
+              25577,
+              25641
+            ],
+            [
+              25641,
+              25704
+            ],
+            [
+              25704,
+              25768
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/fabius_maximus/trace.json",
+          "trace_sha256": "72f60a9a71b9ba8051d1a1f2bb2a10bdc22ba2bdf54b45b5821d6b8caec28649",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "adjacent_prose_locator": "sum- / mitatibus",
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 229,
+          "region": [
+            1046,
+            2092,
+            1937,
+            2129
+          ],
+          "role": "Latin before copied gap"
+        },
+        {
+          "source": 0,
+          "source_page": 229,
+          "region": [
+            1046,
+            2151,
+            1937,
+            2180
+          ],
+          "role": "Latin after copied gap"
+        }
+      ]
     },
     {
       "backlog_id": "II3",
@@ -1260,8 +2619,362 @@
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 139,
-        "body_canvas_index": 33
-      }
+        "body_canvas_index": 33,
+        "folio": 131,
+        "canvas_boundary": [
+          33,
+          43341,
+          44681
+        ]
+      },
+      "source_page": 257,
+      "raster": [
+        2010,
+        2976
+      ],
+      "source_evidence": [
+        {
+          "source_page": 257,
+          "raster": [
+            2010,
+            2976
+          ],
+          "raw_crop_edges": [
+            1073,
+            2010
+          ],
+          "crop_edges": [
+            1073,
+            2010
+          ],
+          "raw_band_count": 54,
+          "raw_bands_near_defect": [
+            [
+              2075,
+              2107
+            ],
+            [
+              2114,
+              2116
+            ],
+            [
+              2118,
+              2150
+            ],
+            [
+              2160,
+              2322
+            ],
+            [
+              2331,
+              2454
+            ],
+            [
+              2459,
+              2759
+            ],
+            [
+              2811,
+              2939
+            ]
+          ],
+          "pass_a_band_count": 51,
+          "pass_a_bands_near_defect": [
+            [
+              2075,
+              2107
+            ],
+            [
+              2114,
+              2116
+            ],
+            [
+              2118,
+              2150
+            ],
+            [
+              2160,
+              2322
+            ],
+            [
+              2331,
+              2454
+            ],
+            [
+              2459,
+              2759
+            ]
+          ],
+          "retained_band_count": 51,
+          "retained_bands_near_defect": [
+            [
+              2075,
+              2107
+            ],
+            [
+              2114,
+              2116
+            ],
+            [
+              2118,
+              2150
+            ],
+            [
+              2160,
+              2322
+            ],
+            [
+              2331,
+              2454
+            ],
+            [
+              2459,
+              2759
+            ]
+          ],
+          "retained_index": 15,
+          "strip_count": 48,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              2155,
+              2326
+            ],
+            [
+              2326,
+              2456
+            ],
+            [
+              2456,
+              2759
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              42921,
+              43127
+            ],
+            [
+              43127,
+              43283
+            ],
+            [
+              43283,
+              43647
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/alcibiades/trace.json",
+          "trace_sha256": "e3464c7d66a319190d951b7222bacd2c035d98f847e48e095d6e37766c7effd4",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 258,
+          "raster": [
+            1990,
+            2992
+          ],
+          "raw_crop_edges": [
+            924,
+            1716
+          ],
+          "crop_edges": [
+            924,
+            1716
+          ],
+          "raw_band_count": 53,
+          "raw_bands_near_defect": [
+            [
+              323,
+              363
+            ],
+            [
+              370,
+              404
+            ],
+            [
+              415,
+              450
+            ],
+            [
+              459,
+              494
+            ],
+            [
+              503,
+              543
+            ],
+            [
+              550,
+              590
+            ],
+            [
+              595,
+              629
+            ],
+            [
+              641,
+              675
+            ],
+            [
+              687,
+              723
+            ]
+          ],
+          "pass_a_band_count": 51,
+          "pass_a_bands_near_defect": [
+            [
+              323,
+              363
+            ],
+            [
+              370,
+              404
+            ],
+            [
+              415,
+              450
+            ],
+            [
+              459,
+              494
+            ],
+            [
+              503,
+              543
+            ],
+            [
+              550,
+              590
+            ],
+            [
+              595,
+              629
+            ],
+            [
+              641,
+              675
+            ],
+            [
+              687,
+              723
+            ]
+          ],
+          "retained_band_count": 50,
+          "retained_bands_near_defect": [
+            [
+              323,
+              363
+            ],
+            [
+              370,
+              404
+            ],
+            [
+              415,
+              450
+            ],
+            [
+              459,
+              494
+            ],
+            [
+              503,
+              543
+            ],
+            [
+              550,
+              590
+            ],
+            [
+              595,
+              629
+            ],
+            [
+              641,
+              675
+            ],
+            [
+              687,
+              723
+            ]
+          ],
+          "retained_index": 16,
+          "strip_count": 50,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              409,
+              454
+            ],
+            [
+              454,
+              498
+            ],
+            [
+              498,
+              546
+            ],
+            [
+              546,
+              592
+            ],
+            [
+              592,
+              635
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              43804,
+              43858
+            ],
+            [
+              43858,
+              43911
+            ],
+            [
+              43911,
+              43969
+            ],
+            [
+              43969,
+              44024
+            ],
+            [
+              44024,
+              44076
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/alcibiades/trace.json",
+          "trace_sha256": "e3464c7d66a319190d951b7222bacd2c035d98f847e48e095d6e37766c7effd4",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "adjacent_prose_locator": "gra- / tiam",
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 257,
+          "region": [
+            1083,
+            2462,
+            2000,
+            2494
+          ],
+          "role": "Latin before copied gap"
+        },
+        {
+          "source": 0,
+          "source_page": 257,
+          "region": [
+            1083,
+            2505,
+            2000,
+            2537
+          ],
+          "role": "Latin after copied gap"
+        }
+      ]
     },
     {
       "backlog_id": "II4",
@@ -1283,8 +2996,224 @@
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 177,
-        "body_canvas_index": 17
-      }
+        "body_canvas_index": 17,
+        "folio": 169,
+        "canvas_boundary": [
+          17,
+          21628,
+          22169
+        ]
+      },
+      "source_page": 276,
+      "raster": [
+        1986,
+        2986
+      ],
+      "source_evidence": [
+        {
+          "source_page": 276,
+          "raster": [
+            1986,
+            2986
+          ],
+          "raw_crop_edges": [
+            944,
+            1986
+          ],
+          "crop_edges": [
+            944,
+            1986
+          ],
+          "raw_band_count": 31,
+          "raw_bands_near_defect": [
+            [
+              1300,
+              1333
+            ],
+            [
+              1348,
+              1381
+            ],
+            [
+              1393,
+              1425
+            ],
+            [
+              1439,
+              1474
+            ],
+            [
+              1485,
+              2624
+            ],
+            [
+              2628,
+              2631
+            ],
+            [
+              2632,
+              2640
+            ],
+            [
+              2661,
+              2663
+            ],
+            [
+              2681,
+              2682
+            ],
+            [
+              2683,
+              2709
+            ]
+          ],
+          "pass_a_band_count": 30,
+          "pass_a_bands_near_defect": [
+            [
+              1300,
+              1333
+            ],
+            [
+              1348,
+              1381
+            ],
+            [
+              1393,
+              1425
+            ],
+            [
+              1439,
+              1474
+            ],
+            [
+              1485,
+              2624
+            ],
+            [
+              2628,
+              2631
+            ],
+            [
+              2632,
+              2640
+            ],
+            [
+              2661,
+              2663
+            ],
+            [
+              2681,
+              2682
+            ],
+            [
+              2683,
+              2709
+            ]
+          ],
+          "retained_band_count": 30,
+          "retained_bands_near_defect": [
+            [
+              1300,
+              1333
+            ],
+            [
+              1348,
+              1381
+            ],
+            [
+              1393,
+              1425
+            ],
+            [
+              1439,
+              1474
+            ],
+            [
+              1485,
+              2624
+            ],
+            [
+              2628,
+              2631
+            ],
+            [
+              2632,
+              2640
+            ],
+            [
+              2661,
+              2663
+            ],
+            [
+              2681,
+              2682
+            ],
+            [
+              2683,
+              2709
+            ]
+          ],
+          "retained_index": 8,
+          "strip_count": 24,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              1387,
+              1432
+            ],
+            [
+              1432,
+              1479
+            ],
+            [
+              1479,
+              2626
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              22010,
+              22064
+            ],
+            [
+              22064,
+              22121
+            ],
+            [
+              22121,
+              23500
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/marcius_coriolanus/trace.json",
+          "trace_sha256": "0178c70e94c35a7911bb73da3755a4744ba99594ac5a3434625750985538679a",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "adjacent_prose_locator": "pa- / tricios at folios 169-170",
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 276,
+          "region": [
+            954,
+            1485,
+            1976,
+            1515
+          ],
+          "role": "Latin before deferred tall strip"
+        },
+        {
+          "source": 0,
+          "source_page": 276,
+          "region": [
+            954,
+            1530,
+            1976,
+            1560
+          ],
+          "role": "following Latin row"
+        }
+      ]
     },
     {
       "backlog_id": "II5",
@@ -1306,8 +3235,252 @@
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 209,
-        "body_canvas_index": 1
-      }
+        "body_canvas_index": 1,
+        "folio": null,
+        "canvas_boundary": [
+          1,
+          0,
+          578
+        ]
+      },
+      "source_page": 292,
+      "raster": [
+        1994,
+        2994
+      ],
+      "source_evidence": [
+        {
+          "source_page": 292,
+          "raster": [
+            1994,
+            2994
+          ],
+          "raw_crop_edges": [
+            959,
+            1994
+          ],
+          "crop_edges": [
+            959,
+            1994
+          ],
+          "raw_band_count": 40,
+          "raw_bands_near_defect": [
+            [
+              1212,
+              1244
+            ],
+            [
+              1253,
+              1286
+            ],
+            [
+              1293,
+              1326
+            ],
+            [
+              1333,
+              1412
+            ],
+            [
+              1413,
+              2161
+            ],
+            [
+              2162,
+              2227
+            ],
+            [
+              2232,
+              2265
+            ],
+            [
+              2281,
+              2288
+            ],
+            [
+              2289,
+              2318
+            ],
+            [
+              2320,
+              2325
+            ],
+            [
+              2346,
+              2379
+            ]
+          ],
+          "pass_a_band_count": 38,
+          "pass_a_bands_near_defect": [
+            [
+              1212,
+              1244
+            ],
+            [
+              1253,
+              1286
+            ],
+            [
+              1293,
+              1326
+            ],
+            [
+              1333,
+              1412
+            ],
+            [
+              1413,
+              2161
+            ],
+            [
+              2162,
+              2227
+            ],
+            [
+              2232,
+              2265
+            ],
+            [
+              2281,
+              2288
+            ],
+            [
+              2289,
+              2318
+            ],
+            [
+              2320,
+              2325
+            ],
+            [
+              2346,
+              2379
+            ]
+          ],
+          "retained_band_count": 27,
+          "retained_bands_near_defect": [
+            [
+              1212,
+              1244
+            ],
+            [
+              1253,
+              1286
+            ],
+            [
+              1293,
+              1326
+            ],
+            [
+              1333,
+              1412
+            ],
+            [
+              1413,
+              2161
+            ],
+            [
+              2162,
+              2227
+            ],
+            [
+              2232,
+              2265
+            ],
+            [
+              2281,
+              2288
+            ],
+            [
+              2289,
+              2318
+            ],
+            [
+              2320,
+              2325
+            ],
+            [
+              2346,
+              2379
+            ]
+          ],
+          "retained_index": 0,
+          "strip_count": 19,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              1289,
+              1329
+            ],
+            [
+              1329,
+              1412
+            ],
+            [
+              1412,
+              2161
+            ],
+            [
+              2161,
+              2229
+            ],
+            [
+              2229,
+              2273
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              382,
+              430
+            ],
+            [
+              430,
+              530
+            ],
+            [
+              530,
+              1431
+            ],
+            [
+              1431,
+              1513
+            ],
+            [
+              1513,
+              1566
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/comparatio_alcibiadis_et_coriolani/trace.json",
+          "trace_sha256": "1b493bc903658554733a5981bebf5220bc4acd13f34d13232cec31c441726a5e",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "adjacent_prose_locator": "Alci- / biades",
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 292,
+          "region": [
+            969,
+            1413,
+            1984,
+            1443
+          ],
+          "role": "Latin before page-end gap"
+        },
+        {
+          "source": 0,
+          "source_page": 292,
+          "region": [
+            969,
+            1455,
+            1984,
+            1486
+          ],
+          "role": "following Latin row"
+        }
+      ]
     },
     {
       "backlog_id": "II6",
@@ -1337,8 +3510,468 @@
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 223,
-        "body_canvas_index": 7
-      }
+        "body_canvas_index": 7,
+        "folio": 215,
+        "canvas_boundary": [
+          7,
+          8030,
+          9409
+        ]
+      },
+      "source_page": 297,
+      "raster": [
+        1900,
+        2964
+      ],
+      "source_evidence": [
+        {
+          "source_page": 297,
+          "raster": [
+            1900,
+            2964
+          ],
+          "raw_crop_edges": [
+            1062,
+            1900
+          ],
+          "crop_edges": [
+            1062,
+            1900
+          ],
+          "raw_band_count": 57,
+          "raw_bands_near_defect": [
+            [
+              2404,
+              2443
+            ],
+            [
+              2453,
+              2490
+            ],
+            [
+              2492,
+              2533
+            ],
+            [
+              2537,
+              2575
+            ],
+            [
+              2582,
+              2627
+            ],
+            [
+              2656,
+              2807
+            ],
+            [
+              2808,
+              2816
+            ]
+          ],
+          "pass_a_band_count": 55,
+          "pass_a_bands_near_defect": [
+            [
+              2404,
+              2443
+            ],
+            [
+              2453,
+              2490
+            ],
+            [
+              2492,
+              2533
+            ],
+            [
+              2537,
+              2575
+            ],
+            [
+              2582,
+              2627
+            ],
+            [
+              2656,
+              2807
+            ],
+            [
+              2808,
+              2816
+            ]
+          ],
+          "retained_band_count": 55,
+          "retained_bands_near_defect": [
+            [
+              2404,
+              2443
+            ],
+            [
+              2453,
+              2490
+            ],
+            [
+              2492,
+              2533
+            ],
+            [
+              2537,
+              2575
+            ],
+            [
+              2582,
+              2627
+            ],
+            [
+              2656,
+              2807
+            ],
+            [
+              2808,
+              2816
+            ]
+          ],
+          "retained_index": 2,
+          "strip_count": 50,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              2491,
+              2535
+            ],
+            [
+              2535,
+              2578
+            ],
+            [
+              2641,
+              2807
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              8238,
+              8291
+            ],
+            [
+              8291,
+              8343
+            ],
+            [
+              8343,
+              8543
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/timoleon/trace.json",
+          "trace_sha256": "fd26c198c04566ebb1d64e1147de2e78542cde02f705ec6f8eb890e5fc350eea",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 298,
+          "raster": [
+            1990,
+            2982
+          ],
+          "raw_crop_edges": [
+            950,
+            1990
+          ],
+          "crop_edges": [
+            949,
+            1741
+          ],
+          "raw_band_count": 47,
+          "raw_bands_near_defect": [
+            [
+              267,
+              301
+            ],
+            [
+              325,
+              353
+            ],
+            [
+              378,
+              410
+            ],
+            [
+              431,
+              465
+            ],
+            [
+              485,
+              516
+            ],
+            [
+              539,
+              571
+            ],
+            [
+              592,
+              624
+            ]
+          ],
+          "pass_a_band_count": 47,
+          "pass_a_bands_near_defect": [
+            [
+              267,
+              301
+            ],
+            [
+              325,
+              353
+            ],
+            [
+              378,
+              410
+            ],
+            [
+              431,
+              465
+            ],
+            [
+              485,
+              516
+            ],
+            [
+              539,
+              571
+            ],
+            [
+              592,
+              624
+            ]
+          ],
+          "retained_band_count": 47,
+          "retained_bands_near_defect": [
+            [
+              267,
+              301
+            ],
+            [
+              325,
+              353
+            ],
+            [
+              378,
+              410
+            ],
+            [
+              431,
+              465
+            ],
+            [
+              485,
+              516
+            ],
+            [
+              539,
+              571
+            ],
+            [
+              592,
+              624
+            ]
+          ],
+          "retained_index": 3,
+          "strip_count": 47,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              267,
+              313
+            ],
+            [
+              313,
+              365
+            ],
+            [
+              365,
+              420
+            ],
+            [
+              420,
+              475
+            ],
+            [
+              475,
+              527
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              8543,
+              8598
+            ],
+            [
+              8598,
+              8661
+            ],
+            [
+              8661,
+              8727
+            ],
+            [
+              8727,
+              8793
+            ],
+            [
+              8793,
+              8856
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/timoleon/trace.json",
+          "trace_sha256": "fd26c198c04566ebb1d64e1147de2e78542cde02f705ec6f8eb890e5fc350eea",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 310,
+          "raster": [
+            1990,
+            2992
+          ],
+          "raw_crop_edges": [
+            933,
+            1990
+          ],
+          "crop_edges": [
+            933,
+            1990
+          ],
+          "raw_band_count": 31,
+          "raw_bands_near_defect": [
+            [
+              215,
+              259
+            ],
+            [
+              285,
+              327
+            ],
+            [
+              329,
+              416
+            ],
+            [
+              419,
+              463
+            ],
+            [
+              464,
+              504
+            ],
+            [
+              509,
+              552
+            ]
+          ],
+          "pass_a_band_count": 27,
+          "pass_a_bands_near_defect": [
+            [
+              285,
+              327
+            ],
+            [
+              329,
+              416
+            ],
+            [
+              419,
+              463
+            ],
+            [
+              464,
+              504
+            ],
+            [
+              509,
+              552
+            ]
+          ],
+          "retained_band_count": 27,
+          "retained_bands_near_defect": [
+            [
+              285,
+              327
+            ],
+            [
+              329,
+              416
+            ],
+            [
+              419,
+              463
+            ],
+            [
+              464,
+              504
+            ],
+            [
+              509,
+              552
+            ]
+          ],
+          "retained_index": 15,
+          "strip_count": 27,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              285,
+              328
+            ],
+            [
+              328,
+              417
+            ],
+            [
+              417,
+              463
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              42231,
+              42283
+            ],
+            [
+              42283,
+              42390
+            ],
+            [
+              42390,
+              42445
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/timoleon/trace.json",
+          "trace_sha256": "fd26c198c04566ebb1d64e1147de2e78542cde02f705ec6f8eb890e5fc350eea",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "adjacent_prose_locator": "cum / deprecatum",
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 297,
+          "region": [
+            1072,
+            2538,
+            1890,
+            2573
+          ],
+          "role": "Latin before source gap"
+        },
+        {
+          "source": 0,
+          "source_page": 298,
+          "region": [
+            959,
+            267,
+            1731,
+            301
+          ],
+          "role": "Latin after source gap"
+        }
+      ]
     },
     {
       "backlog_id": "II7",
@@ -1360,8 +3993,468 @@
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 248,
-        "body_canvas_index": 32
-      }
+        "body_canvas_index": 32,
+        "folio": 240,
+        "canvas_boundary": [
+          32,
+          42231,
+          42722
+        ]
+      },
+      "source_page": 310,
+      "raster": [
+        1990,
+        2992
+      ],
+      "source_evidence": [
+        {
+          "source_page": 297,
+          "raster": [
+            1900,
+            2964
+          ],
+          "raw_crop_edges": [
+            1062,
+            1900
+          ],
+          "crop_edges": [
+            1062,
+            1900
+          ],
+          "raw_band_count": 57,
+          "raw_bands_near_defect": [
+            [
+              177,
+              207
+            ],
+            [
+              251,
+              283
+            ],
+            [
+              294,
+              326
+            ],
+            [
+              341,
+              371
+            ],
+            [
+              383,
+              414
+            ],
+            [
+              428,
+              459
+            ]
+          ],
+          "pass_a_band_count": 55,
+          "pass_a_bands_near_defect": [
+            [
+              251,
+              283
+            ],
+            [
+              294,
+              326
+            ],
+            [
+              341,
+              371
+            ],
+            [
+              383,
+              414
+            ],
+            [
+              428,
+              459
+            ]
+          ],
+          "retained_band_count": 55,
+          "retained_bands_near_defect": [
+            [
+              251,
+              283
+            ],
+            [
+              294,
+              326
+            ],
+            [
+              341,
+              371
+            ],
+            [
+              383,
+              414
+            ],
+            [
+              428,
+              459
+            ]
+          ],
+          "retained_index": 2,
+          "strip_count": 50,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              251,
+              288
+            ],
+            [
+              288,
+              333
+            ],
+            [
+              333,
+              377
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              5572,
+              5616
+            ],
+            [
+              5616,
+              5670
+            ],
+            [
+              5670,
+              5723
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/timoleon/trace.json",
+          "trace_sha256": "fd26c198c04566ebb1d64e1147de2e78542cde02f705ec6f8eb890e5fc350eea",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 298,
+          "raster": [
+            1990,
+            2982
+          ],
+          "raw_crop_edges": [
+            950,
+            1990
+          ],
+          "crop_edges": [
+            949,
+            1741
+          ],
+          "raw_band_count": 47,
+          "raw_bands_near_defect": [
+            [
+              267,
+              301
+            ],
+            [
+              325,
+              353
+            ],
+            [
+              378,
+              410
+            ],
+            [
+              431,
+              465
+            ],
+            [
+              485,
+              516
+            ]
+          ],
+          "pass_a_band_count": 47,
+          "pass_a_bands_near_defect": [
+            [
+              267,
+              301
+            ],
+            [
+              325,
+              353
+            ],
+            [
+              378,
+              410
+            ],
+            [
+              431,
+              465
+            ],
+            [
+              485,
+              516
+            ]
+          ],
+          "retained_band_count": 47,
+          "retained_bands_near_defect": [
+            [
+              267,
+              301
+            ],
+            [
+              325,
+              353
+            ],
+            [
+              378,
+              410
+            ],
+            [
+              431,
+              465
+            ],
+            [
+              485,
+              516
+            ]
+          ],
+          "retained_index": 3,
+          "strip_count": 47,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              267,
+              313
+            ],
+            [
+              313,
+              365
+            ],
+            [
+              365,
+              420
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              8543,
+              8598
+            ],
+            [
+              8598,
+              8661
+            ],
+            [
+              8661,
+              8727
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/timoleon/trace.json",
+          "trace_sha256": "fd26c198c04566ebb1d64e1147de2e78542cde02f705ec6f8eb890e5fc350eea",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 310,
+          "raster": [
+            1990,
+            2992
+          ],
+          "raw_crop_edges": [
+            933,
+            1990
+          ],
+          "crop_edges": [
+            933,
+            1990
+          ],
+          "raw_band_count": 31,
+          "raw_bands_near_defect": [
+            [
+              464,
+              504
+            ],
+            [
+              509,
+              552
+            ],
+            [
+              554,
+              597
+            ],
+            [
+              600,
+              647
+            ],
+            [
+              648,
+              1640
+            ],
+            [
+              1646,
+              1685
+            ],
+            [
+              1699,
+              1740
+            ],
+            [
+              1750,
+              1791
+            ],
+            [
+              1803,
+              1841
+            ]
+          ],
+          "pass_a_band_count": 27,
+          "pass_a_bands_near_defect": [
+            [
+              464,
+              504
+            ],
+            [
+              509,
+              552
+            ],
+            [
+              554,
+              597
+            ],
+            [
+              600,
+              647
+            ],
+            [
+              648,
+              1640
+            ],
+            [
+              1646,
+              1685
+            ],
+            [
+              1699,
+              1740
+            ],
+            [
+              1750,
+              1791
+            ],
+            [
+              1803,
+              1841
+            ]
+          ],
+          "retained_band_count": 27,
+          "retained_bands_near_defect": [
+            [
+              464,
+              504
+            ],
+            [
+              509,
+              552
+            ],
+            [
+              554,
+              597
+            ],
+            [
+              600,
+              647
+            ],
+            [
+              648,
+              1640
+            ],
+            [
+              1646,
+              1685
+            ],
+            [
+              1699,
+              1740
+            ],
+            [
+              1750,
+              1791
+            ],
+            [
+              1803,
+              1841
+            ]
+          ],
+          "retained_index": 15,
+          "strip_count": 27,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              553,
+              598
+            ],
+            [
+              598,
+              647
+            ],
+            [
+              647,
+              1643
+            ],
+            [
+              1643,
+              1692
+            ],
+            [
+              1692,
+              1745
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              42554,
+              42608
+            ],
+            [
+              42608,
+              42667
+            ],
+            [
+              42667,
+              43865
+            ],
+            [
+              43865,
+              43924
+            ],
+            [
+              43924,
+              43988
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/timoleon/trace.json",
+          "trace_sha256": "fd26c198c04566ebb1d64e1147de2e78542cde02f705ec6f8eb890e5fc350eea",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "adjacent_prose_locator": "contra / Corinthios",
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 310,
+          "region": [
+            943,
+            649,
+            1980,
+            690
+          ],
+          "role": "Latin before page-end gap"
+        },
+        {
+          "source": 0,
+          "source_page": 310,
+          "region": [
+            943,
+            694,
+            1980,
+            738
+          ],
+          "role": "following Latin row"
+        }
+      ]
     },
     {
       "backlog_id": "II8",
@@ -1391,8 +4484,358 @@
       "baseline_reader": {
         "tomus": 2,
         "physical_page": 290,
-        "body_canvas_index": 24
-      }
+        "body_canvas_index": 24,
+        "folio": 282,
+        "canvas_boundary": [
+          24,
+          31133,
+          32502
+        ]
+      },
+      "source_page": 329,
+      "raster": [
+        1879,
+        2957
+      ],
+      "source_evidence": [
+        {
+          "source_page": 329,
+          "raster": [
+            1879,
+            2957
+          ],
+          "raw_crop_edges": [
+            1066,
+            1879
+          ],
+          "crop_edges": [
+            1066,
+            1879
+          ],
+          "raw_band_count": 62,
+          "raw_bands_near_defect": [
+            [
+              2340,
+              2373
+            ],
+            [
+              2384,
+              2385
+            ],
+            [
+              2387,
+              2428
+            ],
+            [
+              2432,
+              2474
+            ],
+            [
+              2475,
+              2568
+            ],
+            [
+              2594,
+              2596
+            ],
+            [
+              2634,
+              2636
+            ],
+            [
+              2663,
+              2664
+            ],
+            [
+              2665,
+              2829
+            ],
+            [
+              2846,
+              2851
+            ]
+          ],
+          "pass_a_band_count": 58,
+          "pass_a_bands_near_defect": [
+            [
+              2340,
+              2373
+            ],
+            [
+              2384,
+              2385
+            ],
+            [
+              2387,
+              2428
+            ],
+            [
+              2432,
+              2474
+            ],
+            [
+              2475,
+              2568
+            ],
+            [
+              2594,
+              2596
+            ],
+            [
+              2634,
+              2636
+            ],
+            [
+              2663,
+              2664
+            ],
+            [
+              2665,
+              2829
+            ]
+          ],
+          "retained_band_count": 58,
+          "retained_bands_near_defect": [
+            [
+              2340,
+              2373
+            ],
+            [
+              2384,
+              2385
+            ],
+            [
+              2387,
+              2428
+            ],
+            [
+              2432,
+              2474
+            ],
+            [
+              2475,
+              2568
+            ],
+            [
+              2594,
+              2596
+            ],
+            [
+              2634,
+              2636
+            ],
+            [
+              2663,
+              2664
+            ],
+            [
+              2665,
+              2829
+            ]
+          ],
+          "retained_index": 11,
+          "strip_count": 51,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              2430,
+              2474
+            ],
+            [
+              2474,
+              2581
+            ],
+            [
+              2664,
+              2829
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              31346,
+              31399
+            ],
+            [
+              31399,
+              31528
+            ],
+            [
+              31528,
+              31726
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/aemilius_paulus/trace.json",
+          "trace_sha256": "ea8e284a9f8c46fe30baef2b60239555dc5a24545ac9d3ddde9eabfc99a6920e",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 330,
+          "raster": [
+            1947,
+            2980
+          ],
+          "raw_crop_edges": [
+            930,
+            1717
+          ],
+          "crop_edges": [
+            930,
+            1717
+          ],
+          "raw_band_count": 49,
+          "raw_bands_near_defect": [
+            [
+              194,
+              227
+            ],
+            [
+              264,
+              296
+            ],
+            [
+              311,
+              343
+            ],
+            [
+              360,
+              392
+            ],
+            [
+              405,
+              438
+            ],
+            [
+              452,
+              484
+            ],
+            [
+              498,
+              530
+            ]
+          ],
+          "pass_a_band_count": 48,
+          "pass_a_bands_near_defect": [
+            [
+              264,
+              296
+            ],
+            [
+              311,
+              343
+            ],
+            [
+              360,
+              392
+            ],
+            [
+              405,
+              438
+            ],
+            [
+              452,
+              484
+            ],
+            [
+              498,
+              530
+            ]
+          ],
+          "retained_band_count": 48,
+          "retained_bands_near_defect": [
+            [
+              264,
+              296
+            ],
+            [
+              311,
+              343
+            ],
+            [
+              360,
+              392
+            ],
+            [
+              405,
+              438
+            ],
+            [
+              452,
+              484
+            ],
+            [
+              498,
+              530
+            ]
+          ],
+          "retained_index": 12,
+          "strip_count": 48,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              264,
+              303
+            ],
+            [
+              303,
+              351
+            ],
+            [
+              351,
+              398
+            ],
+            [
+              398,
+              445
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              31726,
+              31773
+            ],
+            [
+              31773,
+              31831
+            ],
+            [
+              31831,
+              31888
+            ],
+            [
+              31888,
+              31945
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/aemilius_paulus/trace.json",
+          "trace_sha256": "ea8e284a9f8c46fe30baef2b60239555dc5a24545ac9d3ddde9eabfc99a6920e",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "adjacent_prose_locator": "Macedo- / num",
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 329,
+          "region": [
+            1076,
+            2527,
+            1869,
+            2564
+          ],
+          "role": "Latin before scan rule"
+        },
+        {
+          "source": 0,
+          "source_page": 330,
+          "region": [
+            940,
+            264,
+            1707,
+            296
+          ],
+          "role": "Latin after scan rule"
+        }
+      ]
     },
     {
       "backlog_id": "III1",
@@ -1414,8 +4857,327 @@
       "baseline_reader": {
         "tomus": 3,
         "physical_page": 273,
-        "body_canvas_index": 45
-      }
+        "body_canvas_index": 45,
+        "folio": 265,
+        "canvas_boundary": [
+          45,
+          59964,
+          61351
+        ]
+      },
+      "source_page": 519,
+      "raster": [
+        1964,
+        2973
+      ],
+      "source_evidence": [
+        {
+          "source_page": 519,
+          "raster": [
+            1964,
+            2973
+          ],
+          "raw_crop_edges": [
+            1034,
+            1852
+          ],
+          "crop_edges": [
+            1034,
+            1852
+          ],
+          "raw_band_count": 29,
+          "raw_bands_near_defect": [
+            [
+              1391,
+              1436
+            ],
+            [
+              1438,
+              1488
+            ],
+            [
+              1489,
+              1534
+            ],
+            [
+              1537,
+              1632
+            ],
+            [
+              1634,
+              1724
+            ],
+            [
+              1730,
+              1772
+            ],
+            [
+              1775,
+              2184
+            ],
+            [
+              2185,
+              2274
+            ]
+          ],
+          "pass_a_band_count": 27,
+          "pass_a_bands_near_defect": [
+            [
+              1391,
+              1436
+            ],
+            [
+              1438,
+              1488
+            ],
+            [
+              1489,
+              1534
+            ],
+            [
+              1537,
+              1632
+            ],
+            [
+              1634,
+              1724
+            ],
+            [
+              1730,
+              1772
+            ],
+            [
+              1775,
+              2184
+            ],
+            [
+              2185,
+              2274
+            ]
+          ],
+          "retained_band_count": 27,
+          "retained_bands_near_defect": [
+            [
+              1391,
+              1436
+            ],
+            [
+              1438,
+              1488
+            ],
+            [
+              1489,
+              1534
+            ],
+            [
+              1537,
+              1632
+            ],
+            [
+              1634,
+              1724
+            ],
+            [
+              1730,
+              1772
+            ],
+            [
+              1775,
+              2184
+            ],
+            [
+              2185,
+              2274
+            ]
+          ],
+          "retained_index": 22,
+          "strip_count": 27,
+          "strip_selection": "reviewed glyph row and neighboring strips",
+          "strip_cut_intervals_near_defect": [
+            [
+              1488,
+              1535
+            ],
+            [
+              1535,
+              1633
+            ],
+            [
+              1633,
+              1727
+            ],
+            [
+              1727,
+              1773
+            ],
+            [
+              1773,
+              2184
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              61156,
+              61213
+            ],
+            [
+              61213,
+              61331
+            ],
+            [
+              61331,
+              61444
+            ],
+            [
+              61444,
+              61499
+            ],
+            [
+              61499,
+              61993
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/caius_marius/trace.json",
+          "trace_sha256": "142edd90c5e1e3c2de737565b2f8812cd5a53dd0e4921346da3b3e286282a648",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 520,
+          "raster": [
+            1963,
+            3008
+          ],
+          "raw_crop_edges": [
+            942,
+            1755
+          ],
+          "crop_edges": [
+            942,
+            1755
+          ],
+          "raw_band_count": 50,
+          "raw_bands_near_defect": [
+            [
+              210,
+              252
+            ],
+            [
+              278,
+              317
+            ],
+            [
+              328,
+              367
+            ],
+            [
+              374,
+              413
+            ],
+            [
+              424,
+              462
+            ],
+            [
+              472,
+              556
+            ]
+          ],
+          "pass_a_band_count": 49,
+          "pass_a_bands_near_defect": [
+            [
+              278,
+              317
+            ],
+            [
+              328,
+              367
+            ],
+            [
+              374,
+              413
+            ],
+            [
+              424,
+              462
+            ],
+            [
+              472,
+              556
+            ]
+          ],
+          "retained_band_count": 49,
+          "retained_bands_near_defect": [
+            [
+              278,
+              317
+            ],
+            [
+              328,
+              367
+            ],
+            [
+              374,
+              413
+            ],
+            [
+              424,
+              462
+            ],
+            [
+              472,
+              556
+            ]
+          ],
+          "retained_index": 23,
+          "strip_count": 49,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              278,
+              322
+            ],
+            [
+              322,
+              370
+            ],
+            [
+              370,
+              418
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              62480,
+              62533
+            ],
+            [
+              62533,
+              62591
+            ],
+            [
+              62591,
+              62649
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/caius_marius/trace.json",
+          "trace_sha256": "142edd90c5e1e3c2de737565b2f8812cd5a53dd0e4921346da3b3e286282a648",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 519,
+          "region": [
+            1044,
+            1634,
+            1842,
+            1681
+          ],
+          "role": "reported complete Latin line"
+        }
+      ],
+      "adjacent_prose_locator": "occopitia intueri ausos ... Ad extremum"
     },
     {
       "backlog_id": "III2",
@@ -1437,8 +5199,387 @@
       "baseline_reader": {
         "tomus": 3,
         "physical_page": 274,
-        "body_canvas_index": 46
-      }
+        "body_canvas_index": 46,
+        "folio": 266,
+        "canvas_boundary": [
+          46,
+          61351,
+          62728
+        ]
+      },
+      "source_page": 520,
+      "raster": [
+        1963,
+        3008
+      ],
+      "source_evidence": [
+        {
+          "source_page": 519,
+          "raster": [
+            1964,
+            2973
+          ],
+          "raw_crop_edges": [
+            1034,
+            1852
+          ],
+          "crop_edges": [
+            1034,
+            1852
+          ],
+          "raw_band_count": 29,
+          "raw_bands_near_defect": [
+            [
+              1537,
+              1632
+            ],
+            [
+              1634,
+              1724
+            ],
+            [
+              1730,
+              1772
+            ],
+            [
+              1775,
+              2184
+            ],
+            [
+              2185,
+              2274
+            ],
+            [
+              2277,
+              2453
+            ],
+            [
+              2462,
+              2500
+            ],
+            [
+              2503,
+              2548
+            ]
+          ],
+          "pass_a_band_count": 27,
+          "pass_a_bands_near_defect": [
+            [
+              1537,
+              1632
+            ],
+            [
+              1634,
+              1724
+            ],
+            [
+              1730,
+              1772
+            ],
+            [
+              1775,
+              2184
+            ],
+            [
+              2185,
+              2274
+            ],
+            [
+              2277,
+              2453
+            ],
+            [
+              2462,
+              2500
+            ],
+            [
+              2503,
+              2548
+            ]
+          ],
+          "retained_band_count": 27,
+          "retained_bands_near_defect": [
+            [
+              1537,
+              1632
+            ],
+            [
+              1634,
+              1724
+            ],
+            [
+              1730,
+              1772
+            ],
+            [
+              1775,
+              2184
+            ],
+            [
+              2185,
+              2274
+            ],
+            [
+              2277,
+              2453
+            ],
+            [
+              2462,
+              2500
+            ],
+            [
+              2503,
+              2548
+            ]
+          ],
+          "retained_index": 22,
+          "strip_count": 27,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              1633,
+              1727
+            ],
+            [
+              1727,
+              1773
+            ],
+            [
+              1773,
+              2184
+            ],
+            [
+              2184,
+              2275
+            ],
+            [
+              2275,
+              2457
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              61331,
+              61444
+            ],
+            [
+              61444,
+              61499
+            ],
+            [
+              61499,
+              61993
+            ],
+            [
+              61993,
+              62102
+            ],
+            [
+              62102,
+              62321
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/caius_marius/trace.json",
+          "trace_sha256": "142edd90c5e1e3c2de737565b2f8812cd5a53dd0e4921346da3b3e286282a648",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 520,
+          "raster": [
+            1963,
+            3008
+          ],
+          "raw_crop_edges": [
+            942,
+            1755
+          ],
+          "crop_edges": [
+            942,
+            1755
+          ],
+          "raw_band_count": 50,
+          "raw_bands_near_defect": [
+            [
+              278,
+              317
+            ],
+            [
+              328,
+              367
+            ],
+            [
+              374,
+              413
+            ],
+            [
+              424,
+              462
+            ],
+            [
+              472,
+              556
+            ],
+            [
+              571,
+              610
+            ],
+            [
+              619,
+              654
+            ],
+            [
+              670,
+              708
+            ],
+            [
+              715,
+              754
+            ]
+          ],
+          "pass_a_band_count": 49,
+          "pass_a_bands_near_defect": [
+            [
+              278,
+              317
+            ],
+            [
+              328,
+              367
+            ],
+            [
+              374,
+              413
+            ],
+            [
+              424,
+              462
+            ],
+            [
+              472,
+              556
+            ],
+            [
+              571,
+              610
+            ],
+            [
+              619,
+              654
+            ],
+            [
+              670,
+              708
+            ],
+            [
+              715,
+              754
+            ]
+          ],
+          "retained_band_count": 49,
+          "retained_bands_near_defect": [
+            [
+              278,
+              317
+            ],
+            [
+              328,
+              367
+            ],
+            [
+              374,
+              413
+            ],
+            [
+              424,
+              462
+            ],
+            [
+              472,
+              556
+            ],
+            [
+              571,
+              610
+            ],
+            [
+              619,
+              654
+            ],
+            [
+              670,
+              708
+            ],
+            [
+              715,
+              754
+            ]
+          ],
+          "retained_index": 23,
+          "strip_count": 49,
+          "strip_selection": "reviewed glyph row and neighboring strips",
+          "strip_cut_intervals_near_defect": [
+            [
+              370,
+              418
+            ],
+            [
+              418,
+              467
+            ],
+            [
+              467,
+              563
+            ],
+            [
+              563,
+              614
+            ],
+            [
+              614,
+              662
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              62591,
+              62649
+            ],
+            [
+              62649,
+              62708
+            ],
+            [
+              62708,
+              62823
+            ],
+            [
+              62823,
+              62884
+            ],
+            [
+              62884,
+              62942
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/caius_marius/trace.json",
+          "trace_sha256": "142edd90c5e1e3c2de737565b2f8812cd5a53dd0e4921346da3b3e286282a648",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "reviewed_lines": [
+        {
+          "source": 0,
+          "source_page": 520,
+          "region": [
+            952,
+            472,
+            1745,
+            511
+          ],
+          "role": "reported complete Latin line"
+        }
+      ],
+      "adjacent_prose_locator": "nibus atque contentionibus"
     },
     {
       "backlog_id": "V1",
@@ -1460,7 +5601,13 @@
       "baseline_reader": {
         "tomus": 5,
         "physical_page": 197,
-        "body_canvas_index": 3
+        "body_canvas_index": 3,
+        "folio": 179,
+        "canvas_boundary": [
+          3,
+          2601,
+          2645
+        ]
       },
       "unmerged_final_canvas": {
         "dimensions": [
@@ -1473,7 +5620,146 @@
         "canvas_index": 3,
         "production_body_scale": 1.2023952,
         "direct_measurement_command": "cargo test --release backlog_short_ending_canvas_fingerprints -- --ignored --nocapture"
-      }
+      },
+      "source_page": 105,
+      "raster": [
+        1879,
+        2834
+      ],
+      "source_evidence": [
+        {
+          "source_page": 105,
+          "raster": [
+            1879,
+            2834
+          ],
+          "raw_crop_edges": [
+            1010,
+            1801
+          ],
+          "crop_edges": [
+            1010,
+            1801
+          ],
+          "raw_band_count": 38,
+          "raw_bands_near_defect": [
+            [
+              1509,
+              1540
+            ],
+            [
+              1551,
+              1584
+            ],
+            [
+              1594,
+              1628
+            ],
+            [
+              1638,
+              1671
+            ],
+            [
+              1683,
+              1714
+            ]
+          ],
+          "pass_a_band_count": 36,
+          "pass_a_bands_near_defect": [
+            [
+              1509,
+              1540
+            ],
+            [
+              1551,
+              1584
+            ],
+            [
+              1594,
+              1628
+            ],
+            [
+              1638,
+              1671
+            ],
+            [
+              1683,
+              1714
+            ]
+          ],
+          "retained_band_count": 35,
+          "retained_bands_near_defect": [
+            [
+              1509,
+              1540
+            ],
+            [
+              1551,
+              1584
+            ],
+            [
+              1594,
+              1628
+            ],
+            [
+              1638,
+              1671
+            ],
+            [
+              1683,
+              1714
+            ]
+          ],
+          "retained_index": 1,
+          "strip_count": 35,
+          "strip_selection": "reviewed glyph row and neighboring strips",
+          "strip_cut_intervals_near_defect": [
+            [
+              1589,
+              1633
+            ],
+            [
+              1633,
+              1677
+            ],
+            [
+              1677,
+              1714
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              2495,
+              2548
+            ],
+            [
+              2548,
+              2601
+            ],
+            [
+              2601,
+              2645
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/comparatio_sertorii_et_eumenis/trace.json",
+          "trace_sha256": "405855382da8718b47707a86eb84b6255a4b29705efe819e6bfb5d222be08b18",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "reviewed_lines": [
+        {
+          "source": 1,
+          "source_page": 105,
+          "region": [
+            1020,
+            1683,
+            1791,
+            1714
+          ],
+          "role": "reported complete Latin line"
+        }
+      ],
+      "adjacent_prose_locator": "potemque fecit."
     },
     {
       "backlog_id": "VII1",
@@ -1495,7 +5781,13 @@
       "baseline_reader": {
         "tomus": 7,
         "physical_page": 45,
-        "body_canvas_index": 37
+        "body_canvas_index": 37,
+        "folio": 37,
+        "canvas_boundary": [
+          37,
+          49134,
+          49178
+        ]
       },
       "unmerged_final_canvas": {
         "dimensions": [
@@ -1508,7 +5800,154 @@
         "canvas_index": 37,
         "production_body_scale": 1.2023952,
         "direct_measurement_command": "cargo test --release backlog_short_ending_canvas_fingerprints -- --ignored --nocapture"
-      }
+      },
+      "source_page": 446,
+      "raster": [
+        1836,
+        2861
+      ],
+      "source_evidence": [
+        {
+          "source_page": 446,
+          "raster": [
+            1836,
+            2861
+          ],
+          "raw_crop_edges": [
+            908,
+            1696
+          ],
+          "crop_edges": [
+            908,
+            1696
+          ],
+          "raw_band_count": 51,
+          "raw_bands_near_defect": [
+            [
+              1383,
+              1415
+            ],
+            [
+              1426,
+              1465
+            ],
+            [
+              1471,
+              1503
+            ],
+            [
+              1514,
+              1544
+            ],
+            [
+              1558,
+              1588
+            ],
+            [
+              1649,
+              1654
+            ]
+          ],
+          "pass_a_band_count": 49,
+          "pass_a_bands_near_defect": [
+            [
+              1383,
+              1415
+            ],
+            [
+              1426,
+              1465
+            ],
+            [
+              1471,
+              1503
+            ],
+            [
+              1514,
+              1544
+            ],
+            [
+              1558,
+              1588
+            ],
+            [
+              1649,
+              1654
+            ]
+          ],
+          "retained_band_count": 30,
+          "retained_bands_near_defect": [
+            [
+              1383,
+              1415
+            ],
+            [
+              1426,
+              1465
+            ],
+            [
+              1471,
+              1503
+            ],
+            [
+              1514,
+              1544
+            ],
+            [
+              1558,
+              1588
+            ]
+          ],
+          "retained_index": 17,
+          "strip_count": 30,
+          "strip_selection": "reviewed glyph row and neighboring strips",
+          "strip_cut_intervals_near_defect": [
+            [
+              1468,
+              1508
+            ],
+            [
+              1508,
+              1551
+            ],
+            [
+              1551,
+              1588
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              49034,
+              49082
+            ],
+            [
+              49082,
+              49134
+            ],
+            [
+              49134,
+              49178
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/demosthenes/trace.json",
+          "trace_sha256": "085f782b268222eccfac179f59742935bf522164c456fd2704eb0c3d7d8c094e",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "reviewed_lines": [
+        {
+          "source": 1,
+          "source_page": 446,
+          "region": [
+            918,
+            1558,
+            1686,
+            1588
+          ],
+          "role": "reported complete Latin line"
+        }
+      ],
+      "adjacent_prose_locator": "accepimus conscriptam."
     },
     {
       "backlog_id": "VII2",
@@ -1530,8 +5969,461 @@
       "baseline_reader": {
         "tomus": 7,
         "physical_page": 287,
-        "body_canvas_index": 1
-      }
+        "body_canvas_index": 1,
+        "folio": null,
+        "canvas_boundary": [
+          1,
+          0,
+          1251
+        ]
+      },
+      "source_page": 566,
+      "raster": [
+        1813,
+        2838
+      ],
+      "source_evidence": [
+        {
+          "source_page": 566,
+          "raster": [
+            1813,
+            2838
+          ],
+          "raw_crop_edges": [
+            892,
+            1697
+          ],
+          "crop_edges": [
+            888,
+            1697
+          ],
+          "raw_band_count": 43,
+          "raw_bands_near_defect": [
+            [
+              1197,
+              1237
+            ],
+            [
+              1243,
+              1276
+            ],
+            [
+              1284,
+              1366
+            ],
+            [
+              1369,
+              1410
+            ],
+            [
+              1413,
+              1584
+            ],
+            [
+              1588,
+              1630
+            ],
+            [
+              1634,
+              1677
+            ],
+            [
+              1678,
+              1718
+            ],
+            [
+              1723,
+              1764
+            ]
+          ],
+          "pass_a_band_count": 40,
+          "pass_a_bands_near_defect": [
+            [
+              1197,
+              1237
+            ],
+            [
+              1243,
+              1276
+            ],
+            [
+              1284,
+              1366
+            ],
+            [
+              1369,
+              1410
+            ],
+            [
+              1413,
+              1584
+            ],
+            [
+              1588,
+              1630
+            ],
+            [
+              1634,
+              1677
+            ],
+            [
+              1678,
+              1718
+            ],
+            [
+              1723,
+              1764
+            ]
+          ],
+          "retained_band_count": 40,
+          "retained_bands_near_defect": [
+            [
+              1197,
+              1237
+            ],
+            [
+              1243,
+              1276
+            ],
+            [
+              1284,
+              1366
+            ],
+            [
+              1369,
+              1410
+            ],
+            [
+              1413,
+              1584
+            ],
+            [
+              1588,
+              1630
+            ],
+            [
+              1634,
+              1677
+            ],
+            [
+              1678,
+              1718
+            ],
+            [
+              1723,
+              1764
+            ]
+          ],
+          "retained_index": 0,
+          "strip_count": 40,
+          "strip_selection": "reviewed glyph row and neighboring strips",
+          "strip_cut_intervals_near_defect": [
+            [
+              1280,
+              1367
+            ],
+            [
+              1367,
+              1411
+            ],
+            [
+              1411,
+              1586
+            ],
+            [
+              1586,
+              1632
+            ],
+            [
+              1632,
+              1677
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              1054,
+              1159
+            ],
+            [
+              1159,
+              1212
+            ],
+            [
+              1212,
+              1422
+            ],
+            [
+              1422,
+              1477
+            ],
+            [
+              1477,
+              1531
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/dio/trace.json",
+          "trace_sha256": "4dd51890361c41d305a2d67786a16a8aa1246330fda2db40ea2ee0c182b6bfb7",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 568,
+          "raster": [
+            1844,
+            2836
+          ],
+          "raw_crop_edges": [
+            904,
+            1711
+          ],
+          "crop_edges": [
+            904,
+            1711
+          ],
+          "raw_band_count": 25,
+          "raw_bands_near_defect": [
+            [
+              155,
+              206
+            ],
+            [
+              220,
+              404
+            ],
+            [
+              408,
+              504
+            ],
+            [
+              505,
+              1207
+            ],
+            [
+              1208,
+              1253
+            ],
+            [
+              1255,
+              1573
+            ]
+          ],
+          "pass_a_band_count": 24,
+          "pass_a_bands_near_defect": [
+            [
+              220,
+              404
+            ],
+            [
+              408,
+              504
+            ],
+            [
+              505,
+              1207
+            ],
+            [
+              1208,
+              1253
+            ],
+            [
+              1255,
+              1573
+            ]
+          ],
+          "retained_band_count": 24,
+          "retained_bands_near_defect": [
+            [
+              220,
+              404
+            ],
+            [
+              408,
+              504
+            ],
+            [
+              505,
+              1207
+            ],
+            [
+              1208,
+              1253
+            ],
+            [
+              1255,
+              1573
+            ]
+          ],
+          "retained_index": 2,
+          "strip_count": 23,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              220,
+              406
+            ],
+            [
+              406,
+              504
+            ],
+            [
+              504,
+              1207
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              5416,
+              5640
+            ],
+            [
+              5640,
+              5758
+            ],
+            [
+              5758,
+              6603
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/dio/trace.json",
+          "trace_sha256": "4dd51890361c41d305a2d67786a16a8aa1246330fda2db40ea2ee0c182b6bfb7",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 593,
+          "raster": [
+            1820,
+            2838
+          ],
+          "raw_crop_edges": [
+            988,
+            1796
+          ],
+          "crop_edges": [
+            988,
+            1796
+          ],
+          "raw_band_count": 41,
+          "raw_bands_near_defect": [
+            [
+              158,
+              159
+            ],
+            [
+              183,
+              225
+            ],
+            [
+              226,
+              270
+            ],
+            [
+              271,
+              311
+            ],
+            [
+              315,
+              355
+            ],
+            [
+              359,
+              396
+            ]
+          ],
+          "pass_a_band_count": 40,
+          "pass_a_bands_near_defect": [
+            [
+              183,
+              225
+            ],
+            [
+              226,
+              270
+            ],
+            [
+              271,
+              311
+            ],
+            [
+              315,
+              355
+            ],
+            [
+              359,
+              396
+            ]
+          ],
+          "retained_band_count": 40,
+          "retained_bands_near_defect": [
+            [
+              183,
+              225
+            ],
+            [
+              226,
+              270
+            ],
+            [
+              271,
+              311
+            ],
+            [
+              315,
+              355
+            ],
+            [
+              359,
+              396
+            ]
+          ],
+          "retained_index": 27,
+          "strip_count": 40,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              183,
+              225
+            ],
+            [
+              225,
+              270
+            ],
+            [
+              270,
+              313
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              75669,
+              75720
+            ],
+            [
+              75720,
+              75774
+            ],
+            [
+              75774,
+              75826
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/dio/trace.json",
+          "trace_sha256": "4dd51890361c41d305a2d67786a16a8aa1246330fda2db40ea2ee0c182b6bfb7",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "reviewed_lines": [
+        {
+          "source": 1,
+          "source_page": 566,
+          "region": [
+            898,
+            1413,
+            1687,
+            1454
+          ],
+          "role": "reported complete Latin line"
+        }
+      ],
+      "adjacent_prose_locator": "quem multis et prae-"
     },
     {
       "backlog_id": "VII3",
@@ -1553,8 +6445,449 @@
       "baseline_reader": {
         "tomus": 7,
         "physical_page": 291,
-        "body_canvas_index": 5
-      }
+        "body_canvas_index": 5,
+        "folio": 283,
+        "canvas_boundary": [
+          5,
+          5316,
+          6709
+        ]
+      },
+      "source_page": 568,
+      "raster": [
+        1844,
+        2836
+      ],
+      "source_evidence": [
+        {
+          "source_page": 566,
+          "raster": [
+            1813,
+            2838
+          ],
+          "raw_crop_edges": [
+            892,
+            1697
+          ],
+          "crop_edges": [
+            888,
+            1697
+          ],
+          "raw_band_count": 43,
+          "raw_bands_near_defect": [
+            [
+              287,
+              330
+            ],
+            [
+              404,
+              451
+            ],
+            [
+              453,
+              538
+            ],
+            [
+              540,
+              583
+            ],
+            [
+              585,
+              625
+            ],
+            [
+              627,
+              668
+            ]
+          ],
+          "pass_a_band_count": 40,
+          "pass_a_bands_near_defect": [
+            [
+              404,
+              451
+            ],
+            [
+              453,
+              538
+            ],
+            [
+              540,
+              583
+            ],
+            [
+              585,
+              625
+            ],
+            [
+              627,
+              668
+            ]
+          ],
+          "retained_band_count": 40,
+          "retained_bands_near_defect": [
+            [
+              404,
+              451
+            ],
+            [
+              453,
+              538
+            ],
+            [
+              540,
+              583
+            ],
+            [
+              585,
+              625
+            ],
+            [
+              627,
+              668
+            ]
+          ],
+          "retained_index": 0,
+          "strip_count": 40,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              404,
+              452
+            ],
+            [
+              452,
+              539
+            ],
+            [
+              539,
+              584
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              0,
+              58
+            ],
+            [
+              58,
+              163
+            ],
+            [
+              163,
+              217
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/dio/trace.json",
+          "trace_sha256": "4dd51890361c41d305a2d67786a16a8aa1246330fda2db40ea2ee0c182b6bfb7",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 568,
+          "raster": [
+            1844,
+            2836
+          ],
+          "raw_crop_edges": [
+            904,
+            1711
+          ],
+          "crop_edges": [
+            904,
+            1711
+          ],
+          "raw_band_count": 25,
+          "raw_bands_near_defect": [
+            [
+              408,
+              504
+            ],
+            [
+              505,
+              1207
+            ],
+            [
+              1208,
+              1253
+            ],
+            [
+              1255,
+              1573
+            ],
+            [
+              1574,
+              1715
+            ],
+            [
+              1720,
+              1764
+            ],
+            [
+              1770,
+              1813
+            ],
+            [
+              1817,
+              1862
+            ]
+          ],
+          "pass_a_band_count": 24,
+          "pass_a_bands_near_defect": [
+            [
+              408,
+              504
+            ],
+            [
+              505,
+              1207
+            ],
+            [
+              1208,
+              1253
+            ],
+            [
+              1255,
+              1573
+            ],
+            [
+              1574,
+              1715
+            ],
+            [
+              1720,
+              1764
+            ],
+            [
+              1770,
+              1813
+            ],
+            [
+              1817,
+              1862
+            ]
+          ],
+          "retained_band_count": 24,
+          "retained_bands_near_defect": [
+            [
+              408,
+              504
+            ],
+            [
+              505,
+              1207
+            ],
+            [
+              1208,
+              1253
+            ],
+            [
+              1255,
+              1573
+            ],
+            [
+              1574,
+              1715
+            ],
+            [
+              1720,
+              1764
+            ],
+            [
+              1770,
+              1813
+            ],
+            [
+              1817,
+              1862
+            ]
+          ],
+          "retained_index": 2,
+          "strip_count": 23,
+          "strip_selection": "reviewed glyph row and neighboring strips",
+          "strip_cut_intervals_near_defect": [
+            [
+              504,
+              1207
+            ],
+            [
+              1207,
+              1254
+            ],
+            [
+              1254,
+              1573
+            ],
+            [
+              1573,
+              1717
+            ],
+            [
+              1717,
+              1767
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              5758,
+              6603
+            ],
+            [
+              6603,
+              6660
+            ],
+            [
+              6660,
+              7044
+            ],
+            [
+              7044,
+              7217
+            ],
+            [
+              7217,
+              7277
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/dio/trace.json",
+          "trace_sha256": "4dd51890361c41d305a2d67786a16a8aa1246330fda2db40ea2ee0c182b6bfb7",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 593,
+          "raster": [
+            1820,
+            2838
+          ],
+          "raw_crop_edges": [
+            988,
+            1796
+          ],
+          "crop_edges": [
+            988,
+            1796
+          ],
+          "raw_band_count": 41,
+          "raw_bands_near_defect": [
+            [
+              158,
+              159
+            ],
+            [
+              183,
+              225
+            ],
+            [
+              226,
+              270
+            ],
+            [
+              271,
+              311
+            ],
+            [
+              315,
+              355
+            ],
+            [
+              359,
+              396
+            ]
+          ],
+          "pass_a_band_count": 40,
+          "pass_a_bands_near_defect": [
+            [
+              183,
+              225
+            ],
+            [
+              226,
+              270
+            ],
+            [
+              271,
+              311
+            ],
+            [
+              315,
+              355
+            ],
+            [
+              359,
+              396
+            ]
+          ],
+          "retained_band_count": 40,
+          "retained_bands_near_defect": [
+            [
+              183,
+              225
+            ],
+            [
+              226,
+              270
+            ],
+            [
+              271,
+              311
+            ],
+            [
+              315,
+              355
+            ],
+            [
+              359,
+              396
+            ]
+          ],
+          "retained_index": 27,
+          "strip_count": 40,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              183,
+              225
+            ],
+            [
+              225,
+              270
+            ],
+            [
+              270,
+              313
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              75669,
+              75720
+            ],
+            [
+              75720,
+              75774
+            ],
+            [
+              75774,
+              75826
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/dio/trace.json",
+          "trace_sha256": "4dd51890361c41d305a2d67786a16a8aa1246330fda2db40ea2ee0c182b6bfb7",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "reviewed_lines": [
+        {
+          "source": 1,
+          "source_page": 568,
+          "region": [
+            914,
+            1255,
+            1701,
+            1301
+          ],
+          "role": "reported complete Latin line"
+        }
+      ],
+      "adjacent_prose_locator": "risum"
     },
     {
       "backlog_id": "VII4",
@@ -1576,8 +6909,449 @@
       "baseline_reader": {
         "tomus": 7,
         "physical_page": 344,
-        "body_canvas_index": 58
-      }
+        "body_canvas_index": 58,
+        "folio": 336,
+        "canvas_boundary": [
+          58,
+          77879,
+          79207
+        ]
+      },
+      "source_page": 593,
+      "raster": [
+        1820,
+        2838
+      ],
+      "source_evidence": [
+        {
+          "source_page": 566,
+          "raster": [
+            1813,
+            2838
+          ],
+          "raw_crop_edges": [
+            892,
+            1697
+          ],
+          "crop_edges": [
+            888,
+            1697
+          ],
+          "raw_band_count": 43,
+          "raw_bands_near_defect": [
+            [
+              287,
+              330
+            ],
+            [
+              404,
+              451
+            ],
+            [
+              453,
+              538
+            ],
+            [
+              540,
+              583
+            ],
+            [
+              585,
+              625
+            ],
+            [
+              627,
+              668
+            ]
+          ],
+          "pass_a_band_count": 40,
+          "pass_a_bands_near_defect": [
+            [
+              404,
+              451
+            ],
+            [
+              453,
+              538
+            ],
+            [
+              540,
+              583
+            ],
+            [
+              585,
+              625
+            ],
+            [
+              627,
+              668
+            ]
+          ],
+          "retained_band_count": 40,
+          "retained_bands_near_defect": [
+            [
+              404,
+              451
+            ],
+            [
+              453,
+              538
+            ],
+            [
+              540,
+              583
+            ],
+            [
+              585,
+              625
+            ],
+            [
+              627,
+              668
+            ]
+          ],
+          "retained_index": 0,
+          "strip_count": 40,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              404,
+              452
+            ],
+            [
+              452,
+              539
+            ],
+            [
+              539,
+              584
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              0,
+              58
+            ],
+            [
+              58,
+              163
+            ],
+            [
+              163,
+              217
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/dio/trace.json",
+          "trace_sha256": "4dd51890361c41d305a2d67786a16a8aa1246330fda2db40ea2ee0c182b6bfb7",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 568,
+          "raster": [
+            1844,
+            2836
+          ],
+          "raw_crop_edges": [
+            904,
+            1711
+          ],
+          "crop_edges": [
+            904,
+            1711
+          ],
+          "raw_band_count": 25,
+          "raw_bands_near_defect": [
+            [
+              155,
+              206
+            ],
+            [
+              220,
+              404
+            ],
+            [
+              408,
+              504
+            ],
+            [
+              505,
+              1207
+            ],
+            [
+              1208,
+              1253
+            ],
+            [
+              1255,
+              1573
+            ]
+          ],
+          "pass_a_band_count": 24,
+          "pass_a_bands_near_defect": [
+            [
+              220,
+              404
+            ],
+            [
+              408,
+              504
+            ],
+            [
+              505,
+              1207
+            ],
+            [
+              1208,
+              1253
+            ],
+            [
+              1255,
+              1573
+            ]
+          ],
+          "retained_band_count": 24,
+          "retained_bands_near_defect": [
+            [
+              220,
+              404
+            ],
+            [
+              408,
+              504
+            ],
+            [
+              505,
+              1207
+            ],
+            [
+              1208,
+              1253
+            ],
+            [
+              1255,
+              1573
+            ]
+          ],
+          "retained_index": 2,
+          "strip_count": 23,
+          "strip_selection": "largest source strip intersecting the reported canvas and its neighbors",
+          "strip_cut_intervals_near_defect": [
+            [
+              220,
+              406
+            ],
+            [
+              406,
+              504
+            ],
+            [
+              504,
+              1207
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              5416,
+              5640
+            ],
+            [
+              5640,
+              5758
+            ],
+            [
+              5758,
+              6603
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/dio/trace.json",
+          "trace_sha256": "4dd51890361c41d305a2d67786a16a8aa1246330fda2db40ea2ee0c182b6bfb7",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        },
+        {
+          "source_page": 593,
+          "raster": [
+            1820,
+            2838
+          ],
+          "raw_crop_edges": [
+            988,
+            1796
+          ],
+          "crop_edges": [
+            988,
+            1796
+          ],
+          "raw_band_count": 41,
+          "raw_bands_near_defect": [
+            [
+              1707,
+              1739
+            ],
+            [
+              1743,
+              1785
+            ],
+            [
+              1787,
+              1869
+            ],
+            [
+              1872,
+              2002
+            ],
+            [
+              2003,
+              2131
+            ],
+            [
+              2134,
+              2177
+            ],
+            [
+              2178,
+              2263
+            ],
+            [
+              2266,
+              2393
+            ]
+          ],
+          "pass_a_band_count": 40,
+          "pass_a_bands_near_defect": [
+            [
+              1707,
+              1739
+            ],
+            [
+              1743,
+              1785
+            ],
+            [
+              1787,
+              1869
+            ],
+            [
+              1872,
+              2002
+            ],
+            [
+              2003,
+              2131
+            ],
+            [
+              2134,
+              2177
+            ],
+            [
+              2178,
+              2263
+            ],
+            [
+              2266,
+              2393
+            ]
+          ],
+          "retained_band_count": 40,
+          "retained_bands_near_defect": [
+            [
+              1707,
+              1739
+            ],
+            [
+              1743,
+              1785
+            ],
+            [
+              1787,
+              1869
+            ],
+            [
+              1872,
+              2002
+            ],
+            [
+              2003,
+              2131
+            ],
+            [
+              2134,
+              2177
+            ],
+            [
+              2178,
+              2263
+            ],
+            [
+              2266,
+              2393
+            ]
+          ],
+          "retained_index": 27,
+          "strip_count": 40,
+          "strip_selection": "reviewed glyph row and neighboring strips",
+          "strip_cut_intervals_near_defect": [
+            [
+              1786,
+              1870
+            ],
+            [
+              1870,
+              2002
+            ],
+            [
+              2002,
+              2132
+            ],
+            [
+              2132,
+              2177
+            ],
+            [
+              2177,
+              2264
+            ]
+          ],
+          "scaled_strip_intervals_near_defect": [
+            [
+              77600,
+              77701
+            ],
+            [
+              77701,
+              77860
+            ],
+            [
+              77860,
+              78016
+            ],
+            [
+              78016,
+              78070
+            ],
+            [
+              78070,
+              78175
+            ]
+          ],
+          "trace_path": "tmp/pdfs/inner_tomi_audit_repairs/backlog_artifacts/dio/trace.json",
+          "trace_sha256": "4dd51890361c41d305a2d67786a16a8aa1246330fda2db40ea2ee0c182b6bfb7",
+          "reproduction_command": "cargo test --release backlog_artifact_source_trace -- --ignored --nocapture"
+        }
+      ],
+      "reviewed_lines": [
+        {
+          "source": 1,
+          "source_page": 593,
+          "region": [
+            998,
+            2005,
+            1786,
+            2047
+          ],
+          "role": "reported complete Latin line"
+        }
+      ],
+      "adjacent_prose_locator": "cusas sit ingressus"
     }
   ]
 }

@@ -2976,7 +2976,7 @@ fn backlog_short_ending_canvas_fingerprints() {
 
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
-fn backlog_artifact_candidate_source_trace() {
+fn backlog_artifact_source_trace() {
     use std::collections::{BTreeMap, BTreeSet};
 
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
@@ -2984,11 +2984,17 @@ fn backlog_artifact_candidate_source_trace() {
     ))
     .unwrap();
     let mut selected: BTreeMap<&str, BTreeSet<u32>> = BTreeMap::new();
+    assert_eq!(fixture["repairs"].as_array().unwrap().len(), 19);
     for record in fixture["repairs"].as_array().unwrap() {
         let id = record["unit_id"].as_str().unwrap();
+        let primary = record["source_page"].as_u64().expect("mapped source page") as u32;
+        assert_eq!(record["source"].as_u64().unwrap() as usize, operational_range(id).unit.source);
         let pages = selected.entry(id).or_default();
-        for page in record["source_page_candidates"].as_array().unwrap() {
-            pages.insert(page.as_u64().unwrap() as u32);
+        let evidence = record["source_evidence"].as_array().expect("measured source pages");
+        assert!(!evidence.is_empty());
+        assert!(evidence.iter().any(|page| page["source_page"] == primary));
+        for page in evidence {
+            pages.insert(page["source_page"].as_u64().unwrap() as u32);
         }
     }
     for (id, pages) in selected {
@@ -3031,6 +3037,20 @@ fn backlog_artifact_fixture_has_expected_shape() {
             .as_u64()
             .is_some());
         assert!(record["source_page_candidates"].as_array().is_some());
+        assert!(record["source_page"].as_u64().is_some());
+        assert_eq!(record["raster"].as_array().unwrap().len(), 2);
+        assert_eq!(record["baseline_reader"]["canvas_boundary"].as_array().unwrap().len(), 3);
+        let source_evidence = record["source_evidence"].as_array().unwrap();
+        assert!(!source_evidence.is_empty());
+        assert!(source_evidence.iter().any(|entry| entry["source_page"] == record["source_page"]));
+        for entry in source_evidence {
+            assert_eq!(entry["trace_sha256"].as_str().unwrap().len(), 64);
+            assert!(entry["reproduction_command"].as_str().is_some_and(|command| !command.is_empty()));
+            assert!(entry["raw_band_count"].as_u64().is_some());
+            assert!(entry["pass_a_band_count"].as_u64().is_some());
+            assert!(entry["retained_band_count"].as_u64().is_some());
+            assert!(entry["strip_count"].as_u64().is_some());
+        }
     }
     let baseline = &fixture["baseline"];
     for digest in baseline["source_pdf_sha256"].as_array().unwrap() {
@@ -3038,7 +3058,13 @@ fn backlog_artifact_fixture_has_expected_shape() {
     }
     assert_eq!(baseline["unit_table_sha256"].as_str().unwrap().len(), 64);
     assert_eq!(baseline["dpi"], 300);
+    assert_eq!(baseline["production_body_scale"], 1.2023952);
     assert_eq!(baseline["geometry"]["tb_w"], 1004);
+    assert!(baseline["baseline_copy_checkout_revision"].as_str().is_some());
+    assert!(baseline["trace_code_revision"].as_str().is_some());
+    for key in ["manifest_command", "reader_crop_command", "body_image_command"] {
+        assert!(baseline[key].as_str().is_some_and(|command| !command.is_empty()));
+    }
     let manifest = baseline["baseline_volume_manifest"].as_array().unwrap();
     assert_eq!(manifest.len(), 8);
     for (index, volume) in manifest.iter().enumerate() {
@@ -3064,6 +3090,7 @@ fn backlog_artifact_fixture_has_expected_shape() {
                 .len(),
             64
         );
+        assert_eq!(record["unmerged_final_canvas"]["direct_compose_pages_verified"], true);
     }
 }
 

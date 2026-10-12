@@ -45,7 +45,9 @@ for volume in range(1, 9):
     for unit_id, image_count in ordered:
         page = doc[next_open - 1]
         assert UNITS[unit_id]["latin_title"] in " ".join(page.get_text().splitlines()), (volume, unit_id, next_open)
-        assert page.get_images(), (volume, unit_id, next_open)
+        for offset in range(image_count):
+            body_page = doc[next_open + offset - 1]
+            assert len(body_page.get_images()) == 1, (volume, unit_id, next_open + offset)
         rows.append({"unit_id": unit_id, "body_image_count": image_count, "opening_physical_page": next_open})
         next_open += image_count
         if next_open % 2 == 0:
