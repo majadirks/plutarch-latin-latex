@@ -26,7 +26,7 @@ pub mod review;
 pub mod units;
 
 use crate::compile;
-use crate::latex::{self, Fonts};
+use crate::latex::{self, Fonts, PaperSize};
 use crate::llm::instrument::UsageTracker;
 use crate::render::{self, Pdf};
 use crate::tags::LifeKind;
@@ -48,6 +48,7 @@ pub struct FacsimileArgs {
     /// Path to the auto-detected, hand-editable `facsimile_units.json` cache.
     pub units: PathBuf,
     pub no_compile: bool,
+    pub paper_size: PaperSize,
     /// Re-transcribe the front matter even when its sidecar is fresh.
     pub retag: bool,
     /// Read existing front-matter prose without invoking vision or updating its cache.
@@ -241,9 +242,9 @@ pub fn run_facsimile(args: &FacsimileArgs) -> Result<()> {
     }
 
     if !args.no_compile && compile::lualatex_available() {
-        compile_and_impose(&args.out, &inner_paths)?;
+        compile_and_impose(&args.out, &inner_paths, args.paper_size)?;
     } else {
-        write_wrappers_from_estimate(&args.out, &volumes)?;
+        write_wrappers_from_estimate(&args.out, &volumes, args.paper_size)?;
     }
 
     println!("Volumes: {}", volumes.len());
@@ -501,7 +502,7 @@ fn assign_front_prose(
 
 /// Compile each inner, read its real page count, then write and compile the
 /// imposition wrappers — reusing the transcription path's compile and imposition.
-fn compile_and_impose(out: &Path, inner_paths: &[PathBuf]) -> Result<()> {
+fn compile_and_impose(out: &Path, inner_paths: &[PathBuf], paper_size: PaperSize) -> Result<()> {
     let mut counts = Vec::with_capacity(inner_paths.len());
     for (i, inner) in inner_paths.iter().enumerate() {
         let name = file_name(inner);
@@ -512,7 +513,8 @@ fn compile_and_impose(out: &Path, inner_paths: &[PathBuf]) -> Result<()> {
         println!("           {stem}.pdf: {pages} pages");
         counts.push(pages);
     }
-    let wrappers = latex::write_imposition_wrappers(inner_paths.len(), &counts, out)?;
+    let wrappers =
+        latex::write_imposition_wrappers_for_paper(inner_paths.len(), &counts, out, paper_size)?;
     for wrapper in &wrappers {
         let name = file_name(wrapper);
         println!("           imposing {name}…");
@@ -580,7 +582,11 @@ fn remove_composed_pngs(out: &Path) {
 /// count (each unit's body images — the standalone title page is gone — charged with
 /// the blank leaves and per-tomus front-matter overhead) and print the manual
 /// compile instructions.
-fn write_wrappers_from_estimate(out: &Path, volumes: &[FacsimileVolume]) -> Result<()> {
+fn write_wrappers_from_estimate(
+    out: &Path,
+    volumes: &[FacsimileVolume],
+    paper_size: PaperSize,
+) -> Result<()> {
     let counts: Vec<u32> = volumes
         .iter()
         .map(|v| {
@@ -588,7 +594,7 @@ fn write_wrappers_from_estimate(out: &Path, volumes: &[FacsimileVolume]) -> Resu
             volume_physical_pages(content, v.source, v.is_first_of_source, v.tomus == 1)
         })
         .collect();
-    latex::write_imposition_wrappers(volumes.len(), &counts, out)?;
+    latex::write_imposition_wrappers_for_paper(volumes.len(), &counts, out, paper_size)?;
     for (i, count) in counts.iter().enumerate() {
         println!("  Tomus {:>2}: ~{count} inner pages", i + 1);
     }
@@ -639,6 +645,7 @@ mod tests {
             units: dir.path().join("units.json"),
             exlibris: Some("\t".into()),
             no_compile: true,
+            paper_size: PaperSize::Letter,
             retag: false,
             offline: true,
             detect_units: false,
@@ -914,13 +921,41 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let (up, pl) = two_source_units();
         let volumes = plan_volumes(&up, &pl, false).unwrap();
-        write_wrappers_from_estimate(dir.path(), &volumes).unwrap();
+        write_wrappers_from_estimate(dir.path(), &volumes, PaperSize::Letter).unwrap();
         for i in 1..=volumes.len() {
             assert!(
                 dir.path().join(format!("tomus_{i}.tex")).exists(),
                 "wrapper for tomus {i} missing"
             );
         }
+    }
+
+    #[test]
+    fn facsimile_estimated_wrapper_uses_selected_paper_size() {
+        let dir = tempfile::tempdir().unwrap();
+        let (up, pl) = two_source_units();
+        let volumes = plan_volumes(&up, &pl, false).unwrap();
+        write_wrappers_from_estimate(dir.path(), &volumes, PaperSize::A4).unwrap();
+        let wrapper = std::fs::read_to_string(dir.path().join("tomus_1.tex")).unwrap();
+        assert!(wrapper.contains("paperwidth=29.7cm,paperheight=21cm"));
+        assert!(wrapper.contains("\\def\\Lx{4.35}"));
+    }
+
+    #[test]
+    #[ignore = "requires LuaLaTeX and Poppler"]
+    fn facsimile_compiled_wrapper_uses_selected_paper_size() {
+        let dir = tempfile::tempdir().unwrap();
+        let inner = dir.path().join("tomus_1_inner.tex");
+        std::fs::write(
+            &inner,
+            "\\documentclass{article}\n\\usepackage[paperwidth=10.5cm,paperheight=16cm,margin=0pt]{geometry}\n\\begin{document}X\\end{document}\n",
+        )
+        .unwrap();
+        compile_and_impose(dir.path(), &[inner], PaperSize::A4).unwrap();
+        let wrapper = std::fs::read_to_string(dir.path().join("tomus_1.tex")).unwrap();
+        assert!(wrapper.contains("paperwidth=29.7cm,paperheight=21cm"));
+        assert!(wrapper.contains("\\def\\Lx{4.35}"));
+        assert!(dir.path().join("tomus_1.pdf").exists());
     }
 
     #[test]
@@ -979,6 +1014,7 @@ mod tests {
             out: dir.path().to_path_buf(),
             units: PathBuf::from("facsimile_units.json"),
             no_compile: true,
+            paper_size: PaperSize::Letter,
             retag: false,
             offline: false,
             detect_units: false,
@@ -1045,6 +1081,7 @@ mod tests {
             out: dir.path().to_path_buf(),
             units: PathBuf::from("facsimile_units.json"),
             no_compile: true,
+            paper_size: PaperSize::Letter,
             retag: false,
             offline: false,
             detect_units: false,

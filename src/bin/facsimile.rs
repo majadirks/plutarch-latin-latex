@@ -1,9 +1,25 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 
 use plutarch_reader::facsimile::{run_facsimile, validate_exlibris_name, FacsimileArgs};
+use plutarch_reader::latex::PaperSize;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum PaperSizeArg {
+    Letter,
+    A4,
+}
+
+impl From<PaperSizeArg> for PaperSize {
+    fn from(value: PaperSizeArg) -> Self {
+        match value {
+            PaperSizeArg::Letter => Self::Letter,
+            PaperSizeArg::A4 => Self::A4,
+        }
+    }
+}
 
 /// Build a Loeb-size, Latin-only reader whose body pages are the original 1857
 /// Didot Latin column cropped from the source scans and reflowed into the trim
@@ -35,6 +51,10 @@ struct Args {
     /// Write the `.tex` files but do not invoke lualatex.
     #[arg(long)]
     no_compile: bool,
+
+    /// Printer sheet size for facsimile imposition; inner trim size is unchanged.
+    #[arg(long, value_enum, default_value_t = PaperSizeArg::Letter)]
+    paper_size: PaperSizeArg,
 
     /// Re-transcribe the front matter even when its sidecar is fresh.
     #[arg(long)]
@@ -85,6 +105,7 @@ fn main() -> Result<()> {
         exlibris: args.exlibris,
         units: args.units,
         no_compile: args.no_compile,
+        paper_size: args.paper_size.into(),
         retag: args.retag,
         offline: args.offline,
         detect_units: args.detect_units,
@@ -100,6 +121,24 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn facsimile_paper_size_defaults_to_letter() {
+        assert_eq!(exlibris_cli(&[]).unwrap().paper_size, PaperSizeArg::Letter);
+    }
+
+    #[test]
+    fn facsimile_paper_size_accepts_a4() {
+        assert_eq!(
+            exlibris_cli(&["--paper-size", "a4"]).unwrap().paper_size,
+            PaperSizeArg::A4
+        );
+    }
+
+    #[test]
+    fn facsimile_paper_size_rejects_unknown_value() {
+        assert!(exlibris_cli(&["--paper-size", "legal"]).is_err());
+    }
 
     fn exlibris_cli(extra: &[&str]) -> std::result::Result<Args, clap::Error> {
         Args::try_parse_from(
