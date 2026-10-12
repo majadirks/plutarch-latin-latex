@@ -955,7 +955,20 @@ mod tests {
         let wrapper = std::fs::read_to_string(dir.path().join("tomus_1.tex")).unwrap();
         assert!(wrapper.contains("paperwidth=29.7cm,paperheight=21cm"));
         assert!(wrapper.contains("\\def\\Lx{4.35}"));
-        assert!(dir.path().join("tomus_1.pdf").exists());
+        let pdf = dir.path().join("tomus_1.pdf");
+        assert!(pdf.exists());
+        let pdfinfo = std::env::var("PLUTARCH_PDFINFO").unwrap_or_else(|_| "pdfinfo".to_string());
+        let output = std::process::Command::new(pdfinfo)
+            .arg(&pdf)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let details = String::from_utf8_lossy(&output.stdout);
+        let page_size = details
+            .lines()
+            .find(|line| line.starts_with("Page size:"))
+            .expect("imposed PDF reports its page size");
+        assert!(page_size.contains("(A4)"), "{page_size}");
     }
 
     #[test]
