@@ -4621,14 +4621,11 @@ mod tests {
         );
         for (index, (&page, (column, bands))) in sequence.iter().zip(&pages).enumerate() {
             let raw = real_source_image(range.unit.source, page);
-            // Detect the column on the masked image so the crop matches production on
-            // pages that carry a furniture mask (e.g. the retained Cato folio-934 header
-            // on 337 and the right-rule margin on 361). The retained body bands lie
-            // outside those rectangles, so each still compares byte-identical to the raw
-            // source Latin here.
+            // Compare retained bands at the source coordinates used by production,
+            // including reviewed crop edges that preserve marginal glyphs.
             let mut masked = raw.clone();
             mask_known_source_furniture(range.unit.source, page, &mut masked);
-            let crop = detect_latin_column(&masked).unwrap();
+            let crop = production_source_column(range.unit.source, page, &masked).unwrap();
             let trace = RetainedSourcePageTrace {
                 source: range.unit.source,
                 page,
