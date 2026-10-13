@@ -782,7 +782,8 @@ pub(in crate::facsimile) mod tests {
         let doc = inner_document(&vol, &Fonts::default(), None);
         assert!(!doc.contains("\\heading{EMPTY}"));
         assert_eq!(doc.matches("\\unitrecto\n\\markboth").count(), 1);
-        let empty = volume(vec![unit("empty", &[])]);
+        let mut empty = volume(vec![unit("empty", &[])]);
+        empty.emit_front_matter = false;
         assert!(!inner_document(&empty, &Fonts::default(), None).contains("\\unitrecto\n"));
     }
 

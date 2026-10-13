@@ -487,7 +487,7 @@ pub(crate) fn tomus_title_page(
     // pushed to the bottom, separated from the title by the larger flexible gap.
     format!(
         "% Tomus title page\n\
-         \\freshpage\n\
+         \\unitrecto\n\
          \\thispagestyle{{empty}}\n\
          \\null\\vfill\n\
          \\begin{{center}}\n\
@@ -513,7 +513,7 @@ fn exlibris_plate(name: &str) -> String {
 pub(crate) fn embed_scan(name: &str) -> String {
     format!(
         "% Embedded front-matter scan\n\
-         \\freshpage\n\
+         \\unitrecto\n\
          \\thispagestyle{{empty}}\n\
          \\begin{{center}}\n\
          \x20 \\includegraphics[width=\\textwidth,height=\\textheight,keepaspectratio]{{{name}}}\n\
@@ -905,6 +905,9 @@ mod tests {
         assert!(page.contains("PLVTARCHI"));
         assert!(page.contains("VIT\u{c6}"));
         assert!(page.ends_with("\\clearpage\n\n"));
+        // The title page opens on a recto, not a verso.
+        assert!(page.contains("\\unitrecto"));
+        assert!(!page.contains("\\freshpage"));
     }
     #[test]
     fn tomus_title_page_renders_bordered_uppercase_exlibris() {
@@ -1397,6 +1400,9 @@ mod tests {
         assert!(s.contains("\\thispagestyle{empty}"));
         // The PNG is cropped in Rust, so no LaTeX trim is emitted.
         assert!(!s.contains("trim="));
+        // The embedded scan opens on a recto, not a verso.
+        assert!(s.contains("\\unitrecto"));
+        assert!(!s.contains("\\freshpage"));
     }
 
     #[test]
