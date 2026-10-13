@@ -1,3 +1,39 @@
+# Implementation status (2026-10-13)
+
+Seven of the twelve defects are implemented, verified by ignored production
+regressions, and committed on branch `fix/tomus-1-gaps-split-shortending`:
+
+- **Done:** G1 (p23 mask), G2 (p30 mask), S1 (p41 mask), T2b (p315 right-edge
+  mask) — `backlog_tomi_divider_masks_restore_banding` + the faithfulness gate
+  `inner_tomi_known_masks_preserve_latin`; G4 (p36 excision), G5 (p37 excision) —
+  `backlog_romulus_chapter_gaps_excised`; M1 (short-ending merge) —
+  `backlog_solon_poplicola_short_ending_merges`. New masks live in
+  `fixtures/tomi_gap_split_repairs_source_trace.json`.
+- **Remaining (harder class — not simple edge streaks):**
+  - **G3 (p34)**, **T3a (p448)**: the page is **skewed** (baselines not level), so
+    no row is blank across the width and the column bands into one block; an
+    edge mask cannot de-bridge it. G3's *visible* defect is the left divider
+    streak rendering as gutter fragments — a narrow left mask removes those, but
+    the skew-merge residual needs eyeballing. p448 also has a bled Greek column
+    and an over-wide crop. These need a per-page deskew or a whole-strip guard,
+    not a furniture mask.
+  - **T3b (p451)**, **T3c (p462)**: horizontal splits from a skew/tight-text
+    bridge at a page foot; the merged band must wrap whole via
+    `is_known_whole_source_strip` (measure the column dims / band / crop /
+    fingerprint at production scale and confirm the scaled band fits a budget),
+    as III1/III2/VII2-4 did.
+  - **T2a (p289→p290 boundary)**: the "O ma-/ter" split straddles the source
+    page break; the right-edge streak at abs x≈1905 sits in the right margin
+    (outside the ~[933,1719] Latin crop) and the two specks below "O ma-" are too
+    sparse (<3 px/row) to band, so the mechanism is not yet a simple streak mask —
+    needs the p289 production crop (the diagnostic now covers p289/p291) to pin
+    the cause.
+
+The three **Tomus VI** items the owner added (pdf 86-87 "quidem" split; v2 p266
+skew losing right-edge glyphs + left Greek bleed; gap on pdf 394 after "…summae
+rerum consi-") are explicitly scheduled for a **separate** plan after this branch
+lands, and are not addressed here.
+
 # Context
 
 `BACKLOG.md`'s "Tomus I" section lists seven visible defects in
