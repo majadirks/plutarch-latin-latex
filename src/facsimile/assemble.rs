@@ -303,7 +303,9 @@ pub(in crate::facsimile) mod tests {
             assert_blank(dir.path(), 5, (closing + 1) as u32, &texts, &images);
         }
         assert!(images.contains(&((body + 1) as u32, 312, 102)));
-        assert!(texts[body].lines().any(|l| l.trim() == "2"));
+        assert!(texts[body]
+            .lines()
+            .any(|l| l.split_whitespace().any(|w| w == "2")));
         let log = std::fs::read_to_string(dir.path().join("tomus_5_inner.log")).unwrap();
         assert!(!log.contains("Overfull "));
         assert!(!log.contains("Missing character:"));
@@ -316,11 +318,15 @@ pub(in crate::facsimile) mod tests {
             )
             .unwrap();
             let raster = image::open(png).unwrap().to_luma8();
-            // The left image edge avoids the centered footer folio.
-            let edge_x = (1.0 / 2.54 * 300.0_f32).round() as u32 + 15;
+            // Probe the horizontal centre: the body image fills the full measure
+            // there, but the folio never does — `\fancyfoot[LE]/[RO]` sets it flush
+            // to the inner or outer margin, so which edge it occupies flips with the
+            // page's parity. Measuring the centre keeps the bottom ink the image's,
+            // regardless of whether this page landed on a recto or a verso.
+            let centre_x = raster.width() / 2;
             let last_ink = (0..raster.height())
                 .rev()
-                .find(|&y| raster.get_pixel(edge_x, y)[0] < 100)
+                .find(|&y| raster.get_pixel(centre_x, y)[0] < 100)
                 .unwrap();
             assert!(last_ink < raster.height() - 170, "bottom ink at {last_ink}");
             assert!(
@@ -639,9 +645,12 @@ pub(in crate::facsimile) mod tests {
                 .any(|l| l.trim().parse::<u32>().is_ok()));
         }
         for (page, folio) in [(6, 2), (8, 4), (9, 5), (12, 8)] {
+            // Match the folio as a whitespace-delimited token: some pdftotext
+            // builds group the centered running head and the corner folio onto one
+            // extracted line (e.g. "THESEUS 2"), others keep them separate.
             assert!(texts[page - 1]
                 .lines()
-                .any(|l| l.trim() == folio.to_string()));
+                .any(|l| l.split_whitespace().any(|w| w.parse::<u32>() == Ok(folio))));
         }
         assert_blank(dir.path(), 2, 10, &texts, &images);
     }
@@ -705,7 +714,11 @@ pub(in crate::facsimile) mod tests {
                 );
                 write_inner(&vol, dir.path(), &Fonts::default(), None).unwrap();
                 let (texts, images) = compiled_fixture(dir.path(), tomus);
-                let prose_start = if tomus == 1 { 13 } else { 9 };
+                // Front-matter units now open on rectos, so the literal prose
+                // (which carries no \unitrecto of its own) lands one page earlier:
+                // Tomus I after title/QR/Volumen/colophon on recto pages 5/7/9/11
+                // -> page 12; a plain tomus after title/QR on 5/7 -> page 8.
+                let prose_start = if tomus == 1 { 12 } else { 8 };
                 assert!(texts[prose_start - 1].contains("FRONT-A"));
                 if prose_count == 2 {
                     assert!(texts[prose_start].contains("FRONT-B"));
@@ -735,7 +748,9 @@ pub(in crate::facsimile) mod tests {
                 if body == final_front + 2 {
                     assert_blank(dir.path(), tomus, (body - 1) as u32, &texts, &images);
                 }
-                assert!(texts[body].lines().any(|l| l.trim() == "2"));
+                assert!(texts[body]
+                    .lines()
+                    .any(|l| l.split_whitespace().any(|w| w == "2")));
                 assert!(!texts[body - 1]
                     .lines()
                     .any(|l| l.trim().parse::<u32>().is_ok()));
@@ -782,7 +797,8 @@ pub(in crate::facsimile) mod tests {
         let doc = inner_document(&vol, &Fonts::default(), None);
         assert!(!doc.contains("\\heading{EMPTY}"));
         assert_eq!(doc.matches("\\unitrecto\n\\markboth").count(), 1);
-        let empty = volume(vec![unit("empty", &[])]);
+        let mut empty = volume(vec![unit("empty", &[])]);
+        empty.emit_front_matter = false;
         assert!(!inner_document(&empty, &Fonts::default(), None).contains("\\unitrecto\n"));
     }
 
@@ -1050,6 +1066,94 @@ pub(in crate::facsimile) mod tests {
     }
 
     #[test]
+    fn front_matter_units_open_on_recto() {
+        // Every named front-matter unit opens with the recto-forcing \unitrecto,
+        // and the front-matter region carries no verso-forcing \freshpage. The
+        // scan count varies by the tomus's place in the work. The prose unit's own
+        // recto break lives inside its (here literal) prose string and is covered
+        // by the latex::front_prose_* tests, so prose is checked for order only.
+        // The document body between \begin{document} and \beginbodynumbering,
+        // excluding the preamble (which defines \freshpage and \unitrecto).
+        let front_region = |doc: &str| {
+            let start = doc.find("\\begin{document}").unwrap();
+            let end = start + doc[start..].find("\\beginbodynumbering").unwrap();
+            doc[start..end].to_string()
+        };
+        let scan_recto = "% Embedded front-matter scan\n\\unitrecto\n";
+
+        // Tomus I: title, QR, Volumen, colophon, Monitum prose; errata pair follows.
+        let doc = inner_document(
+            &volume_full(
+                1,
+                0,
+                true,
+                true,
+                "% MONITUM PROSE MARKER\n",
+                vec![unit("theseus", &["x.png"])],
+            ),
+            &Fonts::default(),
+            None,
+        );
+        let region = front_region(&doc);
+        assert!(!region.contains("\\freshpage"));
+        assert!(region.contains("% Tomus title page\n\\unitrecto\n"));
+        assert_eq!(region.matches(scan_recto).count(), 3);
+        // The Monitum errata pair follows the prose on a plain page break, not a recto.
+        assert!(region.contains("% Embedded front-matter scan pair\n\\clearpage\n"));
+        assert!(!region.contains("% Embedded front-matter scan pair\n\\unitrecto"));
+        let (title, qr, volumen, colophon, prose) = (
+            region.find("PLVTARCHI").unwrap(),
+            region.find("front_qr_s0.png").unwrap(),
+            region.find("front_volumen_s0.png").unwrap(),
+            region.find("front_colophon.png").unwrap(),
+            region.find("MONITUM PROSE MARKER").unwrap(),
+        );
+        assert!(title < qr && qr < volumen && volumen < colophon && colophon < prose);
+
+        // Tomus 5 (first tomus of source 1): title, QR, Volumen, Praefatio prose;
+        // no colophon and no errata pair.
+        let doc = inner_document(
+            &volume_full(
+                5,
+                1,
+                true,
+                true,
+                "% PRAEFATIO PROSE MARKER\n",
+                vec![unit("nicias", &["x.png"])],
+            ),
+            &Fonts::default(),
+            None,
+        );
+        let region = front_region(&doc);
+        assert!(!region.contains("\\freshpage"));
+        assert!(region.contains("% Tomus title page\n\\unitrecto\n"));
+        assert_eq!(region.matches(scan_recto).count(), 2);
+        assert!(!region.contains("front_colophon.png"));
+        assert!(!region.contains("% Embedded front-matter scan pair"));
+        let (title, qr, volumen, prose) = (
+            region.find("PLVTARCHI").unwrap(),
+            region.find("front_qr_s1.png").unwrap(),
+            region.find("front_volumen_s1.png").unwrap(),
+            region.find("PRAEFATIO PROSE MARKER").unwrap(),
+        );
+        assert!(title < qr && qr < volumen && volumen < prose);
+
+        // A plain later tomus: title and QR only.
+        let doc = inner_document(
+            &volume_full(2, 0, false, true, "", vec![unit("theseus", &["x.png"])]),
+            &Fonts::default(),
+            None,
+        );
+        let region = front_region(&doc);
+        assert!(!region.contains("\\freshpage"));
+        assert!(region.contains("% Tomus title page\n\\unitrecto\n"));
+        assert_eq!(region.matches(scan_recto).count(), 1);
+        assert!(!region.contains("front_volumen_s0.png"));
+        assert!(!region.contains("front_colophon.png"));
+        assert!(region.find("PLVTARCHI").unwrap() < region.find("front_qr_s0.png").unwrap());
+    }
+
+    #[test]
     fn qr_scan_on_every_tomus() {
         // A non-first-of-source emitting volume still embeds its source's QR scan,
         // but not the Volumen title, colophon, or prose.
@@ -1233,7 +1337,9 @@ pub(in crate::facsimile) mod tests {
         );
         assert!(
             pages[body_page].contains("THESEUS")
-                && pages[body_page].lines().any(|l| l.trim() == "2"),
+                && pages[body_page]
+                    .lines()
+                    .any(|l| l.split_whitespace().any(|w| w == "2")),
             "second body page {} lacks running head/folio 2 in {}: {:?}",
             body_page + 1,
             inner_pdf.display(),
