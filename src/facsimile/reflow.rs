@@ -2815,6 +2815,166 @@ fn matches_source_region_fingerprint(column: &GrayImage, region: [u32; 4], expec
     format!("{:x}", sha2::Sha256::digest(glyphs.as_raw())) == expected
 }
 
+/// A reviewed cut-point strip recognized by cropped column dimensions, the exact
+/// band, a fingerprint region, and the raw-pixel fingerprint of that region.
+type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
+
+const WHOLE_STRIPS: &[WholeStripSignature] = &[
+    (
+        (825, 3033),
+        Band {
+            top: 2188,
+            bottom: 2613,
+        },
+        [0, 2188, 825, 2613],
+        "65a1b23e165f1eb2809bcc25df57424a00c0918c608dc6e4965bd0611bb0e80a",
+    ),
+    (
+        (793, 2986),
+        Band {
+            top: 2542,
+            bottom: 2620,
+        },
+        [0, 2542, 793, 2620],
+        "3db7429f26c774e70220d15ceb87c8fc52ab583b4426d19b90e305fa63062202",
+    ),
+    (
+        (818, 2973),
+        Band {
+            top: 1633,
+            bottom: 1727,
+        },
+        [0, 1633, 818, 1727],
+        "98e0c26eb64b4981e4d963ca5b260c9832224f0d1cbad15665b46777b2a41eab",
+    ),
+    (
+        (813, 3008),
+        Band {
+            top: 467,
+            bottom: 563,
+        },
+        [0, 467, 813, 563],
+        "fe2a11f9446ea81ff88a8f37a429edbff020e6eee0ca567239a63589d40af4ac",
+    ),
+    (
+        (809, 2838),
+        Band {
+            top: 1411,
+            bottom: 1586,
+        },
+        [0, 1411, 809, 1586],
+        "4b9ddbc1990b9144c0952250b144c8260a3e5c723ecfca6e979f642d0e47b3c8",
+    ),
+    (
+        (807, 2836),
+        Band {
+            top: 1254,
+            bottom: 1573,
+        },
+        [0, 1254, 807, 1573],
+        "304aedc23f1d463a5ecd9028f26c5594b2b6187b7a33db64629b18be7a13ef6c",
+    ),
+    (
+        (808, 2838),
+        Band {
+            top: 2002,
+            bottom: 2132,
+        },
+        [0, 2002, 808, 2132],
+        "081fc41d7d05be508e5b112e7659a3c920586066d459fff679de81d3b4e145aa",
+    ),
+    (
+        (845, 2835),
+        Band {
+            top: 248,
+            bottom: 1364,
+        },
+        [0, 249, 845, 1364],
+        "d19136f5c88476c20db6ccdc4727421dfb1a354e3d080f34ecf2e3cdfe24c2ce",
+    ),
+    (
+        (845, 2835),
+        Band {
+            top: 1364,
+            bottom: 1691,
+        },
+        [0, 1364, 845, 1691],
+        "22bc97d92d9b1ae5970495b3c87fcb081f96e78b1df76b4dbc685a3b6bbf0567",
+    ),
+    (
+        (817, 2836),
+        Band {
+            top: 1507,
+            bottom: 1648,
+        },
+        [0, 1507, 817, 1648],
+        "b9923339da9e250ebc0404036149d63cf9a253aafbb4c2f73957398188f608d0",
+    ),
+    (
+        (815, 2835),
+        Band {
+            top: 249,
+            bottom: 1364,
+        },
+        [0, 249, 815, 1364],
+        "ab6e88cedbcb8117631ab2ee3d942eb10392f2da3616000cbd18f6548f5dae95",
+    ),
+    (
+        (815, 2835),
+        Band {
+            top: 1364,
+            bottom: 1691,
+        },
+        [0, 1364, 815, 1691],
+        "70a25389a74d1114c2bf05345593112c8fb7e00d3e1382f759081765714e9f49",
+    ),
+    (
+        (826, 2835),
+        Band {
+            top: 249,
+            bottom: 1364,
+        },
+        [0, 249, 826, 1364],
+        "5bd51a4290f3d012bcedf037f3cb8b0d67a4479bd381b3449a8165171b832632",
+    ),
+    (
+        (826, 2835),
+        Band {
+            top: 1364,
+            bottom: 1691,
+        },
+        [0, 1364, 826, 1691],
+        "5a3cfc2d34e81d528e74ac84ce4c954d91dbbc65f12403579b6d665a8c868980",
+    ),
+    // T3b (philopoemen, v1 source page 451): the page-foot merged strip
+    // "oppidanorum inflaverat, et ad portas exciverat. Ut vero" /
+    // "Philopoemenem indigne gloria tanti viri, rebusque gestis" (two prose lines
+    // fused by tight foot spacing) was bisected mid-glyph across generated pages
+    // 129->130; wrap it whole (scaled 107 <= 1394 budget).
+    (
+        (751, 2953),
+        Band {
+            top: 2344,
+            bottom: 2433,
+        },
+        [0, 2344, 751, 2433],
+        "71401035f8ab7fd9f305a8c4aa47f02dbe32d72c64f8db212dc6ef96e0b7b1db",
+    ),
+    // T3c (flamininus, v1 source page 462): the merged strip
+    // "phis enim clypeos argenteos affigens, suumque scutum, ita" / "inscripsit :"
+    // (the "...del-phis" continuation plus its colophon) was bisected mid-glyph
+    // across generated pages 151->152; wrap it whole (scaled 108 <= 1394 budget).
+    (
+        (801, 2988),
+        Band {
+            top: 412,
+            bottom: 502,
+        },
+        [0, 412, 801, 502],
+        "f31a373625ac795614f07c68557c2668890af5776d7ffa456e981994c61b7068",
+    ),
+];
+
 /// Recognize reviewed source strips by dimensions, cut-point interval, and original
 /// pixel fingerprint. A matching strip wraps whole only when it fits a fresh body
 /// canvas; the caller applies the measured scaled-height budget.
@@ -2826,162 +2986,6 @@ fn is_known_whole_source_strip(column: &GrayImage, band: &Band) -> bool {
     {
         return false;
     }
-    type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
-    const WHOLE_STRIPS: &[WholeStripSignature] = &[
-        (
-            (825, 3033),
-            Band {
-                top: 2188,
-                bottom: 2613,
-            },
-            [0, 2188, 825, 2613],
-            "65a1b23e165f1eb2809bcc25df57424a00c0918c608dc6e4965bd0611bb0e80a",
-        ),
-        (
-            (793, 2986),
-            Band {
-                top: 2542,
-                bottom: 2620,
-            },
-            [0, 2542, 793, 2620],
-            "3db7429f26c774e70220d15ceb87c8fc52ab583b4426d19b90e305fa63062202",
-        ),
-        (
-            (818, 2973),
-            Band {
-                top: 1633,
-                bottom: 1727,
-            },
-            [0, 1633, 818, 1727],
-            "98e0c26eb64b4981e4d963ca5b260c9832224f0d1cbad15665b46777b2a41eab",
-        ),
-        (
-            (813, 3008),
-            Band {
-                top: 467,
-                bottom: 563,
-            },
-            [0, 467, 813, 563],
-            "fe2a11f9446ea81ff88a8f37a429edbff020e6eee0ca567239a63589d40af4ac",
-        ),
-        (
-            (809, 2838),
-            Band {
-                top: 1411,
-                bottom: 1586,
-            },
-            [0, 1411, 809, 1586],
-            "4b9ddbc1990b9144c0952250b144c8260a3e5c723ecfca6e979f642d0e47b3c8",
-        ),
-        (
-            (807, 2836),
-            Band {
-                top: 1254,
-                bottom: 1573,
-            },
-            [0, 1254, 807, 1573],
-            "304aedc23f1d463a5ecd9028f26c5594b2b6187b7a33db64629b18be7a13ef6c",
-        ),
-        (
-            (808, 2838),
-            Band {
-                top: 2002,
-                bottom: 2132,
-            },
-            [0, 2002, 808, 2132],
-            "081fc41d7d05be508e5b112e7659a3c920586066d459fff679de81d3b4e145aa",
-        ),
-        (
-            (845, 2835),
-            Band {
-                top: 248,
-                bottom: 1364,
-            },
-            [0, 249, 845, 1364],
-            "d19136f5c88476c20db6ccdc4727421dfb1a354e3d080f34ecf2e3cdfe24c2ce",
-        ),
-        (
-            (845, 2835),
-            Band {
-                top: 1364,
-                bottom: 1691,
-            },
-            [0, 1364, 845, 1691],
-            "22bc97d92d9b1ae5970495b3c87fcb081f96e78b1df76b4dbc685a3b6bbf0567",
-        ),
-        (
-            (817, 2836),
-            Band {
-                top: 1507,
-                bottom: 1648,
-            },
-            [0, 1507, 817, 1648],
-            "b9923339da9e250ebc0404036149d63cf9a253aafbb4c2f73957398188f608d0",
-        ),
-        (
-            (815, 2835),
-            Band {
-                top: 249,
-                bottom: 1364,
-            },
-            [0, 249, 815, 1364],
-            "ab6e88cedbcb8117631ab2ee3d942eb10392f2da3616000cbd18f6548f5dae95",
-        ),
-        (
-            (815, 2835),
-            Band {
-                top: 1364,
-                bottom: 1691,
-            },
-            [0, 1364, 815, 1691],
-            "70a25389a74d1114c2bf05345593112c8fb7e00d3e1382f759081765714e9f49",
-        ),
-        (
-            (826, 2835),
-            Band {
-                top: 249,
-                bottom: 1364,
-            },
-            [0, 249, 826, 1364],
-            "5bd51a4290f3d012bcedf037f3cb8b0d67a4479bd381b3449a8165171b832632",
-        ),
-        (
-            (826, 2835),
-            Band {
-                top: 1364,
-                bottom: 1691,
-            },
-            [0, 1364, 826, 1691],
-            "5a3cfc2d34e81d528e74ac84ce4c954d91dbbc65f12403579b6d665a8c868980",
-        ),
-        // T3b (philopoemen, v1 source page 451): the page-foot merged strip
-        // "oppidanorum inflaverat, et ad portas exciverat. Ut vero" /
-        // "Philopoemenem indigne gloria tanti viri, rebusque gestis" (two prose lines
-        // fused by tight foot spacing) was bisected mid-glyph across generated pages
-        // 129->130; wrap it whole (scaled 107 <= 1394 budget).
-        (
-            (751, 2953),
-            Band {
-                top: 2344,
-                bottom: 2433,
-            },
-            [0, 2344, 751, 2433],
-            "71401035f8ab7fd9f305a8c4aa47f02dbe32d72c64f8db212dc6ef96e0b7b1db",
-        ),
-        // T3c (flamininus, v1 source page 462): the merged strip
-        // "phis enim clypeos argenteos affigens, suumque scutum, ita" / "inscripsit :"
-        // (the "...del-phis" continuation plus its colophon) was bisected mid-glyph
-        // across generated pages 151->152; wrap it whole (scaled 108 <= 1394 budget).
-        (
-            (801, 2988),
-            Band {
-                top: 412,
-                bottom: 502,
-            },
-            [0, 412, 801, 502],
-            "f31a373625ac795614f07c68557c2668890af5776d7ffa456e981994c61b7068",
-        ),
-    ];
     WHOLE_STRIPS
         .iter()
         .any(|(dimensions, strip, region, fingerprint)| {
@@ -4974,38 +4978,104 @@ mod tests {
         .unwrap()
     }
 
+    /// A JSON value is a lowercase/uppercase 64-character SHA-256 hex digest.
+    fn ledger_is_hex64(value: &serde_json::Value) -> bool {
+        value
+            .as_str()
+            .is_some_and(|s| s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit()))
+    }
+
+    /// A JSON value is an array of exactly `n` non-negative integers.
+    fn ledger_is_u_array(value: &serde_json::Value, n: usize) -> bool {
+        value
+            .as_array()
+            .is_some_and(|a| a.len() == n && a.iter().all(|v| v.as_u64().is_some()))
+    }
+
     #[test]
     fn tomi_gap_split_ledger_has_expected_shape() {
         let ledger = tomi_gap_split_repair_ledger();
         assert_eq!(ledger["schema_version"], 1);
+        assert!(ledger["description"]
+            .as_str()
+            .is_some_and(|d| !d.is_empty()));
         let repairs = ledger["repairs"].as_array().unwrap();
         assert!(!repairs.is_empty());
         for repair in repairs {
-            assert_eq!(repair["disposition"], "mask");
-            assert_eq!(repair["status"], "repaired");
-            assert!(repair["backlog_id"]
-                .as_str()
-                .is_some_and(|id| !id.is_empty()));
+            // Every installed record shares source identity, raw dimensions, and
+            // reviewed Latin regions regardless of disposition.
             assert!(repair["unit_id"].as_str().is_some_and(|id| !id.is_empty()));
             assert!(matches!(repair["source"].as_u64(), Some(0 | 1)));
             assert!(repair["source_page"].as_u64().is_some());
-            assert_eq!(repair["raster"].as_array().unwrap().len(), 2);
-            let rects = repair["mask_rectangles"].as_array().unwrap();
-            assert!(!rects.is_empty());
-            for rect in rects {
-                let r: Vec<f64> = rect
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .map(|v| v.as_f64().unwrap())
-                    .collect();
-                assert_eq!(r.len(), 4);
-                assert!(r[0] >= 0.0 && r[2] <= 1.0 && r[0] < r[2]);
-                assert!(r[1] >= 0.0 && r[3] <= 1.0 && r[1] < r[3]);
-            }
+            assert!(ledger_is_u_array(&repair["raster"], 2));
             assert!(repair["preserved_latin_regions"]
                 .as_array()
                 .is_some_and(|regions| !regions.is_empty()));
+
+            match repair["disposition"].as_str().unwrap() {
+                "mask" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert!(repair["backlog_id"]
+                        .as_str()
+                        .is_some_and(|id| !id.is_empty()));
+                    let rects = repair["mask_rectangles"].as_array().unwrap();
+                    assert!(!rects.is_empty());
+                    for rect in rects {
+                        let r: Vec<f64> = rect
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|v| v.as_f64().unwrap())
+                            .collect();
+                        assert_eq!(r.len(), 4);
+                        assert!(r[0] >= 0.0 && r[2] <= 1.0 && r[0] < r[2]);
+                        assert!(r[1] >= 0.0 && r[3] <= 1.0 && r[1] < r[3]);
+                    }
+                    // Fractions are raw full-source coordinates unless marked sheared.
+                    if let Some(space) = repair["coordinate_space"].as_str() {
+                        assert!(matches!(space, "raw" | "sheared"));
+                    }
+                }
+                "shear" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert!(ledger_is_hex64(&repair["fingerprint"]));
+                    assert!(ledger_is_u_array(&repair["fingerprint_region"], 4));
+                    let gaps = &repair["matched_gaps"];
+                    assert!(gaps["left_x"].as_u64().is_some());
+                    assert!(gaps["right_x"].as_u64().is_some());
+                    assert!(ledger_is_u_array(&gaps["left_rows"], 2));
+                    assert!(ledger_is_u_array(&gaps["right_rows"], 2));
+                    assert!(repair["x0_px"].as_u64().is_some());
+                    assert!(repair["baseline_slope"].as_f64().is_some());
+                    assert_eq!(repair["shift_range"].as_array().unwrap().len(), 2);
+                    assert!(repair["top_pad"].as_u64().is_some());
+                    assert!(ledger_is_u_array(&repair["crop_edges"], 2));
+                    assert!(repair["expected_bands"].as_array().is_some());
+                }
+                "whole_strip" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert!(ledger_is_u_array(&repair["column_dims"], 2));
+                    assert!(ledger_is_u_array(&repair["composer_strip"], 2));
+                    assert!(ledger_is_u_array(&repair["strip_fingerprint_region"], 4));
+                    assert!(ledger_is_hex64(&repair["strip_fingerprint"]));
+                }
+                "word_patch" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert!(ledger_is_u_array(&repair["src_rect"], 4));
+                    assert!(ledger_is_u_array(&repair["dest_anchor"], 2));
+                    if !repair["excise_rect"].is_null() {
+                        assert!(ledger_is_u_array(&repair["excise_rect"], 4));
+                    }
+                    assert!(ledger_is_hex64(&repair["fingerprint"]));
+                }
+                "source_spacing_retained" => {
+                    // Not a repair: a measured, justified decision to leave the gap.
+                    assert!(repair["source_gap_px"].as_array().is_some());
+                    assert!(!repair["reader_gap_px"].is_null());
+                    assert!(repair["reason"].as_str().is_some_and(|r| !r.is_empty()));
+                }
+                other => panic!("unknown disposition {other}"),
+            }
         }
     }
 
@@ -5016,6 +5086,7 @@ mod tests {
         let mut pages = std::collections::BTreeMap::new();
         for repair in ledger["repairs"].as_array().unwrap() {
             if repair["disposition"] != "mask"
+                || repair["coordinate_space"] == "sheared"
                 || (repair["status"].is_string() && repair["status"] != "repaired")
             {
                 continue;
@@ -5040,6 +5111,7 @@ mod tests {
         for ledger in ledgers {
             for repair in ledger["repairs"].as_array().unwrap() {
                 if repair["disposition"] != "mask"
+                    || repair["coordinate_space"] == "sheared"
                     || (repair["status"].is_string() && repair["status"] != "repaired")
                 {
                     continue;
@@ -5274,6 +5346,149 @@ mod tests {
                             && pixels(actual) == pixels(rectangle)
                     }),
                     "source {source} page {page}: every reviewed rectangle is installed"
+                );
+            }
+        }
+    }
+
+    /// Installed `repairs` records of one disposition across the shared ledger.
+    fn repairs_with_disposition<'a>(
+        ledger: &'a serde_json::Value,
+        disposition: &str,
+    ) -> Vec<&'a serde_json::Value> {
+        ledger["repairs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|r| r["disposition"] == disposition && r["status"] == "repaired")
+            .collect()
+    }
+
+    #[test]
+    fn inner_tomi_shears_match_reviewed_ledger() {
+        let tomi = tomi_gap_split_repair_ledger();
+        let records = repairs_with_disposition(&tomi, "shear");
+        // Every reviewed shear record is installed with identical geometry.
+        for record in &records {
+            let source = record["source"].as_u64().unwrap() as usize;
+            let page = record["source_page"].as_u64().unwrap() as u32;
+            let raw_dims = (
+                record["raster"][0].as_u64().unwrap() as u32,
+                record["raster"][1].as_u64().unwrap() as u32,
+            );
+            let entry = SOURCE_SHEARS
+                .iter()
+                .find(|s| s.source == source && s.page == page)
+                .unwrap_or_else(|| panic!("shear installed for source {source} page {page}"));
+            assert_eq!(entry.raw_dims, raw_dims);
+            assert_eq!(u64::from(entry.x0_px), record["x0_px"].as_u64().unwrap());
+            assert_eq!(
+                entry.baseline_slope,
+                record["baseline_slope"].as_f64().unwrap()
+            );
+            assert_eq!(entry.fingerprint, record["fingerprint"].as_str().unwrap());
+            let region: [u32; 4] =
+                std::array::from_fn(|i| record["fingerprint_region"][i].as_u64().unwrap() as u32);
+            assert_eq!(entry.fingerprint_region, region);
+        }
+        // SOURCE_SHEARS is exclusive to this work, so every installed shear is reviewed.
+        for entry in SOURCE_SHEARS {
+            assert!(
+                records.iter().any(|r| {
+                    r["source"].as_u64() == Some(entry.source as u64)
+                        && r["source_page"].as_u64() == Some(u64::from(entry.page))
+                }),
+                "installed shear source {} page {} has a reviewed ledger record",
+                entry.source,
+                entry.page
+            );
+        }
+    }
+
+    #[test]
+    fn inner_tomi_whole_strips_match_reviewed_ledger() {
+        let tomi = tomi_gap_split_repair_ledger();
+        // Every reviewed whole-strip record is backed by a WHOLE_STRIPS signature with
+        // identical cropped column dimensions, band, fingerprint region, and digest.
+        for record in repairs_with_disposition(&tomi, "whole_strip") {
+            let dims = (
+                record["column_dims"][0].as_u64().unwrap() as u32,
+                record["column_dims"][1].as_u64().unwrap() as u32,
+            );
+            let band = Band {
+                top: record["composer_strip"][0].as_u64().unwrap() as u32,
+                bottom: record["composer_strip"][1].as_u64().unwrap() as u32,
+            };
+            let region: [u32; 4] = std::array::from_fn(|i| {
+                record["strip_fingerprint_region"][i].as_u64().unwrap() as u32
+            });
+            let fingerprint = record["strip_fingerprint"].as_str().unwrap();
+            assert!(
+                WHOLE_STRIPS.iter().any(|(d, b, r, f)| {
+                    *d == dims && *b == band && *r == region && *f == fingerprint
+                }),
+                "reviewed whole strip source {} page {} is installed in WHOLE_STRIPS",
+                record["source"],
+                record["source_page"]
+            );
+        }
+    }
+
+    /// A reviewed Latin region `[x0, y0, x1, y1]` from a ledger record.
+    fn ledger_region(value: &serde_json::Value) -> [u32; 4] {
+        std::array::from_fn(|i| value[i].as_u64().unwrap() as u32)
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn inner_tomi_shears_preserve_latin() {
+        let tomi = tomi_gap_split_repair_ledger();
+        for record in repairs_with_disposition(&tomi, "shear") {
+            let source = record["source"].as_u64().unwrap() as usize;
+            let page = record["source_page"].as_u64().unwrap() as u32;
+            let raw = real_source_image(source, page);
+            let (cropped, _) =
+                render_and_band(source, page, &|s, p| Ok(real_source_image(s, p))).unwrap();
+            let x0 = record["x0_px"].as_u64().unwrap() as u32;
+            let slope = record["baseline_slope"].as_f64().unwrap();
+            let top_pad = record["top_pad"].as_u64().unwrap() as u32;
+            let crop_left = record["crop_edges"][0].as_u64().unwrap() as u32;
+            // The reviewed shear pages carry no row excisions.
+            assert!(!SOURCE_ROW_EXCISIONS
+                .iter()
+                .any(|e| e.source == source && e.page == page));
+            for region in record["preserved_latin_regions"].as_array().unwrap() {
+                assert_sheared_source_region_pixels_survive(
+                    &raw,
+                    &cropped,
+                    x0,
+                    slope,
+                    top_pad,
+                    crop_left,
+                    &[],
+                    ledger_region(region),
+                );
+            }
+        }
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn inner_tomi_whole_strips_preserve_latin() {
+        let tomi = tomi_gap_split_repair_ledger();
+        for record in repairs_with_disposition(&tomi, "whole_strip") {
+            let source = record["source"].as_u64().unwrap() as usize;
+            let page = record["source_page"].as_u64().unwrap() as u32;
+            let (pages, _, traces) = audit_traced_unit(record["unit_id"].as_str().unwrap());
+            let trace = retained_page(&traces, source, page).unwrap();
+            let index = trace.retained_index.unwrap();
+            let original = real_source_image(source, page);
+            for region in record["preserved_latin_regions"].as_array().unwrap() {
+                assert_source_region_pixels_survive(
+                    &original,
+                    &pages[index].0,
+                    trace,
+                    ledger_region(region),
                 );
             }
         }
@@ -5719,7 +5934,9 @@ mod tests {
                     "source {source} page {page} pixel {x},{y}"
                 );
             }
-            let (_, bands) = render_and_band(source, page, &|_, _| Ok(cleaned.clone())).unwrap();
+            // Feed the untouched raw page so render_and_band applies its own shear
+            // and masking; a sheared page masked here would be transformed twice.
+            let (_, bands) = render_and_band(source, page, &|_, _| Ok(original.clone())).unwrap();
             let raw_column = detect_latin_column(&original).unwrap();
             let raw_crop = crop_column(&original, &raw_column);
             let before = drop_furniture(&line_bands(&raw_crop, LINE_MIN_INK), original.height());
