@@ -3205,6 +3205,70 @@ fn theseus_page_17_followup_trace() {
     audit_save_unit_trace("theseus", &std::collections::BTreeSet::from([17]), "theseus_followup");
 }
 
+/// Diagnostic (not a regression): pin the Theseus §17/§18 bleed-through slab on
+/// v1 source page 21. Prints the production cropped-column bands and per-row ink
+/// near the slab, the unit line metrics, and the consecutive inter-line gaps, and
+/// saves cropped-column and full-page-raster PNGs of the slab for human review.
+/// Supplies the `tradit_agi_bottom` / `xviii_top` coordinates and the target
+/// residual gap used to pin `SOURCE_ROW_EXCISIONS`.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn theseus_p21_bleedthrough_trace() {
+    let (pages, metrics, traces) = audit_traced_unit("theseus");
+    let idx = retained_page(&traces, 0, 21)
+        .expect("page 21 traced")
+        .retained_index
+        .expect("page 21 retained");
+    let (col, kept) = &pages[idx];
+    let raw = line_bands(col, LINE_MIN_INK);
+    let rows = ink_profile_rows(col, INK_THRESHOLD);
+
+    println!(
+        "page 21: crop_dims={:?} metrics={:?}",
+        col.dimensions(),
+        metrics
+    );
+    println!("--- raw line_bands in [1850,2300) with ink/row (faint = bleed) ---");
+    for b in raw.iter().filter(|b| b.bottom > 1850 && b.top < 2300) {
+        let ink: u64 = rows[b.top as usize..b.bottom as usize]
+            .iter()
+            .map(|&r| r as u64)
+            .sum();
+        let per_row = ink as f64 / (b.bottom - b.top).max(1) as f64;
+        println!(
+            "  raw [{},{}) h={} ink={} ink/row={:.1}",
+            b.top,
+            b.bottom,
+            b.bottom - b.top,
+            ink,
+            per_row
+        );
+    }
+    println!("--- kept bands in [1850,2300) ---");
+    for b in kept.iter().filter(|b| b.bottom > 1850 && b.top < 2300) {
+        println!("  kept [{},{}) h={}", b.top, b.bottom, b.bottom - b.top);
+    }
+    println!("--- consecutive inter-line gaps among all kept bands ---");
+    let mut gaps: Vec<i64> = kept
+        .windows(2)
+        .map(|w| w[1].top as i64 - w[0].bottom as i64)
+        .collect();
+    gaps.sort_unstable();
+    println!("  sorted gaps = {gaps:?}");
+    if !gaps.is_empty() {
+        println!("  median gap = {}", gaps[gaps.len() / 2]);
+    }
+
+    let dir = std::path::Path::new("tmp/pdfs/theseus_p21_bleedthrough");
+    std::fs::create_dir_all(dir).unwrap();
+    let h = col.height().min(2300) - 1850;
+    image::imageops::crop_imm(col, 0, 1850, col.width(), h)
+        .to_image()
+        .save(dir.join("slab_column.png"))
+        .unwrap();
+    println!("saved {}", dir.join("slab_column.png").display());
+}
+
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn theseus_p17_analysis_keeps_original_latin_pixels() {

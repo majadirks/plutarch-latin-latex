@@ -64,18 +64,23 @@ satisfy the second half of the request (see "Why a mask is not enough" below).
   bridge is masked, normal banding re-splits the rows and the annexed
   furniture/margin falls outside the body bands. Our case has **no bridge**: the
   bleed forms its own genuine bands between two real paragraphs.
-- Measured evidence for page 21 (300-DPI render, raster **2000 × 2975**; Latin
-  column is the right column):
-  - Real Latin above the slab (`… tradit agi.`) ends by raster row ≈ **2018**.
-  - The bleed slab is faint: in a column-ink row profile it reads ≈ 34–36 dark
-    px/row, versus ≈ 270 dark px/row for real Latin lines — about 8× fainter, but
-    still far above `LINE_MIN_INK = 3`, which is why it currently bands and
-    renders. The slab spans raster rows ≈ **2021 → ~2200** (five broken lines).
-  - Real Latin of §18 (`XVIII. Sorte ducta …`) resumes by raster row ≈ **2204**.
-  - So there is clean whitespace margin on both sides of the slab; no real glyph
-    row lies inside `[~2020, ~2200)`.
-  - These coordinates are **starting estimates for one 300-DPI render**; Phase 1
-    re-measures them at production scale and pins the final interval.
+- Measured evidence for page 21 (pinned by `theseus_p21_bleedthrough_trace` at
+  production scale; full-page raster height **2975**, production Latin-column crop
+  **789 × 2975**, unit `LineMetrics` height_med **33**, median inter-line gap **7**):
+  - Last real §17 line (`… tradit agi.`) band is `[1971, 2008)` (ink/row ≈ 273),
+    so `tradit_agi_bottom = 2008`.
+  - The bleed slab is faint — its bands read ink/row ≈ 26–58, versus ≈ 250–323 for
+    real Latin lines (far above `LINE_MIN_INK = 3`, which is why it bands and
+    renders). It spans raster rows ≈ `[2022, 2234)` (five broken lines plus a few
+    1–3 px specks).
+  - First real §18 line (`XVIII. Sorte ducta …`) band is `[2240, 2275)` (ink/row
+    ≈ 323), so `xviii_top = 2240`.
+  - So there is clean whitespace margin on both sides; no real glyph row lies
+    inside `[2009, 2239)`. The current §17→§18 gap is `2240 − 2008 = 232` px.
+  - **Pinned excision interval `[2012, 2237)`** (full-page raster rows; both edges
+    in clean whitespace): deletes 225 px, leaving a residual gap of
+    `(2012 − 2008) + (2240 − 2237) = 7` px = one median inter-line gap. Normalized:
+    `top = 2012.0 / 2975.0`, `bottom = 2237.0 / 2975.0`.
 - The ordinary `cargo test` suite runs from tracked fixtures and synthetic
   inputs; source-PDF-dependent checks are `#[ignore]`d and named explicitly.
   `src/facsimile/audit_repair_tests.rs` (included inside `reflow.rs`'s test
@@ -106,9 +111,9 @@ Whiting out the slab with a `SOURCE_FURNITURE_MASKS` entry removes the bleed
 **ink**: the faint bands disappear. But it leaves the **space**. After masking,
 `line_bands` sees one large blank interval between the `… tradit agi.` band and
 the `XVIII …` band. `cut_points` puts a single cut at that interval's midpoint,
-so the `… tradit agi.` strip carries ≈ half of the ~180 px blank as its trailing
+so the `… tradit agi.` strip carries ≈ half of the ~230 px blank as its trailing
 half-gap and the `XVIII …` strip carries the other half as its leading half-gap.
-`place_line_images` stacks both at full height, so ≈ four blank lines of space
+`place_line_images` stacks both at full height, so ≈ five blank lines of space
 survive between the two paragraphs. `drop_furniture`/`drop_gap_outliers` only act
 on leading/trailing bands, never interior gaps, so nothing collapses it. Removing
 the space therefore requires removing the **rows**, not just the ink.
@@ -190,40 +195,35 @@ code.
 Steps:
 
 1. In `src/facsimile/audit_repair_tests.rs` (included in `reflow.rs`'s test
-   module), add an `#[ignore = "requires source PDFs and production-DPI renders"]`
-   diagnostic test `theseus_p21_bleedthrough_trace`. Reuse `audit_traced_unit("theseus")`
-   and `production_body_scale()`; do not re-implement rendering, banding, or
-   composition. From the returned `PageBands` for source-0 page 21, dump, for the
-   region `[1900, 2300)` of the cropped Latin column: the per-row ink profile
-   (`ink_profile_rows` over `INK_THRESHOLD`), the raw and kept `line_bands`, and
-   each band's ink/row. Save the trace via `audit_save_unit_trace` under the
-   existing `tmp/pdfs/inner_tomi_audit*/` convention (group
-   `theseus_p21_bleedthrough`). Also save a 300-DPI PNG crop of the full-page
-   raster rows `[1850, 2300)` for human inspection.
-2. From that trace, record precisely, in full-page raster coordinates:
-   - `tradit_agi_bottom`: the last real-glyph row of `… tradit agi.` (bottom of
-     the band just above the slab, including descenders).
-   - `xviii_top`: the first real-glyph row of `XVIII. Sorte ducta …` (top of the
-     band just below the slab, including the `X` ascender).
-   - the slab's faint-band extent between them.
-3. Choose the excision interval `[top, bottom)` so that: `top > tradit_agi_bottom`
-   with a small whitespace margin; `bottom < xviii_top` with a small whitespace
-   margin; and the **residual** whitespace left after deletion (i.e.
-   `(top - tradit_agi_bottom) + (xviii_top - bottom)`, after excising `bottom-top`
-   rows) equals **one ordinary inter-line pitch** for this unit (median line
-   height + median gap, available from the `LineMetrics` returned by
-   `audit_traced_unit`). Convert `top`/`bottom` to normalized fractions of the
-   page height (denominator = the actual page-21 raster height, expected 2975),
-   written as `pixel / raster_h` literals.
-4. Record the pinned values in this plan (replace the estimates in "Current state
-   of the world" in place) and in the Phase-1 trace output: the raster
-   dimensions, `tradit_agi_bottom`, `xviii_top`, the chosen `[top, bottom)` in
-   both pixels and normalized form, and the predicted residual gap in pixels and
-   in line-pitches.
+   module), the `#[ignore = "requires source PDFs and production-DPI renders"]`
+   diagnostic test `theseus_p21_bleedthrough_trace` reuses `audit_traced_unit("theseus")`
+   (it does not re-implement rendering, banding, or composition). For source-0
+   page 21 it locates the retained page via `retained_page(&traces, 0, 21)` and
+   dumps, for the region `[1850, 2300)` of the cropped Latin column: the raw
+   `line_bands` with each band's per-row ink (`ink_profile_rows` over
+   `INK_THRESHOLD`), the kept bands, the sorted consecutive inter-line gaps and
+   their median, and the unit `LineMetrics`. It saves a PNG of the cropped column
+   rows `[1850, 2300)` to `tmp/pdfs/theseus_p21_bleedthrough/slab_column.png` for
+   human inspection.
+2. From that trace the following were recorded (full-page raster coordinates;
+   see the measured-evidence bullet in "Current state of the world"):
+   - `tradit_agi_bottom = 2008` (bottom of the last real §17 line `[1971, 2008)`).
+   - `xviii_top = 2240` (top of the first real §18 line `[2240, 2275)`).
+   - the slab's faint bands span `[2022, 2234)` (ink/row ≈ 26–58).
+3. The excision interval was chosen so that `top > tradit_agi_bottom` and
+   `bottom < xviii_top`, both edges in clean whitespace, and the **residual**
+   whitespace after deletion — `(top - tradit_agi_bottom) + (xviii_top - bottom)`
+   — equals one **ordinary inter-line gap** (the unit's median inter-line gap,
+   7 px here — not a full line-pitch, so §18 simply follows §17 at normal line
+   spacing). Pinned: **`[2012, 2237)`**, residual `= 4 + 3 = 7` px, normalized
+   `top = 2012.0 / 2975.0`, `bottom = 2237.0 / 2975.0`.
+4. These pinned values are recorded in this plan's "Current state of the world"
+   measured-evidence bullet and consumed by `SOURCE_ROW_EXCISIONS` in Phase 2.1.
 
-Acceptance: the pinned interval contains **no** real-glyph row (verified against
-the measured band boundaries with ascender/descender margins) and the predicted
-residual gap is within ±0.25 line-pitch of one pitch.
+Acceptance (met): the pinned interval `[2012, 2237)` contains no real-glyph row
+(all intervening bands have ink/row ≤ 58, versus ≥ 250 for real lines; real lines
+end at 2008 and resume at 2240), and the predicted residual gap (7 px) equals the
+median inter-line gap.
 
 **LLM verification:** `cargo fmt --all`; `cargo fmt --all --check`;
 `cargo clippy --all-targets -- -D warnings`;
@@ -347,13 +347,13 @@ In `src/facsimile/audit_repair_tests.rs`, add an
 3. **Gap collapsed, not fused.** Compute the residual gap in **compacted column
    rows** (not composed output, to avoid page-break ambiguity): `map_row` the
    `XVIII` band top and the `… tradit agi.` band bottom and assert their difference
-   is `> 0` and `≤` the bound frozen in Phase 1 (one line-pitch + a stated
-   tolerance from the unit's `LineMetrics`).
+   is `> 0` and `≤ 20` px (the Phase-1 target is 7 px = one median inter-line gap;
+   20 px stays well under a full line-pitch of ≈ 40 px, allowing rounding slack).
 
 Record the pre-excision baseline for comparison: with the excision record
-temporarily removed, assertion 3's bound fails (~4 line-pitches) and assertion 1
-finds bleed bands; capture that for the Phase-3 note but commit only the passing
-form.
+temporarily removed, the residual gap is ~232 px (far over the 20 px bound) and
+assertion 1 finds bleed bands; capture that for the Phase-3 note but commit only
+the passing form.
 
 **LLM verification:** `cargo fmt --all`; `cargo fmt --all --check`;
 `cargo clippy --all-targets -- -D warnings`;
@@ -365,7 +365,7 @@ ones surviving and the removed region contained only bled strokes.
 
 ## 2.4 Confirm the excision does not disturb the rest of Theseus
 
-Excising ~180 px from page 21 shifts every Theseus body canvas composed from page
+Excising 225 px from page 21 shifts every Theseus body canvas composed from page
 21 onward; earlier canvases (including the I1 orphan-line repair on page 17) are
 unaffected. The new excision is **not** a mask, so it stays outside the
 `SOURCE_FURNITURE_MASKS` ledger and needs no page-21 entry in
@@ -412,7 +412,7 @@ confirm all sixteen PDFs exist and are freshly written. Locate the Theseus
 §17/§18 transition in the rebuilt `tomus_1_inner.pdf` (it was physical page 30 in
 the pre-change build; it may shift) and save an after-crop.
 
-Because deleting ~180 px from one Theseus page slightly shortens that unit's body,
+Because deleting 225 px from one Theseus page slightly shortens that unit's body,
 the Theseus page count can change by at most one canvas, which can ripple into
 recto alignment, the signature-padded total, and `split_into_volumes` membership.
 Record — do not force — these: Theseus body-canvas count and first-page/folio,
