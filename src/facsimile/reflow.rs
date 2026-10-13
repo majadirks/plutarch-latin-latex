@@ -2905,6 +2905,14 @@ const REVIEWED_SHORT_ENDINGS: &[(&str, (u32, u32), &str)] = &[
         (1004, 44),
         "955b6c7d39a181531f864b54468abc20092dc54536691e4f9a39bd94a132ac59",
     ),
+    // Solon/Poplicola comparison: the final body page holds only the line
+    // "jungeret, et omnem belli apparatum tolleret." (1004x49 at production scale);
+    // stack it onto the preceding page (sum 1414 <= 1429 text-block height).
+    (
+        "comparatio_solonis_et_poplicolae",
+        (1004, 49),
+        "111bae67bf83c76b8dba75b5599b1871b54a3f62c6da761f6518fca4adca4755",
+    ),
 ];
 
 /// Stack a reviewed, complete final line with its preceding body canvas when

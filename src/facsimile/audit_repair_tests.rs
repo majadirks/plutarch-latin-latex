@@ -3422,7 +3422,7 @@ fn backlog_tomus1_gap_split_trace() {
     for (unit, page_list) in [
         ("theseus", vec![23u32, 30]),
         ("romulus", vec![34, 36, 37, 41]),
-        ("marcius_coriolanus", vec![290]),
+        ("marcius_coriolanus", vec![289, 290, 291]),
         ("timoleon", vec![315, 316]),
         ("philopoemen", vec![448, 451]),
         ("flamininus", vec![462]),
@@ -3742,6 +3742,62 @@ fn backlog_short_ending_merge_is_identity_scoped() {
         assert!(!merge_reviewed_short_ending(id, &mut canvases, &geometry));
         assert_eq!(canvases, original, "rejected case {id}");
     }
+}
+
+/// Regression (M1): the Solon/Poplicola comparison's lone final line
+/// ("jungeret, et omnem belli apparatum tolleret.") merges onto its predecessor
+/// page. `merge_reviewed_short_ending` returns true, drops one canvas, and both
+/// stacked regions are byte-identical to the originals, within the text block.
+///
+/// `production_body_scale()` samples the whole corpus (>15 min); it is frozen at
+/// 1.2023952 for the current source PDFs (see the baseline manifest), so this
+/// composes at that scale directly — the value `run_facsimile` uses in a full
+/// build, so the REVIEWED_SHORT_ENDINGS fingerprint matches production.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_solon_poplicola_short_ending_merges() {
+    let geom = TrimGeom::default();
+    let scale = 1.2023952_f32;
+    let (pages, metrics, _) = audit_traced_unit("comparatio_solonis_et_poplicolae");
+    let mut canvases = compose_pages(
+        &pages,
+        scale,
+        &geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
+        &metrics,
+    );
+    assert!(canvases.len() >= 3, "unit has >= 3 canvases");
+    let original = canvases.clone();
+    let last = original.last().unwrap().clone();
+    let prev = original[original.len() - 2].clone();
+    assert_eq!(last.dimensions(), (1004, 49), "lone final line canvas");
+
+    assert!(merge_reviewed_short_ending(
+        "comparatio_solonis_et_poplicolae",
+        &mut canvases,
+        &geom
+    ));
+    assert_eq!(canvases.len() + 1, original.len(), "one canvas fewer");
+    assert_eq!(
+        &canvases[..canvases.len() - 1],
+        &original[..original.len() - 2],
+        "preceding canvases unchanged"
+    );
+    let merged = canvases.last().unwrap();
+    assert_eq!(merged.height(), prev.height() + last.height());
+    assert!(merged.height() <= geom.content_height(), "fits text block");
+    assert_eq!(
+        image::imageops::crop_imm(merged, 0, 0, merged.width(), prev.height()).to_image(),
+        prev,
+        "predecessor region byte-identical"
+    );
+    assert_eq!(
+        image::imageops::crop_imm(merged, 0, prev.height(), merged.width(), last.height())
+            .to_image(),
+        last,
+        "final line region byte-identical"
+    );
 }
 
 fn assert_backlog_short_ending_merges(id: &str) {
