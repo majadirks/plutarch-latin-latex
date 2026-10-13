@@ -318,11 +318,15 @@ pub(in crate::facsimile) mod tests {
             )
             .unwrap();
             let raster = image::open(png).unwrap().to_luma8();
-            // The left image edge avoids the centered footer folio.
-            let edge_x = (1.0 / 2.54 * 300.0_f32).round() as u32 + 15;
+            // Probe the horizontal centre: the body image fills the full measure
+            // there, but the folio never does — `\fancyfoot[LE]/[RO]` sets it flush
+            // to the inner or outer margin, so which edge it occupies flips with the
+            // page's parity. Measuring the centre keeps the bottom ink the image's,
+            // regardless of whether this page landed on a recto or a verso.
+            let centre_x = raster.width() / 2;
             let last_ink = (0..raster.height())
                 .rev()
-                .find(|&y| raster.get_pixel(edge_x, y)[0] < 100)
+                .find(|&y| raster.get_pixel(centre_x, y)[0] < 100)
                 .unwrap();
             assert!(last_ink < raster.height() - 170, "bottom ink at {last_ink}");
             assert!(
