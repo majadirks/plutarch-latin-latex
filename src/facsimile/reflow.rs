@@ -603,6 +603,44 @@ const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
         right: 1.0,
         bottom: 1.0,
     },
+    // Left Greek/Latin divider streaks that merge every Latin row into one band on
+    // these pages (Theseus p23/p30, Romulus p41), causing early page breaks and the
+    // horizontal split of the genethliacus line. The streak sits in the gutter left
+    // of the Latin glyphs, which begin well right of the mask.
+    SourceFurnitureMask {
+        source: 0,
+        page: 23,
+        left: 1047.0 / 2007.0,
+        top: 0.0,
+        right: 1065.0 / 2007.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 30,
+        left: 936.0 / 1984.0,
+        top: 0.0,
+        right: 955.0 / 1984.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 41,
+        left: 1037.0 / 1990.0,
+        top: 0.0,
+        right: 1072.0 / 1990.0,
+        bottom: 1.0,
+    },
+    // Right scan edge joins the Latin rows at the foot of Timoleon p315, splitting
+    // "... operam suam nava-/vit ...".
+    SourceFurnitureMask {
+        source: 0,
+        page: 315,
+        left: 1880.0 / 1883.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
 ];
 
 fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
@@ -653,6 +691,27 @@ const SOURCE_ROW_EXCISIONS: &[SourceRowExcision] = &[
         page: 21,
         top: 2012.0 / 2975.0,
         bottom: 2237.0 / 2975.0,
+    },
+    // Romulus VI→VII: the Latin column finishes chapter VI ("... Hinc adolescentibus
+    // magnum nomen.") well above where the parallel Greek column reaches "VII.", so the
+    // Latin sits blank until the next chapter aligns. That alignment whitespace is
+    // meaningless in a Latin-only reader. Delete the ink-free slab (max ink 2-3 per row
+    // on the 2978-row raster; real text ends at row 2408 and resumes at 2602), leaving
+    // one ordinary inter-line gap.
+    SourceRowExcision {
+        source: 0,
+        page: 36,
+        top: 2414.0 / 2978.0,
+        bottom: 2596.0 / 2978.0,
+    },
+    // Romulus VII→VIII: the same parallel-alignment blank between "... remotis arbitris
+    // de his ageret." (ends row 2298) and "VIII. At Faustulus ..." (resumes row 2496) on
+    // the 2990-row raster; the slab is ink-free. Close it to one inter-line gap.
+    SourceRowExcision {
+        source: 0,
+        page: 37,
+        top: 2304.0 / 2990.0,
+        bottom: 2490.0 / 2990.0,
     },
 ];
 
@@ -4655,6 +4714,48 @@ mod tests {
         serde_json::from_str(include_str!("fixtures/backlog_artifact_source_trace.json")).unwrap()
     }
 
+    fn tomi_gap_split_repair_ledger() -> serde_json::Value {
+        serde_json::from_str(include_str!(
+            "fixtures/tomi_gap_split_repairs_source_trace.json"
+        ))
+        .unwrap()
+    }
+
+    #[test]
+    fn tomi_gap_split_ledger_has_expected_shape() {
+        let ledger = tomi_gap_split_repair_ledger();
+        assert_eq!(ledger["schema_version"], 1);
+        let repairs = ledger["repairs"].as_array().unwrap();
+        assert!(!repairs.is_empty());
+        for repair in repairs {
+            assert_eq!(repair["disposition"], "mask");
+            assert_eq!(repair["status"], "repaired");
+            assert!(repair["backlog_id"]
+                .as_str()
+                .is_some_and(|id| !id.is_empty()));
+            assert!(repair["unit_id"].as_str().is_some_and(|id| !id.is_empty()));
+            assert!(matches!(repair["source"].as_u64(), Some(0 | 1)));
+            assert!(repair["source_page"].as_u64().is_some());
+            assert_eq!(repair["raster"].as_array().unwrap().len(), 2);
+            let rects = repair["mask_rectangles"].as_array().unwrap();
+            assert!(!rects.is_empty());
+            for rect in rects {
+                let r: Vec<f64> = rect
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_f64().unwrap())
+                    .collect();
+                assert_eq!(r.len(), 4);
+                assert!(r[0] >= 0.0 && r[2] <= 1.0 && r[0] < r[2]);
+                assert!(r[1] >= 0.0 && r[3] <= 1.0 && r[1] < r[3]);
+            }
+            assert!(repair["preserved_latin_regions"]
+                .as_array()
+                .is_some_and(|regions| !regions.is_empty()));
+        }
+    }
+
     /// Reviewed rectangles grouped by source identity, including separate repairs on one page.
     fn reviewed_page_masks(
         ledger: &serde_json::Value,
@@ -4885,8 +4986,10 @@ mod tests {
     fn inner_tomi_masks_match_reviewed_ledger() {
         let historical = repair_ledger();
         let backlog = backlog_repair_ledger();
-        for ((source, page), rectangles) in all_reviewed_page_masks(&[&historical, &backlog]) {
-            let record = [&historical, &backlog]
+        let tomi = tomi_gap_split_repair_ledger();
+        for ((source, page), rectangles) in all_reviewed_page_masks(&[&historical, &backlog, &tomi])
+        {
+            let record = [&historical, &backlog, &tomi]
                 .into_iter()
                 .flat_map(|ledger| ledger["repairs"].as_array().unwrap())
                 .find(|r| {
@@ -5312,12 +5415,13 @@ mod tests {
     fn inner_tomi_known_masks_preserve_latin() {
         let historical = repair_ledger();
         let backlog = backlog_repair_ledger();
-        let page_masks = all_reviewed_page_masks(&[&historical, &backlog]);
+        let tomi = tomi_gap_split_repair_ledger();
+        let page_masks = all_reviewed_page_masks(&[&historical, &backlog, &tomi]);
         let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/masks");
         std::fs::create_dir_all(dir).unwrap();
         let mut measurements = Vec::new();
         for &(source, page) in page_masks.keys() {
-            let records: Vec<_> = [&historical, &backlog]
+            let records: Vec<_> = [&historical, &backlog, &tomi]
                 .into_iter()
                 .flat_map(|ledger| ledger["repairs"].as_array().unwrap())
                 .filter(|repair| {

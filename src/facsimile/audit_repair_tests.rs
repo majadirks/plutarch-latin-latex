@@ -3336,6 +3336,80 @@ fn backlog_theseus_p21_bleedthrough_excised() {
     assert!(gap > 0 && gap <= 20, "residual gap {gap} px (target 7)");
 }
 
+/// Regression: the Romulus VI→VII (page 36) and VII→VIII (page 37) parallel-
+/// alignment blanks are excised, each closed to one ordinary inter-line gap, and
+/// the real Latin lines bracketing every slab survive once byte-identically.
+/// Band/trace/pixel domain only (no `production_body_scale()`).
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_romulus_chapter_gaps_excised() {
+    let (pages, _metrics, traces) = audit_traced_unit("romulus");
+    let original36 = real_source_image(0, 36);
+    let original37 = real_source_image(0, 37);
+    for (page, original, deleted, before, after) in [
+        (36u32, &original36, [2414u32, 2596u32], (2375u32, 2408u32), (2602u32, 2633u32)),
+        (37u32, &original37, [2304u32, 2490u32], (2266u32, 2298u32), (2496u32, 2530u32)),
+    ] {
+        let trace = retained_page(&traces, 0, page).expect("page traced");
+        let idx = trace.retained_index.expect("page retained");
+        let (col, kept) = &pages[idx];
+
+        assert_eq!(trace.deleted_rows, vec![deleted], "page {page}: pinned slab deleted");
+        let before_bottom = trace.map_row(before.1 - 1).unwrap() + 1;
+        let after_top = trace.map_row(after.0).unwrap();
+        assert!(
+            !kept.iter().any(|b| b.top < after_top && b.bottom > before_bottom),
+            "page {page}: no band remains in the excised slab: {kept:?}"
+        );
+
+        let [cl, cr] = trace.crop;
+        for (top, bottom) in [before, after] {
+            let mapped_top = trace.map_row(top).unwrap();
+            let mapped_bottom = trace.map_row(bottom - 1).unwrap() + 1;
+            assert_eq!(
+                mapped_bottom - mapped_top,
+                bottom - top,
+                "page {page}: no deleted Latin rows in [{top},{bottom})"
+            );
+            assert_eq!(
+                kept.iter()
+                    .filter(|b| b.top <= mapped_top && b.bottom >= mapped_bottom)
+                    .count(),
+                1,
+                "page {page}: line [{top},{bottom}) covered by exactly one band"
+            );
+            assert_source_region_pixels_survive(original, col, trace, [cl, top, cr, bottom]);
+        }
+
+        let gap = after_top - before_bottom;
+        assert!(gap > 0 && gap <= 20, "page {page}: residual gap {gap} px (target ~12)");
+    }
+}
+
+/// Regression: the installed divider / scan-edge masks (Theseus p23/p30,
+/// Romulus p41, Timoleon p315) remove the streak that merged each Latin column
+/// into one giant band, so `render_and_band` recovers normal per-line banding
+/// (no band taller than two lines). On the unmasked source each column bands into
+/// a single >400-px block, so this fails without the mask.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_tomi_divider_masks_restore_banding() {
+    for (source, page) in [(0u32, 23u32), (0, 30), (0, 41), (0, 315)] {
+        let (_, bands) =
+            render_and_band(source as usize, page, &|s, p| Ok(real_source_image(s, p))).unwrap();
+        let max_h = bands.iter().map(|b| b.bottom - b.top).max().unwrap_or(0);
+        assert!(
+            max_h <= 60,
+            "source {source} page {page}: tallest band {max_h}px (bridge not cleared)"
+        );
+        assert!(
+            bands.len() >= 30,
+            "source {source} page {page}: only {} bands (expected ~45-55 lines)",
+            bands.len()
+        );
+    }
+}
+
 /// Diagnostic (not a regression): dump the production cropped-column bands,
 /// per-row ink, and inter-line gaps for the Tomus-I backlog gap/split source
 /// pages, and save each cropped column so rows can be mapped to the anchor text.
