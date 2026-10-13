@@ -373,11 +373,26 @@ pub(in crate::facsimile) mod tests {
                 let titles: Vec<_> = texts
                     .iter()
                     .enumerate()
-                    .filter(|(_, text)| text.contains("SECUNDUM CODICES"))
+                    .filter(|(_, text)| text.contains("GVILIELMO XYLANDRO"))
                     .collect();
                 assert_eq!(titles.len(), 1);
                 let title_index = titles[0].0;
                 let title_text = normalize(titles[0].1);
+                for phrase in [
+                    "PLVTARCHI",
+                    "VITÆ",
+                    "A GVILIELMO XYLANDRO",
+                    "LATINE REDDITÆ,",
+                    "ATQVE",
+                    "A THEODORO DŒHNERO",
+                    "RECOGNITÆ, EMENDATÆ",
+                    "ET ORDINATÆ.",
+                ] {
+                    assert!(
+                        title_text.contains(phrase),
+                        "missing {phrase}: {title_text}"
+                    );
+                }
                 assert_eq!(
                     texts
                         .iter()
@@ -448,6 +463,48 @@ pub(in crate::facsimile) mod tests {
                 }
             }
         }
+
+        // Tomus II has the widest eight-Life title list in the current volume plan.
+        let dir = tempfile::tempdir().unwrap();
+        fixture_image(dir.path(), &frontmatter::front_qr_name(0), 301, 101);
+        fixture_image(dir.path(), "body-a.png", 311, 101);
+        let titles = [
+            "pericles",
+            "fabius maximus",
+            "alcibiades",
+            "marcius coriolanus",
+            "timoleon",
+            "aemilius paulus",
+            "pelopidas",
+            "marcellus",
+        ];
+        let units = titles
+            .iter()
+            .enumerate()
+            .map(|(i, name)| unit(name, if i == 0 { &["body-a.png"] } else { &[] }))
+            .collect();
+        let vol = volume_full(2, 0, false, true, "", units);
+        write_inner(&vol, dir.path(), &Fonts::default(), Some("Alex Smith")).unwrap();
+        let (texts, _) = compiled_fixture(dir.path(), 2);
+        let title_pages: Vec<_> = texts
+            .iter()
+            .filter(|text| text.contains("GVILIELMO XYLANDRO"))
+            .collect();
+        assert_eq!(title_pages.len(), 1);
+        let title_text = normalize(title_pages[0]);
+        for title in titles {
+            assert!(
+                title_text.to_uppercase().contains(&title.to_uppercase()),
+                "{title_text}"
+            );
+        }
+        assert!(title_text.contains("ET ORDINATÆ."));
+        assert!(title_text.contains("EX LIBRIS"));
+        let log = fs::read_to_string(dir.path().join("tomus_2_inner.log")).unwrap();
+        assert!(
+            !log.contains("Overfull"),
+            "long title list overflows: {log}"
+        );
     }
 
     #[test]
@@ -981,7 +1038,7 @@ pub(in crate::facsimile) mod tests {
             vec![unit("theseus", &["facsimile_theseus_1.png"])],
         );
         let doc = inner_document(&vol, &Fonts::default(), None);
-        let title = doc.find("PLUTARCHI VITÆ").unwrap();
+        let title = doc.find("PLVTARCHI").unwrap();
         let qr = doc.find("front_qr_s0.png").unwrap();
         let volumen = doc.find("front_volumen_s0.png").unwrap();
         let colophon = doc.find("front_colophon.png").unwrap();
