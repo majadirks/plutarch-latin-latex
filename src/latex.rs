@@ -310,7 +310,7 @@ pub(crate) fn front_prose_pages(sidecar: &Sidecar, pages: &[(usize, u32)]) -> St
     if blocks.is_empty() {
         String::new()
     } else {
-        front_prose_page_blocks(&blocks, true, true)
+        front_prose_page_blocks(&blocks, true, true, true)
     }
 }
 
@@ -377,7 +377,7 @@ pub(crate) fn front_praefatio(sidecar: &Sidecar, image_names: &[String]) -> Resu
 /// `\markboth{}{}` so the facsimile path's prose carries no stale Life running head;
 /// the transcription path passes `false`, keeping its golden bytes unchanged.
 fn front_prose_page(doc: &PageDoc, reset_running_head: bool) -> String {
-    front_prose_page_blocks(&doc.blocks, reset_running_head, false)
+    front_prose_page_blocks(&doc.blocks, reset_running_head, false, false)
 }
 
 /// Render listed pages through the first block containing `sentinel`, preserving
@@ -400,21 +400,31 @@ pub(crate) fn front_prose_pages_until(
             .iter()
             .position(|block| block.text.contains(sentinel))
         {
-            out.push_str(&front_prose_page_blocks(&doc.blocks[..=idx], true, false));
+            out.push_str(&front_prose_page_blocks(
+                &doc.blocks[..=idx],
+                true,
+                false,
+                true,
+            ));
             return out;
         }
-        out.push_str(&front_prose_page_blocks(&doc.blocks, true, false));
+        out.push_str(&front_prose_page_blocks(&doc.blocks, true, false, true));
     }
     eprintln!("WARNING: front-prose sentinel not found: {sentinel:?}; emitting all available prose, which may duplicate embedded errata");
     out
 }
 
+/// `recto` selects the opening page break: the facsimile path passes `true` so
+/// the prose opens on a recto (`\unitrecto`); the transcription path passes
+/// `false`, keeping its golden `\freshpage` bytes unchanged.
 fn front_prose_page_blocks(
     blocks: &[Block],
     reset_running_head: bool,
     flexible_spacing: bool,
+    recto: bool,
 ) -> String {
-    let mut out = String::from("% Re-typeset front-matter prose\n\\freshpage\n");
+    let page_break = if recto { "\\unitrecto" } else { "\\freshpage" };
+    let mut out = format!("% Re-typeset front-matter prose\n{page_break}\n");
     if reset_running_head {
         out.push_str("\\markboth{}{}\n");
     }
@@ -973,9 +983,11 @@ mod tests {
     fn praefatio_hybrid_has_no_internal_parity_breaks() {
         let (sc, names) = hybrid_fixture();
         let out = front_praefatio(&sc, &names).unwrap();
-        assert_eq!(out.matches("\\freshpage").count(), 1);
+        // One recto break opens the section; no verso break and no internal parity breaks.
+        assert_eq!(out.matches("\\unitrecto").count(), 1);
+        assert!(!out.contains("\\freshpage"));
         assert_eq!(out.matches("\\clearpage").count(), 4);
-        for token in ["\\unitrecto", "\\hbox{}", "\\begin{center}", "\\vfill"] {
+        for token in ["\\hbox{}", "\\begin{center}", "\\vfill"] {
             assert!(!out.contains(token));
         }
     }
@@ -1431,7 +1443,8 @@ mod tests {
         assert!(out.contains("Dœhnerus hæc mutanda esse significavit."));
         assert!(!out.contains("ERRATA"));
         assert!(!out.contains("LATER PAGE"));
-        assert_eq!(out.matches("\\freshpage").count(), 1);
+        assert_eq!(out.matches("\\unitrecto").count(), 1);
+        assert!(!out.contains("\\freshpage"));
         assert!(out.contains("\\markboth{}{}"));
         assert!(out.ends_with("\\clearpage\n\n"));
     }
@@ -1456,7 +1469,8 @@ mod tests {
         let out = front_prose_pages_until(&sc, &pages, "absent");
         assert!(out.contains("FIRST BLOCK\n\nSECOND BLOCK"));
         assert!(out.contains("LATER PAGE"));
-        assert_eq!(out.matches("\\freshpage").count(), 2);
+        assert_eq!(out.matches("\\unitrecto").count(), 2);
+        assert!(!out.contains("\\freshpage"));
         assert_eq!(out.matches("\\markboth{}{}").count(), 2);
         assert_eq!(out.matches("\\clearpage").count(), 2);
     }
@@ -1478,7 +1492,8 @@ mod tests {
             vec![],
         );
         let out = front_prose_pages(&sc, &[(1, 14), (1, 15)]);
-        assert_eq!(out.matches("\\freshpage").count(), 1);
+        assert_eq!(out.matches("\\unitrecto").count(), 1);
+        assert!(!out.contains("\\freshpage"));
         assert_eq!(out.matches("\\clearpage").count(), 1);
         assert_eq!(out.matches("\\markboth{}{}").count(), 1);
         assert_eq!(out.matches("\\heading{PRÆFATIO.}").count(), 1);
