@@ -3281,6 +3281,61 @@ fn theseus_p21_bleedthrough_trace() {
     println!("saved {}", dir.join("slab_column.png").display());
 }
 
+/// Regression: the Theseus §17/§18 bleed-through slab on v1 page 21 is excised, the
+/// space is closed to one ordinary inter-line gap, and both real lines survive once
+/// byte-identically. The §18 line sits below the slab, so it exercises the
+/// `deleted_rows` row shift in `audit_traced_unit`.
+///
+/// Works in the band/trace/pixel domain only — it does **not** call
+/// `production_body_scale()` or recompose the unit, so it avoids the whole-corpus
+/// scale-sampling cost; ink removal, glyph preservation, and gap collapse are all
+/// observable before composition.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_theseus_p21_bleedthrough_excised() {
+    let (pages, _metrics, traces) = audit_traced_unit("theseus");
+    let trace = retained_page(&traces, 0, 21).expect("page 21 traced");
+    let idx = trace.retained_index.expect("page 21 retained");
+    let (col, kept) = &pages[idx];
+
+    // 1. Ink gone: the pinned slab is recorded as deleted, and no retained band
+    //    survives between the two real paragraphs.
+    assert_eq!(trace.deleted_rows, vec![[2012, 2237]], "pinned slab deleted");
+    let tradit_bottom = trace.map_row(2007).unwrap() + 1; // last real §17 row -> 2008
+    let xviii_top = trace.map_row(2240).unwrap(); // first real §18 row -> 2015
+    assert!(
+        !kept
+            .iter()
+            .any(|b| b.top < xviii_top && b.bottom > tradit_bottom),
+        "no bleed band remains between §17 and §18: {kept:?}"
+    );
+
+    // 2. Faithfulness: both real lines survive once, byte-identical to the source.
+    let original = real_source_image(0, 21);
+    let [cl, cr] = trace.crop;
+    for (top, bottom) in [(1971u32, 2008u32), (2240u32, 2275u32)] {
+        let mapped_top = trace.map_row(top).unwrap();
+        let mapped_bottom = trace.map_row(bottom - 1).unwrap() + 1;
+        assert_eq!(
+            mapped_bottom - mapped_top,
+            bottom - top,
+            "no deleted Latin rows in [{top},{bottom})"
+        );
+        assert_eq!(
+            kept.iter()
+                .filter(|b| b.top <= mapped_top && b.bottom >= mapped_bottom)
+                .count(),
+            1,
+            "line [{top},{bottom}) covered by exactly one band"
+        );
+        assert_source_region_pixels_survive(&original, col, trace, [cl, top, cr, bottom]);
+    }
+
+    // 3. Gap collapsed, not fused: one ordinary inter-line gap (7 px target).
+    let gap = xviii_top - tradit_bottom;
+    assert!(gap > 0 && gap <= 20, "residual gap {gap} px (target 7)");
+}
+
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn theseus_p17_analysis_keeps_original_latin_pixels() {

@@ -328,37 +328,41 @@ guard confirms no glyph row was excised.
 
 In `src/facsimile/audit_repair_tests.rs`, add an
 `#[ignore = "requires source PDFs and production-DPI renders"]` test
-`backlog_theseus_p21_bleedthrough_excised`. Using `audit_traced_unit("theseus")`
-(now carrying the page-21 `deleted_rows`) and `production_body_scale()`:
+`backlog_theseus_p21_bleedthrough_excised`. It uses `audit_traced_unit("theseus")`
+(now carrying the page-21 `deleted_rows`) and works **only in the band / trace /
+pixel domain** — it does **not** call `production_body_scale()` or recompose the
+unit. (The full-composition helper `assert_reviewed_source_lines_survive` pulls in
+`production_body_scale()`, which samples column widths across the whole ~1300-page
+corpus and pushes the test well past ten minutes; ink removal, glyph preservation,
+and gap collapse are all observable before composition, so that cost is
+unnecessary here.) Via `retained_page(&traces, 0, 21)`:
 
-1. **Ink gone.** Via `retained_page(&traces, 0, 21)`, confirm the trace's
-   `deleted_rows` contains the pinned interval, and assert there is no retained
-   band between the `… tradit agi.` band and the `XVIII …` band — the bleed bands
-   are gone and the two paragraphs are now adjacent bands with a single gap.
-2. **Glyphs preserved (faithfulness gate).** Build two `ReviewedSourceLine` values
-   inline (no new JSON fixture for one page) for the `… tradit agi.` line and the
-   `XVIII. Sorte ducta …` line, with `region` boxes in **original-source**
-   coordinates from Phase 1 (full ascenders/descenders; `x` within the column
-   crop). Call `assert_reviewed_source_lines_survive(..., false)` with a
-   `ReviewedLineContext` built from the traced unit and `production_body_scale()`.
-   The helper asserts each line survives exactly once, maps through `map_row`, and
-   that `assert_source_region_pixels_survive` finds byte-identical source pixels in
-   the compacted column; the `XVIII` box exercises the 2.2 `deleted_rows` shift.
-3. **Gap collapsed, not fused.** Compute the residual gap in **compacted column
-   rows** (not composed output, to avoid page-break ambiguity): `map_row` the
-   `XVIII` band top and the `… tradit agi.` band bottom and assert their difference
-   is `> 0` and `≤ 20` px (the Phase-1 target is 7 px = one median inter-line gap;
-   20 px stays well under a full line-pitch of ≈ 40 px, allowing rounding slack).
+1. **Ink gone.** Assert `trace.deleted_rows == vec![[2012, 2237]]` (the pinned
+   interval), then assert no retained band lies between the `… tradit agi.` band
+   bottom (`map_row(2007)+1 = 2008`) and the `XVIII …` band top (`map_row(2240) =
+   2015`) — the bleed bands are gone.
+2. **Glyphs preserved (faithfulness gate).** For each real line box (`[1971, 2008)`
+   and `[2240, 2275)` in original-source rows, full column width `[crop.left,
+   crop.right)`): map its rows through `map_row`, assert `mapped_bottom -
+   mapped_top == bottom - top` (no Latin row deleted), assert exactly one kept band
+   covers it, and call `assert_source_region_pixels_survive(&original, col, trace,
+   region)` to confirm byte-identical source pixels in the compacted column. The
+   `XVIII` box sits below the slab, so it exercises the 2.2 `deleted_rows` shift.
+3. **Gap collapsed, not fused.** Assert the residual gap `map_row(2240) −
+   (map_row(2007)+1)` is `> 0` and `≤ 20` px (the Phase-1 target is 7 px = one
+   median inter-line gap; 20 px stays well under a full line-pitch of ≈ 40 px,
+   allowing rounding slack).
 
-Record the pre-excision baseline for comparison: with the excision record
-temporarily removed, the residual gap is ~232 px (far over the 20 px bound) and
-assertion 1 finds bleed bands; capture that for the Phase-3 note but commit only
+The test has teeth by construction: with the excision record removed,
+`deleted_rows` is `[]` (failing assertion 1's `assert_eq!`) and the residual gap is
+~232 px (failing assertion 3); capture that for the Phase-3 note but commit only
 the passing form.
 
 **LLM verification:** `cargo fmt --all`; `cargo fmt --all --check`;
 `cargo clippy --all-targets -- -D warnings`;
-`cargo test backlog_theseus_p21_bleedthrough_excised -- --ignored --nocapture`;
-`cargo build`. Confirm the test executes and passes (not merely selected).
+`cargo test backlog_theseus_p21_bleedthrough_excised -- --ignored --nocapture`
+(runs in ~1 min); `cargo build`. Confirm the test executes and passes (not merely
+selected).
 
 **Human verification:** Read the trace output: confirm the two real lines are the
 ones surviving and the removed region contained only bled strokes.
