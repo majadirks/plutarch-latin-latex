@@ -2930,8 +2930,20 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
     let traces = (range.unit.start_page..=range.end_page)
         .map(|p| {
             let index = source_pages.iter().position(|&page| page == p);
+            // Mirror render_and_band: mask, then excise, then detect the column, so
+            // the crop edges match the retained page. `deleted_rows` is captured in
+            // original-source coordinates (pre-excision height) so `map_row` shifts
+            // every row below an excised slab.
             let mut raw = real_source_image(range.unit.source, p);
+            let original_height = raw.height();
             mask_known_source_furniture(range.unit.source, p, &mut raw);
+            let mut deleted_rows: Vec<[u32; 2]> = SOURCE_ROW_EXCISIONS
+                .iter()
+                .filter(|e| e.source == range.unit.source && e.page == p)
+                .filter_map(|e| excision_rows(e, original_height).map(|(t, b)| [t, b]))
+                .collect();
+            deleted_rows.sort_unstable();
+            let raw = excise_known_source_rows(range.unit.source, p, raw);
             let crop = production_source_column(range.unit.source, p, &raw).unwrap();
             RetainedSourcePageTrace {
                 source: range.unit.source,
@@ -2941,7 +2953,7 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
                 bands: index
                     .map(|i| pages[i].1.iter().map(|b| [b.top, b.bottom]).collect())
                     .unwrap_or_default(),
-                deleted_rows: vec![],
+                deleted_rows,
             }
         })
         .collect();
