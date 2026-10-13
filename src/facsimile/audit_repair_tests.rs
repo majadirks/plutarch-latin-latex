@@ -3336,6 +3336,85 @@ fn backlog_theseus_p21_bleedthrough_excised() {
     assert!(gap > 0 && gap <= 20, "residual gap {gap} px (target 7)");
 }
 
+/// Diagnostic (not a regression): dump the production cropped-column bands,
+/// per-row ink, and inter-line gaps for the Tomus-I backlog gap/split source
+/// pages, and save each cropped column so rows can be mapped to the anchor text.
+/// Supplies the mask/excision rectangles (G1-G5) and the whole-strip band (S1).
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_tomus1_gap_split_trace() {
+    let dir = std::path::Path::new("tmp/pdfs/backlog_tomus1");
+    std::fs::create_dir_all(dir).unwrap();
+    for (unit, page_list) in [
+        ("theseus", vec![23u32, 30]),
+        ("romulus", vec![34, 36, 37, 41]),
+        ("marcius_coriolanus", vec![290]),
+        ("timoleon", vec![315, 316]),
+        ("philopoemen", vec![448, 451]),
+        ("flamininus", vec![462]),
+    ] {
+        let (pages, metrics, traces) = audit_traced_unit(unit);
+        println!("\n======== unit {unit} metrics={metrics:?} ========");
+        for page in page_list {
+            let Some(trace) = retained_page(&traces, 0, page) else {
+                println!("page {page}: not traced");
+                continue;
+            };
+            let Some(idx) = trace.retained_index else {
+                println!("page {page}: skipped");
+                continue;
+            };
+            let (col, kept) = &pages[idx];
+            let raw = line_bands(col, LINE_MIN_INK);
+            let rows = ink_profile_rows(col, INK_THRESHOLD);
+            let full = real_source_image(0, page);
+            println!(
+                "---- page {page}: raster={:?} crop_dims={:?} crop_edges={:?} ----",
+                full.dimensions(),
+                col.dimensions(),
+                trace.crop
+            );
+            println!("  raw bands [top,bottom) h ink/row:");
+            for b in &raw {
+                let ink: u64 = rows[b.top as usize..b.bottom as usize]
+                    .iter()
+                    .map(|&r| r as u64)
+                    .sum();
+                let per_row = ink as f64 / (b.bottom - b.top).max(1) as f64;
+                println!(
+                    "    [{},{}) h={} ink/row={:.1}",
+                    b.top,
+                    b.bottom,
+                    b.bottom - b.top,
+                    per_row
+                );
+            }
+            println!("  kept bands [top,bottom) h gap_above:");
+            let mut prev_bottom: Option<u32> = None;
+            for b in kept {
+                let gap = prev_bottom.map(|pb| b.top as i64 - pb as i64);
+                println!(
+                    "    [{},{}) h={} gap_above={:?}",
+                    b.top,
+                    b.bottom,
+                    b.bottom - b.top,
+                    gap
+                );
+                prev_bottom = Some(b.bottom);
+            }
+            let mut gaps: Vec<i64> =
+                kept.windows(2).map(|w| w[1].top as i64 - w[0].bottom as i64).collect();
+            gaps.sort_unstable();
+            if !gaps.is_empty() {
+                println!("  sorted kept gaps = {gaps:?} median = {}", gaps[gaps.len() / 2]);
+            }
+            let path = dir.join(format!("{unit}_p{page}_col.png"));
+            col.save(&path).unwrap();
+            println!("  saved {}", path.display());
+        }
+    }
+}
+
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn theseus_p17_analysis_keeps_original_latin_pixels() {
