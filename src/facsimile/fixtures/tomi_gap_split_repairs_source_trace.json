@@ -7,44 +7,170 @@
       "unit_id": "theseus",
       "source": 0,
       "source_page": 23,
-      "raster": [2007, 2993],
+      "raster": [
+        2007,
+        2993
+      ],
       "disposition": "mask",
       "status": "repaired",
-      "mask_rectangles": [[0.5216741405082213, 0.0, 0.5306427503736921, 1.0]],
-      "preserved_latin_regions": [[1080, 1072, 1860, 1106], [1080, 1774, 1860, 1805]]
+      "mask_rectangles": [
+        [
+          0.5216741405082213,
+          0.0,
+          0.5306427503736921,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          1080,
+          1072,
+          1860,
+          1106
+        ],
+        [
+          1080,
+          1774,
+          1860,
+          1805
+        ]
+      ]
     },
     {
       "backlog_id": "G2",
       "unit_id": "theseus",
       "source": 0,
       "source_page": 30,
-      "raster": [1984, 2998],
+      "raster": [
+        1984,
+        2998
+      ],
       "disposition": "mask",
       "status": "repaired",
-      "mask_rectangles": [[0.4717741935483871, 0.0, 0.4813508064516129, 1.0]],
-      "preserved_latin_regions": [[970, 919, 1755, 952], [970, 1839, 1755, 1876]]
+      "mask_rectangles": [
+        [
+          0.4717741935483871,
+          0.0,
+          0.4813508064516129,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          970,
+          919,
+          1755,
+          952
+        ],
+        [
+          970,
+          1839,
+          1755,
+          1876
+        ]
+      ]
     },
     {
       "backlog_id": "S1",
       "unit_id": "romulus",
       "source": 0,
       "source_page": 41,
-      "raster": [1990, 2974],
+      "raster": [
+        1990,
+        2974
+      ],
       "disposition": "mask",
       "status": "repaired",
-      "mask_rectangles": [[0.521105527638191, 0.0, 0.5386934673366834, 1.0]],
-      "preserved_latin_regions": [[1087, 840, 1873, 880], [1087, 1787, 1873, 1822]]
+      "mask_rectangles": [
+        [
+          0.521105527638191,
+          0.0,
+          0.5386934673366834,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          1087,
+          840,
+          1873,
+          880
+        ],
+        [
+          1087,
+          1787,
+          1873,
+          1822
+        ]
+      ]
     },
     {
       "backlog_id": "T2b",
       "unit_id": "timoleon",
       "source": 0,
       "source_page": 315,
-      "raster": [1883, 2961],
+      "raster": [
+        1883,
+        2961
+      ],
       "disposition": "mask",
       "status": "repaired",
-      "mask_rectangles": [[0.9984067976633032, 0.0, 1.0, 1.0]],
-      "preserved_latin_regions": [[1054, 1079, 1865, 1110], [1054, 1916, 1865, 1952]]
+      "mask_rectangles": [
+        [
+          0.9984067976633032,
+          0.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          1054,
+          1079,
+          1865,
+          1110
+        ],
+        [
+          1054,
+          1916,
+          1865,
+          1952
+        ]
+      ]
+    },
+    {
+      "backlog_id": "T2a",
+      "unit_id": "marcius_coriolanus",
+      "source": 0,
+      "source_page": 289,
+      "raster": [
+        1913,
+        2963
+      ],
+      "disposition": "mask",
+      "status": "repaired",
+      "mask_rectangles": [
+        [
+          0.9952953476215368,
+          0.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "preserved_latin_regions": [
+        [
+          1085,
+          2504,
+          1860,
+          2544
+        ],
+        [
+          1085,
+          2559,
+          1860,
+          2586
+        ]
+      ]
     }
   ]
 }

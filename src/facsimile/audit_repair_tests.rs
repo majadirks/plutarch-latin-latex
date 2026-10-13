@@ -3336,6 +3336,135 @@ fn backlog_theseus_p21_bleedthrough_excised() {
     assert!(gap > 0 && gap <= 20, "residual gap {gap} px (target 7)");
 }
 
+/// Regression: the Tomus-III page-foot split rows T3b (philopoemen v1 p451,
+/// "oppidanorum inflaverat … Ut vero") and T3c (flamininus v1 p462, the
+/// "…del-phis enim clypeos argenteos affigens … ita" / "inscripsit :" strip) are
+/// recognized by `is_known_whole_source_strip` on the exact production cut-point
+/// strip, so `compose_body_canvases` wraps each whole onto a fresh canvas instead
+/// of bisecting it mid-glyph. Proves (1) the registered strip is Tall and now
+/// recognized (fails on the baseline, where no `WHOLE_STRIPS` row matched),
+/// (2) its scaled height fits a fresh body budget, (3) sibling strips on the same
+/// page are **not** recognized (the signature is specific), (4) a tampered column
+/// is rejected (fingerprint guard), and (5) every glyph in the merged strip
+/// survives byte-identical to the source. Band/trace/pixel domain only (no
+/// `production_body_scale()`); the frozen scale literal drives the budget check.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_tomus3_foot_splits_wrap_whole() {
+    let geom = TrimGeom::default();
+    let budget = geom.body_budget();
+    let scale = 1.2023952f32; // frozen production_body_scale()
+    for (unit, page, top, bottom) in
+        [("philopoemen", 451u32, 2344u32, 2433u32), ("flamininus", 462, 412, 502)]
+    {
+        let (pages, metrics, traces) = audit_traced_unit(unit);
+        let strips = strips_in_reading_order(&pages, &metrics);
+        let trace = retained_page(&traces, 0, page).expect("page traced");
+        let idx = trace.retained_index.expect("page retained");
+        let (col, _) = &pages[idx];
+        let band = Band { top, bottom };
+
+        // 1. The reported strip is a merged Tall strip, and the live production cut
+        //    points still produce it exactly (so the signature stays wired to reality).
+        let strip = strips
+            .iter()
+            .find(|s| s.page_img_index == idx && s.band == band)
+            .unwrap_or_else(|| panic!("{unit} p{page}: cut-point strip {band:?} not found"));
+        assert!(
+            matches!(strip.class, BandClass::Tall),
+            "{unit} p{page}: strip {band:?} is {:?}, not Tall",
+            strip.class
+        );
+
+        // 2. Recognized as a whole strip (fails on the baseline), and it fits a fresh
+        //    body canvas so it wraps instead of bisecting.
+        assert!(
+            is_known_whole_source_strip(col, &band),
+            "{unit} p{page}: strip {band:?} not recognized by WHOLE_STRIPS"
+        );
+        let scaled = ((bottom - top) as f32 * scale).round() as u32;
+        assert!(scaled <= budget, "{unit} p{page}: scaled {scaled} exceeds budget {budget}");
+
+        // 3. Specificity: no other strip on the page is recognized.
+        for other in strips.iter().filter(|s| s.page_img_index == idx && s.band != band) {
+            assert!(
+                !is_known_whole_source_strip(col, &other.band),
+                "{unit} p{page}: unexpected whole-strip match {:?}",
+                other.band
+            );
+        }
+
+        // 4. Fingerprint guard: flipping one pixel in the strip rejects the match.
+        let mut tampered = col.clone();
+        let old = tampered.get_pixel(0, top).0[0];
+        tampered.put_pixel(0, top, Luma([if old == 0 { 255 } else { 0 }]));
+        assert!(
+            !is_known_whole_source_strip(&tampered, &band),
+            "{unit} p{page}: tampered column still matched"
+        );
+
+        // 5. Faithfulness: every glyph in the merged strip is byte-identical.
+        let original = real_source_image(0, page);
+        let [cl, cr] = trace.crop;
+        assert_source_region_pixels_survive(&original, col, trace, [cl, top, cr, bottom]);
+    }
+}
+
+/// Regression: T2a. The right scan-edge streak at the foot of Coriolanus v1 p289
+/// is masked, so the last Latin band stops at the real "… exclamans : O ma-" row
+/// (~[2559,2586]) instead of being dragged down to row 2728 by the streak. Removing
+/// that ~140 px of trailing whitespace collapses the inflated gap that preceded
+/// "ter, ut mecum egisti!" (first line of p290). Proves (1) no retained p289 band
+/// reaches into the streak region (fails on the unmasked baseline, where the foot
+/// band is [2559,2728]), (2) the "O ma-" row survives as its own band, and (3) both
+/// the "O ma-" row (p289) and the continuing "ter …" row (p290) survive once
+/// byte-identically. Band/trace/pixel domain only (no `production_body_scale()`).
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_coriolanus_boundary_gap_masked() {
+    let (pages, _metrics, traces) = audit_traced_unit("marcius_coriolanus");
+
+    // p289: the foot band collapses to the real "O ma-" row.
+    let trace289 = retained_page(&traces, 0, 289).expect("p289 traced");
+    let idx289 = trace289.retained_index.expect("p289 retained");
+    let (col289, kept289) = &pages[idx289];
+    assert!(
+        kept289.iter().all(|b| b.bottom <= 2600),
+        "p289 foot band still reaches the streak region: {:?}",
+        kept289.iter().filter(|b| b.bottom > 2600).collect::<Vec<_>>()
+    );
+    assert_eq!(
+        kept289
+            .iter()
+            .filter(|b| b.top <= 2560 && b.bottom >= 2585)
+            .count(),
+        1,
+        "the 'O ma-' row is covered by exactly one band: {kept289:?}"
+    );
+
+    // Faithfulness: the "O ma-" row survives byte-identical (right of the crop stays
+    // left of the masked streak at x>=1904).
+    let original289 = real_source_image(0, 289);
+    let [cl289, cr289] = trace289.crop;
+    assert!(cr289 <= 1904, "p289 crop {cr289} must stop before the masked streak");
+    assert_source_region_pixels_survive(&original289, col289, trace289, [cl289, 2559, cr289, 2586]);
+
+    // p290: the continuing "ter, ut mecum egisti!" first line is untouched.
+    let trace290 = retained_page(&traces, 0, 290).expect("p290 traced");
+    let idx290 = trace290.retained_index.expect("p290 retained");
+    let (col290, kept290) = &pages[idx290];
+    let first = kept290.first().expect("p290 has bands");
+    assert!(first.top < 400, "p290 first band unexpectedly low: {first:?}");
+    let original290 = real_source_image(0, 290);
+    let [cl290, cr290] = trace290.crop;
+    assert_source_region_pixels_survive(
+        &original290,
+        col290,
+        trace290,
+        [cl290, first.top, cr290, first.bottom],
+    );
+}
+
 /// Regression: the Romulus VI→VII (page 36) and VII→VIII (page 37) parallel-
 /// alignment blanks are excised, each closed to one ordinary inter-line gap, and
 /// the real Latin lines bracketing every slab survive once byte-identically.
@@ -3485,6 +3614,65 @@ fn backlog_tomus1_gap_split_trace() {
             let path = dir.join(format!("{unit}_p{page}_col.png"));
             col.save(&path).unwrap();
             println!("  saved {}", path.display());
+        }
+    }
+}
+
+/// Diagnostic (not a regression): dump the cut-point **strips** (the atoms compose
+/// actually packs), their class, raw+scaled height, whole-page-budget fit, and the
+/// raw-grayscale SHA-256 of each strip's full-width crop region, for the Tomus-III
+/// page-foot split pages (T3a p448, T3b p451, T3c p462). Supplies the exact
+/// `is_known_whole_source_strip` signature (dimensions, cut-interval band, crop
+/// region, fingerprint) for the merged Tall strip that `compose_body_canvases`
+/// bisects. Uses the frozen production scale literal so it stays in the ~1-min band
+/// domain (no whole-corpus `production_body_scale()` sampling). Saves a PNG of each
+/// Tall strip for human mapping to the reported split row.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_tomus3_split_strip_trace() {
+    use sha2::Digest;
+    let geom = TrimGeom::default();
+    let budget = geom.body_budget();
+    // Frozen production_body_scale() for the current PDFs (see note / memory).
+    let scale = 1.2023952f32;
+    let dir = std::path::Path::new("tmp/pdfs/backlog_tomus3");
+    std::fs::create_dir_all(dir).unwrap();
+    println!(
+        "body_budget={budget} first_budget={} scale={scale}",
+        geom.first_body_budget()
+    );
+    for (unit, page) in [("philopoemen", 451u32), ("flamininus", 462), ("philopoemen", 448)] {
+        let (pages, metrics, traces) = audit_traced_unit(unit);
+        let strips = strips_in_reading_order(&pages, &metrics);
+        let Some(idx) = retained_page(&traces, 0, page).and_then(|t| t.retained_index) else {
+            println!("{unit} p{page}: no retained index");
+            continue;
+        };
+        let (col, _) = &pages[idx];
+        let (w, h_full) = col.dimensions();
+        println!("\n==== {unit} p{page} dims=({w},{h_full}) idx={idx} metrics={metrics:?} ====");
+        for s in strips.iter().filter(|s| s.page_img_index == idx) {
+            let bh = s.band.bottom - s.band.top;
+            let scaled = (bh as f32 * scale).round() as u32;
+            let region = image::imageops::crop_imm(col, 0, s.band.top, w, bh).to_image();
+            let fp = format!("{:x}", sha2::Sha256::digest(region.as_raw()));
+            let tall = matches!(s.class, BandClass::Tall);
+            println!(
+                "  strip [{},{}) h={bh} class={:?} scaled={scaled} fits_budget={} fp={}",
+                s.band.top,
+                s.band.bottom,
+                s.class,
+                scaled <= budget,
+                fp
+            );
+            if tall {
+                region
+                    .save(dir.join(format!(
+                        "{unit}_p{page}_strip_{}_{}.png",
+                        s.band.top, s.band.bottom
+                    )))
+                    .unwrap();
+            }
         }
     }
 }

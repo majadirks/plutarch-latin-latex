@@ -641,6 +641,19 @@ const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
         right: 1.0,
         bottom: 1.0,
     },
+    // T2a: the right scan edge below the final Coriolanus line on p289 extends the
+    // last Latin band ("... exclamans : O ma-", rows 2559-2586) down to row 2728,
+    // so the "O ma-" strip carries ~140 px of trailing whitespace that renders as the
+    // inflated gap before "ter, ut mecum egisti!" (first line of p290). The streak
+    // sits at the extreme right margin, clear of the Latin (which ends near x=1826).
+    SourceFurnitureMask {
+        source: 0,
+        page: 289,
+        left: 1904.0 / 1913.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
 ];
 
 fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
@@ -2847,6 +2860,33 @@ fn is_known_whole_source_strip(column: &GrayImage, band: &Band) -> bool {
             },
             [0, 1364, 826, 1691],
             "5a3cfc2d34e81d528e74ac84ce4c954d91dbbc65f12403579b6d665a8c868980",
+        ),
+        // T3b (philopoemen, v1 source page 451): the page-foot merged strip
+        // "oppidanorum inflaverat, et ad portas exciverat. Ut vero" /
+        // "Philopoemenem indigne gloria tanti viri, rebusque gestis" (two prose lines
+        // fused by tight foot spacing) was bisected mid-glyph across generated pages
+        // 129->130; wrap it whole (scaled 107 <= 1394 budget).
+        (
+            (751, 2953),
+            Band {
+                top: 2344,
+                bottom: 2433,
+            },
+            [0, 2344, 751, 2433],
+            "71401035f8ab7fd9f305a8c4aa47f02dbe32d72c64f8db212dc6ef96e0b7b1db",
+        ),
+        // T3c (flamininus, v1 source page 462): the merged strip
+        // "phis enim clypeos argenteos affigens, suumque scutum, ita" / "inscripsit :"
+        // (the "...del-phis" continuation plus its colophon) was bisected mid-glyph
+        // across generated pages 151->152; wrap it whole (scaled 108 <= 1394 budget).
+        (
+            (801, 2988),
+            Band {
+                top: 412,
+                bottom: 502,
+            },
+            [0, 412, 801, 502],
+            "f31a373625ac795614f07c68557c2668890af5776d7ffa456e981994c61b7068",
         ),
     ];
     WHOLE_STRIPS

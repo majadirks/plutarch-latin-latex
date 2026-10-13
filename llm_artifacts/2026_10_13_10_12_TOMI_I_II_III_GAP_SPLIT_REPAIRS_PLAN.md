@@ -1,38 +1,61 @@
-# Implementation status (2026-10-13)
+# Implementation status (updated 2026-10-13, second session)
 
-Seven of the twelve defects are implemented, verified by ignored production
-regressions, and committed on branch `fix/tomus-1-gaps-split-shortending`:
+**Ten of the twelve defects are implemented**, verified by ignored production
+regressions, and committed on branch `fix/tomus-1-gaps-split-shortending`. The two
+remaining (G3, T3a) are deferred to a follow-up plan — see below.
 
-- **Done:** G1 (p23 mask), G2 (p30 mask), S1 (p41 mask), T2b (p315 right-edge
-  mask) — `backlog_tomi_divider_masks_restore_banding` + the faithfulness gate
-  `inner_tomi_known_masks_preserve_latin`; G4 (p36 excision), G5 (p37 excision) —
-  `backlog_romulus_chapter_gaps_excised`; M1 (short-ending merge) —
-  `backlog_solon_poplicola_short_ending_merges`. New masks live in
-  `fixtures/tomi_gap_split_repairs_source_trace.json`.
-- **Remaining (harder class — not simple edge streaks):**
-  - **G3 (p34)**, **T3a (p448)**: the page is **skewed** (baselines not level), so
-    no row is blank across the width and the column bands into one block; an
-    edge mask cannot de-bridge it. G3's *visible* defect is the left divider
-    streak rendering as gutter fragments — a narrow left mask removes those, but
-    the skew-merge residual needs eyeballing. p448 also has a bled Greek column
-    and an over-wide crop. These need a per-page deskew or a whole-strip guard,
-    not a furniture mask.
-  - **T3b (p451)**, **T3c (p462)**: horizontal splits from a skew/tight-text
-    bridge at a page foot; the merged band must wrap whole via
-    `is_known_whole_source_strip` (measure the column dims / band / crop /
-    fingerprint at production scale and confirm the scaled band fits a budget),
-    as III1/III2/VII2-4 did.
-  - **T2a (p289→p290 boundary)**: the "O ma-/ter" split straddles the source
-    page break; the right-edge streak at abs x≈1905 sits in the right margin
-    (outside the ~[933,1719] Latin crop) and the two specks below "O ma-" are too
-    sparse (<3 px/row) to band, so the mechanism is not yet a simple streak mask —
-    needs the p289 production crop (the diagnostic now covers p289/p291) to pin
-    the cause.
+- **Done (first session):** G1 (p23 mask), G2 (p30 mask), S1 (p41 mask), T2b
+  (p315 right-edge mask) — `backlog_tomi_divider_masks_restore_banding` + the
+  faithfulness gate `inner_tomi_known_masks_preserve_latin`; G4 (p36 excision),
+  G5 (p37 excision) — `backlog_romulus_chapter_gaps_excised`; M1 (short-ending
+  merge) — `backlog_solon_poplicola_short_ending_merges`.
+- **Done (second session):**
+  - **T3b (p451)**, **T3c (p462)**: page-foot merged strips bisected mid-glyph.
+    Fixed by registering the exact production cut-point strip in `WHOLE_STRIPS`
+    (`is_known_whole_source_strip`) so each wraps whole: T3b `(751,2953)` band
+    `[2344,2433)` fp `71401035…`; T3c `(801,2988)` band `[412,502)` fp
+    `f31a3736…`. Measured scale-independently by the new diagnostic
+    `backlog_tomus3_split_strip_trace`; regression
+    `backlog_tomus3_foot_splits_wrap_whole`.
+  - **T2a (p289→p290 boundary)**: the "O ma-/ter" gap is **not** a p290 problem —
+    it is a right scan-edge streak at abs x `[1904,1911)` on **p289** that extends
+    the last Latin band ("… exclamans : O ma-", rows `[2559,2586]`) down to row
+    2728, so the "O ma-" strip carried ~140 px of trailing whitespace. Fixed by a
+    right-edge `SOURCE_FURNITURE_MASKS` rectangle (`1904/1913 → 1.0`, full height),
+    recorded in `fixtures/tomi_gap_split_repairs_source_trace.json`; regression
+    `backlog_coriolanus_boundary_gap_masked`.
+- **Deferred to a follow-up plan — G3 (p34), T3a (p448):** both are **true skew**,
+  not edge streaks. Measurement (this session):
+  - **T3a p448**: even cropped tight to the real Latin column `[975,1720]` there are
+    only ~6 blank gap-rows for ~40 lines — tilted baselines fill the inter-line gaps
+    across the full width. A furniture mask cannot de-bridge it; a whole-strip guard
+    cannot apply (the merged blocks are `[300,1514]` h=1214 and `[1514,2668]` h=1154,
+    scaled ~1460/1388, over the 1394-px page budget).
+  - **G3 p34**: the bridge is a vertical rule that **overlays the text body**
+    (abs x `[965,974]`, inside the glyphs), not a clean gutter streak. Masking it only
+    in the chapter-break whitespace `[1862,2120)` does split the band and remove the
+    fragments — but the 252-px break gap then trips `drop_gap_outliers`
+    (median gap = 3 because the rest of the column stays merged), which prunes the
+    "III. Ceterum" block entirely; collapsing the gap to survive that heuristic needs
+    an unnaturally small (~6-px) excision. (Masking also shifts the detected left
+    crop 945→970, requiring a `preserve_known_body_crop_edge` pin.) Not a clean fix.
+  - **Recommended follow-up mechanism — a scoped *lossless shear* (not a deskew).**
+    The baselines are straight lines tilted ~1.2°, so a per-column integer vertical
+    shift `round(x·slope)` straightens them into rectangles **without interpolation**
+    — every glyph pixel is translated to an integer location, so byte-identity holds
+    (unlike rotation). After shearing, the existing rectangular banding/crop/compose
+    path works unchanged, and the gap-outlier/furniture heuristics see normal gaps.
+    This is page-scoped like the masks/excisions and is simpler and safer than a
+    rotation deskew; it also covers the Tomus-VI skew page (v2 p266). It needs its own
+    regression proving all glyphs survive once and remain legible. Freeform
+    polygon-cut-and-paste was considered but rejected: keeping the slant leaves lines
+    visibly tilted and needs new slanted-strip packing; the shear is "polygon extract
+    + straighten" done as an integer remap that drops back into the rectangular code.
 
 The three **Tomus VI** items the owner added (pdf 86-87 "quidem" split; v2 p266
 skew losing right-edge glyphs + left Greek bleed; gap on pdf 394 after "…summae
-rerum consi-") are explicitly scheduled for a **separate** plan after this branch
-lands, and are not addressed here.
+rerum consi-") remain scheduled for a **separate** plan after this branch lands;
+G3/T3a should join that plan since the scoped-shear mechanism serves all three.
 
 # Context
 
