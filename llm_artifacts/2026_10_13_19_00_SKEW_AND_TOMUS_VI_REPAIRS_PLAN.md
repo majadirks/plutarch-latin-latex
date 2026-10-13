@@ -36,8 +36,9 @@ crop and row excisions but has no x-dependent row mapping for shear.
 
 ## Desired end state
 
-Each of the five reader symptoms is repaired, except that the `consi-` gap may be
-retained if source-image evidence proves it is authentic. The Latin on every
+Each reproduced reader symptom is repaired. The reported `quidem` split is absent
+from the current reader and needs no repair unless a later build reproduces it.
+The Latin on every
 affected page is present once, in source order, with reviewed source pixel values
 preserved in the unscaled reader stream. Every page-scoped repair is source-guarded
 and ledger-recorded. Ordinary tests, ignored repair regressions, formatting,
@@ -57,32 +58,79 @@ a scan: a distinctive raw-pixel fingerprint guards a reviewed transformation.
 |---|------------|----------------|----------------|--------------|
 | 1 | **Romulus chapter-break skew** | v1 (source 0) page **34** | Tomus I inner, the page beginning `III. Ceterum receptissimae …` | A vertical stack of spurious tiny marks (`; ) . - ç ç 'ι η …`) runs down the left gutter above/beside the heading, and `III. Ceterum` does not start cleanly at the top of its page. |
 | 2 | **Philopoemen victory-line skew** | v1 (source 0) page **448** | Tomus III inner, after the line `… sed propter victoriam` | An inflated gap after `… sed propter victoriam`, with stray Greek glyph fragments bleeding into the left margin of the Latin. |
-| 3 | **"quidem" page-straddle split** | v2 (source 1); source page **TBD in Phase 0** (reader side is inner pdf 86–87, folio 78–79) | Tomus VI inner, the page break between pdf 86 and 87 | The final line is split across the page break so that its first word, **"quidem"**, is stranded at the foot of one page while the rest of the line continues on the next. |
+| 3 | **reported "quidem" page-straddle split** | v2 (source 1) page **231** (reader side is inner pdf 86–87, folio 78–79) | Tomus VI inner, the page break between pdf 86 and 87 | The reported split is absent in the current reader: `quidem passus Callisthenem` remains complete on p86. |
 | 4 | **v2 p266 angled scan** | v2 (source 1) page **266** (generated inner pdf page 158) | Tomus VI inner, pdf page 158 | The scan is tilted, so the right-hand crop clips the last glyph of several lines — the **"e" in "sive"**, the terminal **"r" in "praeter"**, the **closing paren in "(3)"**, the **"o" in "auferro,"**, and the **"m" in "idem"** — and Greek bleeds into the left margin. |
-| 5 | **"consi-" continuation gap** | v2 (source 1); source page **TBD in Phase 0** (reader side is inner pdf 394, folio 386) | Tomus VI inner, pdf page 394 | An inflated gap after the hyphenated line `non praebebat, Sosibus autem, qui summae rerum consi-`, before its continuation. |
+| 5 | **"consi-" continuation gap** | v2 (source 1) page **398** (reader side is inner pdf 394, folio 386) | Tomus VI inner, pdf pages 394–395 | The hyphenated line ending `consi-` is separated from its continuation by a reader page break, although the source inter-line gap is ordinary. |
 
-Defects 1, 2, and 4 are **true skew** (the whole scan is rotated ~1–1.5°). Defects 3
-and 5 look like the bridge/split/short-ending family already repaired on this branch,
-but their source pages have not yet been pinned — Phase 0 below classifies them before
-any mechanism is chosen.
+Defects 1, 2, and 4 have slanted baselines. Defect 3 is located at v2 p231 but
+the reported split is absent in the current reader. Defect 5 is located at v2
+p398 and is a `Tall` fill-split case.
 
 ## Diagnosis results
 
-Phase 0 fills this section. It is the plan-side home for the one-line mechanism
+This section records Phase 0 results. It is the plan-side home for the mechanism
 decision and its evidence that Phase 0.2 records for each of the five defects (the
 machine-readable copy lives in the fixture's `diagnoses` array). Each entry records
 the pinned source page, raw dimensions, raw fingerprint, measured baseline slope and
 `x0_px` (for skew defects), the chosen disposition (`shear`, `mask`, `whole_strip`,
-`word_patch`, or `source_spacing_retained`), and the evidence behind it. Phase 2 reads
+`word_patch`, `source_spacing_retained`, or `no_repair_required`), and the evidence behind it. Phase 2 reads
 the slope, `x0_px`, fingerprint, and dimensions recorded here when it installs each
 `SOURCE_SHEARS` (or other table) entry, so these measurements are taken once and not
 re-derived downstream.
 
-- **Defect 1 — Romulus chapter-break skew (v1 p34):** _pending Phase 0._
-- **Defect 2 — Philopoemen victory-line skew (v1 p448):** _pending Phase 0._
-- **Defect 3 — "quidem" page-straddle split (v2, page TBD):** _pending Phase 0._
-- **Defect 4 — angled v2 p266:** _pending Phase 0._
-- **Defect 5 — "consi-" continuation gap (v2, page TBD):** _pending Phase 0._
+- **Defect 1 — Romulus chapter-break skew (v1 p34):** `shear`. Raw raster
+  `1982×3008`, SHA-256 `7d4b205db97b3a77abc3f53a281391e47f5898a174e68b4747577b9acef1d3b4`.
+  At raw x `1080` the reviewed gap is rows `[544,571)`; at x `1733` the same
+  gap is `[535,559)`. Slope `-0.016079632465543646`, full-page `x0_px=1400`,
+  signed shifts `[-23,9]`, `top_pad=23`. Fingerprint raw rectangle
+  `[1100,600,1700,750)` hashes to
+  `6a72bab3264a4a88ccdb988d4d138a383f7dcf140366be63192fd99740a3f204`.
+  Production crop `[945,1773)` has a merged band `[907,2633)`; reader Tomus I
+  p58 displays left-gutter fragments beside `III. Ceterum`. The source heading
+  is around raw y2141. Remeasure the crop and heading retention after shear.
+- **Defect 2 — Philopoemen victory-line skew (v1 p448):** `shear`. Raw raster
+  `1988×3007`, SHA-256 `9b7175759d9ad807a93052779c05387e8f567fe9d5b0776842c170a995487cd3`.
+  Same inter-line gap: `[868,886)` at x `1083`, `[841,873)` at x `1739`.
+  Slope `-0.03048780487804878`, `x0_px=1400`, shifts `[-43,18]`,
+  `top_pad=43`. Raw fingerprint rectangle `[1100,600,1700,750)` hashes to
+  `852199dd3ab488b25f83a7d74e3beeb99d03a8148961068de1ccba083b477ccf`.
+  Production crop `[909,1988)` has giant bands `[300,1501)` and `[1527,2663)`.
+  Reader Tomus III p121 ends after `… sed propter victoriam` with Greek scraps
+  in the left margin; the source line is around raw y325.
+- **Defect 3 — reported `quidem` straddle (v2 p231):** `no_repair_required`
+  for the current reader. Raw raster `1900×2844`, SHA-256
+  `0d773276f23f73d593426e75a36a74bdce147d02c61106044f4d9bc424cdd3f6`.
+  The source has `quidem passus Callisthenem` on one line around y2242.
+  The current Tomus VI p86 carries that complete line; p87 begins
+  `Alexander statim`. Crop `[1019,1829)` produces a `Tall` strip
+  `[2224,2317)` (112 scaled px, below the 1394-px budget), but the actual
+  page break is after the complete line. A `Tall` classification by itself
+  does not establish a defect. Do not install a whole-strip guard or a word
+  patch without a reproduced mid-line split and a baseline-failing regression.
+- **Defect 4 — angled v2 p266:** `shear`, with a later crop check for any
+  remaining right-edge loss. Raw raster `1878×2825`, SHA-256
+  `b0601cd563d69864e1c34a5f041fa34a4586f16cf45aaf333edaddda8ceb95a0`.
+  Same gap: `[630,658)` at x `1026`, `[654,680)` at x `1640`.
+  Slope `0.03745928338762215`, `x0_px=1350`, shifts `[-20,51]`,
+  `top_pad=20`. Raw fingerprint rectangle `[1050,600,1650,750)` hashes to
+  `fcf1065d83486979a6e6f9d4ddbcf50f0e20b107cdd7aafa48f507246edc5d2c`.
+  Production crop `[880,1708)` clips the source `sive` ending, which reaches
+  x1720; the first merged band is `[239,441)`. Reader Tomus VI p158 also
+  loses the reviewed right-edge glyphs. Remeasure crop after shear before
+  deciding whether a source-pixel patch is needed.
+- **Defect 5 — `consi-` continuation (v2 p398):** `whole_strip`. Raw raster
+  `1840×2835`, SHA-256 `dbb4326a4d1e66391555e81b8ee0716a850e83b3cf5f7594e9ecfe0fac30d572`.
+  The source has local gaps of 20 px at x `[950,1050)` and 18 px at
+  x `[1550,1650)` between `consi-` and
+  its continuation `lioque`. Production crop `[880,1698)` merges rows
+  `[1028,1819)` into a `Tall` strip `[1022,1837)`; at the frozen scale its
+  height is 980 px, below the 1394-px full-page budget. The reviewed cropped
+  column is `818×2835`; strip fingerprint region `[0,1022,818,1837)` hashes
+  to `1d7abf778c5458949c6bcedbfd519d7dbf174aab33fa547301aeb3b5cef6e5df`.
+  The fill-split puts
+  `consi-` on reader Tomus VI p394 and `lioque` on p395. Wrap this reviewed
+  strip whole using the existing `WHOLE_STRIPS` path; the source gap itself
+  must be retained. Record the strip fingerprint before installation.
 
 ---
 
@@ -299,8 +347,9 @@ shift range. Save raw and diagnostic PNGs under `tmp/pdfs/skew/`. For `quidem`
 and `consi-`, report raw bands, cut points, source spacing, and whether the
 composer classifies the relevant strip as `Tall`. Record a one-line mechanism
 decision and its evidence for each defect in a diagnosis section of this plan
-and in the fixture's `diagnoses` array: shear, mask, whole strip, patch, or
-retained source spacing. Name the ignored trace `skew_and_tomus6_repair_trace`.
+and in the fixture's `diagnoses` array: shear, mask, whole strip, patch,
+retained source spacing, or no repair required when the reported symptom is absent.
+Name the ignored trace `skew_and_tomus6_repair_trace`.
 Do not choose a word patch solely because the symptom occurs at a page break.
 
 **LLM verification:** run
@@ -376,7 +425,7 @@ with its source image, coordinate system, and actual Rust table entry.
 
 ## Phase 2 — individual repairs (Suggested implementer: Opus)
 
-For each repair, first write its named regression and confirm that it fails on
+For each reproduced repair, first write its named regression and confirm that it fails on
 the baseline; then install the smallest diagnosed page-scoped entry and confirm
 it passes. Remeasure crop edges and bands after any shear or patch. The one
 exception is the `source_spacing_retained` disposition (the retained-spacing
@@ -425,7 +474,11 @@ including the left margin and the continuation.
 
 ### 2.3 `quidem` straddle, located v2 page
 
-If Phase 0 shows a `Tall` fill-split, add a reviewed signature to the existing
+Phase 0 found no mid-line split in the current reader: `quidem passus
+Callisthenem` is complete on p86. First recheck the current baseline with a
+regression that asserts the source line is complete and unique across pp86–87.
+If a later baseline reproduces the reported split and shows a `Tall` fill-split,
+add a reviewed signature to the existing
 `WHOLE_STRIPS` table and ledger. Assert that the strip's scaled height fits a full
 page budget; a guard cannot fix a strip taller than that budget. The regression
 `tomus6_quidem_wraps_whole` asserts source order, one occurrence of `quidem`, a
@@ -526,8 +579,9 @@ faithful pixels, one occurrence per Latin line, and expected spacing.
   patch can fix isolated crop loss but cannot repair a column whose lines still merge.
 - **Shear vs. crop order.** Shearing changes row positions and canvas height.
   Remeasure the Latin crop and body-zone filtering on each transformed page.
-- **Defects 3 and 5 may not be skew at all** — Phase 0 might reclassify them as ordinary
-  mask/whole-strip cases, in which case no new mechanism is needed for them.
+- **Defect 3 may reappear with a changed corpus or composer.** The current reader
+  has the complete `quidem` line. Reproduce a split and trace its actual cut
+  before installing a page-scoped guard.
 - **Patch width.** A widened crop must fit the safe composed text area; verify
   the scaled strip and PDF rather than assuming right-margin overflow is harmless.
 - Do **not** add a global deskew or any change to global thresholds, body scale, the

@@ -3710,6 +3710,75 @@ fn skew_and_tomus6_source_pages_trace() {
     }
 }
 
+/// Measure three slanted scans and trace the two Tomus VI page-break passages.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn skew_and_tomus6_repair_trace() {
+    use sha2::Digest;
+    let dir = std::path::Path::new("tmp/pdfs/skew");
+    std::fs::create_dir_all(dir).unwrap();
+    for (source, page, left, right, left_gap, right_gap, fingerprint_region, x0) in [
+        (0, 34, [1030, 1130], [1683, 1783], [544, 571], [535, 559], [1100, 600, 1700, 750], 1400),
+        (0, 448, [1033, 1133], [1689, 1789], [868, 886], [841, 873], [1100, 600, 1700, 750], 1400),
+        (1, 266, [976, 1076], [1590, 1690], [630, 658], [654, 680], [1050, 600, 1650, 750], 1350),
+    ] {
+        let raw = real_source_image(source, page);
+        let [fl, ft, fr, fb] = fingerprint_region;
+        let fp = image::imageops::crop_imm(&raw, fl, ft, fr - fl, fb - ft).to_image();
+        let digest = format!("{:x}", sha2::Sha256::digest(fp.as_raw()));
+        let mut transformed = raw.clone();
+        mask_known_source_furniture(source, page, &mut transformed);
+        let transformed = excise_known_source_rows(source, page, transformed);
+        let crop = production_source_column(source, page, &transformed).unwrap();
+        let column = crop_column(&transformed, &crop);
+        let raw_bands = line_bands(&column, LINE_MIN_INK);
+        let profile = ink_profile_rows(&column, INK_THRESHOLD);
+        let blank_rows = profile.iter().filter(|&&n| n <= LINE_MIN_INK).count();
+        let body_blank_rows = profile[300..2650].iter().filter(|&&n| n <= LINE_MIN_INK).count();
+        let left_center = (left_gap[0] + left_gap[1]) as f64 / 2.0;
+        let right_center = (right_gap[0] + right_gap[1]) as f64 / 2.0;
+        let left_x = (left[0] + left[1]) as f64 / 2.0;
+        let right_x = (right[0] + right[1]) as f64 / 2.0;
+        let slope = (right_center - left_center) / (right_x - left_x);
+        let shifts: Vec<i64> = (0..raw.width()).map(|x| (-((x as f64 - x0 as f64) * slope)).round() as i64).collect();
+        let min_shift = *shifts.iter().min().unwrap().min(&0);
+        let max_shift = *shifts.iter().max().unwrap().max(&0);
+        let prefix = format!("v{}_p{page}", source + 1);
+        column.save(dir.join(format!("{prefix}_production_crop.png"))).unwrap();
+        image::imageops::crop_imm(&raw, left[0], 0, left[1] - left[0], raw.height()).to_image().save(dir.join(format!("{prefix}_left_gap.png"))).unwrap();
+        image::imageops::crop_imm(&raw, right[0], 0, right[1] - right[0], raw.height()).to_image().save(dir.join(format!("{prefix}_right_gap.png"))).unwrap();
+        println!("SKEW source={source} p{page} raw_dims={:?} crop=[{},{}] crop_dims={:?} raw_bands={raw_bands:?} blank_rows={blank_rows} body_blank_rows={body_blank_rows} left_gap={left_gap:?} right_gap={right_gap:?} left_x={left_x} right_x={right_x} slope={slope:.9} x0={x0} shifts=[{min_shift},{max_shift}] top_pad={} fingerprint_region={fingerprint_region:?} fingerprint={digest}", raw.dimensions(), crop.left, crop.right, column.dimensions(), -min_shift);
+    }
+    for (unit, page, target_row) in [("alexander", 231, 2250), ("cleomenes", 398, 1370)] {
+        let source_image = real_source_image(1, page);
+        for [left, right] in [[950, 1050], [1550, 1650]] {
+            let edge = image::imageops::crop_imm(
+                &source_image, left, 0, right - left, source_image.height()
+            ).to_image();
+            let edge_bands: Vec<_> = line_bands(&edge, LINE_MIN_INK)
+                .into_iter()
+                .filter(|b| b.top < target_row + 100 && b.bottom > target_row - 100)
+                .collect();
+            println!("SOURCE_EDGE v2 p{page} x=[{left},{right}) bands={edge_bands:?}");
+        }
+        let (pages, metrics, traces) = audit_traced_unit(unit);
+        let trace = retained_page(&traces, 1, page).unwrap();
+        let index = trace.retained_index.unwrap();
+        let (column, kept) = &pages[index];
+        let raw = line_bands(column, LINE_MIN_INK);
+        let cuts = cut_points(kept);
+        let strips = strips_in_reading_order(&pages, &metrics);
+        let relevant: Vec<_> = strips.iter().filter(|s| s.page_img_index == index && s.band.top < target_row + 170 && s.band.bottom > target_row - 170).map(|s| {
+            let region = image::imageops::crop_imm(column, 0, s.band.top, column.width(), s.band.bottom - s.band.top).to_image();
+            let digest = format!("{:x}", sha2::Sha256::digest(region.as_raw()));
+            (s.band, s.class, ((s.band.bottom - s.band.top) as f32 * 1.2023952).round() as u32, digest)
+        }).collect();
+        let around: Vec<_> = raw.iter().filter(|b| b.top < target_row + 170 && b.bottom > target_row - 170).copied().collect();
+        println!("BREAK {unit} v2 p{page} crop={:?} dims={:?} metrics={metrics:?} raw_bands={around:?} kept={kept:?} cuts={cuts:?} strips={relevant:?} body_budget={}", trace.crop, column.dimensions(), TrimGeom::default().body_budget());
+        column.save(dir.join(format!("v2_p{page}_retained_crop.png"))).unwrap();
+    }
+}
+
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn theseus_p17_analysis_keeps_original_latin_pixels() {
