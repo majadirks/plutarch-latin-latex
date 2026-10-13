@@ -705,7 +705,11 @@ pub(in crate::facsimile) mod tests {
                 );
                 write_inner(&vol, dir.path(), &Fonts::default(), None).unwrap();
                 let (texts, images) = compiled_fixture(dir.path(), tomus);
-                let prose_start = if tomus == 1 { 13 } else { 9 };
+                // Front-matter units now open on rectos, so the literal prose
+                // (which carries no \unitrecto of its own) lands one page earlier:
+                // Tomus I after title/QR/Volumen/colophon on recto pages 5/7/9/11
+                // -> page 12; a plain tomus after title/QR on 5/7 -> page 8.
+                let prose_start = if tomus == 1 { 12 } else { 8 };
                 assert!(texts[prose_start - 1].contains("FRONT-A"));
                 if prose_count == 2 {
                     assert!(texts[prose_start].contains("FRONT-B"));
@@ -1048,6 +1052,94 @@ pub(in crate::facsimile) mod tests {
             title < qr && qr < volumen && volumen < colophon && colophon < prose,
             "front-matter order wrong: title={title} qr={qr} volumen={volumen} colophon={colophon} prose={prose}"
         );
+    }
+
+    #[test]
+    fn front_matter_units_open_on_recto() {
+        // Every named front-matter unit opens with the recto-forcing \unitrecto,
+        // and the front-matter region carries no verso-forcing \freshpage. The
+        // scan count varies by the tomus's place in the work. The prose unit's own
+        // recto break lives inside its (here literal) prose string and is covered
+        // by the latex::front_prose_* tests, so prose is checked for order only.
+        // The document body between \begin{document} and \beginbodynumbering,
+        // excluding the preamble (which defines \freshpage and \unitrecto).
+        let front_region = |doc: &str| {
+            let start = doc.find("\\begin{document}").unwrap();
+            let end = start + doc[start..].find("\\beginbodynumbering").unwrap();
+            doc[start..end].to_string()
+        };
+        let scan_recto = "% Embedded front-matter scan\n\\unitrecto\n";
+
+        // Tomus I: title, QR, Volumen, colophon, Monitum prose; errata pair follows.
+        let doc = inner_document(
+            &volume_full(
+                1,
+                0,
+                true,
+                true,
+                "% MONITUM PROSE MARKER\n",
+                vec![unit("theseus", &["x.png"])],
+            ),
+            &Fonts::default(),
+            None,
+        );
+        let region = front_region(&doc);
+        assert!(!region.contains("\\freshpage"));
+        assert!(region.contains("% Tomus title page\n\\unitrecto\n"));
+        assert_eq!(region.matches(scan_recto).count(), 3);
+        // The Monitum errata pair follows the prose on a plain page break, not a recto.
+        assert!(region.contains("% Embedded front-matter scan pair\n\\clearpage\n"));
+        assert!(!region.contains("% Embedded front-matter scan pair\n\\unitrecto"));
+        let (title, qr, volumen, colophon, prose) = (
+            region.find("PLVTARCHI").unwrap(),
+            region.find("front_qr_s0.png").unwrap(),
+            region.find("front_volumen_s0.png").unwrap(),
+            region.find("front_colophon.png").unwrap(),
+            region.find("MONITUM PROSE MARKER").unwrap(),
+        );
+        assert!(title < qr && qr < volumen && volumen < colophon && colophon < prose);
+
+        // Tomus 5 (first tomus of source 1): title, QR, Volumen, Praefatio prose;
+        // no colophon and no errata pair.
+        let doc = inner_document(
+            &volume_full(
+                5,
+                1,
+                true,
+                true,
+                "% PRAEFATIO PROSE MARKER\n",
+                vec![unit("nicias", &["x.png"])],
+            ),
+            &Fonts::default(),
+            None,
+        );
+        let region = front_region(&doc);
+        assert!(!region.contains("\\freshpage"));
+        assert!(region.contains("% Tomus title page\n\\unitrecto\n"));
+        assert_eq!(region.matches(scan_recto).count(), 2);
+        assert!(!region.contains("front_colophon.png"));
+        assert!(!region.contains("% Embedded front-matter scan pair"));
+        let (title, qr, volumen, prose) = (
+            region.find("PLVTARCHI").unwrap(),
+            region.find("front_qr_s1.png").unwrap(),
+            region.find("front_volumen_s1.png").unwrap(),
+            region.find("PRAEFATIO PROSE MARKER").unwrap(),
+        );
+        assert!(title < qr && qr < volumen && volumen < prose);
+
+        // A plain later tomus: title and QR only.
+        let doc = inner_document(
+            &volume_full(2, 0, false, true, "", vec![unit("theseus", &["x.png"])]),
+            &Fonts::default(),
+            None,
+        );
+        let region = front_region(&doc);
+        assert!(!region.contains("\\freshpage"));
+        assert!(region.contains("% Tomus title page\n\\unitrecto\n"));
+        assert_eq!(region.matches(scan_recto).count(), 1);
+        assert!(!region.contains("front_volumen_s0.png"));
+        assert!(!region.contains("front_colophon.png"));
+        assert!(region.find("PLVTARCHI").unwrap() < region.find("front_qr_s0.png").unwrap());
     }
 
     #[test]
