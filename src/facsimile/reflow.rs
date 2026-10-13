@@ -803,6 +803,98 @@ fn excise_known_source_rows(source: usize, page: u32, img: GrayImage) -> GrayIma
     splice_out_rows(&img, &intervals)
 }
 
+/// A reviewed per-column shear that straightens a uniformly tilted source scan
+/// before masking and banding. The scan was photographed at a slight angle, so its
+/// baselines are straight lines with a small constant slope; shifting each column
+/// vertically by an integer number of rows makes them horizontal again. Because
+/// every pixel moves a whole number of rows **within its own column**, the glyph
+/// pixel values are translated, never interpolated or resampled. The shear spans the
+/// full page width (Greek column, divider, and Latin column together) under the
+/// premise that the defect is a single uniform rotation of the whole scan, so one
+/// slope straightens every baseline.
+struct SourceShear {
+    source: usize,
+    page: u32,
+    raw_dims: (u32, u32),
+    fingerprint_region: [u32; 4],
+    fingerprint: &'static str,
+    /// Full-page raw x the shift pivots around; its exact value only slides the
+    /// straightened raster by a constant absorbed by `top_pad`.
+    x0_px: u32,
+    /// Measured change in baseline y per x pixel. The applied shift negates it.
+    baseline_slope: f64,
+}
+
+impl SourceShear {
+    /// A raw page matches when its dimensions and distinctive raw pixels are the
+    /// reviewed ones. The fingerprint is checked on the untransformed image, so a
+    /// same-sized but changed render does not trigger the shear.
+    fn matches(&self, raw: &GrayImage) -> bool {
+        self.raw_dims == raw.dimensions()
+            && matches_source_region_fingerprint(raw, self.fingerprint_region, self.fingerprint)
+    }
+}
+
+const SOURCE_SHEARS: &[SourceShear] = &[];
+
+/// The integer vertical shift applied to raw column `x` for a shear centered at
+/// `x0_px` with measured `baseline_slope`. The shift negates the baseline's rise so
+/// a baseline that descends to the right is lifted back level.
+fn source_shear_shift(x: u32, x0_px: u32, baseline_slope: f64) -> i64 {
+    (-((f64::from(x) - f64::from(x0_px)) * baseline_slope)).round() as i64
+}
+
+/// Every column's signed shift plus the top padding (`-min_shift`, with zero
+/// included in the minimum) that keeps all shifted pixels at non-negative rows.
+fn source_shear_shifts(width: u32, x0_px: u32, baseline_slope: f64) -> (Vec<i64>, u32) {
+    let shifts: Vec<i64> = (0..width)
+        .map(|x| source_shear_shift(x, x0_px, baseline_slope))
+        .collect();
+    let min_shift = shifts.iter().copied().min().unwrap_or(0).min(0);
+    let top_pad = u32::try_from(-min_shift).expect("non-negative top padding");
+    (shifts, top_pad)
+}
+
+/// Straighten a uniformly tilted scan by shifting each column vertically by an
+/// integer number of rows. The destination is padded top and bottom so no pixel is
+/// clipped: its height is `raw_height + max_shift - min_shift` (zero included in
+/// both bounds), and every raw pixel `(x, y)` lands once at
+/// `(x, y + shift(x) + top_pad)`. Vacated cells stay white, so each output column
+/// holds the input column's exact pixels plus white padding.
+fn shear_image(raw: &GrayImage, x0_px: u32, baseline_slope: f64) -> GrayImage {
+    let (width, height) = raw.dimensions();
+    let (shifts, top_pad) = source_shear_shifts(width, x0_px, baseline_slope);
+    let bottom_pad = u32::try_from(shifts.iter().copied().max().unwrap_or(0).max(0))
+        .expect("non-negative bottom padding");
+    let out_height = height
+        .checked_add(top_pad)
+        .and_then(|h| h.checked_add(bottom_pad))
+        .expect("sheared height fits u32");
+    let mut out = GrayImage::from_pixel(width, out_height, Luma([255]));
+    for x in 0..width {
+        let shift = shifts[x as usize];
+        for y in 0..height {
+            let dst = i64::from(y) + shift + i64::from(top_pad);
+            let dst = u32::try_from(dst).expect("shifted row within padded height");
+            out.put_pixel(x, dst, *raw.get_pixel(x, y));
+        }
+    }
+    out
+}
+
+/// Straighten a reviewed tilted page before any other source transform. Returns the
+/// input untouched unless a `SOURCE_SHEARS` entry matches source, page, raw
+/// dimensions, and the raw-pixel fingerprint.
+fn apply_known_source_shear(source: usize, page: u32, raw: GrayImage) -> GrayImage {
+    match SOURCE_SHEARS
+        .iter()
+        .find(|s| s.source == source && s.page == page && s.matches(&raw))
+    {
+        Some(shear) => shear_image(&raw, shear.x0_px, shear.baseline_slope),
+        None => raw,
+    }
+}
+
 /// Minimum per-row ink for a row to count as texty when banding a column.
 const LINE_MIN_INK: u32 = 3;
 
@@ -1075,7 +1167,8 @@ fn render_and_band(
     page: u32,
     render_fn: &impl Fn(usize, u32) -> Result<GrayImage>,
 ) -> Result<(GrayImage, Vec<Band>)> {
-    let mut page_img = render_fn(source, page)?;
+    let page_img = render_fn(source, page)?;
+    let mut page_img = apply_known_source_shear(source, page, page_img);
     mask_known_source_furniture(source, page, &mut page_img);
     let page_img = excise_known_source_rows(source, page, page_img);
     let column = production_source_column(source, page, &page_img)?;
@@ -3298,6 +3391,118 @@ mod tests {
             };
             assert_eq!(apply_source_row_excision(&excision, &img), img);
         }
+    }
+
+    #[test]
+    fn source_shear_levels_both_slope_directions() {
+        use super::*;
+        let width = 200u32;
+        let height = 200u32;
+        let x0 = 100u32;
+        let bases = [50u32, 100, 150];
+        let draw_x = 10u32..190;
+        for &slope in &[0.03f64, -0.03] {
+            // Ink each baseline along the exact tilt the shear will undo.
+            let mut raw = GrayImage::from_pixel(width, height, Luma([255]));
+            for &base in &bases {
+                for x in draw_x.clone() {
+                    let y = i64::from(base) - source_shear_shift(x, x0, slope);
+                    raw.put_pixel(x, u32::try_from(y).unwrap(), Luma([0]));
+                }
+            }
+            // The first baseline really is tilted (in both signed directions).
+            let lo = i64::from(bases[0]) - source_shear_shift(draw_x.start, x0, slope);
+            let hi = i64::from(bases[0]) - source_shear_shift(draw_x.end - 1, x0, slope);
+            assert_ne!(
+                lo, hi,
+                "baseline must be tilted before shear for slope {slope}"
+            );
+
+            let (_, top_pad) = source_shear_shifts(width, x0, slope);
+            let out = shear_image(&raw, x0, slope);
+            let leveled: std::collections::BTreeSet<u32> =
+                bases.iter().map(|&b| b + top_pad).collect();
+            for x in draw_x.clone() {
+                let inked: std::collections::BTreeSet<u32> = (0..out.height())
+                    .filter(|&y| out.get_pixel(x, y)[0] == 0)
+                    .collect();
+                assert_eq!(inked, leveled, "column {x} not leveled for slope {slope}");
+            }
+        }
+    }
+
+    #[test]
+    fn source_shear_preserves_every_column_with_padding() {
+        use super::*;
+        let width = 64u32;
+        let height = 48u32;
+        let x0 = 30u32;
+        let slope = 0.05f64;
+        // Distinctive per-pixel values (never white) with deliberate top/bottom edge ink.
+        let raw = GrayImage::from_fn(width, height, |x, y| {
+            if y == 0 || y == height - 1 {
+                Luma([0])
+            } else {
+                Luma([((x * 7 + y * 11) % 251 + 1) as u8])
+            }
+        });
+        let (shifts, top_pad) = source_shear_shifts(width, x0, slope);
+        let out = shear_image(&raw, x0, slope);
+        assert_eq!(out.width(), width);
+        for x in 0..width {
+            let shift = shifts[x as usize];
+            // Every source pixel lands once at its shifted row.
+            for y in 0..height {
+                let dst = u32::try_from(i64::from(y) + shift + i64::from(top_pad)).unwrap();
+                assert_eq!(
+                    out.get_pixel(x, dst),
+                    raw.get_pixel(x, y),
+                    "col {x} row {y}"
+                );
+            }
+            // The column's value multiset is the input's plus white padding only.
+            let mut got: Vec<u8> = (0..out.height()).map(|y| out.get_pixel(x, y)[0]).collect();
+            let mut want: Vec<u8> = (0..height).map(|y| raw.get_pixel(x, y)[0]).collect();
+            want.extend(std::iter::repeat_n(255u8, (out.height() - height) as usize));
+            got.sort_unstable();
+            want.sort_unstable();
+            assert_eq!(got, want, "column {x} multiset changed");
+        }
+    }
+
+    #[test]
+    fn source_shear_rejects_changed_source_identity() {
+        use super::*;
+        use sha2::Digest;
+        let raw = GrayImage::from_fn(40, 30, |x, y| Luma([((x * 5 + y * 3) % 256) as u8]));
+        let region = [5u32, 4, 25, 20];
+        let [l, t, r, b] = region;
+        let fp = image::imageops::crop_imm(&raw, l, t, r - l, b - t).to_image();
+        let fingerprint: &'static str =
+            Box::leak(format!("{:x}", sha2::Sha256::digest(fp.as_raw())).into_boxed_str());
+        let shear = SourceShear {
+            source: 0,
+            page: 34,
+            raw_dims: (40, 30),
+            fingerprint_region: region,
+            fingerprint,
+            x0_px: 20,
+            baseline_slope: -0.1,
+        };
+        // The reviewed raw page matches and would be straightened (padded taller).
+        assert!(shear.matches(&raw));
+        assert_ne!(
+            shear_image(&raw, shear.x0_px, shear.baseline_slope).dimensions(),
+            raw.dimensions()
+        );
+        // A single changed pixel inside the fingerprint region rejects the match.
+        let mut changed = raw.clone();
+        changed.get_pixel_mut(l, t)[0] ^= 1;
+        assert!(!shear.matches(&changed));
+        // A same-content page at different dimensions also fails to match.
+        assert!(!shear.matches(&GrayImage::from_pixel(41, 30, Luma([0]))));
+        // The production table is empty, so any page passes through unchanged.
+        assert_eq!(apply_known_source_shear(0, 34, raw.clone()), raw);
     }
 
     #[test]

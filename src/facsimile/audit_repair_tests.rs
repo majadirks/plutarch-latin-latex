@@ -2676,6 +2676,97 @@ fn assert_source_region_pixels_survive(
     }
 }
 
+/// Like [`assert_source_region_pixels_survive`], but for a sheared page: the raw
+/// source `(x, y)` is first lifted by the per-column shear to sheared row
+/// `y + shift(x) + top_pad` before the crop and any sheared-coordinate row excision
+/// apply. The excision shift reuses [`RetainedSourcePageTrace::map_row`], so a
+/// rectangular raw region becomes x-dependent only through the shear term.
+#[allow(clippy::too_many_arguments)]
+fn assert_sheared_source_region_pixels_survive(
+    original: &GrayImage,
+    retained: &GrayImage,
+    x0_px: u32,
+    baseline_slope: f64,
+    top_pad: u32,
+    crop_left: u32,
+    deleted_rows: &[[u32; 2]],
+    region: [u32; 4],
+) {
+    let trace = RetainedSourcePageTrace {
+        source: 0,
+        page: 0,
+        retained_index: Some(0),
+        crop: [crop_left, crop_left + retained.width()],
+        bands: vec![],
+        deleted_rows: deleted_rows.to_vec(),
+    };
+    let [left, top, right, bottom] = region;
+    for y in top..bottom {
+        for x in left..right {
+            let shift = source_shear_shift(x, x0_px, baseline_slope);
+            let sheared_y = u32::try_from(i64::from(y) + shift + i64::from(top_pad)).unwrap();
+            let mapped = trace.map_row(sheared_y).unwrap();
+            assert_eq!(
+                original.get_pixel(x, y),
+                retained.get_pixel(x - crop_left, mapped),
+                "sheared Latin pixel at {x},{y} -> sheared row {sheared_y}"
+            );
+        }
+    }
+}
+
+#[test]
+fn source_shear_pixels_survive_after_pipeline() {
+    let width = 120u32;
+    let height = 160u32;
+    let x0 = 60u32;
+    let slope = 0.04f64;
+    // Synthetic raw page: a tracked block of Latin ink, plus a left furniture stripe
+    // to mask that sits outside the Latin crop.
+    let mut raw = GrayImage::from_pixel(width, height, Luma([255]));
+    let region = [40u32, 30, 90, 50];
+    for y in region[1]..region[3] {
+        for x in region[0]..region[2] {
+            raw.put_pixel(x, y, Luma([((x * 3 + y * 5) % 200 + 1) as u8]));
+        }
+    }
+    for y in 0..height {
+        for x in 5..10u32 {
+            raw.put_pixel(x, y, Luma([0]));
+        }
+    }
+
+    // Mirror render_and_band's transform order on this synthetic page.
+    let (_, top_pad) = source_shear_shifts(width, x0, slope);
+    let mut transformed = shear_image(&raw, x0, slope);
+    for y in 0..transformed.height() {
+        for x in 5..10u32 {
+            transformed.put_pixel(x, y, Luma([255]));
+        }
+    }
+    // Excise a blank slab above the tracked region, in sheared coordinates.
+    let deleted = (10u32, 25u32);
+    let transformed = splice_out_rows(&transformed, &[deleted]);
+    let cropped = crop_column(
+        &transformed,
+        &Column {
+            left: 20,
+            right: 110,
+        },
+    );
+
+    assert_sheared_source_region_pixels_survive(
+        &raw,
+        &cropped,
+        x0,
+        slope,
+        top_pad,
+        20,
+        &[[deleted.0, deleted.1]],
+        region,
+    );
+}
+
 /// Verify reviewed glyph regions once in the unscaled strips and the composed stream.
 fn assert_reviewed_source_lines_survive(
     lines: &[ReviewedSourceLine],
