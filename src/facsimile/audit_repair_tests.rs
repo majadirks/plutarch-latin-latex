@@ -3677,6 +3677,39 @@ fn backlog_tomus3_split_strip_trace() {
     }
 }
 
+/// Locate the five reviewed passages in the raw right-column scans and current readers.
+#[test]
+#[ignore = "requires source PDFs and current inner PDFs"]
+fn skew_and_tomus6_source_pages_trace() {
+    use sha2::Digest;
+    let dir = std::path::Path::new("tmp/pdfs/skew");
+    std::fs::create_dir_all(dir).unwrap();
+    for (source, page, tomus, reader_page, label) in [
+        (0, 34, 1, 58, "romulus_chapter"),
+        (0, 448, 3, 121, "philopoemen_victory"),
+        (1, 231, 6, 86, "quidem"),
+        (1, 266, 6, 158, "caesar_right_edge"),
+        (1, 398, 6, 394, "consi"),
+    ] {
+        let raw = real_source_image(source, page);
+        let digest = format!("{:x}", sha2::Sha256::digest(raw.as_raw()));
+        let prefix = format!("{label}_v{}_p{page}", source + 1);
+        raw.save(dir.join(format!("{prefix}_raw.png"))).unwrap();
+        image::imageops::crop_imm(&raw, raw.width() / 2, 0, raw.width() - raw.width() / 2, raw.height())
+            .to_image()
+            .save(dir.join(format!("{prefix}_right.png")))
+            .unwrap();
+        let reader_pdf = format!("build_facsimile/tomus_{tomus}_inner.pdf");
+        assert!(std::path::Path::new(&reader_pdf).is_file());
+        let reader_cache = dir.join("reader_cache");
+        let reader_png = crate::render::render_page(
+            std::path::Path::new(&reader_pdf), reader_page, BODY_DPI, &reader_cache
+        ).unwrap();
+        std::fs::copy(reader_png, dir.join(format!("{prefix}_reader_p{reader_page}.png"))).unwrap();
+        println!("{label}: source={source} page={page} raw_dims={:?} raw_sha256={digest} reader=tomus_{tomus}_inner.pdf p{reader_page}", raw.dimensions());
+    }
+}
+
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn theseus_p17_analysis_keeps_original_latin_pixels() {

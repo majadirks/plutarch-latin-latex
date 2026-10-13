@@ -1,6 +1,13 @@
 {
   "schema_version": 1,
   "description": "Reviewed furniture masks for the 2026-10-13 Tomi I-III gap/split repairs. Each record pins a Greek/Latin divider or right scan-edge streak that merged the Latin column into giant bands; masking it restores normal line banding. Coordinates are normalized full-source fractions matching SOURCE_FURNITURE_MASKS; preserved_latin_regions are original-pixel Latin boxes that must survive the mask byte-identically.",
+  "diagnoses": [
+    {"defect": "romulus_chapter_break", "unit_id": "romulus", "source": 0, "source_page": 34, "raw_dims": [1982, 3008], "raw_sha256": "7d4b205db97b3a77abc3f53a281391e47f5898a174e68b4747577b9acef1d3b4", "source_line_boxes": [[1080, 2130, 1750, 2180]], "reader": "tomus_1_inner.pdf", "reader_page": 58, "baseline_symptom": "III. Ceterum chapter opening is displaced and left-gutter fragments appear."},
+    {"defect": "philopoemen_victory", "unit_id": "philopoemen", "source": 0, "source_page": 448, "raw_dims": [1988, 3007], "raw_sha256": "9b7175759d9ad807a93052779c05387e8f567fe9d5b0776842c170a995487cd3", "source_line_boxes": [[1000, 315, 1755, 365]], "reader": "tomus_3_inner.pdf", "reader_page": 121, "baseline_symptom": "Inflated gap after sed propter victoriam and Greek fragments in left margin."},
+    {"defect": "quidem_straddle", "unit_id": "alexander", "source": 1, "source_page": 231, "raw_dims": [1900, 2844], "raw_sha256": "0d773276f23f73d593426e75a36a74bdce147d02c61106044f4d9bc424cdd3f6", "source_line_boxes": [[1040, 2220, 1700, 2290]], "reader": "tomus_6_inner.pdf", "reader_page": 86, "adjacent_reader_page": 87, "baseline_symptom": "Reported quidem page straddle; current p86 image shows quidem passus Callisthenem on one line, requiring classification against the source and composer trace."},
+    {"defect": "caesar_right_edge", "unit_id": "iulius_caesar", "source": 1, "source_page": 266, "raw_dims": [1878, 2825], "raw_sha256": "b0601cd563d69864e1c34a5f041fa34a4586f16cf45aaf333edaddda8ceb95a0", "source_line_boxes": [[1030, 250, 1730, 505]], "reader": "tomus_6_inner.pdf", "reader_page": 158, "baseline_symptom": "Right crop clips endings of sive, praeter, (3), auferro, and idem; Greek bleeds left."},
+    {"defect": "consi_continuation", "unit_id": "cleomenes", "source": 1, "source_page": 398, "raw_dims": [1840, 2835], "raw_sha256": "dbb4326a4d1e66391555e81b8ee0716a850e83b3cf5f7594e9ecfe0fac30d572", "source_line_boxes": [[1000, 1340, 1690, 1435]], "reader": "tomus_6_inner.pdf", "reader_page": 394, "adjacent_reader_page": 395, "baseline_symptom": "consi- ends reader p394; lioque continues on p395 although both lines are adjacent in source p398."}
+  ],
   "repairs": [
     {
       "backlog_id": "G1",
