@@ -329,5 +329,5 @@ outer/recto sheet side only; a cut border on the first recto of each signature.
 - `llm_artifacts/` — the implementation plans and notes, kept as the dated record of
   why the code is shaped as it is.
 
-There is no git; the project lives on OneDrive, which provides file history. The
-committed caches above are kept in the project tree and hand-corrected in place.
+The committed caches above are kept in the project tree and hand-corrected in
+place; git carries their history.
