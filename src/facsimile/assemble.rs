@@ -303,7 +303,9 @@ pub(in crate::facsimile) mod tests {
             assert_blank(dir.path(), 5, (closing + 1) as u32, &texts, &images);
         }
         assert!(images.contains(&((body + 1) as u32, 312, 102)));
-        assert!(texts[body].lines().any(|l| l.trim() == "2"));
+        assert!(texts[body]
+            .lines()
+            .any(|l| l.split_whitespace().any(|w| w == "2")));
         let log = std::fs::read_to_string(dir.path().join("tomus_5_inner.log")).unwrap();
         assert!(!log.contains("Overfull "));
         assert!(!log.contains("Missing character:"));
@@ -639,9 +641,12 @@ pub(in crate::facsimile) mod tests {
                 .any(|l| l.trim().parse::<u32>().is_ok()));
         }
         for (page, folio) in [(6, 2), (8, 4), (9, 5), (12, 8)] {
+            // Match the folio as a whitespace-delimited token: some pdftotext
+            // builds group the centered running head and the corner folio onto one
+            // extracted line (e.g. "THESEUS 2"), others keep them separate.
             assert!(texts[page - 1]
                 .lines()
-                .any(|l| l.trim() == folio.to_string()));
+                .any(|l| l.split_whitespace().any(|w| w.parse::<u32>() == Ok(folio))));
         }
         assert_blank(dir.path(), 2, 10, &texts, &images);
     }
@@ -739,7 +744,9 @@ pub(in crate::facsimile) mod tests {
                 if body == final_front + 2 {
                     assert_blank(dir.path(), tomus, (body - 1) as u32, &texts, &images);
                 }
-                assert!(texts[body].lines().any(|l| l.trim() == "2"));
+                assert!(texts[body]
+                    .lines()
+                    .any(|l| l.split_whitespace().any(|w| w == "2")));
                 assert!(!texts[body - 1]
                     .lines()
                     .any(|l| l.trim().parse::<u32>().is_ok()));
@@ -1326,7 +1333,9 @@ pub(in crate::facsimile) mod tests {
         );
         assert!(
             pages[body_page].contains("THESEUS")
-                && pages[body_page].lines().any(|l| l.trim() == "2"),
+                && pages[body_page]
+                    .lines()
+                    .any(|l| l.split_whitespace().any(|w| w == "2")),
             "second body page {} lacks running head/folio 2 in {}: {:?}",
             body_page + 1,
             inner_pdf.display(),
