@@ -629,6 +629,108 @@ fn mask_known_source_furniture(source: usize, page: u32, img: &mut GrayImage) {
     }
 }
 
+/// Verified bleed-through / compaction regions in normalized, half-open full-source
+/// row coordinates. Unlike a furniture mask (which only whitens ink), an excision
+/// deletes the rows entirely and shifts the rows below up, closing the vertical
+/// space the region occupied. Records for one `(source, page)` must be sorted
+/// ascending and non-overlapping.
+#[derive(Clone, Copy)]
+struct SourceRowExcision {
+    source: usize,
+    page: u32,
+    top: f64,
+    bottom: f64,
+}
+
+const SOURCE_ROW_EXCISIONS: &[SourceRowExcision] = &[
+    // Theseus §17/§18: five faint bled-through lines stand alone between the line
+    // ending "... tradit agi." and "XVIII. Sorte ducta ...". Delete the bleed-only
+    // slab and close the space, leaving one ordinary inter-line gap. On the 789×2975
+    // production crop the real text ends at row 2008 and resumes at row 2240; the
+    // intervening bands are all faint bleed (ink/row ≤ 58 vs ≥ 250 for real lines).
+    SourceRowExcision {
+        source: 0,
+        page: 21,
+        top: 2012.0 / 2975.0,
+        bottom: 2237.0 / 2975.0,
+    },
+];
+
+/// The original-image row interval `[top, bottom)` an excision deletes, or `None`
+/// for a non-finite, empty, or out-of-range record.
+fn excision_rows(excision: &SourceRowExcision, height: u32) -> Option<(u32, u32)> {
+    if !excision.top.is_finite() || !excision.bottom.is_finite() || excision.top >= excision.bottom
+    {
+        return None;
+    }
+    let row = |v: f64| (v.clamp(0.0, 1.0) * height as f64).round() as u32;
+    let (top, bottom) = (
+        row(excision.top).min(height),
+        row(excision.bottom).min(height),
+    );
+    (top < bottom).then_some((top, bottom))
+}
+
+/// Copy every row of `img` except those in the sorted, non-overlapping half-open
+/// `deleted` intervals (original-image coordinates) into a new image, shifting the
+/// surviving rows below each deletion up. An empty deletion set is a no-op clone.
+fn splice_out_rows(img: &GrayImage, deleted: &[(u32, u32)]) -> GrayImage {
+    let (w, h) = img.dimensions();
+    let total: u32 = deleted
+        .iter()
+        .map(|&(t, b)| b.min(h).saturating_sub(t.min(h)))
+        .sum();
+    if total == 0 {
+        return img.clone();
+    }
+    let mut out = GrayImage::from_pixel(w, h - total, Luma([255]));
+    let mut src = 0u32;
+    let mut dst = 0u32;
+    for &(t, b) in deleted {
+        let (t, b) = (t.min(h), b.min(h));
+        if t > src {
+            let span = t - src;
+            let keep = image::imageops::crop_imm(img, 0, src, w, span).to_image();
+            image::imageops::overlay(&mut out, &keep, 0, dst as i64);
+            dst += span;
+        }
+        src = src.max(b);
+    }
+    if src < h {
+        let keep = image::imageops::crop_imm(img, 0, src, w, h - src).to_image();
+        image::imageops::overlay(&mut out, &keep, 0, dst as i64);
+    }
+    out
+}
+
+/// Delete one excision's rows from `img`, returning a new, shorter image (or an
+/// unchanged clone for a degenerate record). Used by the synthetic primitive tests;
+/// production dispatches through [`excise_known_source_rows`].
+#[cfg(test)]
+fn apply_source_row_excision(excision: &SourceRowExcision, img: &GrayImage) -> GrayImage {
+    match excision_rows(excision, img.height()) {
+        Some(rows) => splice_out_rows(img, &[rows]),
+        None => img.clone(),
+    }
+}
+
+/// Delete every configured bleed-through slab for `(source, page)` from `img` in one
+/// pass, closing the vertical space it occupied. Intervals are converted against the
+/// original height and must be disjoint; with no record the image is returned as-is.
+fn excise_known_source_rows(source: usize, page: u32, img: GrayImage) -> GrayImage {
+    let height = img.height();
+    let mut intervals: Vec<(u32, u32)> = SOURCE_ROW_EXCISIONS
+        .iter()
+        .filter(|e| e.source == source && e.page == page)
+        .filter_map(|e| excision_rows(e, height))
+        .collect();
+    if intervals.is_empty() {
+        return img;
+    }
+    intervals.sort_unstable();
+    splice_out_rows(&img, &intervals)
+}
+
 /// Minimum per-row ink for a row to count as texty when banding a column.
 const LINE_MIN_INK: u32 = 3;
 
@@ -903,6 +1005,7 @@ fn render_and_band(
 ) -> Result<(GrayImage, Vec<Band>)> {
     let mut page_img = render_fn(source, page)?;
     mask_known_source_furniture(source, page, &mut page_img);
+    let page_img = excise_known_source_rows(source, page, page_img);
     let column = production_source_column(source, page, &page_img)?;
     let cropped = crop_column(&page_img, &column);
     let (raw, bands) = band_source_column(source, page, &cropped);
@@ -3043,6 +3146,52 @@ pub fn body_image_name(unit_id: &str, n: usize) -> String {
 #[cfg(test)]
 mod tests {
     include!("audit_repair_tests.rs");
+
+    #[test]
+    fn source_row_excision_splices_configured_rows() {
+        use super::*;
+        // 20×30 image, every pixel in row y carries value y; delete rows [10, 18).
+        let mut img = GrayImage::new(20, 30);
+        for y in 0..30u32 {
+            for x in 0..20u32 {
+                img.put_pixel(x, y, Luma([y as u8]));
+            }
+        }
+        let excision = SourceRowExcision {
+            source: 7,
+            page: 1,
+            top: 10.0 / 30.0,
+            bottom: 18.0 / 30.0,
+        };
+        let out = apply_source_row_excision(&excision, &img);
+        assert_eq!(out.dimensions(), (20, 22));
+        // Rows above the cut are byte-identical.
+        for y in 0..10u32 {
+            assert_eq!(out.get_pixel(0, y)[0], y as u8, "row {y} above cut");
+        }
+        // Rows at/after the cut equal the original rows at/after 18, shifted up by 8.
+        for y in 10..22u32 {
+            assert_eq!(out.get_pixel(0, y)[0], (y + 8) as u8, "row {y} after cut");
+        }
+    }
+
+    #[test]
+    fn source_row_excision_absent_or_degenerate_is_identity() {
+        use super::*;
+        let img = GrayImage::from_pixel(8, 12, Luma([128]));
+        // No configured record for this (source, page): returned unchanged.
+        assert_eq!(excise_known_source_rows(0, 999, img.clone()), img);
+        // Degenerate records (top == bottom, top > bottom) are no-op clones.
+        for (top, bottom) in [(0.5, 0.5), (0.7, 0.3)] {
+            let excision = SourceRowExcision {
+                source: 0,
+                page: 0,
+                top,
+                bottom,
+            };
+            assert_eq!(apply_source_row_excision(&excision, &img), img);
+        }
+    }
 
     #[test]
     fn shared_line_primitives_preserve_body_pixels() {

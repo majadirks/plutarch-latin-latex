@@ -2930,8 +2930,20 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
     let traces = (range.unit.start_page..=range.end_page)
         .map(|p| {
             let index = source_pages.iter().position(|&page| page == p);
+            // Mirror render_and_band: mask, then excise, then detect the column, so
+            // the crop edges match the retained page. `deleted_rows` is captured in
+            // original-source coordinates (pre-excision height) so `map_row` shifts
+            // every row below an excised slab.
             let mut raw = real_source_image(range.unit.source, p);
+            let original_height = raw.height();
             mask_known_source_furniture(range.unit.source, p, &mut raw);
+            let mut deleted_rows: Vec<[u32; 2]> = SOURCE_ROW_EXCISIONS
+                .iter()
+                .filter(|e| e.source == range.unit.source && e.page == p)
+                .filter_map(|e| excision_rows(e, original_height).map(|(t, b)| [t, b]))
+                .collect();
+            deleted_rows.sort_unstable();
+            let raw = excise_known_source_rows(range.unit.source, p, raw);
             let crop = production_source_column(range.unit.source, p, &raw).unwrap();
             RetainedSourcePageTrace {
                 source: range.unit.source,
@@ -2941,7 +2953,7 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
                 bands: index
                     .map(|i| pages[i].1.iter().map(|b| [b.top, b.bottom]).collect())
                     .unwrap_or_default(),
-                deleted_rows: vec![],
+                deleted_rows,
             }
         })
         .collect();
@@ -3203,6 +3215,125 @@ fn backlog_theseus_orphan_line_rejoins_body() {
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn theseus_page_17_followup_trace() {
     audit_save_unit_trace("theseus", &std::collections::BTreeSet::from([17]), "theseus_followup");
+}
+
+/// Diagnostic (not a regression): pin the Theseus §17/§18 bleed-through slab on
+/// v1 source page 21. Prints the production cropped-column bands and per-row ink
+/// near the slab, the unit line metrics, and the consecutive inter-line gaps, and
+/// saves cropped-column and full-page-raster PNGs of the slab for human review.
+/// Supplies the `tradit_agi_bottom` / `xviii_top` coordinates and the target
+/// residual gap used to pin `SOURCE_ROW_EXCISIONS`.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn theseus_p21_bleedthrough_trace() {
+    let (pages, metrics, traces) = audit_traced_unit("theseus");
+    let idx = retained_page(&traces, 0, 21)
+        .expect("page 21 traced")
+        .retained_index
+        .expect("page 21 retained");
+    let (col, kept) = &pages[idx];
+    let raw = line_bands(col, LINE_MIN_INK);
+    let rows = ink_profile_rows(col, INK_THRESHOLD);
+
+    println!(
+        "page 21: crop_dims={:?} metrics={:?}",
+        col.dimensions(),
+        metrics
+    );
+    println!("--- raw line_bands in [1850,2300) with ink/row (faint = bleed) ---");
+    for b in raw.iter().filter(|b| b.bottom > 1850 && b.top < 2300) {
+        let ink: u64 = rows[b.top as usize..b.bottom as usize]
+            .iter()
+            .map(|&r| r as u64)
+            .sum();
+        let per_row = ink as f64 / (b.bottom - b.top).max(1) as f64;
+        println!(
+            "  raw [{},{}) h={} ink={} ink/row={:.1}",
+            b.top,
+            b.bottom,
+            b.bottom - b.top,
+            ink,
+            per_row
+        );
+    }
+    println!("--- kept bands in [1850,2300) ---");
+    for b in kept.iter().filter(|b| b.bottom > 1850 && b.top < 2300) {
+        println!("  kept [{},{}) h={}", b.top, b.bottom, b.bottom - b.top);
+    }
+    println!("--- consecutive inter-line gaps among all kept bands ---");
+    let mut gaps: Vec<i64> = kept
+        .windows(2)
+        .map(|w| w[1].top as i64 - w[0].bottom as i64)
+        .collect();
+    gaps.sort_unstable();
+    println!("  sorted gaps = {gaps:?}");
+    if !gaps.is_empty() {
+        println!("  median gap = {}", gaps[gaps.len() / 2]);
+    }
+
+    let dir = std::path::Path::new("tmp/pdfs/theseus_p21_bleedthrough");
+    std::fs::create_dir_all(dir).unwrap();
+    let h = col.height().min(2300) - 1850;
+    image::imageops::crop_imm(col, 0, 1850, col.width(), h)
+        .to_image()
+        .save(dir.join("slab_column.png"))
+        .unwrap();
+    println!("saved {}", dir.join("slab_column.png").display());
+}
+
+/// Regression: the Theseus §17/§18 bleed-through slab on v1 page 21 is excised, the
+/// space is closed to one ordinary inter-line gap, and both real lines survive once
+/// byte-identically. The §18 line sits below the slab, so it exercises the
+/// `deleted_rows` row shift in `audit_traced_unit`.
+///
+/// Works in the band/trace/pixel domain only — it does **not** call
+/// `production_body_scale()` or recompose the unit, so it avoids the whole-corpus
+/// scale-sampling cost; ink removal, glyph preservation, and gap collapse are all
+/// observable before composition.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_theseus_p21_bleedthrough_excised() {
+    let (pages, _metrics, traces) = audit_traced_unit("theseus");
+    let trace = retained_page(&traces, 0, 21).expect("page 21 traced");
+    let idx = trace.retained_index.expect("page 21 retained");
+    let (col, kept) = &pages[idx];
+
+    // 1. Ink gone: the pinned slab is recorded as deleted, and no retained band
+    //    survives between the two real paragraphs.
+    assert_eq!(trace.deleted_rows, vec![[2012, 2237]], "pinned slab deleted");
+    let tradit_bottom = trace.map_row(2007).unwrap() + 1; // last real §17 row -> 2008
+    let xviii_top = trace.map_row(2240).unwrap(); // first real §18 row -> 2015
+    assert!(
+        !kept
+            .iter()
+            .any(|b| b.top < xviii_top && b.bottom > tradit_bottom),
+        "no bleed band remains between §17 and §18: {kept:?}"
+    );
+
+    // 2. Faithfulness: both real lines survive once, byte-identical to the source.
+    let original = real_source_image(0, 21);
+    let [cl, cr] = trace.crop;
+    for (top, bottom) in [(1971u32, 2008u32), (2240u32, 2275u32)] {
+        let mapped_top = trace.map_row(top).unwrap();
+        let mapped_bottom = trace.map_row(bottom - 1).unwrap() + 1;
+        assert_eq!(
+            mapped_bottom - mapped_top,
+            bottom - top,
+            "no deleted Latin rows in [{top},{bottom})"
+        );
+        assert_eq!(
+            kept.iter()
+                .filter(|b| b.top <= mapped_top && b.bottom >= mapped_bottom)
+                .count(),
+            1,
+            "line [{top},{bottom}) covered by exactly one band"
+        );
+        assert_source_region_pixels_survive(&original, col, trace, [cl, top, cr, bottom]);
+    }
+
+    // 3. Gap collapsed, not fused: one ordinary inter-line gap (7 px target).
+    let gap = xviii_top - tradit_bottom;
+    assert!(gap > 0 && gap <= 20, "residual gap {gap} px (target 7)");
 }
 
 #[test]
