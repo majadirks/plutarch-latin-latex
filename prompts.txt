@@ -164,6 +164,7 @@ Autodetection of polygons and bands must be resumable, and must respect existing
 Newly-detected polygons should not overlap with existing polygons; newly-detected band should not overlap with existing bands.
 We should be able to manually update the sidecar json and have those changes persist in future runs
 (so that eg we could update the sidecar to suppress a scan artifact that otherwise the detection algorithm would treat as text)
+Output PDF should include a text layer based on band-level OCR so that the output pdf can be searched and easily compared to the source pdf
 
 - Determine "page types" and quadrilateral / clustering heuristics. Every page will have a Google Books watermark; include that as a mandatory region to identify.
 - Design data structures
