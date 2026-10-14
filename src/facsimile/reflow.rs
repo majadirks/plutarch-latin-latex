@@ -936,6 +936,15 @@ const SOURCE_SHEARS: &[SourceShear] = &[
         x0_px: 1350,
         baseline_slope: 0.03745928338762215,
     },
+    SourceShear {
+        source: 1,
+        page: 398,
+        raw_dims: (1840, 2835),
+        fingerprint_region: [1050, 600, 1650, 750],
+        fingerprint: "680397c87b37fb70c0a520f82755d86b0a186a93b1d201a303c7bbc3281cd660",
+        x0_px: 1350,
+        baseline_slope: 0.03175895765472313,
+    },
 ];
 
 /// The integer vertical shift applied to raw column `x` for a shear centered at
@@ -2997,15 +3006,6 @@ fn matches_source_region_fingerprint(column: &GrayImage, region: [u32; 4], expec
 type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
 
 const WHOLE_STRIPS: &[WholeStripSignature] = &[
-    (
-        (818, 2835),
-        Band {
-            top: 1022,
-            bottom: 1837,
-        },
-        [0, 1022, 818, 1837],
-        "1d7abf778c5458949c6bcedbfd519d7dbf174aab33fa547301aeb3b5cef6e5df",
-    ),
     (
         (825, 3033),
         Band {

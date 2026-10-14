@@ -4330,19 +4330,9 @@ fn tomus6_quidem_line_complete() {
     assert!(((band.bottom - band.top) as f32 * 1.2023952).round() as u32 <= TrimGeom::default().body_budget());
 }
 
-/// Composer-level counterpart to `tomus6_consi_continuation_gap_closed`: the
-/// band-domain check proves the Cleomenes p398 lines band individually after the
-/// deskew, but it cannot see how the packer lays them onto reader pages. The
-/// pre-repair whole strip wrapped the merged `[1022,1837]` block onto a single
-/// canvas and left a large page-bottom gap on the preceding reader page after
-/// `agerentur pensitantis`, with `qui summae rerum consi-` and its `lioque`
-/// continuation trapped inside one undivided strip. This composes the unit at the
-/// frozen scale and requires `agerentur pensitantis`, the `consi-` line, and the
-/// `lioque` continuation to be three separate strips, each whole on one canvas, read
-/// in source order, with no injected page-bottom gap after `agerentur pensitantis`.
-/// It fails on the pre-repair tree (the merged block is one whole strip, so the
-/// `consi-` and `lioque` bands are not resolved) and passes once p398 is deskewed
-/// and the whole strip removed.
+/// Compose Cleomenes at the frozen scale and require the three reviewed p398
+/// lines to occupy distinct strips in source order, each whole on one canvas.
+/// The canvas carrying `agerentur pensitantis` must have an ordinary bottom gap.
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn tomus6_consi_page_reads_continuously() {
@@ -4383,8 +4373,7 @@ fn tomus6_consi_page_reads_continuously() {
     let c_pos = one_strip(consi, "consi line");
     let l_pos = one_strip(lioque, "lioque continuation");
 
-    // Three distinct strips in source order; consi and lioque are adjacent, so the
-    // continuation is no longer fused into the consi line as the whole strip did.
+    // The continuation immediately follows the consi line in source order.
     assert!(
         a_pos < c_pos && c_pos < l_pos,
         "lines read in source order: agerentur@{a_pos}, consi@{c_pos}, lioque@{l_pos}"
@@ -4422,9 +4411,8 @@ fn tomus6_consi_page_reads_continuously() {
         "canvases read in source order: {a_canvas} <= {c_canvas} <= {l_canvas}"
     );
 
-    // No injected page-bottom gap: the deskew lets the block pack continuously, so the
-    // canvas carrying `agerentur pensitantis` is filled to within two median
-    // complete-line heights rather than closed early under the removed whole strip.
+    // The canvas carrying `agerentur pensitantis` is filled to within two
+    // median complete-line heights.
     let mut completes: Vec<u32> = strips
         .iter()
         .filter(|(s, _, _)| matches!(s.class, BandClass::Normal))
@@ -4446,23 +4434,47 @@ fn tomus6_consi_page_reads_continuously() {
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn tomus6_consi_continuation_gap_closed() {
+    assert!(
+        !WHOLE_STRIPS.iter().any(|(dims, band, _, _)| {
+            *dims == (818, 2835)
+                && *band
+                    == Band {
+                        top: 1022,
+                        bottom: 1837,
+                    }
+        }),
+        "p398 must not retain the merged whole-strip signature"
+    );
     let (column, kept) =
         render_and_band(1, 398, &|s, p| Ok(real_source_image(s, p))).unwrap();
-    assert_eq!(column.dimensions(), (818, 2835));
-    let band = Band { top: 1022, bottom: 1837 };
-    assert!(cut_points(&kept).windows(2).any(|pair| pair == [band.top, band.bottom]));
-    assert!(is_known_whole_source_strip(&column, &band));
-    assert!(((band.bottom - band.top) as f32 * 1.2023952).round() as u32 <= TrimGeom::default().body_budget());
+    assert_eq!(column.dimensions(), (818, 2894));
+    for [top, bottom] in [[1013, 1042], [1362, 1392], [1405, 1436]] {
+        assert!(
+            kept.contains(&Band { top, bottom }),
+            "reviewed p398 line [{top},{bottom}) has its own band"
+        );
+    }
+    assert!(
+        kept.iter().all(|band| band.bottom - band.top < 100),
+        "p398 Latin lines must band individually"
+    );
     let original = real_source_image(1, 398);
-    let trace = RetainedSourcePageTrace {
-        source: 1,
-        page: 398,
-        retained_index: Some(0),
-        crop: [880, 1698],
-        bands: kept.iter().map(|b| [b.top, b.bottom]).collect(),
-        deleted_rows: vec![],
-    };
-    assert_source_region_pixels_survive(&original, &column, &trace, [910, 1330, 1690, 1422]);
+    for region in [
+        [910, 987, 1198, 1017],
+        [1390, 1354, 1676, 1380],
+        [900, 1376, 1102, 1411],
+    ] {
+        assert_sheared_source_region_pixels_survive(
+            &original,
+            &column,
+            1350,
+            0.03175895765472313,
+            16,
+            880,
+            &[],
+            region,
+        );
+    }
 }
 
 #[test]

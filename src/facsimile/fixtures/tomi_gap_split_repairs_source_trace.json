@@ -31,14 +31,6 @@
       "preserved_latin_regions": [[1030, 250, 1730, 505]]
     },
     {
-      "unit_id": "cleomenes", "source": 1, "source_page": 398, "raster": [1840, 2835],
-      "disposition": "whole_strip", "status": "repaired",
-      "column_dims": [818, 2835], "composer_strip": [1022, 1837],
-      "strip_fingerprint_region": [0, 1022, 818, 1837],
-      "strip_fingerprint": "1d7abf778c5458949c6bcedbfd519d7dbf174aab33fa547301aeb3b5cef6e5df",
-      "preserved_latin_regions": [[910, 1330, 1690, 1422]]
-    },
-    {
       "unit_id": "alexander", "source": 1, "source_page": 231, "raster": [1900, 2844],
       "disposition": "whole_strip", "status": "repaired",
       "column_dims": [810, 2844], "composer_strip": [2224, 2317],
@@ -86,6 +78,19 @@
       "shift_range": [-20, 51], "top_pad": 20,
       "crop_edges": [880, 1730], "expected_bands": [[270, 302], [322, 406], [425, 458], [477, 512]],
       "preserved_latin_regions": [[1030, 250, 1730, 505]]
+    },
+    {
+      "unit_id": "cleomenes", "source": 1, "source_page": 398, "raster": [1840, 2835],
+      "disposition": "shear", "status": "repaired",
+      "fingerprint_region": [1050, 600, 1650, 750],
+      "fingerprint": "680397c87b37fb70c0a520f82755d86b0a186a93b1d201a303c7bbc3281cd660",
+      "matched_gaps": {"left_x": 1026, "left_rows": [1273, 1300], "right_x": 1640, "right_rows": [1293, 1319]},
+      "x0_px": 1350, "baseline_slope": 0.03175895765472313,
+      "shift_range": [-16, 43], "top_pad": 16,
+      "crop_edges": [880, 1698], "expected_bands": [[1013, 1042], [1362, 1392], [1405, 1436]],
+      "preceding_canvas_bottom_gap_before_px": 741, "preceding_canvas_bottom_gap_after_px": 10,
+      "two_median_strip_bound_after_px": 116,
+      "preserved_latin_regions": [[910, 987, 1198, 1017], [1390, 1354, 1676, 1380], [900, 1376, 1102, 1411]]
     },
     {
       "backlog_id": "G1",
