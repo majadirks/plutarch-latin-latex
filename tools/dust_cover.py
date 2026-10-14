@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -15,6 +16,34 @@ SHEET_SIZES_IN = {
 
 class DustCoverError(Exception):
     """An invalid dust-cover request or failed generation."""
+
+
+@dataclass(frozen=True)
+class Layout:
+    flap_in: float
+    cover_in: float
+    spine_in: float
+    total_width_in: float
+    total_height_in: float
+    back_x: float
+    spine_x: float
+    front_x: float
+    right_flap_x: float
+
+
+def compute_layout(total_width: float, total_height: float,
+                   spine_width: float, cover_width: float) -> Layout:
+    flap = (total_width - 2 * cover_width - spine_width) / 2
+    if flap < MIN_FLAP_IN - 1e-9:
+        raise DustCoverError(
+            f"flap width {flap:.3f}in is below the {MIN_FLAP_IN}in minimum; "
+            "reduce spine/cover widths or increase total width"
+        )
+    return Layout(
+        flap, cover_width, spine_width, total_width, total_height,
+        flap, flap + cover_width, flap + cover_width + spine_width,
+        flap + 2 * cover_width + spine_width,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
