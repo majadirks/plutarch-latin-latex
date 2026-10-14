@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 
 from tools.dust_cover import (
     SHEET_SIZES_IN, DustCoverError, back_cover_body, check_printable,
-    compute_layout, front_cover_body, int_to_roman, panel_box,
+    compute_layout, escape_latex, front_cover_body, int_to_roman, panel_box,
     parse_inner_tex, render_preamble, roman_to_int, spine_body,
     validate_exlibris,
 )
@@ -140,3 +140,14 @@ class PanelBuilderTests(unittest.TestCase):
         box = panel_box(5.5, 9.5, "BODY")
         self.assertIn(r"\begin{minipage}[c][9.5000in][c]{5.5000in}", box)
         self.assertIn("BODY", box)
+
+    def test_exlibris_name_uppercased_then_escaped(self):
+        body = spine_body("I", "a & b_c", 1.25)
+        self.assertIn(r"A \& B\_C", body)
+
+    def test_owner_name_special_characters_are_escaped(self):
+        self.assertEqual(
+            escape_latex("\\{}%_#$~^&"),
+            r"\textbackslash{}\{\}\%\_\#\$\textasciitilde{}"
+            r"\textasciicircum{}\&",
+        )
