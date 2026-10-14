@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 
 from tools.dust_cover import (
     SHEET_SIZES_IN, DustCoverError, check_printable, compute_layout,
-    int_to_roman, parse_inner_tex, roman_to_int, validate_exlibris,
+    int_to_roman, parse_inner_tex, render_preamble, roman_to_int, validate_exlibris,
 )
 
 
@@ -96,3 +96,11 @@ class InnerTitleTests(unittest.TestCase):
         self.path.write_text(r"\begin{center}No title\end{center}", encoding="utf-8")
         with self.assertRaisesRegex(DustCoverError, "no Tomus title page"):
             parse_inner_tex(self.path, 2)
+
+
+class RenderPreambleTests(unittest.TestCase):
+    def test_sheet_and_book_font_are_in_preamble(self):
+        preamble = render_preamble(17, 11)
+        self.assertIn("paperwidth=17.0000in,paperheight=11.0000in", preamble)
+        self.assertIn(r"\setmainfont{OldStandard}", preamble)
+        self.assertIn(r"\usepackage{tikz}", preamble)

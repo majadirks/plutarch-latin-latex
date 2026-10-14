@@ -92,6 +92,25 @@ def parse_inner_tex(path: Path, expected_tomus: int) -> InnerTitle:
     return InnerTitle(center_block, lives)
 
 
+def render_preamble(sheet_long_in: float, sheet_short_in: float) -> str:
+    return (
+        "\\documentclass{article}\n"
+        f"\\usepackage[paperwidth={sheet_long_in:.4f}in,"
+        f"paperheight={sheet_short_in:.4f}in,margin=0pt]{{geometry}}\n"
+        "\\usepackage{fontspec}\n"
+        "\\setmainfont{OldStandard}[\n"
+        "  Extension=.otf,\n"
+        "  UprightFont=*-Regular,\n"
+        "  BoldFont=*-Bold,\n"
+        "  ItalicFont=*-Italic,\n"
+        "  BoldItalicFont=*-BoldItalic]\n"
+        "\\usepackage{tikz}\n"
+        "\\usepackage{graphicx}\n"
+        "\\pagestyle{empty}\n"
+        "\\setlength{\\parindent}{0pt}\n"
+    )
+
+
 def compute_layout(total_width: float, total_height: float,
                    spine_width: float, cover_width: float) -> Layout:
     flap = (total_width - 2 * cover_width - spine_width) / 2
