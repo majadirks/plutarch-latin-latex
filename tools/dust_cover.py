@@ -16,11 +16,7 @@ SHEET_SIZES_IN = {
     "tabloid": (17.0, 11.0),
     "a3": (420.0 / 25.4, 297.0 / 25.4),
 }
-ROMAN_NUMERALS = (
-    (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
-    (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
-    (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
-)
+TOMUS_ROMANS = ("I", "II", "III", "IV", "V", "VI", "VII", "VIII")
 
 
 class DustCoverError(Exception):
@@ -28,25 +24,16 @@ class DustCoverError(Exception):
 
 
 def int_to_roman(n: int) -> str:
-    if n <= 0:
-        raise DustCoverError("tomus must be a positive integer")
-    result = []
-    for value, numeral in ROMAN_NUMERALS:
-        count, n = divmod(n, value)
-        result.append(numeral * count)
-    return "".join(result)
+    if not 1 <= n <= len(TOMUS_ROMANS):
+        raise DustCoverError("tomus must be between 1 and 8")
+    return TOMUS_ROMANS[n - 1]
 
 
 def roman_to_int(s: str) -> int:
-    remaining = s
-    value = 0
-    for number, numeral in ROMAN_NUMERALS:
-        while remaining.startswith(numeral):
-            value += number
-            remaining = remaining[len(numeral):]
-    if remaining or not s or int_to_roman(value) != s:
-        raise DustCoverError(f"invalid Roman numeral: {s!r}")
-    return value
+    try:
+        return TOMUS_ROMANS.index(s) + 1
+    except ValueError as exc:
+        raise DustCoverError(f"invalid Tomus numeral: {s!r}") from exc
 
 
 @dataclass(frozen=True)
@@ -209,9 +196,12 @@ def render_cover(layout: Layout, sheet_long_in: float, sheet_short_in: float,
 
 
 def write_cover_tex(out_dir: Path, tomus: int, tex: str) -> Path:
-    out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"tomus_{tomus}_cover.tex"
-    path.write_text(tex, encoding="utf-8")
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        path.write_text(tex, encoding="utf-8")
+    except OSError as exc:
+        raise DustCoverError(f"cannot write cover TeX {path}: {exc}") from exc
     return path
 
 
@@ -288,15 +278,19 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.exlibris is not None:
             validate_exlibris(args.exlibris)
+        roman = int_to_roman(args.tomus)
         check_printable(args.total_width, args.total_height,
                         args.paper_size, args.printable_margin)
         layout = compute_layout(args.total_width, args.total_height,
                                 args.spine_width, args.cover_width)
-        print(
-            f"sheet={args.paper_size} jacket={args.total_width}x{args.total_height}in "
-            f"cover={args.cover_width}in spine={args.spine_width}in "
-            f"flap={layout.flap_in:.3f}in"
-        )
+        inner_path = args.inner_tex or args.out / f"tomus_{args.tomus}_inner.tex"
+        title = parse_inner_tex(inner_path, args.tomus)
+        sheet_long, sheet_short = SHEET_SIZES_IN[args.paper_size]
+        tex = render_cover(layout, sheet_long, sheet_short, title, roman, args.exlibris)
+        tex_path = write_cover_tex(args.out, args.tomus, tex)
+        print(tex_path)
+        if not args.no_compile:
+            print(compile_cover(tex_path))
     except DustCoverError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

@@ -5,11 +5,12 @@ import re
 from subprocess import CompletedProcess
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from tools.dust_cover import (
     SHEET_SIZES_IN, DustCoverError, InnerTitle, back_cover_body, check_printable,
     compile_cover, compute_layout, escape_latex, front_cover_body,
-    int_to_roman, panel_box, parse_inner_tex, render_cover, render_preamble,
+    int_to_roman, main, panel_box, parse_inner_tex, render_cover, render_preamble,
     roman_to_int, spine_body, validate_exlibris, write_cover_tex,
 )
 
@@ -64,9 +65,15 @@ class ValidationTests(unittest.TestCase):
 
 class RomanNumeralTests(unittest.TestCase):
     def test_int_to_roman_and_back_roundtrips(self):
-        for n in range(1, 13):
+        for n in range(1, 9):
             with self.subTest(n=n):
                 self.assertEqual(roman_to_int(int_to_roman(n)), n)
+
+    def test_tomus_outside_eight_volumes_raises(self):
+        with self.assertRaisesRegex(DustCoverError, "between 1 and 8"):
+            int_to_roman(9)
+        with self.assertRaisesRegex(DustCoverError, "invalid Tomus numeral"):
+            roman_to_int("IX")
 
 
 TITLE_FIXTURE = r"""% Tomus title page
@@ -236,3 +243,29 @@ class OutputTests(unittest.TestCase):
 
             with self.assertRaisesRegex(DustCoverError, "lualatex failed"):
                 compile_cover(path, runner)
+
+
+class MainTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.out = Path(self.temp.name)
+        (self.out / "tomus_2_inner.tex").write_text(TITLE_FIXTURE, encoding="utf-8")
+        self.args = [
+            "--tomus", "2", "--total-width", "15.5", "--total-height", "9.5",
+            "--spine-width", "1.25", "--cover-width", "5.5",
+            "--out", str(self.out),
+        ]
+
+    def test_no_compile_writes_tex_only(self):
+        with patch("tools.dust_cover.compile_cover") as compile_mock:
+            self.assertEqual(main(self.args + ["--no-compile"]), 0)
+            compile_mock.assert_not_called()
+        self.assertTrue((self.out / "tomus_2_cover.tex").exists())
+        self.assertFalse((self.out / "tomus_2_cover.pdf").exists())
+
+    def test_main_exits_2_on_impossible_geometry(self):
+        args = self.args.copy()
+        args[args.index("15.5")] = "17"
+        self.assertEqual(main(args + ["--no-compile"]), 2)
+        self.assertFalse((self.out / "tomus_2_cover.tex").exists())
