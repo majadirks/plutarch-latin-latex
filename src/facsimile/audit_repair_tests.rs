@@ -4109,7 +4109,139 @@ fn assert_reviewed_sheared_page(
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn romulus_chapter_break_deskewed() {
-    assert_reviewed_sheared_page(0, 34, 1400, -0.016079632465543646, [1080, 2130, 1750, 2180], [945, 1773], &[[1840, 1878], [1906, 1943]], [945, 1900, 975, 2651]);
+    assert_reviewed_sheared_page(0, 34, 1400, -0.016079632465543646, [1080, 2130, 1750, 2180], [945, 1790], &[[1840, 1878], [1906, 1943]], [945, 1900, 975, 2651]);
+}
+
+#[test]
+fn romulus_p34_right_crop_guard_rejects_unreviewed_rasters() {
+    let raster = GrayImage::from_pixel(1982, 2797, Luma([255]));
+    let detected = Column {
+        left: 950,
+        right: 1774,
+    };
+    for (source, page, image, column) in [
+        (1, 34, &raster, detected),
+        (0, 35, &raster, detected),
+        (0, 34, &raster, Column { left: 950, right: 1775 }),
+    ] {
+        assert_eq!(
+            preserve_known_body_crop_edge(source, page, image, column),
+            column
+        );
+    }
+    let resized = GrayImage::from_pixel(1983, 2797, Luma([255]));
+    assert_eq!(preserve_known_body_crop_edge(0, 34, &resized, detected), detected);
+    assert_eq!(preserve_known_body_crop_edge(0, 34, &raster, detected), detected);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn romulus_p34_wide_crop_fits_content_width() {
+    let (retained, _) = render_and_band(0, 34, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    assert_eq!(retained.dimensions(), (845, 2797));
+    let requested = 1.2023952;
+    let fitted = source_strip_scale(&retained, requested);
+    assert_eq!(fitted, TrimGeom::default().content_width() as f32 / 845.0);
+    assert!((retained.width() as f32 * fitted).round() as u32 <= TrimGeom::default().content_width());
+    let mut changed = retained.clone();
+    let pixel = changed.get_pixel(100, 600).0[0];
+    changed.put_pixel(100, 600, Luma([pixel ^ 1]));
+    assert_eq!(source_strip_scale(&changed, requested), requested);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn romulus_p34_right_glyphs_restored() {
+    let original = real_source_image(0, 34);
+    let (retained, bands) = render_and_band(0, 34, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale("romulus");
+    let trace = retained_page(&traces, 0, 34).expect("Romulus p34 retained");
+    let index = trace.retained_index.expect("p34 retained column");
+    assert_eq!(trace.crop, [945, 1790]);
+    assert_eq!(trace.deleted_rows, vec![[1892, 2135]]);
+    assert_eq!(retained.dimensions(), (845, 2797));
+    let old_bound = 1773;
+    assert_eq!(old_bound - trace.crop[0], 828);
+    assert_eq!(
+        (retained.width() as f32 * source_strip_scale(&retained, FROZEN_BODY_SCALE)).round()
+            as u32,
+        TrimGeom::default().content_width()
+    );
+
+    // The first row is an unaffected line before the chapter break and anchors source order.
+    let lines = [
+        [1730, 1800, 1790, 1835],
+        [1730, 2254, 1790, 2281],
+        [1730, 2304, 1790, 2329],
+        [1730, 2354, 1790, 2381],
+        [1730, 2403, 1790, 2421],
+        [1730, 2444, 1790, 2468],
+        [1730, 2490, 1790, 2517],
+        [1730, 2535, 1790, 2559],
+        [1730, 2586, 1790, 2605],
+    ];
+    let mut previous_start = None;
+    for (line_index, region) in lines.into_iter().enumerate() {
+        let [left, top, right, bottom] = region;
+        if line_index > 0 {
+            let edge_ink = (top..bottom)
+                .flat_map(|y| (1773..right).map(move |x| (x, y)))
+                .filter(|&(x, y)| original.get_pixel(x, y).0[0] < 200)
+                .count();
+            assert!(edge_ink > 0, "reviewed line {region:?} has clipped source ink");
+            assert!(
+                (top..bottom).any(|y| (old_bound..right)
+                    .any(|x| original.get_pixel(x, y).0[0] < 200 && x - trace.crop[0] >= 828)),
+                "the old-bound candidate loses ink on {region:?}"
+            );
+        }
+        assert_sheared_source_region_pixels_survive(
+            &original,
+            &retained,
+            1400,
+            -0.016079632465543646,
+            23,
+            945,
+            &trace.deleted_rows,
+            region,
+        );
+        let mapped_ink_rows: Vec<_> = (top..bottom)
+            .flat_map(|y| (left..right).map(move |x| (x, y)))
+            .filter(|&(x, y)| original.get_pixel(x, y).0[0] < 200)
+            .map(|(x, y)| {
+                trace
+                    .map_row((i64::from(y) + source_shear_shift(x, 1400, -0.016079632465543646) + 23) as u32)
+                    .unwrap()
+            })
+            .collect();
+        let mapped_top = *mapped_ink_rows.iter().min().unwrap();
+        let mapped_bottom = mapped_ink_rows.iter().max().unwrap() + 1;
+        assert!(
+            bands
+                .iter()
+                .any(|band| band.top < mapped_bottom && band.bottom > mapped_top),
+            "reviewed line {region:?} ink rows [{mapped_top},{mapped_bottom}) must intersect a band"
+        );
+        let owners: Vec<_> = strips
+            .iter()
+            .filter(|(strip, _, _)| {
+                strip.page_img_index == index
+                    && strip.band.top <= mapped_top
+                    && strip.band.bottom >= mapped_bottom
+            })
+            .collect();
+        assert_eq!(owners.len(), 1, "reviewed line {region:?} has one complete strip");
+        let (_, start, end) = owners[0];
+        assert!(previous_start.is_none_or(|previous| previous < *start));
+        previous_start = Some(*start);
+        let landings: Vec<_> = canvas_ranges
+            .iter()
+            .filter(|(_, canvas_start, canvas_end)| *canvas_start <= *start && *canvas_end >= *end)
+            .collect();
+        assert_eq!(landings.len(), 1, "reviewed line {region:?} has one canvas");
+        let canvas = &canvases[landings[0].0 - 1];
+        assert!(canvas.as_raw().iter().any(|&pixel| pixel <= INK_THRESHOLD));
+    }
 }
 
 #[test]

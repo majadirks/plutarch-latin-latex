@@ -1318,14 +1318,14 @@ fn production_source_column(source: usize, page: u32, masked: &GrayImage) -> Res
 /// Raw line evidence and furniture-filtered bands on an owned Latin column.
 fn band_source_column(source: usize, page: u32, cropped: &GrayImage) -> (Vec<Band>, Vec<Band>) {
     let reviewed_text_window = match (source, page, cropped.dimensions()) {
-        (0, 34, (828, 2797))
+        (0, 34, (845, 2797))
             if matches_source_region_fingerprint(
                 cropped,
                 [100, 600, 600, 750],
                 "b178043dee776247891c4b54e8ad38b3a12e4b91a9b2619e51cebf5d4fde92e5",
             ) =>
         {
-            Some((60, 798))
+            Some((60, 838))
         }
         (0, 448, (1079, 3068))
             if matches_source_region_fingerprint(
@@ -1379,7 +1379,7 @@ fn preserve_known_body_crop_edge(
         {
             Column {
                 left: 945,
-                right: 1773,
+                right: 1790,
             }
         }
         (0, 448, (1988, 3068), 915, 1988)
@@ -3427,12 +3427,18 @@ fn retain_body_canvases(canvases: &mut Vec<GrayImage>, scale: f32, metrics: &Lin
 /// Fit reviewed wide source columns inside the production canvas. The retained
 /// unscaled column remains the exact source-pixel record.
 fn source_strip_scale(img: &GrayImage, requested: f32) -> f32 {
-    let known = (img.dimensions() == (873, 2836)
+    let known = (img.dimensions() == (845, 2797)
         && matches_source_region_fingerprint(
             img,
-            [6, 206, 855, 239],
-            "ca1e88fb55367597531166802b72bb1be361c09718cc95e4f5aa1c701e192eeb",
+            [100, 600, 600, 750],
+            "b178043dee776247891c4b54e8ad38b3a12e4b91a9b2619e51cebf5d4fde92e5",
         ))
+        || (img.dimensions() == (873, 2836)
+            && matches_source_region_fingerprint(
+                img,
+                [6, 206, 855, 239],
+                "ca1e88fb55367597531166802b72bb1be361c09718cc95e4f5aa1c701e192eeb",
+            ))
         || (img.dimensions() == (850, 2896)
             && matches_source_region_fingerprint(
                 img,
@@ -5770,7 +5776,7 @@ mod tests {
         assert_eq!(record["deleted_rows"], serde_json::json!([top, bottom]));
         assert_eq!(
             record["column_dims"],
-            serde_json::json!([828, sheared_height - (bottom - top)])
+            serde_json::json!([845, sheared_height - (bottom - top)])
         );
         assert_eq!(record["gap_before_rows"], 271);
         assert_eq!(record["gap_after_rows"], 271 - (bottom - top));

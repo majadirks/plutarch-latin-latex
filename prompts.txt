@@ -132,15 +132,22 @@ in a cheap-and-dirty way is probably better than adding complexity or tuning par
 
 Notes for Orlando Furioso:
 Sidecar classifies all pages in volume.
-Different page types are tied to different algorithms to detect Latin polygons.
+Different page types are tied to different algorithms to detect Latin polygons (quadrilaterals).
 So every page has ID and array of Polygons (regions to keep).
 Polygon data structure: coordinates for four corners, pointer to source page id, array of bands, "suppress" flag.
 
-Within a polygon, auto-detect bands.
-Each band is associated with id, coordinates (four coreners), source page, source polygon, "suppress" flag, and (optional) transcription. Also, destination volume and page number (these fields may contain numbers, "UNDETERMINED". or "SUPRRESSED").
+Polygons will then be "deskewed" to become rectangles such that the words are parallel to the bottom of the rectangle. The deskew data is embedded in the polygon data structure as well, so that skew can be manually tweaked later if needed.
 
+Within a deskewed polygon, auto-detect bands (lines of words).
+Each band is associated with id, coordinates (four coreners), source page, source polygon, "suppress" flag, OCR transcription, and a flag "use-transcription-over-image" (default false).
+Also, destination volume and page number (these fields may contain numbers, "UNDETERMINED". or "SUPRRESSED").
+Also, an array of "words".
 
-When compiling text onto pages on tomi, scale polygons at global scale factor to get uniform text throughout.
+OCR transcription of individual should be run soon after the bands are separated
+
+A word (Auto-detected shape) is a region corresponding as closely as possible to whitespace-separated words within a band. Run OCR on these as well. Data: id, coordinates, source polygon, source page, OCR transcription.
+
+When compiling text onto pages on tomi, scale the deskewed polygons at global scale factor to get uniform text size throughout.
 After scaling, fit within a rectangular "bounding box". These boxes are then "glued" onto pages Jerfferson Bible-style
 until page is full (margins for safety and for page number, as in Plutarch project).
 Plan gluing ahead of time (ie calculate prior to embedding), and update relevant fields on destination volume and page number. Use this downstream for auditing that every source line is successfully included in output.
@@ -157,3 +164,6 @@ Autodetection of polygons and bands must be resumable, and must respect existing
 Newly-detected polygons should not overlap with existing polygons; newly-detected band should not overlap with existing bands.
 We should be able to manually update the sidecar json and have those changes persist in future runs
 (so that eg we could update the sidecar to suppress a scan artifact that otherwise the detection algorithm would treat as text)
+
+- Determine "page types" and quadrilateral / clustering heuristics. Every page will have a Google Books watermark; include that as a mandatory region to identify.
+- Design data structures
