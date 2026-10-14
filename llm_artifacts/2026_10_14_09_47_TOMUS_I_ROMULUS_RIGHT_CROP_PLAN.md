@@ -3,10 +3,9 @@
 ## Context
 
 The Tomus I facsimile drops right-edge Latin letters in Romulus III, sections
-(2)–(4). The reported reader location is PDF pp. 58–59 / printed folios 43–44;
-in the supplied `build_facsimile/tomus_1_inner.pdf`, the relevant passage is on
-PDF pp. **57–58**, which carry printed folios **43–44**. PDF p. 59 carries folio
-45. The source is `Ploutarchou_Bioi_v1.pdf`, 1-based PDF p. **34**, at the bottom
+(2)–(4). In the supplied `build_facsimile/tomus_1_inner.pdf`, the relevant
+passage is on PDF pp. **57–58**, which carry printed folios **43–44**. The
+source is `Ploutarchou_Bioi_v1.pdf`, 1-based PDF p. **34**, at the bottom
 of its right-hand Latin column. Locate the passage by its text and printed folio
 as well as the PDF index when regenerating, since composition can change.
 
@@ -47,15 +46,18 @@ for by the observed crop defect.
   `preserve_known_body_crop_edge` arm extends the detected right edge, and
   `tomus6_p266_right_glyphs_restored` checks the restored source pixels and
   `source_strip_scale` page-width limit. Reuse that path and the existing
-  `assert_sheared_source_region_pixels_survive` helper.
+  `assert_sheared_source_region_pixels_survive` helper. The scale cap is
+  signature-scoped: `source_strip_scale` currently recognizes only three
+  reviewed columns, none of them Romulus p. 34. A new Romulus-specific guard
+  is required if the widened column exceeds the current text measure.
 
 ## Desired end state
 
 The complete rightmost glyphs of every affected Romulus III (2)–(4) line
 survive once, in source order, on the Tomus I reader. The crop remains scoped
 to the reviewed source raster and detector signature, keeps the original left
-edge, excludes adjacent furniture, and fits the inner page's text width after
-the existing scale cap. The chapter-break shear, mask, and gap repair remain
+edge, excludes adjacent furniture, and fits the inner page's text width. The
+chapter-break shear, mask, and gap repair remain
 effective. The repair ledger, regressions, full Rust checks, and an offline
 rebuild agree with the visually inspected source and reader pages.
 
@@ -87,17 +89,20 @@ edge, or other furniture. Keep the new bound as a measured value, not a guess.
 Check whether folio 43 also has affected right-end glyphs.
 
 Record the measurement and selected bound in the existing fixture's p. 34
-diagnosis and add a separate reviewed crop-repair record under `repairs` if its
-schema admits it; otherwise extend the schema and its shape check narrowly.
-Do not overwrite the earlier shear, mask, or row-excision diagnosis. A wider
-crop is the intended disposition if the missing glyphs are present in the raw
-raster beyond the existing bound. If those pixels are absent in the raw source,
-stop this crop path and diagnose the actual loss stage before changing code.
+diagnosis. The existing p. 34 `shear` repair record already carries
+`crop_edges` and `preserved_latin_regions`; update the first in Phase 2.1 and
+the second in Phase 2.2, following the v2 p. 266 pattern. Keep the separate mask and row-excision
+records. A wider crop is the intended disposition if the missing glyphs are
+present in the raw raster beyond the existing bound. If those pixels are
+absent in the raw source, stop this crop path and diagnose the actual loss
+stage before changing code. Measure the current composed strip width and the
+new predicted width against `TrimGeom::default().content_width()` at the
+production Romulus scale. Record whether the new width needs a scale cap.
 
 **LLM verification:** Inspect a baseline raster/trace for `(0, 34)` and confirm
 `[945, 1773)` before editing production code; save the measured source boxes,
-ink counts, mapped rows, chosen bound, and furniture check in the fixture or a
-dated measurement note in `llm_artifacts/`. Run
+ink counts, mapped rows, chosen bound, width comparison, and furniture check
+in the fixture's diagnosis or a dated measurement note in `llm_artifacts/`. Run
 `cargo test romulus_chapter_break_deskewed -- --ignored` to confirm the
 existing regression's baseline.
 
@@ -109,27 +114,46 @@ proposed right edge contains Latin without neighboring furniture.
 
 ### 2.1 Extend the existing guarded crop arm and update its dependent checks
 
-In `src/facsimile/reflow.rs::preserve_known_body_crop_edge`, change **only**
-the `(source=0, page=34)` result's exclusive right edge from `1773` to the
+In `src/facsimile/reflow.rs::preserve_known_body_crop_edge`, change the
+`(source=0, page=34)` result's exclusive right edge from `1773` to the
 measured Phase 1 bound. Retain its source/page, transformed dimensions,
 detector-edge, and pixel-fingerprint guard, and its left edge `945`. Do not
 add another shear, paste glyphs, or change the transcription cache. Run the
-real-page crop and banding path. If `band_source_column`'s p. 34 signature no
-longer matches because the crop width or selected fingerprint region changes,
-update its `cropped.dimensions()` and, only if required, remeasure the
-fingerprint and text window on the widened crop. Preserve the same gutter
-exclusion and ordinary line separation. Update p. 34 `crop_edges` and
-`column_dims` in the reviewed fixture records that describe the **final**
-crop. Do not change a field describing the earlier detected/raw crop. Update
-the existing `romulus_chapter_break_deskewed` expected crop to the newly
-measured result, keeping its heading, gutter, and gap assertions.
+real-page crop and banding path. The existing `band_source_column` p. 34 arm
+matches `(828, 2797)`, so update that dimension to the measured widened crop
+size. Its fingerprint rectangle `[100, 600, 600, 750]` is away from the
+changed right edge and its value should stay the same; recompute and change
+the digest only if measured pixels in that rectangle actually changed. Check
+the existing `Some((60, 798))` interior text window against the widened crop;
+extend its right endpoint only as far as needed to band the restored terminal
+letters while continuing to exclude gutter/furniture ink. Update p. 34
+`crop_edges` in the shear repair record and `column_dims` in the row-excision
+record to describe the **final** crop. Preserve any field describing the
+earlier detected/raw crop. Update the existing
+`romulus_chapter_break_deskewed` expected crop to the newly measured result,
+keeping its heading, gutter, and gap assertions.
 
-**LLM verification:** Add or update a small non-ignored signature test named
-`romulus_p34_right_crop_guard_is_source_scoped` that checks the expected crop
-and unchanged behavior for another page/source, changed dimensions, changed
-detector edges, and a same-sized raster with a changed fingerprint. Run
-`cargo test romulus_p34_right_crop_guard_is_source_scoped`,
+If the Phase 1 width measurement exceeds the text measure, add a guarded p. 34
+column signature to the existing `source_strip_scale` predicate, using the
+widened image dimensions and a reviewed fingerprint rectangle within the
+retained column. Reuse its current `requested.min(content_width / width)`
+calculation; do not introduce a second scaling path. Test the unchanged
+requested scale for an altered same-size image as well as the capped scale
+for the reviewed p. 34 image in an ignored real-PDF test named
+`romulus_p34_wide_crop_fits_content_width`. If the measured width already
+fits, that test should assert it fits at the ordinary production scale and
+should not add a new scale signature. Re-measure band and canvas placement
+after any scale change.
+
+**LLM verification:** Add a small non-ignored test named
+`romulus_p34_right_crop_guard_rejects_unreviewed_rasters` that checks unchanged
+behavior for another page/source, changed dimensions, changed detector edges,
+and a same-sized raster with a changed fingerprint. Verify the positive guard
+on the real source raster in `romulus_chapter_break_deskewed`; a synthetic
+white raster cannot match the production fingerprint. Run
+`cargo test romulus_p34_right_crop_guard_rejects_unreviewed_rasters`,
 `cargo test romulus_chapter_break_deskewed -- --ignored`, `cargo fmt`,
+`cargo test romulus_p34_wide_crop_fits_content_width -- --ignored`,
 `cargo fmt --all --check`, `cargo clippy --all-targets -- -D warnings`, and
 `cargo test`.
 
@@ -148,8 +172,11 @@ terminal rectangle from Phase 1, assert that source ink exists in the strip
 pixel in the retained crop at its shear-plus-excision mapped coordinate.
 Require that the corresponding retained line band and the full-unit composed
 strip appear exactly once, in order, on the reader canvases spanning III
-(2)–(4). Reuse the existing full-unit trace/composition helpers instead of
-building a parallel mapper. Assert that `source_strip_scale` keeps the
+(2)–(4). Use `compose_unit_at_frozen_scale("romulus")`,
+`retained_page(&traces, 0, 34)`, and `RetainedSourcePageTrace::map_row` to locate
+each reviewed line within the existing strip and canvas ranges, following
+`romulus_chapter_break_gap_normal`. Reuse those helpers instead of building a
+parallel mapper. Assert that `source_strip_scale` keeps the
 widened line inside `TrimGeom::default().content_width()`. Keep a neighboring
 unaffected source line in the check so a shifted or duplicated strip cannot
 pass by accident. Extend the p. 34 fixture's preserved Latin regions to cover
@@ -161,8 +188,9 @@ test must exercise them too.
 `cargo test inner_tomi_shears_preserve_latin -- --ignored`,
 `cargo test romulus_chapter_break_gap_normal -- --ignored`, `cargo fmt`,
 `cargo fmt --all --check`, `cargo clippy --all-targets -- -D warnings`, and
-`cargo test`. Verify the test fails against the old crop bound before accepting
-its passing result with the wider bound.
+`cargo test`. Prove the regression is meaningful by running it against an
+explicit old-bound candidate or by checking its failure on the parent commit
+before accepting its passing result with the wider bound.
 
 **Human verification:** Review the source-to-retained pixel-box overlays and
 the composed passage. Confirm each affected ending is complete, appears once,
@@ -188,7 +216,7 @@ investigate any unexpected reflow rather than assuming the old page indices
 remain fixed. Save a dated verification note under `llm_artifacts/` with the
 measured right bound, pixel-test result, build commands, and visual findings.
 
-**LLM verification:** Run `cargo build`, `cargo fmt --all --check`,
+**LLM verification:** Run `cargo build`, `cargo fmt`, `cargo fmt --all --check`,
 `cargo clippy --all-targets -- -D warnings`, `cargo test`, and the targeted
 ignored regressions from Phase 2 after the final code and fixture edits.
 Confirm the offline build exits successfully and the resulting Tomus I PDF
@@ -202,8 +230,9 @@ correctly.
 ## Risks and decision points
 
 - The correct right bound may exceed the width used by the p. 34 banding
-  signature. Re-measure its text window and downstream scale rather than
-  disabling its gutter filter or hard-coding a width copied from v2 p. 266.
+  signature and the page's content measure. Re-measure its text window and
+  add the scoped `source_strip_scale` signature when needed, following the
+  v2 p. 266 pattern. Do not disable the gutter filter or copy v2's width.
 - A full-width right extension might admit furniture on another vertical part
   of source p. 34. If so, use an existing source-scoped furniture mask only
   after proving it touches no Latin pixels. Keep the crop wide enough for
