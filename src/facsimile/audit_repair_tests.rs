@@ -4217,6 +4217,98 @@ fn tomus6_p266_right_glyphs_restored() {
     }
 }
 
+/// Composer-level counterpart to `tomus6_quidem_line_complete`: the band-domain
+/// check proves `quidem passus Callisthenem` bands as one complete strip
+/// `[2224,2317]` on v2 p231, but it cannot see that the packer fill-splits that
+/// `Tall` strip across reader pp86/87 (canvases 78/79). This test composes the
+/// Alexander unit at the frozen scale and requires the whole strip on exactly one
+/// canvas, in source order, with the preceding canvas's bottom whitespace bounded by
+/// two median complete-strip heights. It fails on the pre-repair tree (the strip
+/// straddles two canvases) and passes once `[2224,2317]` is wrapped whole.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn tomus6_quidem_not_split() {
+    let quidem = Band {
+        top: 2224,
+        bottom: 2317,
+    };
+    let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale("alexander");
+    let trace = retained_page(&traces, 1, 231).expect("p231 retained");
+    let index = trace
+        .retained_index
+        .expect("p231 contributes a retained column");
+
+    // The quidem line bands as a single complete strip [2224,2317] on p231.
+    let covers = |s: &Strip| {
+        s.page_img_index == index && s.band.top <= quidem.top && s.band.bottom >= quidem.bottom
+    };
+    assert_eq!(
+        strips.iter().filter(|(s, _, _)| covers(s)).count(),
+        1,
+        "quidem line is one strip on p231: {:?}",
+        strips
+            .iter()
+            .filter(|(s, _, _)| s.page_img_index == index)
+            .map(|(s, _, _)| s.band)
+            .collect::<Vec<_>>()
+    );
+    let order = strips.iter().position(|(s, _, _)| covers(s)).unwrap();
+    let (_, start, end) = &strips[order];
+
+    // The whole strip lands on exactly one canvas — no part straddles the page break.
+    let landing: Vec<_> = canvas_ranges
+        .iter()
+        .filter(|(_, a, b)| *a < *end && *b > *start)
+        .collect();
+    assert_eq!(
+        landing.len(),
+        1,
+        "quidem line stays whole on one canvas: {landing:?}"
+    );
+    let (ci, ctop, _) = *landing[0];
+
+    // That canvas actually carries the quidem glyph ink.
+    let geom = TrimGeom::default();
+    let canvas = &canvases[ci - 1];
+    let ink = ((geom.pad_y + (*start - ctop))..(geom.pad_y + (*end - ctop)))
+        .flat_map(|y| (0..canvas.width()).map(move |x| (x, y)))
+        .filter(|&(x, y)| canvas.get_pixel(x, y)[0] <= INK_THRESHOLD)
+        .count();
+    assert!(ink > 100, "the quidem line's canvas rows carry glyph ink");
+
+    // Source order: the strips before and after the quidem line keep reading order.
+    let (before, _, _) = &strips[order - 1];
+    assert!(
+        before.page_img_index <= index,
+        "the strip before quidem is not later in the unit"
+    );
+    let (after, _, _) = &strips[order + 1];
+    assert!(
+        after.page_img_index >= index,
+        "the strip after quidem is not earlier in the unit"
+    );
+
+    // Wrapping the strip whole closes the preceding canvas early. Require that the
+    // page-bottom whitespace it leaves stays within two median complete-line heights
+    // of this unit, so the wrap does not trade a split for a large gap.
+    let mut completes: Vec<u32> = strips
+        .iter()
+        .filter(|(s, _, _)| matches!(s.class, BandClass::Normal))
+        .map(|(_, a, b)| b - a)
+        .collect();
+    completes.sort_unstable();
+    let median = completes[completes.len() / 2];
+    let preceding = &canvases[ci - 2];
+    let bottom_gap = geom
+        .body_budget()
+        .saturating_sub(preceding.height() - geom.pad_y);
+    assert!(
+        bottom_gap <= 2 * median,
+        "preceding canvas bottom whitespace {bottom_gap}px exceeds two median strip heights {}px",
+        2 * median
+    );
+}
+
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn tomus6_quidem_line_complete() {
