@@ -9,6 +9,8 @@ from pathlib import Path
 
 MIN_FLAP_IN = 1.5
 DEFAULT_PRINTABLE_MARGIN_IN = 0.25
+FOLD_TICK_GAP_IN = 0.02
+FOLD_TICK_LENGTH_IN = 0.10
 SHEET_SIZES_IN = {
     "tabloid": (17.0, 11.0),
     "a3": (420.0 / 25.4, 297.0 / 25.4),
@@ -162,6 +164,49 @@ def spine_body(roman: str, exlibris: str | None, spine_width_in: float) -> str:
     return body
 
 
+def render_cover(layout: Layout, sheet_long_in: float, sheet_short_in: float,
+                 title: InnerTitle, roman: str, exlibris: str | None) -> str:
+    ox = (sheet_long_in - layout.total_width_in) / 2
+    oy = (sheet_short_in - layout.total_height_in) / 2
+    top = oy + layout.total_height_in
+    right = ox + layout.total_width_in
+    lines = [
+        render_preamble(sheet_long_in, sheet_short_in),
+        r"\begin{document}",
+        r"\noindent\begin{tikzpicture}[x=1in,y=1in]",
+        f"  \\useasboundingbox (0,0) rectangle ({sheet_long_in:.4f},{sheet_short_in:.4f});",
+        "  % The two flaps are blank.",
+    ]
+    panels = (
+        (layout.back_x, layout.cover_in, back_cover_body(title.lives)),
+        (layout.spine_x, layout.spine_in, spine_body(roman, exlibris, layout.spine_in)),
+        (layout.front_x, layout.cover_in,
+         front_cover_body(title.center_block, layout.cover_in)),
+    )
+    for panel_x, width, body in panels:
+        lines.append(
+            f"  \\node[anchor=south west,inner sep=0] at ({ox + panel_x:.4f},{oy:.4f}) "
+            f"{{{panel_box(width, layout.total_height_in, body)}}};"
+        )
+    lines.append(
+        f"  \\draw[dotted,thick] ({ox:.4f},{oy:.4f}) "
+        f"rectangle ({right:.4f},{top:.4f});"
+    )
+    for seam in (layout.back_x, layout.spine_x,
+                 layout.front_x, layout.right_flap_x):
+        x = ox + seam
+        lines.append(
+            f"  \\draw[dotted] ({x:.4f},{oy - FOLD_TICK_GAP_IN:.4f}) -- "
+            f"({x:.4f},{oy - FOLD_TICK_GAP_IN - FOLD_TICK_LENGTH_IN:.4f});"
+        )
+        lines.append(
+            f"  \\draw[dotted] ({x:.4f},{top + FOLD_TICK_GAP_IN:.4f}) -- "
+            f"({x:.4f},{top + FOLD_TICK_GAP_IN + FOLD_TICK_LENGTH_IN:.4f});"
+        )
+    lines.extend((r"\end{tikzpicture}", r"\end{document}"))
+    return "\n".join(lines) + "\n"
+
+
 def compute_layout(total_width: float, total_height: float,
                    spine_width: float, cover_width: float) -> Layout:
     flap = (total_width - 2 * cover_width - spine_width) / 2
@@ -193,10 +238,10 @@ def check_printable(total_width: float, total_height: float,
             f"jacket width {total_width:.3f}in exceeds printable width "
             f"{printable_w:.3f}in"
         )
-    if total_height > printable_h + 1e-9:
+    if total_height + 2 * (FOLD_TICK_GAP_IN + FOLD_TICK_LENGTH_IN) > printable_h + 1e-9:
         raise DustCoverError(
-            f"jacket height {total_height:.3f}in exceeds printable height "
-            f"{printable_h:.3f}in"
+            f"jacket height {total_height:.3f}in plus exterior fold ticks exceeds "
+            f"printable height {printable_h:.3f}in"
         )
 
 
