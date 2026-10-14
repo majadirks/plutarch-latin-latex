@@ -78,9 +78,12 @@ the title pages and therefore the plate.
 
 Omitting `--paper-size` selects US Letter. `--paper-size a4` changes only the
 facsimile printing wrappers: both options keep the 10.5 × 16 cm inner pages and
-the same 21 × 16 cm cut border. Print the landscape `tomus_N.pdf` sheets at
-actual size (100%, without fit-to-page scaling) and flip on the short edge when
-duplex printing. Cut to the marked trim border after folding and sewing.
+the same 21 × 16 cm cut border. Each landscape `tomus_N.pdf` page is already
+imposed as a two-page spread. Print at actual size (100%, without fit-to-page
+scaling), select two-sided printing with **flip on the short edge**, and leave
+the printer's booklet and two-pages-per-sheet options off. The short-edge flip
+keeps both sides upright when each sheet is folded into a signature. Cut to the
+marked trim border after folding and sewing.
 
 **Body.** Each page's Latin column is detected, sliced at inter-line whitespace, and
 reflowed (whole source lines repaginated at one **global** scale) into the trim text
