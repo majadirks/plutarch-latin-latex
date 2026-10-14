@@ -111,6 +111,57 @@ def render_preamble(sheet_long_in: float, sheet_short_in: float) -> str:
     )
 
 
+def panel_box(width_in: float, height_in: float, body: str) -> str:
+    return (
+        f"\\begin{{minipage}}[c][{height_in:.4f}in][c]{{{width_in:.4f}in}}"
+        f"\\centering {body}\\end{{minipage}}"
+    )
+
+
+def front_cover_body(center_block: str, cover_width_in: float) -> str:
+    width = f"{cover_width_in:.4f}in"
+    return (
+        f"{{\\setlength{{\\textwidth}}{{{width}}}"
+        f"\\setlength{{\\columnwidth}}{{{width}}}\\hsize={width} "
+        f"\\begin{{center}}{center_block}\\end{{center}}}}"
+    )
+
+
+def back_cover_body(lives: list[str]) -> str:
+    return r"\\[0.8em]".join(
+        rf"\textsc{{\MakeLowercase{{{life}}}}}" for life in lives
+    )
+
+
+def escape_latex(s: str) -> str:
+    replacements = {
+        "\\": r"\textbackslash{}", "&": r"\&", "%": r"\%",
+        "#": r"\#", "_": r"\_", "$": r"\$",
+        "{": r"\{", "}": r"\}", "~": r"\textasciitilde{}",
+        "^": r"\textasciicircum{}",
+    }
+    return "".join(replacements.get(char, char) for char in s)
+
+
+def spine_body(roman: str, exlibris: str | None, spine_width_in: float) -> str:
+    usable_width = spine_width_in - 0.2
+    title = (
+        r"\shortstack[c]{{\large\bfseries PLUTARCHI}\\[0.4em]"
+        r"{\large\bfseries VITÆ}\\[1.2em]"
+        rf"{{\large TOMUS {roman}}}}}"
+    )
+    body = f"\\resizebox{{{usable_width:.4f}in}}{{!}}{{{title}}}"
+    if exlibris is not None:
+        owner = escape_latex(exlibris.upper())
+        foot = rf"\shortstack[c]{{EX LIBRIS\\[0.6em]{{\large {owner}}}}}"
+        body = (
+            r"\par\vspace*{\fill}" + body + r"\par\vspace*{\fill}" +
+            f"\\resizebox{{{usable_width:.4f}in}}{{!}}{{{foot}}}"
+            r"\par\vspace{0.15in}"
+        )
+    return body
+
+
 def compute_layout(total_width: float, total_height: float,
                    spine_width: float, cover_width: float) -> Layout:
     flap = (total_width - 2 * cover_width - spine_width) / 2

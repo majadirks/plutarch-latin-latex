@@ -5,8 +5,10 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from tools.dust_cover import (
-    SHEET_SIZES_IN, DustCoverError, check_printable, compute_layout,
-    int_to_roman, parse_inner_tex, render_preamble, roman_to_int, validate_exlibris,
+    SHEET_SIZES_IN, DustCoverError, back_cover_body, check_printable,
+    compute_layout, front_cover_body, int_to_roman, panel_box,
+    parse_inner_tex, render_preamble, roman_to_int, spine_body,
+    validate_exlibris,
 )
 
 
@@ -104,3 +106,37 @@ class RenderPreambleTests(unittest.TestCase):
         self.assertIn("paperwidth=17.0000in,paperheight=11.0000in", preamble)
         self.assertIn(r"\setmainfont{OldStandard}", preamble)
         self.assertIn(r"\usepackage{tikz}", preamble)
+
+
+class PanelBuilderTests(unittest.TestCase):
+    def test_front_cover_reproduces_title_block_without_exlibris(self):
+        body = front_cover_body("TITLE BLOCK", 5.5)
+        self.assertIn("TITLE BLOCK", body)
+        self.assertIn(r"\setlength{\textwidth}{5.5000in}", body)
+        self.assertNotIn("EX LIBRIS", body)
+
+    def test_back_cover_lists_each_life_on_its_own_line(self):
+        body = back_cover_body(["THESEUS", "ROMULUS"])
+        self.assertEqual(
+            body,
+            r"\textsc{\MakeLowercase{THESEUS}}\\[0.8em]"
+            r"\textsc{\MakeLowercase{ROMULUS}}",
+        )
+
+    def test_spine_lists_plutarchi_vitae_and_tomus(self):
+        body = spine_body("III", None, 1.25)
+        for word in ("PLUTARCHI", "VITÆ", "TOMUS III"):
+            self.assertEqual(body.count(word), 1)
+        self.assertIn(r"\resizebox{1.0500in}{!}", body)
+
+    def test_spine_exlibris_uppercased_at_foot(self):
+        body = spine_body("I", "alex smith", 1.25)
+        self.assertIn("ALEX SMITH", body)
+        self.assertIn("EX LIBRIS", body)
+        self.assertGreater(body.index("EX LIBRIS"), body.index("TOMUS I"))
+        self.assertNotIn("EX LIBRIS", spine_body("I", None, 1.25))
+
+    def test_panel_box_has_fixed_size(self):
+        box = panel_box(5.5, 9.5, "BODY")
+        self.assertIn(r"\begin{minipage}[c][9.5000in][c]{5.5000in}", box)
+        self.assertIn("BODY", box)
