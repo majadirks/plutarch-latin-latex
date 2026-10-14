@@ -4109,7 +4109,44 @@ fn assert_reviewed_sheared_page(
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn romulus_chapter_break_deskewed() {
-    assert_reviewed_sheared_page(0, 34, 1400, -0.016079632465543646, [1080, 2130, 1750, 2180], [945, 1773], &[[1840, 1878], [1906, 1943]], [945, 1900, 975, 2651]);
+    assert_reviewed_sheared_page(0, 34, 1400, -0.016079632465543646, [1080, 2130, 1750, 2180], [945, 1790], &[[1840, 1878], [1906, 1943]], [945, 1900, 975, 2651]);
+}
+
+#[test]
+fn romulus_p34_right_crop_guard_rejects_unreviewed_rasters() {
+    let raster = GrayImage::from_pixel(1982, 2797, Luma([255]));
+    let detected = Column {
+        left: 950,
+        right: 1774,
+    };
+    for (source, page, image, column) in [
+        (1, 34, &raster, detected),
+        (0, 35, &raster, detected),
+        (0, 34, &raster, Column { left: 950, right: 1775 }),
+    ] {
+        assert_eq!(
+            preserve_known_body_crop_edge(source, page, image, column),
+            column
+        );
+    }
+    let resized = GrayImage::from_pixel(1983, 2797, Luma([255]));
+    assert_eq!(preserve_known_body_crop_edge(0, 34, &resized, detected), detected);
+    assert_eq!(preserve_known_body_crop_edge(0, 34, &raster, detected), detected);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn romulus_p34_wide_crop_fits_content_width() {
+    let (retained, _) = render_and_band(0, 34, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    assert_eq!(retained.dimensions(), (845, 2797));
+    let requested = 1.2023952;
+    let fitted = source_strip_scale(&retained, requested);
+    assert_eq!(fitted, TrimGeom::default().content_width() as f32 / 845.0);
+    assert!((retained.width() as f32 * fitted).round() as u32 <= TrimGeom::default().content_width());
+    let mut changed = retained.clone();
+    let pixel = changed.get_pixel(100, 600).0[0];
+    changed.put_pixel(100, 600, Luma([pixel ^ 1]));
+    assert_eq!(source_strip_scale(&changed, requested), requested);
 }
 
 #[test]
