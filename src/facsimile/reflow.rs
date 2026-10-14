@@ -1931,6 +1931,20 @@ const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
         },
     },
     SourceBodyBand {
+        source: 0,
+        page: 448,
+        unit_id: "philopoemen",
+        dimensions: (1079, 3068),
+        observed: Band {
+            top: 330,
+            bottom: 366,
+        },
+        protected: Band {
+            top: 330,
+            bottom: 366,
+        },
+    },
+    SourceBodyBand {
         source: 1,
         page: 294,
         unit_id: "phocion",
@@ -5271,6 +5285,12 @@ mod tests {
                     assert!(ledger_is_u_array(&repair["strip_fingerprint_region"], 4));
                     assert!(ledger_is_hex64(&repair["strip_fingerprint"]));
                 }
+                "source_body_band" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert!(ledger_is_u_array(&repair["column_dims"], 2));
+                    assert!(ledger_is_u_array(&repair["observed"], 2));
+                    assert!(ledger_is_u_array(&repair["protected"], 2));
+                }
                 "word_patch" => {
                     assert_eq!(repair["status"], "repaired");
                     assert!(ledger_is_u_array(&repair["src_rect"], 4));
@@ -5693,6 +5713,67 @@ mod tests {
                 record["source_page"]
             );
         }
+    }
+
+    #[test]
+    fn inner_tomi_source_body_bands_match_reviewed_ledger() {
+        let tomi = tomi_gap_split_repair_ledger();
+        let records = repairs_with_disposition(&tomi, "source_body_band");
+        assert!(
+            !records.is_empty(),
+            "the ledger installs a source_body_band repair"
+        );
+        // Every reviewed source-body-band record is backed by a SOURCE_BODY_BANDS entry
+        // with identical identity, cropped column dimensions, and observed/protected band.
+        for record in &records {
+            let source = record["source"].as_u64().unwrap() as usize;
+            let page = record["source_page"].as_u64().unwrap() as u32;
+            let unit_id = record["unit_id"].as_str().unwrap();
+            let dims = (
+                record["column_dims"][0].as_u64().unwrap() as u32,
+                record["column_dims"][1].as_u64().unwrap() as u32,
+            );
+            let observed = Band {
+                top: record["observed"][0].as_u64().unwrap() as u32,
+                bottom: record["observed"][1].as_u64().unwrap() as u32,
+            };
+            let protected = Band {
+                top: record["protected"][0].as_u64().unwrap() as u32,
+                bottom: record["protected"][1].as_u64().unwrap() as u32,
+            };
+            assert!(
+                SOURCE_BODY_BANDS.iter().any(|b| {
+                    b.source == source
+                        && b.page == page
+                        && b.unit_id == unit_id
+                        && b.dimensions == dims
+                        && b.observed == observed
+                        && b.protected == protected
+                }),
+                "reviewed source body band source {source} page {page} is installed in SOURCE_BODY_BANDS"
+            );
+        }
+        // The installed Philopoemen p448 rescue is reviewed here. SOURCE_BODY_BANDS also
+        // carries entries from unrelated work, so only this branch's page is required to
+        // round-trip back to a ledger record.
+        let entry = SOURCE_BODY_BANDS
+            .iter()
+            .find(|b| b.source == 0 && b.page == 448)
+            .expect("Philopoemen p448 body-band rescue installed");
+        assert!(
+            records.iter().any(|record| {
+                record["source"].as_u64() == Some(entry.source as u64)
+                    && record["source_page"].as_u64() == Some(u64::from(entry.page))
+                    && record["unit_id"].as_str() == Some(entry.unit_id)
+                    && record["column_dims"][0].as_u64() == Some(u64::from(entry.dimensions.0))
+                    && record["column_dims"][1].as_u64() == Some(u64::from(entry.dimensions.1))
+                    && record["observed"][0].as_u64() == Some(u64::from(entry.observed.top))
+                    && record["observed"][1].as_u64() == Some(u64::from(entry.observed.bottom))
+                    && record["protected"][0].as_u64() == Some(u64::from(entry.protected.top))
+                    && record["protected"][1].as_u64() == Some(u64::from(entry.protected.bottom))
+            }),
+            "the installed Philopoemen p448 body-band entry has a reviewed ledger record"
+        );
     }
 
     /// A reviewed Latin region `[x0, y0, x1, y1]` from a ledger record.

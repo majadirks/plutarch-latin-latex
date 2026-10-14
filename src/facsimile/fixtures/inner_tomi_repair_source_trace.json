@@ -15482,8 +15482,8 @@
             ]
         ],
         "expected_first_band": [
-            380,
-            415
+            330,
+            366
         ],
         "expected_last_band": [
             2746,
