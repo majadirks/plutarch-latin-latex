@@ -2676,6 +2676,97 @@ fn assert_source_region_pixels_survive(
     }
 }
 
+/// Like [`assert_source_region_pixels_survive`], but for a sheared page: the raw
+/// source `(x, y)` is first lifted by the per-column shear to sheared row
+/// `y + shift(x) + top_pad` before the crop and any sheared-coordinate row excision
+/// apply. The excision shift reuses [`RetainedSourcePageTrace::map_row`], so a
+/// rectangular raw region becomes x-dependent only through the shear term.
+#[allow(clippy::too_many_arguments)]
+fn assert_sheared_source_region_pixels_survive(
+    original: &GrayImage,
+    retained: &GrayImage,
+    x0_px: u32,
+    baseline_slope: f64,
+    top_pad: u32,
+    crop_left: u32,
+    deleted_rows: &[[u32; 2]],
+    region: [u32; 4],
+) {
+    let trace = RetainedSourcePageTrace {
+        source: 0,
+        page: 0,
+        retained_index: Some(0),
+        crop: [crop_left, crop_left + retained.width()],
+        bands: vec![],
+        deleted_rows: deleted_rows.to_vec(),
+    };
+    let [left, top, right, bottom] = region;
+    for y in top..bottom {
+        for x in left..right {
+            let shift = source_shear_shift(x, x0_px, baseline_slope);
+            let sheared_y = u32::try_from(i64::from(y) + shift + i64::from(top_pad)).unwrap();
+            let mapped = trace.map_row(sheared_y).unwrap();
+            assert_eq!(
+                original.get_pixel(x, y),
+                retained.get_pixel(x - crop_left, mapped),
+                "sheared Latin pixel at {x},{y} -> sheared row {sheared_y}"
+            );
+        }
+    }
+}
+
+#[test]
+fn source_shear_pixels_survive_after_pipeline() {
+    let width = 120u32;
+    let height = 160u32;
+    let x0 = 60u32;
+    let slope = 0.04f64;
+    // Synthetic raw page: a tracked block of Latin ink, plus a left furniture stripe
+    // to mask that sits outside the Latin crop.
+    let mut raw = GrayImage::from_pixel(width, height, Luma([255]));
+    let region = [40u32, 30, 90, 50];
+    for y in region[1]..region[3] {
+        for x in region[0]..region[2] {
+            raw.put_pixel(x, y, Luma([((x * 3 + y * 5) % 200 + 1) as u8]));
+        }
+    }
+    for y in 0..height {
+        for x in 5..10u32 {
+            raw.put_pixel(x, y, Luma([0]));
+        }
+    }
+
+    // Mirror render_and_band's transform order on this synthetic page.
+    let (_, top_pad) = source_shear_shifts(width, x0, slope);
+    let mut transformed = shear_image(&raw, x0, slope);
+    for y in 0..transformed.height() {
+        for x in 5..10u32 {
+            transformed.put_pixel(x, y, Luma([255]));
+        }
+    }
+    // Excise a blank slab above the tracked region, in sheared coordinates.
+    let deleted = (10u32, 25u32);
+    let transformed = splice_out_rows(&transformed, &[deleted]);
+    let cropped = crop_column(
+        &transformed,
+        &Column {
+            left: 20,
+            right: 110,
+        },
+    );
+
+    assert_sheared_source_region_pixels_survive(
+        &raw,
+        &cropped,
+        x0,
+        slope,
+        top_pad,
+        20,
+        &[[deleted.0, deleted.1]],
+        region,
+    );
+}
+
 /// Verify reviewed glyph regions once in the unscaled strips and the composed stream.
 fn assert_reviewed_source_lines_survive(
     lines: &[ReviewedSourceLine],
@@ -2930,17 +3021,16 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
     let traces = (range.unit.start_page..=range.end_page)
         .map(|p| {
             let index = source_pages.iter().position(|&page| page == p);
-            // Mirror render_and_band: mask, then excise, then detect the column, so
-            // the crop edges match the retained page. `deleted_rows` is captured in
-            // original-source coordinates (pre-excision height) so `map_row` shifts
-            // every row below an excised slab.
-            let mut raw = real_source_image(range.unit.source, p);
-            let original_height = raw.height();
+            // Mirror render_and_band so crop edges and excision rows use the
+            // transformed page's coordinate space.
+            let raw = real_source_image(range.unit.source, p);
+            let mut raw = apply_known_source_shear(range.unit.source, p, raw);
+            let sheared_height = raw.height();
             mask_known_source_furniture(range.unit.source, p, &mut raw);
             let mut deleted_rows: Vec<[u32; 2]> = SOURCE_ROW_EXCISIONS
                 .iter()
                 .filter(|e| e.source == range.unit.source && e.page == p)
-                .filter_map(|e| excision_rows(e, original_height).map(|(t, b)| [t, b]))
+                .filter_map(|e| excision_rows(e, sheared_height).map(|(t, b)| [t, b]))
                 .collect();
             deleted_rows.sort_unstable();
             let raw = excise_known_source_rows(range.unit.source, p, raw);
@@ -2958,6 +3048,73 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
         })
         .collect();
     (pages, metrics, traces)
+}
+
+/// The frozen `production_body_scale()` for the current source PDFs. Passing this
+/// literal lets a composer-level test pack real canvases without the whole-corpus
+/// column-width sampling that makes `production_body_scale()` take >10 min.
+const FROZEN_BODY_SCALE: f32 = 1.2023952;
+
+/// Compose one unit's body canvases at [`FROZEN_BODY_SCALE`] and return each
+/// strip's and each canvas's `[top, bottom)` range in the shared scaled-stream
+/// coordinate system, together with the retained-source-page traces. This is the
+/// composer-domain counterpart to `audit_traced_unit`: it packs the production
+/// canvases (`compose_pages`, which applies the final ink floor via
+/// `retain_body_canvases`) so a test can assert where a line lands on a reader page
+/// — a split, an orphaned word, or a page-bottom gap — in ~1 min.
+///
+/// A caller resolves a strip to its source page through the returned traces and
+/// `retained_page`. A canvas index here is a per-unit body-canvas ordinal, not a
+/// physical reader-PDF page number.
+fn compose_unit_at_frozen_scale(
+    id: &str,
+) -> (
+    Vec<StripRange>,
+    Vec<CanvasRange>,
+    Vec<GrayImage>,
+    Vec<RetainedSourcePageTrace>,
+) {
+    // `mod.rs` stacks a reviewed short ending onto its predecessor after
+    // composition; that shifts the canvas count and the cumulative-range mapping
+    // below. None of the units this helper serves takes that path — guard it so a
+    // future short-ending unit cannot be measured with stale canvas indices.
+    assert!(
+        !REVIEWED_SHORT_ENDINGS
+            .iter()
+            .any(|(reviewed, _, _)| *reviewed == id),
+        "{id} merges a reviewed short ending; model merge_reviewed_short_ending before mapping canvases",
+    );
+    let (pages, metrics, traces) = audit_traced_unit(id);
+    let geom = TrimGeom::default();
+    let canvases = compose_pages(
+        &pages,
+        FROZEN_BODY_SCALE,
+        &geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
+        &metrics,
+    );
+    // `ranges_for_composed_canvases` maps strips onto canvases by accumulating
+    // packed canvas heights, which assumes `compose_pages` kept every packed
+    // canvas. `retain_body_canvases` may drop a low-ink canvas; when it does, the
+    // cumulative mapping is invalid and a caller must match canvases by hash
+    // instead. Require identical counts so that mapping stays sound.
+    let packed = compose_body_canvases(
+        &pages,
+        FROZEN_BODY_SCALE,
+        &geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
+        &metrics,
+    );
+    assert_eq!(
+        canvases.len(),
+        packed.len(),
+        "{id}: retain_body_canvases dropped a canvas; map surviving canvases by image hash",
+    );
+    let (strips, canvas_ranges, canvases) =
+        ranges_for_composed_canvases(&pages, &metrics, FROZEN_BODY_SCALE, &geom, canvases);
+    (strips, canvas_ranges, canvases, traces)
 }
 
 #[test]
@@ -3336,6 +3493,1065 @@ fn backlog_theseus_p21_bleedthrough_excised() {
     assert!(gap > 0 && gap <= 20, "residual gap {gap} px (target 7)");
 }
 
+/// Regression: the Tomus-III page-foot split rows T3b (philopoemen v1 p451,
+/// "oppidanorum inflaverat … Ut vero") and T3c (flamininus v1 p462, the
+/// "…del-phis enim clypeos argenteos affigens … ita" / "inscripsit :" strip) are
+/// recognized by `is_known_whole_source_strip` on the exact production cut-point
+/// strip, so `compose_body_canvases` wraps each whole onto a fresh canvas instead
+/// of bisecting it mid-glyph. Proves (1) the registered strip is Tall and now
+/// recognized (fails on the baseline, where no `WHOLE_STRIPS` row matched),
+/// (2) its scaled height fits a fresh body budget, (3) sibling strips on the same
+/// page are **not** recognized (the signature is specific), (4) a tampered column
+/// is rejected (fingerprint guard), and (5) every glyph in the merged strip
+/// survives byte-identical to the source. Band/trace/pixel domain only (no
+/// `production_body_scale()`); the frozen scale literal drives the budget check.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_tomus3_foot_splits_wrap_whole() {
+    let geom = TrimGeom::default();
+    let budget = geom.body_budget();
+    let scale = 1.2023952f32; // frozen production_body_scale()
+    for (unit, page, top, bottom) in
+        [("philopoemen", 451u32, 2344u32, 2433u32), ("flamininus", 462, 412, 502)]
+    {
+        let (pages, metrics, traces) = audit_traced_unit(unit);
+        let strips = strips_in_reading_order(&pages, &metrics);
+        let trace = retained_page(&traces, 0, page).expect("page traced");
+        let idx = trace.retained_index.expect("page retained");
+        let (col, _) = &pages[idx];
+        let band = Band { top, bottom };
+
+        // 1. The reported strip is a merged Tall strip, and the live production cut
+        //    points still produce it exactly (so the signature stays wired to reality).
+        let strip = strips
+            .iter()
+            .find(|s| s.page_img_index == idx && s.band == band)
+            .unwrap_or_else(|| panic!("{unit} p{page}: cut-point strip {band:?} not found"));
+        assert!(
+            matches!(strip.class, BandClass::Tall),
+            "{unit} p{page}: strip {band:?} is {:?}, not Tall",
+            strip.class
+        );
+
+        // 2. Recognized as a whole strip (fails on the baseline), and it fits a fresh
+        //    body canvas so it wraps instead of bisecting.
+        assert!(
+            is_known_whole_source_strip(col, &band),
+            "{unit} p{page}: strip {band:?} not recognized by WHOLE_STRIPS"
+        );
+        let scaled = ((bottom - top) as f32 * scale).round() as u32;
+        assert!(scaled <= budget, "{unit} p{page}: scaled {scaled} exceeds budget {budget}");
+
+        // 3. Specificity: no other strip on the page is recognized.
+        for other in strips.iter().filter(|s| s.page_img_index == idx && s.band != band) {
+            assert!(
+                !is_known_whole_source_strip(col, &other.band),
+                "{unit} p{page}: unexpected whole-strip match {:?}",
+                other.band
+            );
+        }
+
+        // 4. Fingerprint guard: flipping one pixel in the strip rejects the match.
+        let mut tampered = col.clone();
+        let old = tampered.get_pixel(0, top).0[0];
+        tampered.put_pixel(0, top, Luma([if old == 0 { 255 } else { 0 }]));
+        assert!(
+            !is_known_whole_source_strip(&tampered, &band),
+            "{unit} p{page}: tampered column still matched"
+        );
+
+        // 5. Faithfulness: every glyph in the merged strip is byte-identical.
+        let original = real_source_image(0, page);
+        let [cl, cr] = trace.crop;
+        assert_source_region_pixels_survive(&original, col, trace, [cl, top, cr, bottom]);
+    }
+}
+
+/// Regression: T2a. The right scan-edge streak at the foot of Coriolanus v1 p289
+/// is masked, so the last Latin band stops at the real "… exclamans : O ma-" row
+/// (~[2559,2586]) instead of being dragged down to row 2728 by the streak. Removing
+/// that ~140 px of trailing whitespace collapses the inflated gap that preceded
+/// "ter, ut mecum egisti!" (first line of p290). Proves (1) no retained p289 band
+/// reaches into the streak region (fails on the unmasked baseline, where the foot
+/// band is [2559,2728]), (2) the "O ma-" row survives as its own band, and (3) both
+/// the "O ma-" row (p289) and the continuing "ter …" row (p290) survive once
+/// byte-identically. Band/trace/pixel domain only (no `production_body_scale()`).
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_coriolanus_boundary_gap_masked() {
+    let (pages, _metrics, traces) = audit_traced_unit("marcius_coriolanus");
+
+    // p289: the foot band collapses to the real "O ma-" row.
+    let trace289 = retained_page(&traces, 0, 289).expect("p289 traced");
+    let idx289 = trace289.retained_index.expect("p289 retained");
+    let (col289, kept289) = &pages[idx289];
+    assert!(
+        kept289.iter().all(|b| b.bottom <= 2600),
+        "p289 foot band still reaches the streak region: {:?}",
+        kept289.iter().filter(|b| b.bottom > 2600).collect::<Vec<_>>()
+    );
+    assert_eq!(
+        kept289
+            .iter()
+            .filter(|b| b.top <= 2560 && b.bottom >= 2585)
+            .count(),
+        1,
+        "the 'O ma-' row is covered by exactly one band: {kept289:?}"
+    );
+
+    // Faithfulness: the "O ma-" row survives byte-identical (right of the crop stays
+    // left of the masked streak at x>=1904).
+    let original289 = real_source_image(0, 289);
+    let [cl289, cr289] = trace289.crop;
+    assert!(cr289 <= 1904, "p289 crop {cr289} must stop before the masked streak");
+    assert_source_region_pixels_survive(&original289, col289, trace289, [cl289, 2559, cr289, 2586]);
+
+    // p290: the continuing "ter, ut mecum egisti!" first line is untouched.
+    let trace290 = retained_page(&traces, 0, 290).expect("p290 traced");
+    let idx290 = trace290.retained_index.expect("p290 retained");
+    let (col290, kept290) = &pages[idx290];
+    let first = kept290.first().expect("p290 has bands");
+    assert!(first.top < 400, "p290 first band unexpectedly low: {first:?}");
+    let original290 = real_source_image(0, 290);
+    let [cl290, cr290] = trace290.crop;
+    assert_source_region_pixels_survive(
+        &original290,
+        col290,
+        trace290,
+        [cl290, first.top, cr290, first.bottom],
+    );
+}
+
+/// Regression: the Romulus VI→VII (page 36) and VII→VIII (page 37) parallel-
+/// alignment blanks are excised, each closed to one ordinary inter-line gap, and
+/// the real Latin lines bracketing every slab survive once byte-identically.
+/// Band/trace/pixel domain only (no `production_body_scale()`).
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_romulus_chapter_gaps_excised() {
+    let (pages, _metrics, traces) = audit_traced_unit("romulus");
+    let original36 = real_source_image(0, 36);
+    let original37 = real_source_image(0, 37);
+    for (page, original, deleted, before, after) in [
+        (36u32, &original36, [2414u32, 2596u32], (2375u32, 2408u32), (2602u32, 2633u32)),
+        (37u32, &original37, [2304u32, 2490u32], (2266u32, 2298u32), (2496u32, 2530u32)),
+    ] {
+        let trace = retained_page(&traces, 0, page).expect("page traced");
+        let idx = trace.retained_index.expect("page retained");
+        let (col, kept) = &pages[idx];
+
+        assert_eq!(trace.deleted_rows, vec![deleted], "page {page}: pinned slab deleted");
+        let before_bottom = trace.map_row(before.1 - 1).unwrap() + 1;
+        let after_top = trace.map_row(after.0).unwrap();
+        assert!(
+            !kept.iter().any(|b| b.top < after_top && b.bottom > before_bottom),
+            "page {page}: no band remains in the excised slab: {kept:?}"
+        );
+
+        let [cl, cr] = trace.crop;
+        for (top, bottom) in [before, after] {
+            let mapped_top = trace.map_row(top).unwrap();
+            let mapped_bottom = trace.map_row(bottom - 1).unwrap() + 1;
+            assert_eq!(
+                mapped_bottom - mapped_top,
+                bottom - top,
+                "page {page}: no deleted Latin rows in [{top},{bottom})"
+            );
+            assert_eq!(
+                kept.iter()
+                    .filter(|b| b.top <= mapped_top && b.bottom >= mapped_bottom)
+                    .count(),
+                1,
+                "page {page}: line [{top},{bottom}) covered by exactly one band"
+            );
+            assert_source_region_pixels_survive(original, col, trace, [cl, top, cr, bottom]);
+        }
+
+        let gap = after_top - before_bottom;
+        assert!(gap > 0 && gap <= 20, "page {page}: residual gap {gap} px (target ~12)");
+    }
+}
+
+/// Regression: the installed divider / scan-edge masks (Theseus p23/p30,
+/// Romulus p41, Timoleon p315) remove the streak that merged each Latin column
+/// into one giant band, so `render_and_band` recovers normal per-line banding
+/// (no band taller than two lines). On the unmasked source each column bands into
+/// a single >400-px block, so this fails without the mask.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_tomi_divider_masks_restore_banding() {
+    for (source, page) in [(0u32, 23u32), (0, 30), (0, 41), (0, 315)] {
+        let (_, bands) =
+            render_and_band(source as usize, page, &|s, p| Ok(real_source_image(s, p))).unwrap();
+        let max_h = bands.iter().map(|b| b.bottom - b.top).max().unwrap_or(0);
+        assert!(
+            max_h <= 60,
+            "source {source} page {page}: tallest band {max_h}px (bridge not cleared)"
+        );
+        assert!(
+            bands.len() >= 30,
+            "source {source} page {page}: only {} bands (expected ~45-55 lines)",
+            bands.len()
+        );
+    }
+}
+
+/// Diagnostic (not a regression): dump the production cropped-column bands,
+/// per-row ink, and inter-line gaps for the Tomus-I backlog gap/split source
+/// pages, and save each cropped column so rows can be mapped to the anchor text.
+/// Supplies the mask/excision rectangles (G1-G5) and the whole-strip band (S1).
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_tomus1_gap_split_trace() {
+    let dir = std::path::Path::new("tmp/pdfs/backlog_tomus1");
+    std::fs::create_dir_all(dir).unwrap();
+    for (unit, page_list) in [
+        ("theseus", vec![23u32, 30]),
+        ("romulus", vec![34, 36, 37, 41]),
+        ("marcius_coriolanus", vec![289, 290, 291]),
+        ("timoleon", vec![315, 316]),
+        ("philopoemen", vec![448, 451]),
+        ("flamininus", vec![462]),
+    ] {
+        let (pages, metrics, traces) = audit_traced_unit(unit);
+        println!("\n======== unit {unit} metrics={metrics:?} ========");
+        for page in page_list {
+            let Some(trace) = retained_page(&traces, 0, page) else {
+                println!("page {page}: not traced");
+                continue;
+            };
+            let Some(idx) = trace.retained_index else {
+                println!("page {page}: skipped");
+                continue;
+            };
+            let (col, kept) = &pages[idx];
+            let raw = line_bands(col, LINE_MIN_INK);
+            let rows = ink_profile_rows(col, INK_THRESHOLD);
+            let full = real_source_image(0, page);
+            println!(
+                "---- page {page}: raster={:?} crop_dims={:?} crop_edges={:?} ----",
+                full.dimensions(),
+                col.dimensions(),
+                trace.crop
+            );
+            println!("  raw bands [top,bottom) h ink/row:");
+            for b in &raw {
+                let ink: u64 = rows[b.top as usize..b.bottom as usize]
+                    .iter()
+                    .map(|&r| r as u64)
+                    .sum();
+                let per_row = ink as f64 / (b.bottom - b.top).max(1) as f64;
+                println!(
+                    "    [{},{}) h={} ink/row={:.1}",
+                    b.top,
+                    b.bottom,
+                    b.bottom - b.top,
+                    per_row
+                );
+            }
+            println!("  kept bands [top,bottom) h gap_above:");
+            let mut prev_bottom: Option<u32> = None;
+            for b in kept {
+                let gap = prev_bottom.map(|pb| b.top as i64 - pb as i64);
+                println!(
+                    "    [{},{}) h={} gap_above={:?}",
+                    b.top,
+                    b.bottom,
+                    b.bottom - b.top,
+                    gap
+                );
+                prev_bottom = Some(b.bottom);
+            }
+            let mut gaps: Vec<i64> =
+                kept.windows(2).map(|w| w[1].top as i64 - w[0].bottom as i64).collect();
+            gaps.sort_unstable();
+            if !gaps.is_empty() {
+                println!("  sorted kept gaps = {gaps:?} median = {}", gaps[gaps.len() / 2]);
+            }
+            let path = dir.join(format!("{unit}_p{page}_col.png"));
+            col.save(&path).unwrap();
+            println!("  saved {}", path.display());
+        }
+    }
+}
+
+/// Diagnostic (not a regression): dump the cut-point **strips** (the atoms compose
+/// actually packs), their class, raw+scaled height, whole-page-budget fit, and the
+/// raw-grayscale SHA-256 of each strip's full-width crop region, for the Tomus-III
+/// page-foot split pages (T3a p448, T3b p451, T3c p462). Supplies the exact
+/// `is_known_whole_source_strip` signature (dimensions, cut-interval band, crop
+/// region, fingerprint) for the merged Tall strip that `compose_body_canvases`
+/// bisects. Uses the frozen production scale literal so it stays in the ~1-min band
+/// domain (no whole-corpus `production_body_scale()` sampling). Saves a PNG of each
+/// Tall strip for human mapping to the reported split row.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_tomus3_split_strip_trace() {
+    use sha2::Digest;
+    let geom = TrimGeom::default();
+    let budget = geom.body_budget();
+    // Frozen production_body_scale() for the current PDFs (see note / memory).
+    let scale = 1.2023952f32;
+    let dir = std::path::Path::new("tmp/pdfs/backlog_tomus3");
+    std::fs::create_dir_all(dir).unwrap();
+    println!(
+        "body_budget={budget} first_budget={} scale={scale}",
+        geom.first_body_budget()
+    );
+    for (unit, page) in [("philopoemen", 451u32), ("flamininus", 462), ("philopoemen", 448)] {
+        let (pages, metrics, traces) = audit_traced_unit(unit);
+        let strips = strips_in_reading_order(&pages, &metrics);
+        let Some(idx) = retained_page(&traces, 0, page).and_then(|t| t.retained_index) else {
+            println!("{unit} p{page}: no retained index");
+            continue;
+        };
+        let (col, _) = &pages[idx];
+        let (w, h_full) = col.dimensions();
+        println!("\n==== {unit} p{page} dims=({w},{h_full}) idx={idx} metrics={metrics:?} ====");
+        for s in strips.iter().filter(|s| s.page_img_index == idx) {
+            let bh = s.band.bottom - s.band.top;
+            let scaled = (bh as f32 * scale).round() as u32;
+            let region = image::imageops::crop_imm(col, 0, s.band.top, w, bh).to_image();
+            let fp = format!("{:x}", sha2::Sha256::digest(region.as_raw()));
+            let tall = matches!(s.class, BandClass::Tall);
+            println!(
+                "  strip [{},{}) h={bh} class={:?} scaled={scaled} fits_budget={} fp={}",
+                s.band.top,
+                s.band.bottom,
+                s.class,
+                scaled <= budget,
+                fp
+            );
+            if tall {
+                region
+                    .save(dir.join(format!(
+                        "{unit}_p{page}_strip_{}_{}.png",
+                        s.band.top, s.band.bottom
+                    )))
+                    .unwrap();
+            }
+        }
+    }
+}
+
+/// Locate the five reviewed passages in the raw right-column scans and current readers.
+#[test]
+#[ignore = "requires source PDFs and current inner PDFs"]
+fn skew_and_tomus6_source_pages_trace() {
+    use sha2::Digest;
+    let dir = std::path::Path::new("tmp/pdfs/skew");
+    std::fs::create_dir_all(dir).unwrap();
+    for (source, page, tomus, reader_page, label) in [
+        (0, 34, 1, 58, "romulus_chapter"),
+        (0, 448, 3, 121, "philopoemen_victory"),
+        (1, 231, 6, 86, "quidem"),
+        (1, 266, 6, 158, "caesar_right_edge"),
+        (1, 398, 6, 394, "consi"),
+    ] {
+        let raw = real_source_image(source, page);
+        let digest = format!("{:x}", sha2::Sha256::digest(raw.as_raw()));
+        let prefix = format!("{label}_v{}_p{page}", source + 1);
+        raw.save(dir.join(format!("{prefix}_raw.png"))).unwrap();
+        image::imageops::crop_imm(&raw, raw.width() / 2, 0, raw.width() - raw.width() / 2, raw.height())
+            .to_image()
+            .save(dir.join(format!("{prefix}_right.png")))
+            .unwrap();
+        let reader_pdf = format!("build_facsimile/tomus_{tomus}_inner.pdf");
+        assert!(std::path::Path::new(&reader_pdf).is_file());
+        let reader_cache = dir.join("reader_cache");
+        let reader_png = crate::render::render_page(
+            std::path::Path::new(&reader_pdf), reader_page, BODY_DPI, &reader_cache
+        ).unwrap();
+        std::fs::copy(reader_png, dir.join(format!("{prefix}_reader_p{reader_page}.png"))).unwrap();
+        println!("{label}: source={source} page={page} raw_dims={:?} raw_sha256={digest} reader=tomus_{tomus}_inner.pdf p{reader_page}", raw.dimensions());
+    }
+}
+
+/// Measure three slanted scans and trace the two Tomus VI page-break passages.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn skew_and_tomus6_repair_trace() {
+    use sha2::Digest;
+    let dir = std::path::Path::new("tmp/pdfs/skew");
+    std::fs::create_dir_all(dir).unwrap();
+    for (source, page, left, right, left_gap, right_gap, fingerprint_region, x0) in [
+        (0, 34, [1030, 1130], [1683, 1783], [544, 571], [535, 559], [1100, 600, 1700, 750], 1400),
+        (0, 448, [1033, 1133], [1689, 1789], [868, 886], [841, 873], [1100, 600, 1700, 750], 1400),
+        (1, 266, [976, 1076], [1590, 1690], [630, 658], [654, 680], [1050, 600, 1650, 750], 1350),
+    ] {
+        let raw = real_source_image(source, page);
+        let [fl, ft, fr, fb] = fingerprint_region;
+        let fp = image::imageops::crop_imm(&raw, fl, ft, fr - fl, fb - ft).to_image();
+        let digest = format!("{:x}", sha2::Sha256::digest(fp.as_raw()));
+        let mut transformed = raw.clone();
+        mask_known_source_furniture(source, page, &mut transformed);
+        let transformed = excise_known_source_rows(source, page, transformed);
+        let crop = production_source_column(source, page, &transformed).unwrap();
+        let column = crop_column(&transformed, &crop);
+        let raw_bands = line_bands(&column, LINE_MIN_INK);
+        let profile = ink_profile_rows(&column, INK_THRESHOLD);
+        let blank_rows = profile.iter().filter(|&&n| n <= LINE_MIN_INK).count();
+        let body_blank_rows = profile[300..2650].iter().filter(|&&n| n <= LINE_MIN_INK).count();
+        let left_center = (left_gap[0] + left_gap[1]) as f64 / 2.0;
+        let right_center = (right_gap[0] + right_gap[1]) as f64 / 2.0;
+        let left_x = (left[0] + left[1]) as f64 / 2.0;
+        let right_x = (right[0] + right[1]) as f64 / 2.0;
+        let slope = (right_center - left_center) / (right_x - left_x);
+        let shifts: Vec<i64> = (0..raw.width()).map(|x| (-((x as f64 - x0 as f64) * slope)).round() as i64).collect();
+        let min_shift = *shifts.iter().min().unwrap().min(&0);
+        let max_shift = *shifts.iter().max().unwrap().max(&0);
+        let prefix = format!("v{}_p{page}", source + 1);
+        column.save(dir.join(format!("{prefix}_production_crop.png"))).unwrap();
+        image::imageops::crop_imm(&raw, left[0], 0, left[1] - left[0], raw.height()).to_image().save(dir.join(format!("{prefix}_left_gap.png"))).unwrap();
+        image::imageops::crop_imm(&raw, right[0], 0, right[1] - right[0], raw.height()).to_image().save(dir.join(format!("{prefix}_right_gap.png"))).unwrap();
+        println!("SKEW source={source} p{page} raw_dims={:?} crop=[{},{}] crop_dims={:?} raw_bands={raw_bands:?} blank_rows={blank_rows} body_blank_rows={body_blank_rows} left_gap={left_gap:?} right_gap={right_gap:?} left_x={left_x} right_x={right_x} slope={slope:.9} x0={x0} shifts=[{min_shift},{max_shift}] top_pad={} fingerprint_region={fingerprint_region:?} fingerprint={digest}", raw.dimensions(), crop.left, crop.right, column.dimensions(), -min_shift);
+    }
+    for (unit, page, target_row) in [("alexander", 231, 2250), ("cleomenes", 398, 1370)] {
+        let source_image = real_source_image(1, page);
+        for [left, right] in [[950, 1050], [1550, 1650]] {
+            let edge = image::imageops::crop_imm(
+                &source_image, left, 0, right - left, source_image.height()
+            ).to_image();
+            let edge_bands: Vec<_> = line_bands(&edge, LINE_MIN_INK)
+                .into_iter()
+                .filter(|b| b.top < target_row + 100 && b.bottom > target_row - 100)
+                .collect();
+            println!("SOURCE_EDGE v2 p{page} x=[{left},{right}) bands={edge_bands:?}");
+        }
+        let (pages, metrics, traces) = audit_traced_unit(unit);
+        let trace = retained_page(&traces, 1, page).unwrap();
+        let index = trace.retained_index.unwrap();
+        let (column, kept) = &pages[index];
+        let raw = line_bands(column, LINE_MIN_INK);
+        let cuts = cut_points(kept);
+        let strips = strips_in_reading_order(&pages, &metrics);
+        let relevant: Vec<_> = strips.iter().filter(|s| s.page_img_index == index && s.band.top < target_row + 170 && s.band.bottom > target_row - 170).map(|s| {
+            let region = image::imageops::crop_imm(column, 0, s.band.top, column.width(), s.band.bottom - s.band.top).to_image();
+            let digest = format!("{:x}", sha2::Sha256::digest(region.as_raw()));
+            (s.band, s.class, ((s.band.bottom - s.band.top) as f32 * 1.2023952).round() as u32, digest)
+        }).collect();
+        let around: Vec<_> = raw.iter().filter(|b| b.top < target_row + 170 && b.bottom > target_row - 170).copied().collect();
+        println!("BREAK {unit} v2 p{page} crop={:?} dims={:?} metrics={metrics:?} raw_bands={around:?} kept={kept:?} cuts={cuts:?} strips={relevant:?} body_budget={}", trace.crop, column.dimensions(), TrimGeom::default().body_budget());
+        column.save(dir.join(format!("v2_p{page}_retained_crop.png"))).unwrap();
+    }
+
+    // Composer-level placement: where each defect's target band lands on the packed
+    // reader canvases at the frozen production scale. This localizes the loss/split
+    // stage that band-domain assertions cannot see — a band that survives
+    // render_and_band (Pass A) can still be dropped by the unit's boundary trims
+    // (Pass B), filtered as low-ink at strip selection, or split/stranded by the
+    // packer.
+    let geom = TrimGeom::default();
+    for (unit, source, page, target, label) in [
+        ("philopoemen", 0usize, 448u32, [330u32, 366u32], "victory_line"),
+        ("romulus", 0, 34, [1906, 1943], "iii_ceterum_heading"),
+        ("alexander", 1, 231, [2224, 2317], "quidem_line"),
+        ("cleomenes", 1, 398, [1022, 1837], "consi_block"),
+    ] {
+        // Pass A (single page, render_and_band) vs Pass B (full-unit boundary trims).
+        let (_, pass_a) =
+            render_and_band(source, page, &|s, p| Ok(real_source_image(s, p))).unwrap();
+        let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale(unit);
+        let start_page = operational_range(unit).unit.start_page;
+        let trace = retained_page(&traces, source, page).unwrap();
+        let index = trace.retained_index.unwrap();
+        let pass_b: Vec<[u32; 2]> = trace.bands.clone();
+        let near = |t: u32, b: u32| t < target[1] + 220 && b > target[0].saturating_sub(220);
+        let a_near: Vec<[u32; 2]> = pass_a
+            .iter()
+            .filter(|band| near(band.top, band.bottom))
+            .map(|b| [b.top, b.bottom])
+            .collect();
+        let b_near: Vec<[u32; 2]> = pass_b.iter().filter(|b| near(b[0], b[1])).copied().collect();
+        let a_has = pass_a.iter().any(|b| [b.top, b.bottom] == target);
+        let b_has = pass_b.contains(&target);
+        // One-based canvases whose scaled-stream range overlaps a strip's range.
+        let locate = |st: u32, sb: u32| -> Vec<usize> {
+            canvas_ranges
+                .iter()
+                .filter(|(_, t, b)| *t < sb && *b > st)
+                .map(|(i, _, _)| *i)
+                .collect::<Vec<_>>()
+        };
+        let page_strips: Vec<_> = strips
+            .iter()
+            .filter(|(s, _, _)| s.page_img_index == index)
+            .collect();
+        let near_strips: Vec<_> = page_strips
+            .iter()
+            .filter(|(s, _, _)| near(s.band.top, s.band.bottom))
+            .map(|(s, st, sb)| (s.band.top, s.band.bottom, s.class, *st, *sb, locate(*st, *sb)))
+            .collect();
+        let target_strip = page_strips
+            .iter()
+            .find(|(s, _, _)| s.band.top <= target[0] && s.band.bottom >= target[1]);
+        let placement =
+            target_strip.map(|(s, st, sb)| (s.band.top, s.band.bottom, *st, *sb, locate(*st, *sb)));
+        // Bottom whitespace (scaled px) on the canvas that precedes the first canvas
+        // the target lands on, i.e. how much blank the packer left when it closed it.
+        let preceding_gap = placement.as_ref().and_then(|(_, _, _, _, canv)| {
+            canv.first().and_then(|&first| {
+                (first >= 2).then(|| {
+                    let prev = &canvases[first - 2];
+                    geom.body_budget()
+                        .saturating_sub(prev.height().saturating_sub(2 * geom.pad_y))
+                })
+            })
+        });
+        println!(
+            "PLACE {label} {unit} v{} p{page} start_page={start_page} index={index} \
+             pass_a_has_target={a_has} pass_b_has_target={b_has} pass_a_near={a_near:?} \
+             pass_b_near={b_near:?} strips_near={near_strips:?} target_placement={placement:?} \
+             preceding_bottom_gap_px={preceding_gap:?} canvas_count={} body_budget={}",
+            source + 1,
+            canvases.len(),
+            geom.body_budget(),
+        );
+        if let Some((_, _, _, _, canv)) = &placement {
+            for &c in canv {
+                canvases[c - 1]
+                    .save(dir.join(format!("v{}_p{page}_{label}_canvas{c}.png", source + 1)))
+                    .unwrap();
+            }
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn assert_reviewed_sheared_page(
+    source: usize,
+    page: u32,
+    x0_px: u32,
+    baseline_slope: f64,
+    region: [u32; 4],
+    expected_crop: [u32; 2],
+    required_bands: &[[u32; 2]],
+    gutter: [u32; 4],
+) {
+    let original = real_source_image(source, page);
+    let (retained, kept) =
+        render_and_band(source, page, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    let mut sheared = apply_known_source_shear(source, page, original.clone());
+    let sheared_dims = sheared.dimensions();
+    let [left, top, right, bottom] = gutter;
+    let mut removed_ink = 0usize;
+    for y in top..bottom {
+        for x in left..right {
+            removed_ink += usize::from(sheared.get_pixel(x, y).0[0] < 200);
+        }
+    }
+    assert!(removed_ink > 0, "reviewed gutter contains removable ink");
+    mask_known_source_furniture(source, page, &mut sheared);
+    let deleted_rows: Vec<[u32; 2]> = SOURCE_ROW_EXCISIONS
+        .iter()
+        .filter(|entry| entry.source == source && entry.page == page)
+        .filter_map(|entry| excision_rows(entry, sheared.height()).map(|(top, bottom)| [top, bottom]))
+        .collect();
+    let transformed = excise_known_source_rows(source, page, sheared);
+    let crop = production_source_column(source, page, &transformed).unwrap();
+    let (_, top_pad) = source_shear_shifts(original.width(), x0_px, baseline_slope);
+    let ledger = tomi_gap_split_repair_ledger();
+    let record = ledger["repairs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|record| {
+            record["disposition"] == "shear"
+                && record["source"].as_u64() == Some(source as u64)
+                && record["source_page"].as_u64() == Some(u64::from(page))
+        })
+        .expect("reviewed shear record");
+    assert_eq!(record["crop_edges"], serde_json::json!(expected_crop));
+    assert_eq!(record["expected_bands"], serde_json::json!(required_bands));
+    assert_eq!([crop.left, crop.right], expected_crop);
+    assert_ne!(sheared_dims, original.dimensions(), "reviewed shear must apply");
+    assert_eq!(retained.width(), crop.right - crop.left);
+    let trace = RetainedSourcePageTrace {
+        source, page, retained_index: Some(0), crop: expected_crop,
+        bands: vec![], deleted_rows: deleted_rows.clone(),
+    };
+    for y in top..bottom {
+        let Some(mapped_y) = trace.map_row(y) else { continue };
+        for x in left..right {
+            assert_eq!(retained.get_pixel(x - crop.left, mapped_y).0[0], 255);
+        }
+    }
+    assert!(kept.iter().all(|b| b.bottom - b.top < 100), "body lines must band separately: {kept:?}");
+    for [top, bottom] in required_bands {
+        assert!(kept.iter().any(|b| b.top == *top && b.bottom == *bottom), "reviewed band [{top},{bottom}) must survive: {kept:?}");
+    }
+    assert_sheared_source_region_pixels_survive(
+        &original,
+        &retained,
+        x0_px,
+        baseline_slope,
+        top_pad,
+        crop.left,
+        &deleted_rows,
+        region,
+    );
+    let [_, top, _, bottom] = region;
+    let sheared_top = (i64::from(top)
+        + source_shear_shift(region[0], x0_px, baseline_slope)
+        + i64::from(top_pad)) as u32;
+    let sheared_bottom = (i64::from(bottom)
+        + source_shear_shift(region[2] - 1, x0_px, baseline_slope)
+        + i64::from(top_pad)) as u32;
+    let trace = RetainedSourcePageTrace { source, page, retained_index: Some(0), crop: expected_crop, bands: vec![], deleted_rows };
+    let mapped_top = trace.map_row(sheared_top).unwrap();
+    let mapped_bottom = trace.map_row(sheared_bottom).unwrap();
+    assert!(
+        kept.iter().any(|band| band.top < mapped_bottom && band.bottom > mapped_top),
+        "reviewed source line must remain in a retained band"
+    );
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn romulus_chapter_break_deskewed() {
+    assert_reviewed_sheared_page(0, 34, 1400, -0.016079632465543646, [1080, 2130, 1750, 2180], [945, 1773], &[[1840, 1878], [1906, 1943]], [945, 1900, 975, 2651]);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn romulus_chapter_break_gap_normal() {
+    let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale("romulus");
+    let trace = retained_page(&traces, 0, 34).expect("Romulus p34 retained");
+    let index = trace.retained_index.expect("p34 retained column");
+    let preceding = [1840, 1878];
+    let heading = [trace.map_row(2149).unwrap(), trace.map_row(2185).unwrap() + 1];
+    let find = |rows: [u32; 2]| {
+        let hits: Vec<_> = strips.iter().enumerate().filter(|(_, (s, _, _))|
+            s.page_img_index == index && s.band.top <= rows[0] && s.band.bottom >= rows[1]
+        ).collect();
+        assert_eq!(hits.len(), 1, "reviewed line must occur once in a p34 strip");
+        hits[0]
+    };
+    let (before_pos, (_, before_start, before_end)) = find(preceding);
+    let (heading_pos, (_, heading_start, heading_end)) = find(heading);
+    assert!(before_pos < heading_pos, "chapter heading follows the preceding Latin line");
+    let landing = |start: u32, end: u32| -> usize {
+        let hits: Vec<_> = canvas_ranges.iter().filter(|(_, a, b)| *a < end && *b > start).collect();
+        assert_eq!(hits.len(), 1, "reviewed line must stay on one canvas");
+        hits[0].0
+    };
+    let before_canvas = landing(*before_start, *before_end);
+    let heading_canvas = landing(*heading_start, *heading_end);
+    assert!(before_canvas <= heading_canvas);
+    if before_canvas == heading_canvas {
+        let gap = heading[0] - preceding[1];
+        assert!(gap <= 28, "chapter break is {gap} source rows, over twice the ordinary 14-row gap");
+        let (_, canvas_top, _) = canvas_ranges[before_canvas - 1];
+        let canvas = &canvases[before_canvas - 1];
+        let profile = ink_profile_rows(canvas, INK_THRESHOLD);
+        let pad = TrimGeom::default().pad_y;
+        let last_before = (pad + before_start - canvas_top..pad + before_end - canvas_top)
+            .rev()
+            .find(|&row| profile[row as usize] > 3)
+            .expect("preceding line has composed ink");
+        let first_heading = (pad + heading_start - canvas_top..pad + heading_end - canvas_top)
+            .find(|&row| profile[row as usize] > 3)
+            .expect("chapter heading has composed ink");
+        let composed_gap = first_heading - last_before - 1;
+        assert!(composed_gap <= 34, "composed chapter gap {composed_gap}px exceeds twice the ordinary scaled gap");
+    } else {
+        assert_eq!(heading_canvas, before_canvas + 1);
+        assert_eq!(*heading_start, canvas_ranges[heading_canvas - 1].1, "heading starts the new canvas");
+    }
+    for (rows, canvas_index) in [(preceding, before_canvas), (heading, heading_canvas)] {
+        let canvas = &canvases[canvas_index - 1];
+        let ink = canvas.as_raw().iter().filter(|&&pixel| pixel <= INK_THRESHOLD).count();
+        assert!(ink > 100, "reviewed Latin line {rows:?} lands on an ink-bearing canvas");
+    }
+    let original = real_source_image(0, 34);
+    let (retained, _) = render_and_band(0, 34, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    for region in [[1080, 1810, 1750, 1860], [1080, 2130, 1750, 2180]] {
+        assert_sheared_source_region_pixels_survive(
+            &original, &retained, 1400, -0.016079632465543646, 23, 945,
+            &trace.deleted_rows, region,
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn philopoemen_victory_line_deskewed() {
+    assert_reviewed_sheared_page(0, 448, 1400, 0.03048780487804878, [1000, 315, 1755, 365], [909, 1988], &[[330, 366], [380, 415]], [909, 315, 929, 1050]);
+    // Pin the retained post-shear band [330,366] to the victory line's own pixels so
+    // no unrelated retained band can satisfy the exact-band assertion above.
+    let original = real_source_image(0, 448);
+    let (retained, _) = render_and_band(0, 448, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    let victory_ink = (292..353)
+        .flat_map(|y| (1000..1755).map(move |x| (x, y)))
+        .filter(|&(x, y)| original.get_pixel(x, y).0[0] < 200)
+        .count();
+    assert!(victory_ink > 0, "victory line source box contains glyph ink");
+    assert_sheared_source_region_pixels_survive(
+        &original,
+        &retained,
+        1400,
+        0.03048780487804878,
+        18,
+        909,
+        &[],
+        [1000, 292, 1755, 353],
+    );
+}
+
+/// The Philopoemen victory line `subito illis nihil tale exspectantibus, sed
+/// propter victoriam` is the first body line of interior source page 448 (its
+/// post-shear band `[330,366]`). The full-unit composer must keep it as exactly one
+/// strip, place it once on a single reader canvas carrying its glyph ink, and read
+/// it in source order between the preceding page's last line and the following
+/// `secure agentibus` line `[380,415]`. Without the `SOURCE_BODY_BANDS` rescue the
+/// full-unit boundary trim (`drop_interior_running_head`) drops this first band, so
+/// it never becomes a strip and vanishes from every canvas.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn philopoemen_victory_line_present() {
+    let victory = [330u32, 366u32];
+    let following = [380u32, 415u32];
+    let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale("philopoemen");
+    let trace = retained_page(&traces, 0, 448).expect("p448 retained");
+    let index = trace
+        .retained_index
+        .expect("p448 contributes a retained column");
+
+    let covers = |s: &Strip, rows: [u32; 2]| {
+        s.page_img_index == index && s.band.top <= rows[0] && s.band.bottom >= rows[1]
+    };
+    assert_eq!(
+        strips.iter().filter(|(s, _, _)| covers(s, victory)).count(),
+        1,
+        "victory line survives Pass B as a single strip on p448: {:?}",
+        strips
+            .iter()
+            .filter(|(s, _, _)| s.page_img_index == index)
+            .map(|(s, _, _)| s.band)
+            .collect::<Vec<_>>()
+    );
+    let order = strips
+        .iter()
+        .position(|(s, _, _)| covers(s, victory))
+        .unwrap();
+    let (_, start, end) = &strips[order];
+
+    // The victory line's scaled rows land on exactly one canvas — no part straddles a
+    // page break — and that canvas actually carries its glyph ink.
+    let landing: Vec<_> = canvas_ranges
+        .iter()
+        .filter(|(_, a, b)| *a < *end && *b > *start)
+        .collect();
+    assert_eq!(landing.len(), 1, "victory line stays whole on one canvas");
+    let geom = TrimGeom::default();
+    let (ci, ctop, _) = *landing[0];
+    let canvas = &canvases[ci - 1];
+    let ink = ((geom.pad_y + (*start - ctop))..(geom.pad_y + (*end - ctop)))
+        .flat_map(|y| (0..canvas.width()).map(move |x| (x, y)))
+        .filter(|&(x, y)| canvas.get_pixel(x, y)[0] <= INK_THRESHOLD)
+        .count();
+    assert!(ink > 100, "the victory line's canvas rows carry glyph ink");
+
+    // Source order: the first body line of interior p448 follows an earlier page's
+    // lines, and the next strip is the following `secure agentibus` line on p448.
+    let (before, _, _) = &strips[order - 1];
+    assert!(
+        before.page_img_index < index,
+        "the victory line follows an earlier page's lines"
+    );
+    let (after, _, _) = &strips[order + 1];
+    assert_eq!(after.page_img_index, index, "the next strip is also on p448");
+    assert!(
+        after.band.top <= following[0] && after.band.bottom >= following[1],
+        "the strip after the victory line covers `secure agentibus` [380,415]: {:?}",
+        after.band
+    );
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn tomus6_p266_right_glyphs_restored() {
+    assert_reviewed_sheared_page(1, 266, 1350, 0.03745928338762215, [1030, 250, 1730, 505], [880, 1730], &[[270, 302], [322, 406], [425, 458], [477, 512]], [880, 270, 900, 700]);
+    let original = real_source_image(1, 266);
+    let (retained, _) = render_and_band(1, 266, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    let scaled_width = (retained.width() as f32 * source_strip_scale(&retained, 1.2023952)).round() as u32;
+    assert!(scaled_width <= TrimGeom::default().content_width());
+    let mut changed = retained.clone();
+    changed.put_pixel(100, 600, Luma([255 - changed.get_pixel(100, 600).0[0]]));
+    assert_eq!(source_strip_scale(&changed, 1.2023952), 1.2023952);
+    for (top, bottom) in [(260, 293), (309, 345), (360, 400), (413, 447), (464, 500)] {
+        let missing_edge_ink = (1708..1730)
+            .flat_map(|x| (top..bottom).map(move |y| (x, y)))
+            .filter(|&(x, y)| original.get_pixel(x, y).0[0] < 200)
+            .count();
+        assert!(missing_edge_ink > 0, "right-edge source ink must be present on each reviewed line");
+        assert_sheared_source_region_pixels_survive(
+            &original, &retained, 1350, 0.03745928338762215, 20, 880, &[],
+            [1708, top, 1730, bottom],
+        );
+    }
+}
+
+/// Composer-level counterpart to `tomus6_quidem_line_complete`: the band-domain
+/// check proves `quidem passus Callisthenem` bands as one complete strip
+/// `[2224,2317]` on v2 p231, but it cannot see that the packer fill-splits that
+/// `Tall` strip across reader pp86/87 (canvases 78/79). This test composes the
+/// Alexander unit at the frozen scale and requires the whole strip on exactly one
+/// canvas, in source order, with the preceding canvas's bottom whitespace bounded by
+/// two median complete-strip heights. It fails on the pre-repair tree (the strip
+/// straddles two canvases) and passes once `[2224,2317]` is wrapped whole.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn tomus6_quidem_not_split() {
+    let quidem = Band {
+        top: 2224,
+        bottom: 2317,
+    };
+    let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale("alexander");
+    let trace = retained_page(&traces, 1, 231).expect("p231 retained");
+    let index = trace
+        .retained_index
+        .expect("p231 contributes a retained column");
+
+    // The quidem line bands as a single complete strip [2224,2317] on p231.
+    let covers = |s: &Strip| {
+        s.page_img_index == index && s.band.top <= quidem.top && s.band.bottom >= quidem.bottom
+    };
+    assert_eq!(
+        strips.iter().filter(|(s, _, _)| covers(s)).count(),
+        1,
+        "quidem line is one strip on p231: {:?}",
+        strips
+            .iter()
+            .filter(|(s, _, _)| s.page_img_index == index)
+            .map(|(s, _, _)| s.band)
+            .collect::<Vec<_>>()
+    );
+    let order = strips.iter().position(|(s, _, _)| covers(s)).unwrap();
+    let (_, start, end) = &strips[order];
+
+    // The whole strip lands on exactly one canvas — no part straddles the page break.
+    let landing: Vec<_> = canvas_ranges
+        .iter()
+        .filter(|(_, a, b)| *a < *end && *b > *start)
+        .collect();
+    assert_eq!(
+        landing.len(),
+        1,
+        "quidem line stays whole on one canvas: {landing:?}"
+    );
+    let (ci, ctop, _) = *landing[0];
+
+    // That canvas actually carries the quidem glyph ink.
+    let geom = TrimGeom::default();
+    let canvas = &canvases[ci - 1];
+    let ink = ((geom.pad_y + (*start - ctop))..(geom.pad_y + (*end - ctop)))
+        .flat_map(|y| (0..canvas.width()).map(move |x| (x, y)))
+        .filter(|&(x, y)| canvas.get_pixel(x, y)[0] <= INK_THRESHOLD)
+        .count();
+    assert!(ink > 100, "the quidem line's canvas rows carry glyph ink");
+
+    // Source order: the strips before and after the quidem line keep reading order.
+    let (before, _, _) = &strips[order - 1];
+    assert!(
+        before.page_img_index <= index,
+        "the strip before quidem is not later in the unit"
+    );
+    let (after, _, _) = &strips[order + 1];
+    assert!(
+        after.page_img_index >= index,
+        "the strip after quidem is not earlier in the unit"
+    );
+
+    // Wrapping the strip whole closes the preceding canvas early. Require that the
+    // page-bottom whitespace it leaves stays within two median complete-line heights
+    // of this unit, so the wrap does not trade a split for a large gap.
+    let mut completes: Vec<u32> = strips
+        .iter()
+        .filter(|(s, _, _)| matches!(s.class, BandClass::Normal))
+        .map(|(_, a, b)| b - a)
+        .collect();
+    completes.sort_unstable();
+    let median = completes[completes.len() / 2];
+    let preceding = &canvases[ci - 2];
+    let bottom_gap = geom
+        .body_budget()
+        .saturating_sub(preceding.height() - geom.pad_y);
+    assert!(
+        bottom_gap <= 2 * median,
+        "preceding canvas bottom whitespace {bottom_gap}px exceeds two median strip heights {}px",
+        2 * median
+    );
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn tomus6_quidem_line_complete() {
+    let (column, kept) =
+        render_and_band(1, 231, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    assert_eq!(column.dimensions(), (810, 2844));
+    let band = Band { top: 2224, bottom: 2317 };
+    assert!(cut_points(&kept).windows(2).any(|pair| pair == [band.top, band.bottom]));
+    let original = real_source_image(1, 231);
+    let trace = RetainedSourcePageTrace {
+        source: 1,
+        page: 231,
+        retained_index: Some(0),
+        crop: [1019, 1829],
+        bands: kept.iter().map(|b| [b.top, b.bottom]).collect(),
+        deleted_rows: vec![],
+    };
+    assert_source_region_pixels_survive(&original, &column, &trace, [1040, 2220, 1700, 2290]);
+    assert!(((band.bottom - band.top) as f32 * 1.2023952).round() as u32 <= TrimGeom::default().body_budget());
+}
+
+/// Compose Cleomenes at the frozen scale and require the three reviewed p398
+/// lines to occupy distinct strips in source order, each whole on one canvas.
+/// The canvas carrying `agerentur pensitantis` must have an ordinary bottom gap.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn tomus6_consi_page_reads_continuously() {
+    // Post-deskew body bands (sheared crop coordinates) of the three reviewed lines.
+    let agerentur = [1013u32, 1042u32];
+    let consi = [1362u32, 1392u32];
+    let lioque = [1405u32, 1436u32];
+
+    let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale("cleomenes");
+    let trace = retained_page(&traces, 1, 398).expect("p398 retained");
+    let index = trace
+        .retained_index
+        .expect("p398 contributes a retained column");
+
+    let covers = |s: &Strip, rows: [u32; 2]| {
+        s.page_img_index == index && s.band.top <= rows[0] && s.band.bottom >= rows[1]
+    };
+    let one_strip = |rows: [u32; 2], label: &str| -> usize {
+        let hits: Vec<usize> = strips
+            .iter()
+            .enumerate()
+            .filter(|(_, (s, _, _))| covers(s, rows))
+            .map(|(i, _)| i)
+            .collect();
+        assert_eq!(
+            hits.len(),
+            1,
+            "{label} is one strip on p398: {:?}",
+            strips
+                .iter()
+                .filter(|(s, _, _)| s.page_img_index == index)
+                .map(|(s, _, _)| s.band)
+                .collect::<Vec<_>>()
+        );
+        hits[0]
+    };
+    let a_pos = one_strip(agerentur, "agerentur pensitantis");
+    let c_pos = one_strip(consi, "consi line");
+    let l_pos = one_strip(lioque, "lioque continuation");
+
+    // The continuation immediately follows the consi line in source order.
+    assert!(
+        a_pos < c_pos && c_pos < l_pos,
+        "lines read in source order: agerentur@{a_pos}, consi@{c_pos}, lioque@{l_pos}"
+    );
+    assert_eq!(l_pos, c_pos + 1, "lioque immediately follows the consi line");
+
+    // Each line stays whole on exactly one canvas — no word divided across a page
+    // break — and that canvas carries the line's glyph ink.
+    let geom = TrimGeom::default();
+    let land = |pos: usize, label: &str| -> usize {
+        let (_, start, end) = &strips[pos];
+        let landing: Vec<_> = canvas_ranges
+            .iter()
+            .filter(|(_, a, b)| *a < *end && *b > *start)
+            .collect();
+        assert_eq!(
+            landing.len(),
+            1,
+            "{label} stays whole on one canvas: {landing:?}"
+        );
+        let (ci, ctop, _) = *landing[0];
+        let canvas = &canvases[ci - 1];
+        let ink = ((geom.pad_y + (*start - ctop))..(geom.pad_y + (*end - ctop)))
+            .flat_map(|y| (0..canvas.width()).map(move |x| (x, y)))
+            .filter(|&(x, y)| canvas.get_pixel(x, y)[0] <= INK_THRESHOLD)
+            .count();
+        assert!(ink > 100, "{label}'s canvas rows carry glyph ink");
+        ci
+    };
+    let a_canvas = land(a_pos, "agerentur pensitantis");
+    let c_canvas = land(c_pos, "consi line");
+    let l_canvas = land(l_pos, "lioque continuation");
+    assert!(
+        a_canvas <= c_canvas && c_canvas <= l_canvas,
+        "canvases read in source order: {a_canvas} <= {c_canvas} <= {l_canvas}"
+    );
+
+    // The canvas carrying `agerentur pensitantis` is filled to within two
+    // median complete-line heights.
+    let mut completes: Vec<u32> = strips
+        .iter()
+        .filter(|(s, _, _)| matches!(s.class, BandClass::Normal))
+        .map(|(_, a, b)| b - a)
+        .collect();
+    completes.sort_unstable();
+    let median = completes[completes.len() / 2];
+    let canvas = &canvases[a_canvas - 1];
+    let bottom_gap = geom
+        .body_budget()
+        .saturating_sub(canvas.height() - geom.pad_y);
+    assert!(
+        bottom_gap <= 2 * median,
+        "page-bottom gap after agerentur {bottom_gap}px exceeds two median strip heights {}px",
+        2 * median
+    );
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn tomus6_consi_continuation_gap_closed() {
+    assert!(
+        !WHOLE_STRIPS.iter().any(|(dims, band, _, _)| {
+            *dims == (818, 2835)
+                && *band
+                    == Band {
+                        top: 1022,
+                        bottom: 1837,
+                    }
+        }),
+        "p398 must not retain the merged whole-strip signature"
+    );
+    let (column, kept) =
+        render_and_band(1, 398, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    assert_eq!(column.dimensions(), (818, 2894));
+    for [top, bottom] in [[1013, 1042], [1362, 1392], [1405, 1436]] {
+        assert!(
+            kept.contains(&Band { top, bottom }),
+            "reviewed p398 line [{top},{bottom}) has its own band"
+        );
+    }
+    assert!(
+        kept.iter().all(|band| band.bottom - band.top < 100),
+        "p398 Latin lines must band individually"
+    );
+    let original = real_source_image(1, 398);
+    for region in [
+        [910, 987, 1198, 1017],
+        [1390, 1354, 1676, 1380],
+        [900, 1376, 1102, 1411],
+    ] {
+        assert_sheared_source_region_pixels_survive(
+            &original,
+            &column,
+            1350,
+            0.03175895765472313,
+            16,
+            880,
+            &[],
+            region,
+        );
+    }
+}
+
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn theseus_p17_analysis_keeps_original_latin_pixels() {
@@ -3589,6 +4805,62 @@ fn backlog_short_ending_merge_is_identity_scoped() {
         assert!(!merge_reviewed_short_ending(id, &mut canvases, &geometry));
         assert_eq!(canvases, original, "rejected case {id}");
     }
+}
+
+/// Regression (M1): the Solon/Poplicola comparison's lone final line
+/// ("jungeret, et omnem belli apparatum tolleret.") merges onto its predecessor
+/// page. `merge_reviewed_short_ending` returns true, drops one canvas, and both
+/// stacked regions are byte-identical to the originals, within the text block.
+///
+/// `production_body_scale()` samples the whole corpus (>15 min); it is frozen at
+/// 1.2023952 for the current source PDFs (see the baseline manifest), so this
+/// composes at that scale directly — the value `run_facsimile` uses in a full
+/// build, so the REVIEWED_SHORT_ENDINGS fingerprint matches production.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn backlog_solon_poplicola_short_ending_merges() {
+    let geom = TrimGeom::default();
+    let scale = 1.2023952_f32;
+    let (pages, metrics, _) = audit_traced_unit("comparatio_solonis_et_poplicolae");
+    let mut canvases = compose_pages(
+        &pages,
+        scale,
+        &geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
+        &metrics,
+    );
+    assert!(canvases.len() >= 3, "unit has >= 3 canvases");
+    let original = canvases.clone();
+    let last = original.last().unwrap().clone();
+    let prev = original[original.len() - 2].clone();
+    assert_eq!(last.dimensions(), (1004, 49), "lone final line canvas");
+
+    assert!(merge_reviewed_short_ending(
+        "comparatio_solonis_et_poplicolae",
+        &mut canvases,
+        &geom
+    ));
+    assert_eq!(canvases.len() + 1, original.len(), "one canvas fewer");
+    assert_eq!(
+        &canvases[..canvases.len() - 1],
+        &original[..original.len() - 2],
+        "preceding canvases unchanged"
+    );
+    let merged = canvases.last().unwrap();
+    assert_eq!(merged.height(), prev.height() + last.height());
+    assert!(merged.height() <= geom.content_height(), "fits text block");
+    assert_eq!(
+        image::imageops::crop_imm(merged, 0, 0, merged.width(), prev.height()).to_image(),
+        prev,
+        "predecessor region byte-identical"
+    );
+    assert_eq!(
+        image::imageops::crop_imm(merged, 0, prev.height(), merged.width(), last.height())
+            .to_image(),
+        last,
+        "final line region byte-identical"
+    );
 }
 
 fn assert_backlog_short_ending_merges(id: &str) {

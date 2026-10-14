@@ -33,6 +33,34 @@ struct SourceFurnitureMask {
     bottom: f64,
 }
 
+const SOURCE_SHEARED_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
+    // Sheared-page gutter fragments outside the reviewed Latin text.
+    SourceFurnitureMask {
+        source: 0,
+        page: 34,
+        left: 945.0 / 1982.0,
+        top: 1900.0 / 3040.0,
+        right: 975.0 / 1982.0,
+        bottom: 2651.0 / 3040.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 448,
+        left: 909.0 / 1988.0,
+        top: 315.0 / 3068.0,
+        right: 929.0 / 1988.0,
+        bottom: 1050.0 / 3068.0,
+    },
+    SourceFurnitureMask {
+        source: 1,
+        page: 266,
+        left: 880.0 / 1878.0,
+        top: 270.0 / 2896.0,
+        right: 900.0 / 1878.0,
+        bottom: 700.0 / 2896.0,
+    },
+];
+
 const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
     // Source-side vertical rules connect the Latin rows on these two pages.
     SourceFurnitureMask {
@@ -603,6 +631,57 @@ const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
         right: 1.0,
         bottom: 1.0,
     },
+    // Left Greek/Latin divider streaks that merge every Latin row into one band on
+    // these pages (Theseus p23/p30, Romulus p41), causing early page breaks and the
+    // horizontal split of the genethliacus line. The streak sits in the gutter left
+    // of the Latin glyphs, which begin well right of the mask.
+    SourceFurnitureMask {
+        source: 0,
+        page: 23,
+        left: 1047.0 / 2007.0,
+        top: 0.0,
+        right: 1065.0 / 2007.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 30,
+        left: 936.0 / 1984.0,
+        top: 0.0,
+        right: 955.0 / 1984.0,
+        bottom: 1.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 41,
+        left: 1037.0 / 1990.0,
+        top: 0.0,
+        right: 1072.0 / 1990.0,
+        bottom: 1.0,
+    },
+    // Right scan edge joins the Latin rows at the foot of Timoleon p315, splitting
+    // "... operam suam nava-/vit ...".
+    SourceFurnitureMask {
+        source: 0,
+        page: 315,
+        left: 1880.0 / 1883.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
+    // T2a: the right scan edge below the final Coriolanus line on p289 extends the
+    // last Latin band ("... exclamans : O ma-", rows 2559-2586) down to row 2728,
+    // so the "O ma-" strip carries ~140 px of trailing whitespace that renders as the
+    // inflated gap before "ter, ut mecum egisti!" (first line of p290). The streak
+    // sits at the extreme right margin, clear of the Latin (which ends near x=1826).
+    SourceFurnitureMask {
+        source: 0,
+        page: 289,
+        left: 1904.0 / 1913.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    },
 ];
 
 fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) {
@@ -620,12 +699,57 @@ fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) 
     }
 }
 
+fn apply_raw_source_mask_to_sheared(
+    mask: &SourceFurnitureMask,
+    shear: &SourceShear,
+    img: &mut GrayImage,
+) {
+    let coords = [mask.left, mask.top, mask.right, mask.bottom];
+    if coords.iter().any(|v| !v.is_finite()) || mask.left >= mask.right || mask.top >= mask.bottom {
+        return;
+    }
+    let (width, height) = shear.raw_dims;
+    let x = |v: f64| (v.clamp(0.0, 1.0) * f64::from(width)).round() as u32;
+    let y = |v: f64| (v.clamp(0.0, 1.0) * f64::from(height)).round() as u32;
+    let (left, right, top, bottom) = (x(mask.left), x(mask.right), y(mask.top), y(mask.bottom));
+    let (_, top_pad) = source_shear_shifts(width, shear.x0_px, shear.baseline_slope);
+    for xx in left..right {
+        let offset = source_shear_shift(xx, shear.x0_px, shear.baseline_slope) + i64::from(top_pad);
+        for yy in top..bottom {
+            let dst_y =
+                u32::try_from(i64::from(yy) + offset).expect("masked row inside shear padding");
+            img.put_pixel(xx, dst_y, Luma([255]));
+        }
+    }
+}
+
 fn mask_known_source_furniture(source: usize, page: u32, img: &mut GrayImage) {
+    let shear = SOURCE_SHEARS
+        .iter()
+        .find(|entry| entry.source == source && entry.page == page)
+        .filter(|shear| {
+            let (shifts, top_pad) =
+                source_shear_shifts(shear.raw_dims.0, shear.x0_px, shear.baseline_slope);
+            let bottom_pad = u32::try_from(shifts.into_iter().max().unwrap_or(0).max(0)).unwrap();
+            img.dimensions() == (shear.raw_dims.0, shear.raw_dims.1 + top_pad + bottom_pad)
+        });
     for mask in SOURCE_FURNITURE_MASKS
         .iter()
         .filter(|m| m.source == source && m.page == page)
     {
-        apply_source_furniture_mask(mask, img);
+        if let Some(shear) = shear {
+            apply_raw_source_mask_to_sheared(mask, shear, img);
+        } else {
+            apply_source_furniture_mask(mask, img);
+        }
+    }
+    if shear.is_some() {
+        for mask in SOURCE_SHEARED_FURNITURE_MASKS
+            .iter()
+            .filter(|m| m.source == source && m.page == page)
+        {
+            apply_source_furniture_mask(mask, img);
+        }
     }
 }
 
@@ -643,6 +767,16 @@ struct SourceRowExcision {
 }
 
 const SOURCE_ROW_EXCISIONS: &[SourceRowExcision] = &[
+    // Romulus II->III: remove the blank parallel-column alignment space between
+    // the preceding Latin line and "III. Ceterum" after the p34 shear. The body
+    // bands end at row 1878 and resume at 2149; this leaves 14 blank rows on
+    // either side of the splice and preserves every Latin pixel.
+    SourceRowExcision {
+        source: 0,
+        page: 34,
+        top: 1892.0 / 3040.0,
+        bottom: 2135.0 / 3040.0,
+    },
     // Theseus §17/§18: five faint bled-through lines stand alone between the line
     // ending "... tradit agi." and "XVIII. Sorte ducta ...". Delete the bleed-only
     // slab and close the space, leaving one ordinary inter-line gap. On the 789×2975
@@ -653,6 +787,27 @@ const SOURCE_ROW_EXCISIONS: &[SourceRowExcision] = &[
         page: 21,
         top: 2012.0 / 2975.0,
         bottom: 2237.0 / 2975.0,
+    },
+    // Romulus VI→VII: the Latin column finishes chapter VI ("... Hinc adolescentibus
+    // magnum nomen.") well above where the parallel Greek column reaches "VII.", so the
+    // Latin sits blank until the next chapter aligns. That alignment whitespace is
+    // meaningless in a Latin-only reader. Delete the ink-free slab (max ink 2-3 per row
+    // on the 2978-row raster; real text ends at row 2408 and resumes at 2602), leaving
+    // one ordinary inter-line gap.
+    SourceRowExcision {
+        source: 0,
+        page: 36,
+        top: 2414.0 / 2978.0,
+        bottom: 2596.0 / 2978.0,
+    },
+    // Romulus VII→VIII: the same parallel-alignment blank between "... remotis arbitris
+    // de his ageret." (ends row 2298) and "VIII. At Faustulus ..." (resumes row 2496) on
+    // the 2990-row raster; the slab is ink-free. Close it to one inter-line gap.
+    SourceRowExcision {
+        source: 0,
+        page: 37,
+        top: 2304.0 / 2990.0,
+        bottom: 2490.0 / 2990.0,
     },
 ];
 
@@ -729,6 +884,135 @@ fn excise_known_source_rows(source: usize, page: u32, img: GrayImage) -> GrayIma
     }
     intervals.sort_unstable();
     splice_out_rows(&img, &intervals)
+}
+
+/// A reviewed per-column shear that straightens a uniformly tilted source scan
+/// before masking and banding. The scan was photographed at a slight angle, so its
+/// baselines are straight lines with a small constant slope; shifting each column
+/// vertically by an integer number of rows makes them horizontal again. Because
+/// every pixel moves a whole number of rows **within its own column**, the glyph
+/// pixel values are translated, never interpolated or resampled. The shear spans the
+/// full page width (Greek column, divider, and Latin column together) under the
+/// premise that the defect is a single uniform rotation of the whole scan, so one
+/// slope straightens every baseline.
+struct SourceShear {
+    source: usize,
+    page: u32,
+    raw_dims: (u32, u32),
+    fingerprint_region: [u32; 4],
+    fingerprint: &'static str,
+    /// Full-page raw x the shift pivots around; its exact value only slides the
+    /// straightened raster by a constant absorbed by `top_pad`.
+    x0_px: u32,
+    /// Measured change in baseline y per x pixel. The applied shift negates it.
+    baseline_slope: f64,
+}
+
+impl SourceShear {
+    /// A raw page matches when its dimensions and distinctive raw pixels are the
+    /// reviewed ones. The fingerprint is checked on the untransformed image, so a
+    /// same-sized but changed render does not trigger the shear.
+    fn matches(&self, raw: &GrayImage) -> bool {
+        self.raw_dims == raw.dimensions()
+            && matches_source_region_fingerprint(raw, self.fingerprint_region, self.fingerprint)
+    }
+}
+
+const SOURCE_SHEARS: &[SourceShear] = &[
+    SourceShear {
+        source: 0,
+        page: 34,
+        raw_dims: (1982, 3008),
+        fingerprint_region: [1100, 600, 1700, 750],
+        fingerprint: "6a72bab3264a4a88ccdb988d4d138a383f7dcf140366be63192fd99740a3f204",
+        x0_px: 1400,
+        baseline_slope: -0.016079632465543646,
+    },
+    SourceShear {
+        source: 0,
+        page: 448,
+        raw_dims: (1988, 3007),
+        fingerprint_region: [1100, 600, 1700, 750],
+        fingerprint: "852199dd3ab488b25f83a7d74e3beeb99d03a8148961068de1ccba083b477ccf",
+        x0_px: 1400,
+        baseline_slope: 0.03048780487804878,
+    },
+    SourceShear {
+        source: 1,
+        page: 266,
+        raw_dims: (1878, 2825),
+        fingerprint_region: [1050, 600, 1650, 750],
+        fingerprint: "fcf1065d83486979a6e6f9d4ddbcf50f0e20b107cdd7aafa48f507246edc5d2c",
+        x0_px: 1350,
+        baseline_slope: 0.03745928338762215,
+    },
+    SourceShear {
+        source: 1,
+        page: 398,
+        raw_dims: (1840, 2835),
+        fingerprint_region: [1050, 600, 1650, 750],
+        fingerprint: "680397c87b37fb70c0a520f82755d86b0a186a93b1d201a303c7bbc3281cd660",
+        x0_px: 1350,
+        baseline_slope: 0.03175895765472313,
+    },
+];
+
+/// The integer vertical shift applied to raw column `x` for a shear centered at
+/// `x0_px` with measured `baseline_slope`. The shift negates the baseline's rise so
+/// a baseline that descends to the right is lifted back level.
+fn source_shear_shift(x: u32, x0_px: u32, baseline_slope: f64) -> i64 {
+    (-((f64::from(x) - f64::from(x0_px)) * baseline_slope)).round() as i64
+}
+
+/// Every column's signed shift plus the top padding (`-min_shift`, with zero
+/// included in the minimum) that keeps all shifted pixels at non-negative rows.
+fn source_shear_shifts(width: u32, x0_px: u32, baseline_slope: f64) -> (Vec<i64>, u32) {
+    let shifts: Vec<i64> = (0..width)
+        .map(|x| source_shear_shift(x, x0_px, baseline_slope))
+        .collect();
+    let min_shift = shifts.iter().copied().min().unwrap_or(0).min(0);
+    let top_pad = u32::try_from(-min_shift).expect("non-negative top padding");
+    (shifts, top_pad)
+}
+
+/// Straighten a uniformly tilted scan by shifting each column vertically by an
+/// integer number of rows. The destination is padded top and bottom so no pixel is
+/// clipped: its height is `raw_height + max_shift - min_shift` (zero included in
+/// both bounds), and every raw pixel `(x, y)` lands once at
+/// `(x, y + shift(x) + top_pad)`. Vacated cells stay white, so each output column
+/// holds the input column's exact pixels plus white padding.
+fn shear_image(raw: &GrayImage, x0_px: u32, baseline_slope: f64) -> GrayImage {
+    let (width, height) = raw.dimensions();
+    let (shifts, top_pad) = source_shear_shifts(width, x0_px, baseline_slope);
+    let bottom_pad = u32::try_from(shifts.iter().copied().max().unwrap_or(0).max(0))
+        .expect("non-negative bottom padding");
+    let out_height = height
+        .checked_add(top_pad)
+        .and_then(|h| h.checked_add(bottom_pad))
+        .expect("sheared height fits u32");
+    let mut out = GrayImage::from_pixel(width, out_height, Luma([255]));
+    for x in 0..width {
+        let shift = shifts[x as usize];
+        for y in 0..height {
+            let dst = i64::from(y) + shift + i64::from(top_pad);
+            let dst = u32::try_from(dst).expect("shifted row within padded height");
+            out.put_pixel(x, dst, *raw.get_pixel(x, y));
+        }
+    }
+    out
+}
+
+/// Straighten a reviewed tilted page before any other source transform. Returns the
+/// input untouched unless a `SOURCE_SHEARS` entry matches source, page, raw
+/// dimensions, and the raw-pixel fingerprint.
+fn apply_known_source_shear(source: usize, page: u32, raw: GrayImage) -> GrayImage {
+    match SOURCE_SHEARS
+        .iter()
+        .find(|s| s.source == source && s.page == page && s.matches(&raw))
+    {
+        Some(shear) => shear_image(&raw, shear.x0_px, shear.baseline_slope),
+        None => raw,
+    }
 }
 
 /// Minimum per-row ink for a row to count as texty when banding a column.
@@ -1003,7 +1287,8 @@ fn render_and_band(
     page: u32,
     render_fn: &impl Fn(usize, u32) -> Result<GrayImage>,
 ) -> Result<(GrayImage, Vec<Band>)> {
-    let mut page_img = render_fn(source, page)?;
+    let page_img = render_fn(source, page)?;
+    let mut page_img = apply_known_source_shear(source, page, page_img);
     mask_known_source_furniture(source, page, &mut page_img);
     let page_img = excise_known_source_rows(source, page, page_img);
     let column = production_source_column(source, page, &page_img)?;
@@ -1032,14 +1317,40 @@ fn production_source_column(source: usize, page: u32, masked: &GrayImage) -> Res
 
 /// Raw line evidence and furniture-filtered bands on an owned Latin column.
 fn band_source_column(source: usize, page: u32, cropped: &GrayImage) -> (Vec<Band>, Vec<Band>) {
-    let raw = if source == 0
+    let reviewed_text_window = match (source, page, cropped.dimensions()) {
+        (0, 34, (828, 2797))
+            if matches_source_region_fingerprint(
+                cropped,
+                [100, 600, 600, 750],
+                "b178043dee776247891c4b54e8ad38b3a12e4b91a9b2619e51cebf5d4fde92e5",
+            ) =>
+        {
+            Some((60, 798))
+        }
+        (0, 448, (1079, 3068))
+            if matches_source_region_fingerprint(
+                cropped,
+                [100, 600, 600, 750],
+                "d8fae0659e8f02b3d9204b2335552d853757608cced3da72755b5f5a6c9f2e4d",
+            ) =>
+        {
+            Some((60, 1049))
+        }
+        _ => None,
+    };
+    let raw = if let Some((left, right)) = reviewed_text_window {
+        let text_view =
+            image::imageops::crop_imm(cropped, left, 0, right - left, cropped.height()).to_image();
+        line_bands(&text_view, LINE_MIN_INK)
+    } else if source == 0
         && page == 17
         && cropped.dimensions() == (840, 2975)
         && matches_source_region_fingerprint(
             cropped,
             [0, 672, 40, 2651],
             "cca64e5b02b7f0aba9fc096b1856c223e13da07ab18e3725058a809052f6eb59",
-        ) {
+        )
+    {
         let text_view = image::imageops::crop_imm(cropped, 40, 0, 800, cropped.height()).to_image();
         line_bands(&text_view, LINE_MIN_INK)
     } else {
@@ -1059,6 +1370,42 @@ fn preserve_known_body_crop_edge(
     column: Column,
 ) -> Column {
     match (source, page, raster.dimensions(), column.left, column.right) {
+        (0, 34, (1982, 2797), 950, 1774)
+            if matches_source_region_fingerprint(
+                raster,
+                [1045, 600, 1545, 750],
+                "b178043dee776247891c4b54e8ad38b3a12e4b91a9b2619e51cebf5d4fde92e5",
+            ) =>
+        {
+            Column {
+                left: 945,
+                right: 1773,
+            }
+        }
+        (0, 448, (1988, 3068), 915, 1988)
+            if matches_source_region_fingerprint(
+                raster,
+                [1009, 600, 1509, 750],
+                "d8fae0659e8f02b3d9204b2335552d853757608cced3da72755b5f5a6c9f2e4d",
+            ) =>
+        {
+            Column {
+                left: 909,
+                right: 1988,
+            }
+        }
+        (1, 266, (1878, 2896), 880 | 881, 1708)
+            if matches_source_region_fingerprint(
+                raster,
+                [980, 600, 1480, 750],
+                "97191be5be83c45fd48d15fbedff911430d8ea5fd8a1a0d66cd1243edc54df3d",
+            ) =>
+        {
+            Column {
+                left: 880,
+                right: 1730,
+            }
+        }
         (0, 432, (1948, 2980), 907, 1710) => Column {
             left: 907,
             right: 1711,
@@ -1600,6 +1947,20 @@ const SOURCE_BODY_BANDS: &[SourceBodyBand] = &[
         protected: Band {
             top: 280,
             bottom: 312,
+        },
+    },
+    SourceBodyBand {
+        source: 0,
+        page: 448,
+        unit_id: "philopoemen",
+        dimensions: (1079, 3068),
+        observed: Band {
+            top: 330,
+            bottom: 366,
+        },
+        protected: Band {
+            top: 330,
+            bottom: 366,
         },
     },
     SourceBodyBand {
@@ -2650,6 +3011,179 @@ fn matches_source_region_fingerprint(column: &GrayImage, region: [u32; 4], expec
     format!("{:x}", sha2::Sha256::digest(glyphs.as_raw())) == expected
 }
 
+/// A reviewed cut-point strip recognized by cropped column dimensions, the exact
+/// band, a fingerprint region, and the raw-pixel fingerprint of that region.
+type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
+
+const WHOLE_STRIPS: &[WholeStripSignature] = &[
+    (
+        (825, 3033),
+        Band {
+            top: 2188,
+            bottom: 2613,
+        },
+        [0, 2188, 825, 2613],
+        "65a1b23e165f1eb2809bcc25df57424a00c0918c608dc6e4965bd0611bb0e80a",
+    ),
+    (
+        (793, 2986),
+        Band {
+            top: 2542,
+            bottom: 2620,
+        },
+        [0, 2542, 793, 2620],
+        "3db7429f26c774e70220d15ceb87c8fc52ab583b4426d19b90e305fa63062202",
+    ),
+    (
+        (818, 2973),
+        Band {
+            top: 1633,
+            bottom: 1727,
+        },
+        [0, 1633, 818, 1727],
+        "98e0c26eb64b4981e4d963ca5b260c9832224f0d1cbad15665b46777b2a41eab",
+    ),
+    (
+        (813, 3008),
+        Band {
+            top: 467,
+            bottom: 563,
+        },
+        [0, 467, 813, 563],
+        "fe2a11f9446ea81ff88a8f37a429edbff020e6eee0ca567239a63589d40af4ac",
+    ),
+    (
+        (809, 2838),
+        Band {
+            top: 1411,
+            bottom: 1586,
+        },
+        [0, 1411, 809, 1586],
+        "4b9ddbc1990b9144c0952250b144c8260a3e5c723ecfca6e979f642d0e47b3c8",
+    ),
+    (
+        (807, 2836),
+        Band {
+            top: 1254,
+            bottom: 1573,
+        },
+        [0, 1254, 807, 1573],
+        "304aedc23f1d463a5ecd9028f26c5594b2b6187b7a33db64629b18be7a13ef6c",
+    ),
+    (
+        (808, 2838),
+        Band {
+            top: 2002,
+            bottom: 2132,
+        },
+        [0, 2002, 808, 2132],
+        "081fc41d7d05be508e5b112e7659a3c920586066d459fff679de81d3b4e145aa",
+    ),
+    (
+        (845, 2835),
+        Band {
+            top: 248,
+            bottom: 1364,
+        },
+        [0, 249, 845, 1364],
+        "d19136f5c88476c20db6ccdc4727421dfb1a354e3d080f34ecf2e3cdfe24c2ce",
+    ),
+    (
+        (845, 2835),
+        Band {
+            top: 1364,
+            bottom: 1691,
+        },
+        [0, 1364, 845, 1691],
+        "22bc97d92d9b1ae5970495b3c87fcb081f96e78b1df76b4dbc685a3b6bbf0567",
+    ),
+    (
+        (817, 2836),
+        Band {
+            top: 1507,
+            bottom: 1648,
+        },
+        [0, 1507, 817, 1648],
+        "b9923339da9e250ebc0404036149d63cf9a253aafbb4c2f73957398188f608d0",
+    ),
+    (
+        (815, 2835),
+        Band {
+            top: 249,
+            bottom: 1364,
+        },
+        [0, 249, 815, 1364],
+        "ab6e88cedbcb8117631ab2ee3d942eb10392f2da3616000cbd18f6548f5dae95",
+    ),
+    (
+        (815, 2835),
+        Band {
+            top: 1364,
+            bottom: 1691,
+        },
+        [0, 1364, 815, 1691],
+        "70a25389a74d1114c2bf05345593112c8fb7e00d3e1382f759081765714e9f49",
+    ),
+    (
+        (826, 2835),
+        Band {
+            top: 249,
+            bottom: 1364,
+        },
+        [0, 249, 826, 1364],
+        "5bd51a4290f3d012bcedf037f3cb8b0d67a4479bd381b3449a8165171b832632",
+    ),
+    (
+        (826, 2835),
+        Band {
+            top: 1364,
+            bottom: 1691,
+        },
+        [0, 1364, 826, 1691],
+        "5a3cfc2d34e81d528e74ac84ce4c954d91dbbc65f12403579b6d665a8c868980",
+    ),
+    // T3b (philopoemen, v1 source page 451): the page-foot merged strip
+    // "oppidanorum inflaverat, et ad portas exciverat. Ut vero" /
+    // "Philopoemenem indigne gloria tanti viri, rebusque gestis" (two prose lines
+    // fused by tight foot spacing) was bisected mid-glyph across generated pages
+    // 129->130; wrap it whole (scaled 107 <= 1394 budget).
+    (
+        (751, 2953),
+        Band {
+            top: 2344,
+            bottom: 2433,
+        },
+        [0, 2344, 751, 2433],
+        "71401035f8ab7fd9f305a8c4aa47f02dbe32d72c64f8db212dc6ef96e0b7b1db",
+    ),
+    // T3c (flamininus, v1 source page 462): the merged strip
+    // "phis enim clypeos argenteos affigens, suumque scutum, ita" / "inscripsit :"
+    // (the "...del-phis" continuation plus its colophon) was bisected mid-glyph
+    // across generated pages 151->152; wrap it whole (scaled 108 <= 1394 budget).
+    (
+        (801, 2988),
+        Band {
+            top: 412,
+            bottom: 502,
+        },
+        [0, 412, 801, 502],
+        "f31a373625ac795614f07c68557c2668890af5776d7ffa456e981994c61b7068",
+    ),
+    // C (alexander, v2 source page 231): the complete Tall line
+    // "quidem passus Callisthenem" (the page-foot body line) was fill-split across
+    // reader pp86/87 (canvases 78->79). Wrap it whole (scaled 112 <= 1394 budget) so
+    // it reads as one line.
+    (
+        (810, 2844),
+        Band {
+            top: 2224,
+            bottom: 2317,
+        },
+        [0, 2224, 810, 2317],
+        "29bcac098db09c33bc986f1c029283d9c5e23e04e1f0c46eb318350d187350ae",
+    ),
+];
+
 /// Recognize reviewed source strips by dimensions, cut-point interval, and original
 /// pixel fingerprint. A matching strip wraps whole only when it fits a fresh body
 /// canvas; the caller applies the measured scaled-height budget.
@@ -2661,135 +3195,6 @@ fn is_known_whole_source_strip(column: &GrayImage, band: &Band) -> bool {
     {
         return false;
     }
-    type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
-    const WHOLE_STRIPS: &[WholeStripSignature] = &[
-        (
-            (825, 3033),
-            Band {
-                top: 2188,
-                bottom: 2613,
-            },
-            [0, 2188, 825, 2613],
-            "65a1b23e165f1eb2809bcc25df57424a00c0918c608dc6e4965bd0611bb0e80a",
-        ),
-        (
-            (793, 2986),
-            Band {
-                top: 2542,
-                bottom: 2620,
-            },
-            [0, 2542, 793, 2620],
-            "3db7429f26c774e70220d15ceb87c8fc52ab583b4426d19b90e305fa63062202",
-        ),
-        (
-            (818, 2973),
-            Band {
-                top: 1633,
-                bottom: 1727,
-            },
-            [0, 1633, 818, 1727],
-            "98e0c26eb64b4981e4d963ca5b260c9832224f0d1cbad15665b46777b2a41eab",
-        ),
-        (
-            (813, 3008),
-            Band {
-                top: 467,
-                bottom: 563,
-            },
-            [0, 467, 813, 563],
-            "fe2a11f9446ea81ff88a8f37a429edbff020e6eee0ca567239a63589d40af4ac",
-        ),
-        (
-            (809, 2838),
-            Band {
-                top: 1411,
-                bottom: 1586,
-            },
-            [0, 1411, 809, 1586],
-            "4b9ddbc1990b9144c0952250b144c8260a3e5c723ecfca6e979f642d0e47b3c8",
-        ),
-        (
-            (807, 2836),
-            Band {
-                top: 1254,
-                bottom: 1573,
-            },
-            [0, 1254, 807, 1573],
-            "304aedc23f1d463a5ecd9028f26c5594b2b6187b7a33db64629b18be7a13ef6c",
-        ),
-        (
-            (808, 2838),
-            Band {
-                top: 2002,
-                bottom: 2132,
-            },
-            [0, 2002, 808, 2132],
-            "081fc41d7d05be508e5b112e7659a3c920586066d459fff679de81d3b4e145aa",
-        ),
-        (
-            (845, 2835),
-            Band {
-                top: 248,
-                bottom: 1364,
-            },
-            [0, 249, 845, 1364],
-            "d19136f5c88476c20db6ccdc4727421dfb1a354e3d080f34ecf2e3cdfe24c2ce",
-        ),
-        (
-            (845, 2835),
-            Band {
-                top: 1364,
-                bottom: 1691,
-            },
-            [0, 1364, 845, 1691],
-            "22bc97d92d9b1ae5970495b3c87fcb081f96e78b1df76b4dbc685a3b6bbf0567",
-        ),
-        (
-            (817, 2836),
-            Band {
-                top: 1507,
-                bottom: 1648,
-            },
-            [0, 1507, 817, 1648],
-            "b9923339da9e250ebc0404036149d63cf9a253aafbb4c2f73957398188f608d0",
-        ),
-        (
-            (815, 2835),
-            Band {
-                top: 249,
-                bottom: 1364,
-            },
-            [0, 249, 815, 1364],
-            "ab6e88cedbcb8117631ab2ee3d942eb10392f2da3616000cbd18f6548f5dae95",
-        ),
-        (
-            (815, 2835),
-            Band {
-                top: 1364,
-                bottom: 1691,
-            },
-            [0, 1364, 815, 1691],
-            "70a25389a74d1114c2bf05345593112c8fb7e00d3e1382f759081765714e9f49",
-        ),
-        (
-            (826, 2835),
-            Band {
-                top: 249,
-                bottom: 1364,
-            },
-            [0, 249, 826, 1364],
-            "5bd51a4290f3d012bcedf037f3cb8b0d67a4479bd381b3449a8165171b832632",
-        ),
-        (
-            (826, 2835),
-            Band {
-                top: 1364,
-                bottom: 1691,
-            },
-            [0, 1364, 826, 1691],
-            "5a3cfc2d34e81d528e74ac84ce4c954d91dbbc65f12403579b6d665a8c868980",
-        ),
-    ];
     WHOLE_STRIPS
         .iter()
         .any(|(dimensions, strip, region, fingerprint)| {
@@ -2845,6 +3250,14 @@ const REVIEWED_SHORT_ENDINGS: &[(&str, (u32, u32), &str)] = &[
         "demosthenes",
         (1004, 44),
         "955b6c7d39a181531f864b54468abc20092dc54536691e4f9a39bd94a132ac59",
+    ),
+    // Solon/Poplicola comparison: the final body page holds only the line
+    // "jungeret, et omnem belli apparatum tolleret." (1004x49 at production scale);
+    // stack it onto the preceding page (sum 1414 <= 1429 text-block height).
+    (
+        "comparatio_solonis_et_poplicolae",
+        (1004, 49),
+        "111bae67bf83c76b8dba75b5599b1871b54a3f62c6da761f6518fca4adca4755",
     ),
 ];
 
@@ -3011,8 +3424,8 @@ fn retain_body_canvases(canvases: &mut Vec<GrayImage>, scale: f32, metrics: &Lin
     }
 }
 
-/// Fit reviewed wide source columns inside the production canvas while
-/// preserving its layout and every original column pixel through resampling.
+/// Fit reviewed wide source columns inside the production canvas. The retained
+/// unscaled column remains the exact source-pixel record.
 fn source_strip_scale(img: &GrayImage, requested: f32) -> f32 {
     let known = (img.dimensions() == (873, 2836)
         && matches_source_region_fingerprint(
@@ -3020,6 +3433,12 @@ fn source_strip_scale(img: &GrayImage, requested: f32) -> f32 {
             [6, 206, 855, 239],
             "ca1e88fb55367597531166802b72bb1be361c09718cc95e4f5aa1c701e192eeb",
         ))
+        || (img.dimensions() == (850, 2896)
+            && matches_source_region_fingerprint(
+                img,
+                [100, 600, 600, 750],
+                "97191be5be83c45fd48d15fbedff911430d8ea5fd8a1a0d66cd1243edc54df3d",
+            ))
         || (img.dimensions() == (845, 2835)
             && is_known_whole_source_strip(
                 img,
@@ -3191,6 +3610,146 @@ mod tests {
             };
             assert_eq!(apply_source_row_excision(&excision, &img), img);
         }
+    }
+
+    #[test]
+    fn source_shear_levels_both_slope_directions() {
+        use super::*;
+        let width = 200u32;
+        let height = 200u32;
+        let x0 = 100u32;
+        let bases = [50u32, 100, 150];
+        let draw_x = 10u32..190;
+        for &slope in &[0.03f64, -0.03] {
+            // Ink each baseline along the exact tilt the shear will undo.
+            let mut raw = GrayImage::from_pixel(width, height, Luma([255]));
+            for &base in &bases {
+                for x in draw_x.clone() {
+                    let y = i64::from(base) - source_shear_shift(x, x0, slope);
+                    raw.put_pixel(x, u32::try_from(y).unwrap(), Luma([0]));
+                }
+            }
+            // The first baseline really is tilted (in both signed directions).
+            let lo = i64::from(bases[0]) - source_shear_shift(draw_x.start, x0, slope);
+            let hi = i64::from(bases[0]) - source_shear_shift(draw_x.end - 1, x0, slope);
+            assert_ne!(
+                lo, hi,
+                "baseline must be tilted before shear for slope {slope}"
+            );
+
+            let (_, top_pad) = source_shear_shifts(width, x0, slope);
+            let out = shear_image(&raw, x0, slope);
+            let leveled: std::collections::BTreeSet<u32> =
+                bases.iter().map(|&b| b + top_pad).collect();
+            for x in draw_x.clone() {
+                let inked: std::collections::BTreeSet<u32> = (0..out.height())
+                    .filter(|&y| out.get_pixel(x, y)[0] == 0)
+                    .collect();
+                assert_eq!(inked, leveled, "column {x} not leveled for slope {slope}");
+            }
+        }
+    }
+
+    #[test]
+    fn source_shear_preserves_every_column_with_padding() {
+        use super::*;
+        let width = 64u32;
+        let height = 48u32;
+        let x0 = 30u32;
+        let slope = 0.05f64;
+        // Distinctive per-pixel values (never white) with deliberate top/bottom edge ink.
+        let raw = GrayImage::from_fn(width, height, |x, y| {
+            if y == 0 || y == height - 1 {
+                Luma([0])
+            } else {
+                Luma([((x * 7 + y * 11) % 251 + 1) as u8])
+            }
+        });
+        let (shifts, top_pad) = source_shear_shifts(width, x0, slope);
+        let out = shear_image(&raw, x0, slope);
+        assert_eq!(out.width(), width);
+        for x in 0..width {
+            let shift = shifts[x as usize];
+            // Every source pixel lands once at its shifted row.
+            for y in 0..height {
+                let dst = u32::try_from(i64::from(y) + shift + i64::from(top_pad)).unwrap();
+                assert_eq!(
+                    out.get_pixel(x, dst),
+                    raw.get_pixel(x, y),
+                    "col {x} row {y}"
+                );
+            }
+            // The column's value multiset is the input's plus white padding only.
+            let mut got: Vec<u8> = (0..out.height()).map(|y| out.get_pixel(x, y)[0]).collect();
+            let mut want: Vec<u8> = (0..height).map(|y| raw.get_pixel(x, y)[0]).collect();
+            want.extend(std::iter::repeat_n(255u8, (out.height() - height) as usize));
+            got.sort_unstable();
+            want.sort_unstable();
+            assert_eq!(got, want, "column {x} multiset changed");
+        }
+    }
+
+    #[test]
+    fn raw_furniture_mask_follows_source_shear() {
+        let raw = GrayImage::from_fn(80, 60, |x, y| Luma([((x * 7 + y * 3) % 255) as u8]));
+        let mask = SourceFurnitureMask {
+            source: 0,
+            page: 0,
+            left: 0.2,
+            top: 0.25,
+            right: 0.35,
+            bottom: 0.75,
+        };
+        let shear = SourceShear {
+            source: 0,
+            page: 0,
+            raw_dims: raw.dimensions(),
+            fingerprint_region: [0, 0, 1, 1],
+            fingerprint: "",
+            x0_px: 40,
+            baseline_slope: 0.1,
+        };
+        let mut masked_raw = raw.clone();
+        apply_source_furniture_mask(&mask, &mut masked_raw);
+        let expected = shear_image(&masked_raw, shear.x0_px, shear.baseline_slope);
+        let mut actual = shear_image(&raw, shear.x0_px, shear.baseline_slope);
+        apply_raw_source_mask_to_sheared(&mask, &shear, &mut actual);
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn source_shear_rejects_changed_source_identity() {
+        use super::*;
+        use sha2::Digest;
+        let raw = GrayImage::from_fn(40, 30, |x, y| Luma([((x * 5 + y * 3) % 256) as u8]));
+        let region = [5u32, 4, 25, 20];
+        let [l, t, r, b] = region;
+        let fp = image::imageops::crop_imm(&raw, l, t, r - l, b - t).to_image();
+        let fingerprint: &'static str =
+            Box::leak(format!("{:x}", sha2::Sha256::digest(fp.as_raw())).into_boxed_str());
+        let shear = SourceShear {
+            source: 0,
+            page: 34,
+            raw_dims: (40, 30),
+            fingerprint_region: region,
+            fingerprint,
+            x0_px: 20,
+            baseline_slope: -0.1,
+        };
+        // The reviewed raw page matches and would be straightened (padded taller).
+        assert!(shear.matches(&raw));
+        assert_ne!(
+            shear_image(&raw, shear.x0_px, shear.baseline_slope).dimensions(),
+            raw.dimensions()
+        );
+        // A single changed pixel inside the fingerprint region rejects the match.
+        let mut changed = raw.clone();
+        changed.get_pixel_mut(l, t)[0] ^= 1;
+        assert!(!shear.matches(&changed));
+        // A same-content page at different dimensions also fails to match.
+        assert!(!shear.matches(&GrayImage::from_pixel(41, 30, Luma([0]))));
+        // The production table is empty, so any page passes through unchanged.
+        assert_eq!(apply_known_source_shear(0, 34, raw.clone()), raw);
     }
 
     #[test]
@@ -4655,6 +5214,138 @@ mod tests {
         serde_json::from_str(include_str!("fixtures/backlog_artifact_source_trace.json")).unwrap()
     }
 
+    fn tomi_gap_split_repair_ledger() -> serde_json::Value {
+        serde_json::from_str(include_str!(
+            "fixtures/tomi_gap_split_repairs_source_trace.json"
+        ))
+        .unwrap()
+    }
+
+    /// A JSON value is a lowercase/uppercase 64-character SHA-256 hex digest.
+    fn ledger_is_hex64(value: &serde_json::Value) -> bool {
+        value
+            .as_str()
+            .is_some_and(|s| s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit()))
+    }
+
+    /// A JSON value is an array of exactly `n` non-negative integers.
+    fn ledger_is_u_array(value: &serde_json::Value, n: usize) -> bool {
+        value
+            .as_array()
+            .is_some_and(|a| a.len() == n && a.iter().all(|v| v.as_u64().is_some()))
+    }
+
+    #[test]
+    fn tomi_gap_split_ledger_has_expected_shape() {
+        let ledger = tomi_gap_split_repair_ledger();
+        assert_eq!(ledger["schema_version"], 1);
+        assert!(ledger["description"]
+            .as_str()
+            .is_some_and(|d| !d.is_empty()));
+        let repairs = ledger["repairs"].as_array().unwrap();
+        assert!(!repairs.is_empty());
+        for repair in repairs {
+            // Every installed record shares source identity, raw dimensions, and
+            // reviewed Latin regions regardless of disposition.
+            assert!(repair["unit_id"].as_str().is_some_and(|id| !id.is_empty()));
+            assert!(matches!(repair["source"].as_u64(), Some(0 | 1)));
+            assert!(repair["source_page"].as_u64().is_some());
+            assert!(ledger_is_u_array(&repair["raster"], 2));
+            assert!(repair["preserved_latin_regions"]
+                .as_array()
+                .is_some_and(|regions| !regions.is_empty()));
+
+            match repair["disposition"].as_str().unwrap() {
+                "mask" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert!(repair["backlog_id"]
+                        .as_str()
+                        .is_some_and(|id| !id.is_empty()));
+                    let rects = repair["mask_rectangles"].as_array().unwrap();
+                    assert!(!rects.is_empty());
+                    for rect in rects {
+                        let r: Vec<f64> = rect
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|v| v.as_f64().unwrap())
+                            .collect();
+                        assert_eq!(r.len(), 4);
+                        assert!(r[0] >= 0.0 && r[2] <= 1.0 && r[0] < r[2]);
+                        assert!(r[1] >= 0.0 && r[3] <= 1.0 && r[1] < r[3]);
+                    }
+                    // Fractions are raw full-source coordinates unless marked sheared.
+                    if let Some(space) = repair["coordinate_space"].as_str() {
+                        assert!(matches!(space, "raw" | "sheared"));
+                        if space == "sheared" {
+                            assert!(ledger_is_u_array(&repair["sheared_raster"], 2));
+                        }
+                    }
+                }
+                "shear" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert!(ledger_is_hex64(&repair["fingerprint"]));
+                    assert!(ledger_is_u_array(&repair["fingerprint_region"], 4));
+                    let gaps = &repair["matched_gaps"];
+                    assert!(gaps["left_x"].as_u64().is_some());
+                    assert!(gaps["right_x"].as_u64().is_some());
+                    assert!(ledger_is_u_array(&gaps["left_rows"], 2));
+                    assert!(ledger_is_u_array(&gaps["right_rows"], 2));
+                    assert!(repair["x0_px"].as_u64().is_some());
+                    assert!(repair["baseline_slope"].as_f64().is_some());
+                    assert_eq!(repair["shift_range"].as_array().unwrap().len(), 2);
+                    assert!(repair["top_pad"].as_u64().is_some());
+                    assert!(ledger_is_u_array(&repair["crop_edges"], 2));
+                    assert!(repair["expected_bands"]
+                        .as_array()
+                        .is_some_and(|bands| !bands.is_empty()
+                            && bands.iter().all(|band| ledger_is_u_array(band, 2))));
+                }
+                "row_excision" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert_eq!(repair["coordinate_space"], "sheared");
+                    assert!(ledger_is_u_array(&repair["sheared_raster"], 2));
+                    assert!(ledger_is_u_array(&repair["deleted_rows"], 2));
+                    assert!(ledger_is_u_array(&repair["column_dims"], 2));
+                    let top = repair["top"].as_f64().unwrap();
+                    let bottom = repair["bottom"].as_f64().unwrap();
+                    assert!(0.0 <= top && top < bottom && bottom <= 1.0);
+                    assert!(repair["gap_before_rows"].as_u64().is_some());
+                    assert!(repair["gap_after_rows"].as_u64().is_some());
+                }
+                "whole_strip" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert!(ledger_is_u_array(&repair["column_dims"], 2));
+                    assert!(ledger_is_u_array(&repair["composer_strip"], 2));
+                    assert!(ledger_is_u_array(&repair["strip_fingerprint_region"], 4));
+                    assert!(ledger_is_hex64(&repair["strip_fingerprint"]));
+                }
+                "source_body_band" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert!(ledger_is_u_array(&repair["column_dims"], 2));
+                    assert!(ledger_is_u_array(&repair["observed"], 2));
+                    assert!(ledger_is_u_array(&repair["protected"], 2));
+                }
+                "word_patch" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert!(ledger_is_u_array(&repair["src_rect"], 4));
+                    assert!(ledger_is_u_array(&repair["dest_anchor"], 2));
+                    if !repair["excise_rect"].is_null() {
+                        assert!(ledger_is_u_array(&repair["excise_rect"], 4));
+                    }
+                    assert!(ledger_is_hex64(&repair["fingerprint"]));
+                }
+                "source_spacing_retained" => {
+                    // Not a repair: a measured, justified decision to leave the gap.
+                    assert!(repair["source_gap_px"].as_array().is_some());
+                    assert!(!repair["reader_gap_px"].is_null());
+                    assert!(repair["reason"].as_str().is_some_and(|r| !r.is_empty()));
+                }
+                other => panic!("unknown disposition {other}"),
+            }
+        }
+    }
+
     /// Reviewed rectangles grouped by source identity, including separate repairs on one page.
     fn reviewed_page_masks(
         ledger: &serde_json::Value,
@@ -4662,6 +5353,7 @@ mod tests {
         let mut pages = std::collections::BTreeMap::new();
         for repair in ledger["repairs"].as_array().unwrap() {
             if repair["disposition"] != "mask"
+                || repair["coordinate_space"] == "sheared"
                 || (repair["status"].is_string() && repair["status"] != "repaired")
             {
                 continue;
@@ -4686,6 +5378,7 @@ mod tests {
         for ledger in ledgers {
             for repair in ledger["repairs"].as_array().unwrap() {
                 if repair["disposition"] != "mask"
+                    || repair["coordinate_space"] == "sheared"
                     || (repair["status"].is_string() && repair["status"] != "repaired")
                 {
                     continue;
@@ -4885,8 +5578,10 @@ mod tests {
     fn inner_tomi_masks_match_reviewed_ledger() {
         let historical = repair_ledger();
         let backlog = backlog_repair_ledger();
-        for ((source, page), rectangles) in all_reviewed_page_masks(&[&historical, &backlog]) {
-            let record = [&historical, &backlog]
+        let tomi = tomi_gap_split_repair_ledger();
+        for ((source, page), rectangles) in all_reviewed_page_masks(&[&historical, &backlog, &tomi])
+        {
+            let record = [&historical, &backlog, &tomi]
                 .into_iter()
                 .flat_map(|ledger| ledger["repairs"].as_array().unwrap())
                 .find(|r| {
@@ -4918,6 +5613,294 @@ mod tests {
                             && pixels(actual) == pixels(rectangle)
                     }),
                     "source {source} page {page}: every reviewed rectangle is installed"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn inner_tomi_sheared_masks_match_reviewed_ledger() {
+        let ledger = tomi_gap_split_repair_ledger();
+        for record in repairs_with_disposition(&ledger, "mask")
+            .into_iter()
+            .filter(|record| record["coordinate_space"] == "sheared")
+        {
+            let source = record["source"].as_u64().unwrap() as usize;
+            let page = record["source_page"].as_u64().unwrap() as u32;
+            let dims = (
+                record["sheared_raster"][0].as_u64().unwrap() as u32,
+                record["sheared_raster"][1].as_u64().unwrap() as u32,
+            );
+            let shear = SOURCE_SHEARS
+                .iter()
+                .find(|entry| entry.source == source && entry.page == page)
+                .expect("sheared mask needs an installed source shear");
+            let (shifts, top_pad) =
+                source_shear_shifts(shear.raw_dims.0, shear.x0_px, shear.baseline_slope);
+            let bottom_pad = u32::try_from(shifts.into_iter().max().unwrap_or(0).max(0)).unwrap();
+            assert_eq!(
+                dims,
+                (shear.raw_dims.0, shear.raw_dims.1 + top_pad + bottom_pad)
+            );
+            let masks: Vec<_> = SOURCE_SHEARED_FURNITURE_MASKS
+                .iter()
+                .filter(|mask| mask.source == source && mask.page == page)
+                .collect();
+            let rectangles = record["mask_rectangles"].as_array().unwrap();
+            assert_eq!(masks.len(), rectangles.len());
+            for rectangle in rectangles {
+                let expected: [f64; 4] = std::array::from_fn(|i| rectangle[i].as_f64().unwrap());
+                let pixels = |r: [f64; 4]| -> [u32; 4] {
+                    std::array::from_fn(|i| {
+                        (r[i] * f64::from(if i % 2 == 0 { dims.0 } else { dims.1 })).round() as u32
+                    })
+                };
+                assert!(masks.iter().any(|mask| {
+                    let actual = [mask.left, mask.top, mask.right, mask.bottom];
+                    actual
+                        .iter()
+                        .zip(expected)
+                        .all(|(a, b)| (a - b).abs() <= 4.0 * f64::EPSILON)
+                        && pixels(actual) == pixels(expected)
+                }));
+            }
+        }
+    }
+
+    /// Installed `repairs` records of one disposition across the shared ledger.
+    fn repairs_with_disposition<'a>(
+        ledger: &'a serde_json::Value,
+        disposition: &str,
+    ) -> Vec<&'a serde_json::Value> {
+        ledger["repairs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|r| r["disposition"] == disposition && r["status"] == "repaired")
+            .collect()
+    }
+
+    #[test]
+    fn inner_tomi_shears_match_reviewed_ledger() {
+        let tomi = tomi_gap_split_repair_ledger();
+        let records = repairs_with_disposition(&tomi, "shear");
+        // Every reviewed shear record is installed with identical geometry.
+        for record in &records {
+            let source = record["source"].as_u64().unwrap() as usize;
+            let page = record["source_page"].as_u64().unwrap() as u32;
+            let raw_dims = (
+                record["raster"][0].as_u64().unwrap() as u32,
+                record["raster"][1].as_u64().unwrap() as u32,
+            );
+            let entry = SOURCE_SHEARS
+                .iter()
+                .find(|s| s.source == source && s.page == page)
+                .unwrap_or_else(|| panic!("shear installed for source {source} page {page}"));
+            assert_eq!(entry.raw_dims, raw_dims);
+            assert_eq!(u64::from(entry.x0_px), record["x0_px"].as_u64().unwrap());
+            assert_eq!(
+                entry.baseline_slope,
+                record["baseline_slope"].as_f64().unwrap()
+            );
+            assert_eq!(entry.fingerprint, record["fingerprint"].as_str().unwrap());
+            let region: [u32; 4] =
+                std::array::from_fn(|i| record["fingerprint_region"][i].as_u64().unwrap() as u32);
+            assert_eq!(entry.fingerprint_region, region);
+        }
+        // SOURCE_SHEARS is exclusive to this work, so every installed shear is reviewed.
+        for entry in SOURCE_SHEARS {
+            assert!(
+                records.iter().any(|r| {
+                    r["source"].as_u64() == Some(entry.source as u64)
+                        && r["source_page"].as_u64() == Some(u64::from(entry.page))
+                }),
+                "installed shear source {} page {} has a reviewed ledger record",
+                entry.source,
+                entry.page
+            );
+        }
+    }
+
+    #[test]
+    fn inner_tomi_whole_strips_match_reviewed_ledger() {
+        let tomi = tomi_gap_split_repair_ledger();
+        // Every reviewed whole-strip record is backed by a WHOLE_STRIPS signature with
+        // identical cropped column dimensions, band, fingerprint region, and digest.
+        for record in repairs_with_disposition(&tomi, "whole_strip") {
+            let dims = (
+                record["column_dims"][0].as_u64().unwrap() as u32,
+                record["column_dims"][1].as_u64().unwrap() as u32,
+            );
+            let band = Band {
+                top: record["composer_strip"][0].as_u64().unwrap() as u32,
+                bottom: record["composer_strip"][1].as_u64().unwrap() as u32,
+            };
+            let region: [u32; 4] = std::array::from_fn(|i| {
+                record["strip_fingerprint_region"][i].as_u64().unwrap() as u32
+            });
+            let fingerprint = record["strip_fingerprint"].as_str().unwrap();
+            assert!(
+                WHOLE_STRIPS.iter().any(|(d, b, r, f)| {
+                    *d == dims && *b == band && *r == region && *f == fingerprint
+                }),
+                "reviewed whole strip source {} page {} is installed in WHOLE_STRIPS",
+                record["source"],
+                record["source_page"]
+            );
+        }
+    }
+
+    #[test]
+    fn inner_tomi_row_excisions_match_reviewed_ledger() {
+        let tomi = tomi_gap_split_repair_ledger();
+        let records = repairs_with_disposition(&tomi, "row_excision");
+        assert_eq!(records.len(), 1, "one reviewed Tomi row excision");
+        let record = records[0];
+        assert_eq!(record["source"], 0);
+        assert_eq!(record["source_page"], 34);
+        assert_eq!(record["raster"], serde_json::json!([1982, 3008]));
+        let entry = SOURCE_ROW_EXCISIONS
+            .iter()
+            .find(|e| e.source == 0 && e.page == 34)
+            .expect("Romulus p34 row excision installed");
+        assert_eq!(entry.top, record["top"].as_f64().unwrap());
+        assert_eq!(entry.bottom, record["bottom"].as_f64().unwrap());
+        let sheared_height = record["sheared_raster"][1].as_u64().unwrap() as u32;
+        let (top, bottom) = excision_rows(entry, sheared_height).unwrap();
+        assert_eq!(record["deleted_rows"], serde_json::json!([top, bottom]));
+        assert_eq!(
+            record["column_dims"],
+            serde_json::json!([828, sheared_height - (bottom - top)])
+        );
+        assert_eq!(record["gap_before_rows"], 271);
+        assert_eq!(record["gap_after_rows"], 271 - (bottom - top));
+        assert_eq!(
+            SOURCE_ROW_EXCISIONS
+                .iter()
+                .filter(|e| e.source == 0 && e.page == 34)
+                .count(),
+            1
+        );
+    }
+
+    #[test]
+    fn inner_tomi_source_body_bands_match_reviewed_ledger() {
+        let tomi = tomi_gap_split_repair_ledger();
+        let records = repairs_with_disposition(&tomi, "source_body_band");
+        assert!(
+            !records.is_empty(),
+            "the ledger installs a source_body_band repair"
+        );
+        // Every reviewed source-body-band record is backed by a SOURCE_BODY_BANDS entry
+        // with identical identity, cropped column dimensions, and observed/protected band.
+        for record in &records {
+            let source = record["source"].as_u64().unwrap() as usize;
+            let page = record["source_page"].as_u64().unwrap() as u32;
+            let unit_id = record["unit_id"].as_str().unwrap();
+            let dims = (
+                record["column_dims"][0].as_u64().unwrap() as u32,
+                record["column_dims"][1].as_u64().unwrap() as u32,
+            );
+            let observed = Band {
+                top: record["observed"][0].as_u64().unwrap() as u32,
+                bottom: record["observed"][1].as_u64().unwrap() as u32,
+            };
+            let protected = Band {
+                top: record["protected"][0].as_u64().unwrap() as u32,
+                bottom: record["protected"][1].as_u64().unwrap() as u32,
+            };
+            assert!(
+                SOURCE_BODY_BANDS.iter().any(|b| {
+                    b.source == source
+                        && b.page == page
+                        && b.unit_id == unit_id
+                        && b.dimensions == dims
+                        && b.observed == observed
+                        && b.protected == protected
+                }),
+                "reviewed source body band source {source} page {page} is installed in SOURCE_BODY_BANDS"
+            );
+        }
+        // The installed Philopoemen p448 rescue is reviewed here. SOURCE_BODY_BANDS also
+        // carries entries from unrelated work, so only this branch's page is required to
+        // round-trip back to a ledger record.
+        let entry = SOURCE_BODY_BANDS
+            .iter()
+            .find(|b| b.source == 0 && b.page == 448)
+            .expect("Philopoemen p448 body-band rescue installed");
+        assert!(
+            records.iter().any(|record| {
+                record["source"].as_u64() == Some(entry.source as u64)
+                    && record["source_page"].as_u64() == Some(u64::from(entry.page))
+                    && record["unit_id"].as_str() == Some(entry.unit_id)
+                    && record["column_dims"][0].as_u64() == Some(u64::from(entry.dimensions.0))
+                    && record["column_dims"][1].as_u64() == Some(u64::from(entry.dimensions.1))
+                    && record["observed"][0].as_u64() == Some(u64::from(entry.observed.top))
+                    && record["observed"][1].as_u64() == Some(u64::from(entry.observed.bottom))
+                    && record["protected"][0].as_u64() == Some(u64::from(entry.protected.top))
+                    && record["protected"][1].as_u64() == Some(u64::from(entry.protected.bottom))
+            }),
+            "the installed Philopoemen p448 body-band entry has a reviewed ledger record"
+        );
+    }
+
+    /// A reviewed Latin region `[x0, y0, x1, y1]` from a ledger record.
+    fn ledger_region(value: &serde_json::Value) -> [u32; 4] {
+        std::array::from_fn(|i| value[i].as_u64().unwrap() as u32)
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn inner_tomi_shears_preserve_latin() {
+        let tomi = tomi_gap_split_repair_ledger();
+        for record in repairs_with_disposition(&tomi, "shear") {
+            let source = record["source"].as_u64().unwrap() as usize;
+            let page = record["source_page"].as_u64().unwrap() as u32;
+            let raw = real_source_image(source, page);
+            let (cropped, _) =
+                render_and_band(source, page, &|s, p| Ok(real_source_image(s, p))).unwrap();
+            let x0 = record["x0_px"].as_u64().unwrap() as u32;
+            let slope = record["baseline_slope"].as_f64().unwrap();
+            let top_pad = record["top_pad"].as_u64().unwrap() as u32;
+            let crop_left = record["crop_edges"][0].as_u64().unwrap() as u32;
+            let sheared_height = apply_known_source_shear(source, page, raw.clone()).height();
+            let deleted_rows: Vec<[u32; 2]> = SOURCE_ROW_EXCISIONS
+                .iter()
+                .filter(|e| e.source == source && e.page == page)
+                .filter_map(|e| excision_rows(e, sheared_height).map(|(top, bottom)| [top, bottom]))
+                .collect();
+            for region in record["preserved_latin_regions"].as_array().unwrap() {
+                assert_sheared_source_region_pixels_survive(
+                    &raw,
+                    &cropped,
+                    x0,
+                    slope,
+                    top_pad,
+                    crop_left,
+                    &deleted_rows,
+                    ledger_region(region),
+                );
+            }
+        }
+    }
+
+    #[test]
+    #[ignore = "requires source PDFs and production-DPI renders"]
+    fn inner_tomi_whole_strips_preserve_latin() {
+        let tomi = tomi_gap_split_repair_ledger();
+        for record in repairs_with_disposition(&tomi, "whole_strip") {
+            let source = record["source"].as_u64().unwrap() as usize;
+            let page = record["source_page"].as_u64().unwrap() as u32;
+            let (pages, _, traces) = audit_traced_unit(record["unit_id"].as_str().unwrap());
+            let trace = retained_page(&traces, source, page).unwrap();
+            let index = trace.retained_index.unwrap();
+            let original = real_source_image(source, page);
+            for region in record["preserved_latin_regions"].as_array().unwrap() {
+                assert_source_region_pixels_survive(
+                    &original,
+                    &pages[index].0,
+                    trace,
+                    ledger_region(region),
                 );
             }
         }
@@ -5312,12 +6295,13 @@ mod tests {
     fn inner_tomi_known_masks_preserve_latin() {
         let historical = repair_ledger();
         let backlog = backlog_repair_ledger();
-        let page_masks = all_reviewed_page_masks(&[&historical, &backlog]);
+        let tomi = tomi_gap_split_repair_ledger();
+        let page_masks = all_reviewed_page_masks(&[&historical, &backlog, &tomi]);
         let dir = std::path::Path::new("tmp/pdfs/inner_tomi_repairs/masks");
         std::fs::create_dir_all(dir).unwrap();
         let mut measurements = Vec::new();
         for &(source, page) in page_masks.keys() {
-            let records: Vec<_> = [&historical, &backlog]
+            let records: Vec<_> = [&historical, &backlog, &tomi]
                 .into_iter()
                 .flat_map(|ledger| ledger["repairs"].as_array().unwrap())
                 .filter(|repair| {
@@ -5362,7 +6346,9 @@ mod tests {
                     "source {source} page {page} pixel {x},{y}"
                 );
             }
-            let (_, bands) = render_and_band(source, page, &|_, _| Ok(cleaned.clone())).unwrap();
+            // Feed the untouched raw page so render_and_band applies its own shear
+            // and masking; a sheared page masked here would be transformed twice.
+            let (_, bands) = render_and_band(source, page, &|_, _| Ok(original.clone())).unwrap();
             let raw_column = detect_latin_column(&original).unwrap();
             let raw_crop = crop_column(&original, &raw_column);
             let before = drop_furniture(&line_bands(&raw_crop, LINE_MIN_INK), original.height());
