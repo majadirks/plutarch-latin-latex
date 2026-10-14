@@ -4102,6 +4102,95 @@ fn romulus_chapter_break_deskewed() {
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn philopoemen_victory_line_deskewed() {
     assert_reviewed_sheared_page(0, 448, 1400, 0.03048780487804878, [1000, 315, 1755, 365], [909, 1988], &[[330, 366], [380, 415]], [909, 315, 929, 1050]);
+    // Pin the retained post-shear band [330,366] to the victory line's own pixels so
+    // no unrelated retained band can satisfy the exact-band assertion above.
+    let original = real_source_image(0, 448);
+    let (retained, _) = render_and_band(0, 448, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    let victory_ink = (292..353)
+        .flat_map(|y| (1000..1755).map(move |x| (x, y)))
+        .filter(|&(x, y)| original.get_pixel(x, y).0[0] < 200)
+        .count();
+    assert!(victory_ink > 0, "victory line source box contains glyph ink");
+    assert_sheared_source_region_pixels_survive(
+        &original,
+        &retained,
+        1400,
+        0.03048780487804878,
+        18,
+        909,
+        &[],
+        [1000, 292, 1755, 353],
+    );
+}
+
+/// The Philopoemen victory line `subito illis nihil tale exspectantibus, sed
+/// propter victoriam` is the first body line of interior source page 448 (its
+/// post-shear band `[330,366]`). The full-unit composer must keep it as exactly one
+/// strip, place it once on a single reader canvas carrying its glyph ink, and read
+/// it in source order between the preceding page's last line and the following
+/// `secure agentibus` line `[380,415]`. Without the `SOURCE_BODY_BANDS` rescue the
+/// full-unit boundary trim (`drop_interior_running_head`) drops this first band, so
+/// it never becomes a strip and vanishes from every canvas.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn philopoemen_victory_line_present() {
+    let victory = [330u32, 366u32];
+    let following = [380u32, 415u32];
+    let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale("philopoemen");
+    let trace = retained_page(&traces, 0, 448).expect("p448 retained");
+    let index = trace
+        .retained_index
+        .expect("p448 contributes a retained column");
+
+    let covers = |s: &Strip, rows: [u32; 2]| {
+        s.page_img_index == index && s.band.top <= rows[0] && s.band.bottom >= rows[1]
+    };
+    assert_eq!(
+        strips.iter().filter(|(s, _, _)| covers(s, victory)).count(),
+        1,
+        "victory line survives Pass B as a single strip on p448: {:?}",
+        strips
+            .iter()
+            .filter(|(s, _, _)| s.page_img_index == index)
+            .map(|(s, _, _)| s.band)
+            .collect::<Vec<_>>()
+    );
+    let order = strips
+        .iter()
+        .position(|(s, _, _)| covers(s, victory))
+        .unwrap();
+    let (_, start, end) = &strips[order];
+
+    // The victory line's scaled rows land on exactly one canvas — no part straddles a
+    // page break — and that canvas actually carries its glyph ink.
+    let landing: Vec<_> = canvas_ranges
+        .iter()
+        .filter(|(_, a, b)| *a < *end && *b > *start)
+        .collect();
+    assert_eq!(landing.len(), 1, "victory line stays whole on one canvas");
+    let geom = TrimGeom::default();
+    let (ci, ctop, _) = *landing[0];
+    let canvas = &canvases[ci - 1];
+    let ink = ((geom.pad_y + (*start - ctop))..(geom.pad_y + (*end - ctop)))
+        .flat_map(|y| (0..canvas.width()).map(move |x| (x, y)))
+        .filter(|&(x, y)| canvas.get_pixel(x, y)[0] <= INK_THRESHOLD)
+        .count();
+    assert!(ink > 100, "the victory line's canvas rows carry glyph ink");
+
+    // Source order: the first body line of interior p448 follows an earlier page's
+    // lines, and the next strip is the following `secure agentibus` line on p448.
+    let (before, _, _) = &strips[order - 1];
+    assert!(
+        before.page_img_index < index,
+        "the victory line follows an earlier page's lines"
+    );
+    let (after, _, _) = &strips[order + 1];
+    assert_eq!(after.page_img_index, index, "the next strip is also on p448");
+    assert!(
+        after.band.top <= following[0] && after.band.bottom >= following[1],
+        "the strip after the victory line covers `secure agentibus` [380,415]: {:?}",
+        after.band
+    );
 }
 
 #[test]
