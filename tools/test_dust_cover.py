@@ -2,7 +2,10 @@
 
 import unittest
 
-from tools.dust_cover import DustCoverError, compute_layout
+from tools.dust_cover import (
+    SHEET_SIZES_IN, DustCoverError, check_printable, compute_layout,
+    validate_exlibris,
+)
 
 
 class LayoutTests(unittest.TestCase):
@@ -28,3 +31,22 @@ class LayoutTests(unittest.TestCase):
         self.assertLess(layout.spine_x, layout.front_x)
         self.assertLess(layout.front_x, layout.right_flap_x)
         self.assertAlmostEqual(layout.right_flap_x + layout.flap_in, 15.5)
+
+
+class ValidationTests(unittest.TestCase):
+    def test_total_width_exceeds_printable_raises(self):
+        with self.assertRaisesRegex(DustCoverError, "printable width"):
+            check_printable(17, 9.5, "tabloid", 0.25)
+
+    def test_total_height_exceeds_printable_raises(self):
+        with self.assertRaisesRegex(DustCoverError, "printable height"):
+            check_printable(15.5, 11, "tabloid", 0.25)
+
+    def test_a3_printable_area_smaller_than_tabloid(self):
+        self.assertLess(SHEET_SIZES_IN["a3"][0] - 0.5, 16.5)
+
+    def test_validate_exlibris_rejects_blank(self):
+        for value in ("", "   ", "\t"):
+            with self.subTest(value=value), self.assertRaises(DustCoverError):
+                validate_exlibris(value)
+        self.assertEqual(validate_exlibris(" Alex "), " Alex ")

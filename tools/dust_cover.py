@@ -46,6 +46,29 @@ def compute_layout(total_width: float, total_height: float,
     )
 
 
+def validate_exlibris(name: str) -> str:
+    if not name.strip():
+        raise DustCoverError("exlibris name must not be blank")
+    return name
+
+
+def check_printable(total_width: float, total_height: float,
+                    paper_size: str, margin: float) -> None:
+    long_in, short_in = SHEET_SIZES_IN[paper_size]
+    printable_w = long_in - 2 * margin
+    printable_h = short_in - 2 * margin
+    if total_width > printable_w + 1e-9:
+        raise DustCoverError(
+            f"jacket width {total_width:.3f}in exceeds printable width "
+            f"{printable_w:.3f}in"
+        )
+    if total_height > printable_h + 1e-9:
+        raise DustCoverError(
+            f"jacket height {total_height:.3f}in exceeds printable height "
+            f"{printable_h:.3f}in"
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tomus", type=int, required=True)
@@ -61,9 +84,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-compile", action="store_true")
     args = parser.parse_args(argv)
     try:
+        if args.exlibris is not None:
+            validate_exlibris(args.exlibris)
+        check_printable(args.total_width, args.total_height,
+                        args.paper_size, args.printable_margin)
+        layout = compute_layout(args.total_width, args.total_height,
+                                args.spine_width, args.cover_width)
         print(
             f"sheet={args.paper_size} jacket={args.total_width}x{args.total_height}in "
-            f"cover={args.cover_width}in spine={args.spine_width}in"
+            f"cover={args.cover_width}in spine={args.spine_width}in "
+            f"flap={layout.flap_in:.3f}in"
         )
     except DustCoverError as exc:
         print(f"error: {exc}", file=sys.stderr)
