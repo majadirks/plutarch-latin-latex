@@ -767,6 +767,16 @@ struct SourceRowExcision {
 }
 
 const SOURCE_ROW_EXCISIONS: &[SourceRowExcision] = &[
+    // Romulus II->III: remove the blank parallel-column alignment space between
+    // the preceding Latin line and "III. Ceterum" after the p34 shear. The body
+    // bands end at row 1878 and resume at 2149; this leaves 14 blank rows on
+    // either side of the splice and preserves every Latin pixel.
+    SourceRowExcision {
+        source: 0,
+        page: 34,
+        top: 1892.0 / 3040.0,
+        bottom: 2135.0 / 3040.0,
+    },
     // Theseus §17/§18: five faint bled-through lines stand alone between the line
     // ending "... tradit agi." and "XVIII. Sorte ducta ...". Delete the bleed-only
     // slab and close the space, leaving one ordinary inter-line gap. On the 789×2975
@@ -1308,7 +1318,7 @@ fn production_source_column(source: usize, page: u32, masked: &GrayImage) -> Res
 /// Raw line evidence and furniture-filtered bands on an owned Latin column.
 fn band_source_column(source: usize, page: u32, cropped: &GrayImage) -> (Vec<Band>, Vec<Band>) {
     let reviewed_text_window = match (source, page, cropped.dimensions()) {
-        (0, 34, (828, 3040))
+        (0, 34, (828, 2797))
             if matches_source_region_fingerprint(
                 cropped,
                 [100, 600, 600, 750],
@@ -1360,7 +1370,7 @@ fn preserve_known_body_crop_edge(
     column: Column,
 ) -> Column {
     match (source, page, raster.dimensions(), column.left, column.right) {
-        (0, 34, (1982, 3040), 950, 1773)
+        (0, 34, (1982, 2797), 950, 1774)
             if matches_source_region_fingerprint(
                 raster,
                 [1045, 600, 1545, 750],
@@ -5291,6 +5301,18 @@ mod tests {
                         .is_some_and(|bands| !bands.is_empty()
                             && bands.iter().all(|band| ledger_is_u_array(band, 2))));
                 }
+                "row_excision" => {
+                    assert_eq!(repair["status"], "repaired");
+                    assert_eq!(repair["coordinate_space"], "sheared");
+                    assert!(ledger_is_u_array(&repair["sheared_raster"], 2));
+                    assert!(ledger_is_u_array(&repair["deleted_rows"], 2));
+                    assert!(ledger_is_u_array(&repair["column_dims"], 2));
+                    let top = repair["top"].as_f64().unwrap();
+                    let bottom = repair["bottom"].as_f64().unwrap();
+                    assert!(0.0 <= top && top < bottom && bottom <= 1.0);
+                    assert!(repair["gap_before_rows"].as_u64().is_some());
+                    assert!(repair["gap_after_rows"].as_u64().is_some());
+                }
                 "whole_strip" => {
                     assert_eq!(repair["status"], "repaired");
                     assert!(ledger_is_u_array(&repair["column_dims"], 2));
@@ -5726,6 +5748,39 @@ mod tests {
                 record["source_page"]
             );
         }
+    }
+
+    #[test]
+    fn inner_tomi_row_excisions_match_reviewed_ledger() {
+        let tomi = tomi_gap_split_repair_ledger();
+        let records = repairs_with_disposition(&tomi, "row_excision");
+        assert_eq!(records.len(), 1, "one reviewed Tomi row excision");
+        let record = records[0];
+        assert_eq!(record["source"], 0);
+        assert_eq!(record["source_page"], 34);
+        assert_eq!(record["raster"], serde_json::json!([1982, 3008]));
+        let entry = SOURCE_ROW_EXCISIONS
+            .iter()
+            .find(|e| e.source == 0 && e.page == 34)
+            .expect("Romulus p34 row excision installed");
+        assert_eq!(entry.top, record["top"].as_f64().unwrap());
+        assert_eq!(entry.bottom, record["bottom"].as_f64().unwrap());
+        let sheared_height = record["sheared_raster"][1].as_u64().unwrap() as u32;
+        let (top, bottom) = excision_rows(entry, sheared_height).unwrap();
+        assert_eq!(record["deleted_rows"], serde_json::json!([top, bottom]));
+        assert_eq!(
+            record["column_dims"],
+            serde_json::json!([828, sheared_height - (bottom - top)])
+        );
+        assert_eq!(record["gap_before_rows"], 271);
+        assert_eq!(record["gap_after_rows"], 271 - (bottom - top));
+        assert_eq!(
+            SOURCE_ROW_EXCISIONS
+                .iter()
+                .filter(|e| e.source == 0 && e.page == 34)
+                .count(),
+            1
+        );
     }
 
     #[test]

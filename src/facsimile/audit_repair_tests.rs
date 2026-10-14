@@ -3944,7 +3944,7 @@ fn skew_and_tomus6_repair_trace() {
     let geom = TrimGeom::default();
     for (unit, source, page, target, label) in [
         ("philopoemen", 0usize, 448u32, [330u32, 366u32], "victory_line"),
-        ("romulus", 0, 34, [2149, 2186], "iii_ceterum_heading"),
+        ("romulus", 0, 34, [1906, 1943], "iii_ceterum_heading"),
         ("alexander", 1, 231, [2224, 2317], "quidem_line"),
         ("cleomenes", 1, 398, [1022, 1837], "consi_block"),
     ] {
@@ -4042,7 +4042,13 @@ fn assert_reviewed_sheared_page(
     }
     assert!(removed_ink > 0, "reviewed gutter contains removable ink");
     mask_known_source_furniture(source, page, &mut sheared);
-    let crop = production_source_column(source, page, &sheared).unwrap();
+    let deleted_rows: Vec<[u32; 2]> = SOURCE_ROW_EXCISIONS
+        .iter()
+        .filter(|entry| entry.source == source && entry.page == page)
+        .filter_map(|entry| excision_rows(entry, sheared.height()).map(|(top, bottom)| [top, bottom]))
+        .collect();
+    let transformed = excise_known_source_rows(source, page, sheared);
+    let crop = production_source_column(source, page, &transformed).unwrap();
     let (_, top_pad) = source_shear_shifts(original.width(), x0_px, baseline_slope);
     let ledger = tomi_gap_split_repair_ledger();
     let record = ledger["repairs"]
@@ -4060,9 +4066,14 @@ fn assert_reviewed_sheared_page(
     assert_eq!([crop.left, crop.right], expected_crop);
     assert_ne!(sheared_dims, original.dimensions(), "reviewed shear must apply");
     assert_eq!(retained.width(), crop.right - crop.left);
+    let trace = RetainedSourcePageTrace {
+        source, page, retained_index: Some(0), crop: expected_crop,
+        bands: vec![], deleted_rows: deleted_rows.clone(),
+    };
     for y in top..bottom {
+        let Some(mapped_y) = trace.map_row(y) else { continue };
         for x in left..right {
-            assert_eq!(retained.get_pixel(x - crop.left, y).0[0], 255);
+            assert_eq!(retained.get_pixel(x - crop.left, mapped_y).0[0], 255);
         }
     }
     assert!(kept.iter().all(|b| b.bottom - b.top < 100), "body lines must band separately: {kept:?}");
@@ -4076,16 +4087,19 @@ fn assert_reviewed_sheared_page(
         baseline_slope,
         top_pad,
         crop.left,
-        &[],
+        &deleted_rows,
         region,
     );
     let [_, top, _, bottom] = region;
-    let mapped_top = (i64::from(top)
+    let sheared_top = (i64::from(top)
         + source_shear_shift(region[0], x0_px, baseline_slope)
         + i64::from(top_pad)) as u32;
-    let mapped_bottom = (i64::from(bottom)
+    let sheared_bottom = (i64::from(bottom)
         + source_shear_shift(region[2] - 1, x0_px, baseline_slope)
         + i64::from(top_pad)) as u32;
+    let trace = RetainedSourcePageTrace { source, page, retained_index: Some(0), crop: expected_crop, bands: vec![], deleted_rows };
+    let mapped_top = trace.map_row(sheared_top).unwrap();
+    let mapped_bottom = trace.map_row(sheared_bottom).unwrap();
     assert!(
         kept.iter().any(|band| band.top < mapped_bottom && band.bottom > mapped_top),
         "reviewed source line must remain in a retained band"
@@ -4095,7 +4109,68 @@ fn assert_reviewed_sheared_page(
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn romulus_chapter_break_deskewed() {
-    assert_reviewed_sheared_page(0, 34, 1400, -0.016079632465543646, [1080, 2130, 1750, 2180], [945, 1773], &[[1840, 1878], [2149, 2186]], [945, 1900, 975, 2651]);
+    assert_reviewed_sheared_page(0, 34, 1400, -0.016079632465543646, [1080, 2130, 1750, 2180], [945, 1773], &[[1840, 1878], [1906, 1943]], [945, 1900, 975, 2651]);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn romulus_chapter_break_gap_normal() {
+    let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale("romulus");
+    let trace = retained_page(&traces, 0, 34).expect("Romulus p34 retained");
+    let index = trace.retained_index.expect("p34 retained column");
+    let preceding = [1840, 1878];
+    let heading = [trace.map_row(2149).unwrap(), trace.map_row(2185).unwrap() + 1];
+    let find = |rows: [u32; 2]| {
+        let hits: Vec<_> = strips.iter().enumerate().filter(|(_, (s, _, _))|
+            s.page_img_index == index && s.band.top <= rows[0] && s.band.bottom >= rows[1]
+        ).collect();
+        assert_eq!(hits.len(), 1, "reviewed line must occur once in a p34 strip");
+        hits[0]
+    };
+    let (before_pos, (_, before_start, before_end)) = find(preceding);
+    let (heading_pos, (_, heading_start, heading_end)) = find(heading);
+    assert!(before_pos < heading_pos, "chapter heading follows the preceding Latin line");
+    let landing = |start: u32, end: u32| -> usize {
+        let hits: Vec<_> = canvas_ranges.iter().filter(|(_, a, b)| *a < end && *b > start).collect();
+        assert_eq!(hits.len(), 1, "reviewed line must stay on one canvas");
+        hits[0].0
+    };
+    let before_canvas = landing(*before_start, *before_end);
+    let heading_canvas = landing(*heading_start, *heading_end);
+    assert!(before_canvas <= heading_canvas);
+    if before_canvas == heading_canvas {
+        let gap = heading[0] - preceding[1];
+        assert!(gap <= 28, "chapter break is {gap} source rows, over twice the ordinary 14-row gap");
+        let (_, canvas_top, _) = canvas_ranges[before_canvas - 1];
+        let canvas = &canvases[before_canvas - 1];
+        let profile = ink_profile_rows(canvas, INK_THRESHOLD);
+        let pad = TrimGeom::default().pad_y;
+        let last_before = (pad + before_start - canvas_top..pad + before_end - canvas_top)
+            .rev()
+            .find(|&row| profile[row as usize] > 3)
+            .expect("preceding line has composed ink");
+        let first_heading = (pad + heading_start - canvas_top..pad + heading_end - canvas_top)
+            .find(|&row| profile[row as usize] > 3)
+            .expect("chapter heading has composed ink");
+        let composed_gap = first_heading - last_before - 1;
+        assert!(composed_gap <= 34, "composed chapter gap {composed_gap}px exceeds twice the ordinary scaled gap");
+    } else {
+        assert_eq!(heading_canvas, before_canvas + 1);
+        assert_eq!(*heading_start, canvas_ranges[heading_canvas - 1].1, "heading starts the new canvas");
+    }
+    for (rows, canvas_index) in [(preceding, before_canvas), (heading, heading_canvas)] {
+        let canvas = &canvases[canvas_index - 1];
+        let ink = canvas.as_raw().iter().filter(|&&pixel| pixel <= INK_THRESHOLD).count();
+        assert!(ink > 100, "reviewed Latin line {rows:?} lands on an ink-bearing canvas");
+    }
+    let original = real_source_image(0, 34);
+    let (retained, _) = render_and_band(0, 34, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    for region in [[1080, 1810, 1750, 1860], [1080, 2130, 1750, 2180]] {
+        assert_sheared_source_region_pixels_survive(
+            &original, &retained, 1400, -0.016079632465543646, 23, 945,
+            &trace.deleted_rows, region,
+        );
+    }
 }
 
 #[test]
