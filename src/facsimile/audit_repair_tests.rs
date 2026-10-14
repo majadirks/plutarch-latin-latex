@@ -4330,6 +4330,119 @@ fn tomus6_quidem_line_complete() {
     assert!(((band.bottom - band.top) as f32 * 1.2023952).round() as u32 <= TrimGeom::default().body_budget());
 }
 
+/// Composer-level counterpart to `tomus6_consi_continuation_gap_closed`: the
+/// band-domain check proves the Cleomenes p398 lines band individually after the
+/// deskew, but it cannot see how the packer lays them onto reader pages. The
+/// pre-repair whole strip wrapped the merged `[1022,1837]` block onto a single
+/// canvas and left a large page-bottom gap on the preceding reader page after
+/// `agerentur pensitantis`, with `qui summae rerum consi-` and its `lioque`
+/// continuation trapped inside one undivided strip. This composes the unit at the
+/// frozen scale and requires `agerentur pensitantis`, the `consi-` line, and the
+/// `lioque` continuation to be three separate strips, each whole on one canvas, read
+/// in source order, with no injected page-bottom gap after `agerentur pensitantis`.
+/// It fails on the pre-repair tree (the merged block is one whole strip, so the
+/// `consi-` and `lioque` bands are not resolved) and passes once p398 is deskewed
+/// and the whole strip removed.
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn tomus6_consi_page_reads_continuously() {
+    // Post-deskew body bands (sheared crop coordinates) of the three reviewed lines.
+    let agerentur = [1013u32, 1042u32];
+    let consi = [1362u32, 1392u32];
+    let lioque = [1405u32, 1436u32];
+
+    let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale("cleomenes");
+    let trace = retained_page(&traces, 1, 398).expect("p398 retained");
+    let index = trace
+        .retained_index
+        .expect("p398 contributes a retained column");
+
+    let covers = |s: &Strip, rows: [u32; 2]| {
+        s.page_img_index == index && s.band.top <= rows[0] && s.band.bottom >= rows[1]
+    };
+    let one_strip = |rows: [u32; 2], label: &str| -> usize {
+        let hits: Vec<usize> = strips
+            .iter()
+            .enumerate()
+            .filter(|(_, (s, _, _))| covers(s, rows))
+            .map(|(i, _)| i)
+            .collect();
+        assert_eq!(
+            hits.len(),
+            1,
+            "{label} is one strip on p398: {:?}",
+            strips
+                .iter()
+                .filter(|(s, _, _)| s.page_img_index == index)
+                .map(|(s, _, _)| s.band)
+                .collect::<Vec<_>>()
+        );
+        hits[0]
+    };
+    let a_pos = one_strip(agerentur, "agerentur pensitantis");
+    let c_pos = one_strip(consi, "consi line");
+    let l_pos = one_strip(lioque, "lioque continuation");
+
+    // Three distinct strips in source order; consi and lioque are adjacent, so the
+    // continuation is no longer fused into the consi line as the whole strip did.
+    assert!(
+        a_pos < c_pos && c_pos < l_pos,
+        "lines read in source order: agerentur@{a_pos}, consi@{c_pos}, lioque@{l_pos}"
+    );
+    assert_eq!(l_pos, c_pos + 1, "lioque immediately follows the consi line");
+
+    // Each line stays whole on exactly one canvas — no word divided across a page
+    // break — and that canvas carries the line's glyph ink.
+    let geom = TrimGeom::default();
+    let land = |pos: usize, label: &str| -> usize {
+        let (_, start, end) = &strips[pos];
+        let landing: Vec<_> = canvas_ranges
+            .iter()
+            .filter(|(_, a, b)| *a < *end && *b > *start)
+            .collect();
+        assert_eq!(
+            landing.len(),
+            1,
+            "{label} stays whole on one canvas: {landing:?}"
+        );
+        let (ci, ctop, _) = *landing[0];
+        let canvas = &canvases[ci - 1];
+        let ink = ((geom.pad_y + (*start - ctop))..(geom.pad_y + (*end - ctop)))
+            .flat_map(|y| (0..canvas.width()).map(move |x| (x, y)))
+            .filter(|&(x, y)| canvas.get_pixel(x, y)[0] <= INK_THRESHOLD)
+            .count();
+        assert!(ink > 100, "{label}'s canvas rows carry glyph ink");
+        ci
+    };
+    let a_canvas = land(a_pos, "agerentur pensitantis");
+    let c_canvas = land(c_pos, "consi line");
+    let l_canvas = land(l_pos, "lioque continuation");
+    assert!(
+        a_canvas <= c_canvas && c_canvas <= l_canvas,
+        "canvases read in source order: {a_canvas} <= {c_canvas} <= {l_canvas}"
+    );
+
+    // No injected page-bottom gap: the deskew lets the block pack continuously, so the
+    // canvas carrying `agerentur pensitantis` is filled to within two median
+    // complete-line heights rather than closed early under the removed whole strip.
+    let mut completes: Vec<u32> = strips
+        .iter()
+        .filter(|(s, _, _)| matches!(s.class, BandClass::Normal))
+        .map(|(_, a, b)| b - a)
+        .collect();
+    completes.sort_unstable();
+    let median = completes[completes.len() / 2];
+    let canvas = &canvases[a_canvas - 1];
+    let bottom_gap = geom
+        .body_budget()
+        .saturating_sub(canvas.height() - geom.pad_y);
+    assert!(
+        bottom_gap <= 2 * median,
+        "page-bottom gap after agerentur {bottom_gap}px exceeds two median strip heights {}px",
+        2 * median
+    );
+}
+
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn tomus6_consi_continuation_gap_closed() {
