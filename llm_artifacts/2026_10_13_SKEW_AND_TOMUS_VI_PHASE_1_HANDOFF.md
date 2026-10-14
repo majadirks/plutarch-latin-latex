@@ -64,7 +64,7 @@ No `repairs` records were added in Phase 1: `SOURCE_SHEARS` is empty and the
 | Defect | Source | Reader | Disposition | Key measured values (in `diagnoses`) |
 |---|---|---|---|---|
 | Romulus heading | v1 p34 | Tomus I p58 | `shear` | `1982×3008`; slope `-0.016079632465543646`, `x0=1400`, shifts `[-23,9]`, `top_pad=23`; fp region `[1100,600,1700,750]`; crop `[945,1773)` merges `[907,2633]` |
-| Philopoemen victory | v1 p448 | Tomus III p121 | `shear` | `1988×3007`; slope `-0.03048780487804878`, `x0=1400`, shifts `[-43,18]`, `top_pad=43`; fp region `[1100,600,1700,750]`; crop `[909,1988)` merges `[300,1501]`+`[1527,2663]` |
+| Philopoemen victory | v1 p448 | Tomus III p121 | `shear` | `1988×3007`; tested slope `0.03048780487804878`, `x0=1400`, shifts `[-18,43]`, `top_pad=18`; fp region `[1100,600,1700,750]`; baseline crop `[909,1988)` merges `[300,1501]`+`[1527,2663]`. The Phase 0 gap pair came from adjacent lines and gave the wrong sign. |
 | `quidem` straddle | v2 p231 | Tomus VI pp86–87 | **no repair** | Complete `quidem passus Callisthenem` on p86; a 112-px scaled `Tall` strip exists but the break follows the complete line |
 | Caesar right glyphs | v2 p266 | Tomus VI p158 | `shear`, then recheck crop | `1878×2825`; slope `0.03745928338762215`, `x0=1350`, shifts `[-20,51]`, `top_pad=20`; fp region `[1050,600,1650,750]`; baseline crop `[880,1708)` cuts `sive` at x1720 |
 | `consi-` continuation | v2 p398 | Tomus VI pp394–395 | `whole_strip` | crop `818×2835`; strip `[1022,1837)` 980 scaled px (<1394 budget); strip fp region `[0,1022,818,1837]`, digest `1d7abf778c…c5bef5df`; source gaps 20/18 px |
@@ -112,13 +112,13 @@ For each page:
    the `SOURCE_SHEARS` entry exactly.
 4. **Remeasure** the crop edges and `band_source_column` output on the sheared
    raster and record them as `crop_edges` / `expected_bands`; the pre-shear crop
-   in `diagnoses` will change once the baselines are level.
+   in `diagnoses` may change once the baselines are level.
 5. For v2 p266 only: after the shear, re-check all five right-edge glyphs
-   (`sive`, `praeter`, `(3)`, `auferro,`, `idem`). If any glyph is still clipped
-   by the crop, implement the word-patch mechanism (New mechanism B) under its
-   contract and add `source_word_patch_replaces_overlap_once` +
-   `source_word_patch_rejects_changed_source_identity`. Do not add the patch if
-   the shear restores every glyph.
+   (`sive`, `praeter`, `(3)`, `auferro,`, `idem`). The detector still crops at
+   x1708; a fingerprint-guarded crop-edge correction to x1730 retains the five
+   endings directly, and `source_strip_scale` caps its composed width. Reserve
+   the word-patch mechanism for a glyph that a safe full-column crop cannot
+   retain.
 6. Add a sheared-coordinate left-gutter / Greek-bleed mask only if fragments
    remain outside reviewed Latin pixels; mark such a mask record
    `coordinate_space:"sheared"` and measure its fractions against the sheared

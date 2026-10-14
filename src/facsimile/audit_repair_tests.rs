@@ -3021,17 +3021,16 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
     let traces = (range.unit.start_page..=range.end_page)
         .map(|p| {
             let index = source_pages.iter().position(|&page| page == p);
-            // Mirror render_and_band: mask, then excise, then detect the column, so
-            // the crop edges match the retained page. `deleted_rows` is captured in
-            // original-source coordinates (pre-excision height) so `map_row` shifts
-            // every row below an excised slab.
-            let mut raw = real_source_image(range.unit.source, p);
-            let original_height = raw.height();
+            // Mirror render_and_band so crop edges and excision rows use the
+            // transformed page's coordinate space.
+            let raw = real_source_image(range.unit.source, p);
+            let mut raw = apply_known_source_shear(range.unit.source, p, raw);
+            let sheared_height = raw.height();
             mask_known_source_furniture(range.unit.source, p, &mut raw);
             let mut deleted_rows: Vec<[u32; 2]> = SOURCE_ROW_EXCISIONS
                 .iter()
                 .filter(|e| e.source == range.unit.source && e.page == p)
-                .filter_map(|e| excision_rows(e, original_height).map(|(t, b)| [t, b]))
+                .filter_map(|e| excision_rows(e, sheared_height).map(|(t, b)| [t, b]))
                 .collect();
             deleted_rows.sort_unstable();
             let raw = excise_known_source_rows(range.unit.source, p, raw);
@@ -3868,6 +3867,160 @@ fn skew_and_tomus6_repair_trace() {
         println!("BREAK {unit} v2 p{page} crop={:?} dims={:?} metrics={metrics:?} raw_bands={around:?} kept={kept:?} cuts={cuts:?} strips={relevant:?} body_budget={}", trace.crop, column.dimensions(), TrimGeom::default().body_budget());
         column.save(dir.join(format!("v2_p{page}_retained_crop.png"))).unwrap();
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn assert_reviewed_sheared_page(
+    source: usize,
+    page: u32,
+    x0_px: u32,
+    baseline_slope: f64,
+    region: [u32; 4],
+    expected_crop: [u32; 2],
+    required_bands: &[[u32; 2]],
+    gutter: [u32; 4],
+) {
+    let original = real_source_image(source, page);
+    let (retained, kept) =
+        render_and_band(source, page, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    let mut sheared = apply_known_source_shear(source, page, original.clone());
+    let sheared_dims = sheared.dimensions();
+    let [left, top, right, bottom] = gutter;
+    let mut removed_ink = 0usize;
+    for y in top..bottom {
+        for x in left..right {
+            removed_ink += usize::from(sheared.get_pixel(x, y).0[0] < 200);
+        }
+    }
+    assert!(removed_ink > 0, "reviewed gutter contains removable ink");
+    mask_known_source_furniture(source, page, &mut sheared);
+    let crop = production_source_column(source, page, &sheared).unwrap();
+    let (_, top_pad) = source_shear_shifts(original.width(), x0_px, baseline_slope);
+    let ledger = tomi_gap_split_repair_ledger();
+    let record = ledger["repairs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|record| {
+            record["disposition"] == "shear"
+                && record["source"].as_u64() == Some(source as u64)
+                && record["source_page"].as_u64() == Some(u64::from(page))
+        })
+        .expect("reviewed shear record");
+    assert_eq!(record["crop_edges"], serde_json::json!(expected_crop));
+    assert_eq!(record["expected_bands"], serde_json::json!(required_bands));
+    assert_eq!([crop.left, crop.right], expected_crop);
+    assert_ne!(sheared_dims, original.dimensions(), "reviewed shear must apply");
+    assert_eq!(retained.width(), crop.right - crop.left);
+    for y in top..bottom {
+        for x in left..right {
+            assert_eq!(retained.get_pixel(x - crop.left, y).0[0], 255);
+        }
+    }
+    assert!(kept.iter().all(|b| b.bottom - b.top < 100), "body lines must band separately: {kept:?}");
+    for [top, bottom] in required_bands {
+        assert!(kept.iter().any(|b| b.top == *top && b.bottom == *bottom), "reviewed band [{top},{bottom}) must survive: {kept:?}");
+    }
+    assert_sheared_source_region_pixels_survive(
+        &original,
+        &retained,
+        x0_px,
+        baseline_slope,
+        top_pad,
+        crop.left,
+        &[],
+        region,
+    );
+    let [_, top, _, bottom] = region;
+    let mapped_top = (i64::from(top)
+        + source_shear_shift(region[0], x0_px, baseline_slope)
+        + i64::from(top_pad)) as u32;
+    let mapped_bottom = (i64::from(bottom)
+        + source_shear_shift(region[2] - 1, x0_px, baseline_slope)
+        + i64::from(top_pad)) as u32;
+    assert!(
+        kept.iter().any(|band| band.top < mapped_bottom && band.bottom > mapped_top),
+        "reviewed source line must remain in a retained band"
+    );
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn romulus_chapter_break_deskewed() {
+    assert_reviewed_sheared_page(0, 34, 1400, -0.016079632465543646, [1080, 2130, 1750, 2180], [945, 1773], &[[1840, 1878], [2149, 2186]], [945, 1900, 975, 2651]);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn philopoemen_victory_line_deskewed() {
+    assert_reviewed_sheared_page(0, 448, 1400, 0.03048780487804878, [1000, 315, 1755, 365], [909, 1988], &[[330, 366], [380, 415]], [909, 315, 929, 1050]);
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn tomus6_p266_right_glyphs_restored() {
+    assert_reviewed_sheared_page(1, 266, 1350, 0.03745928338762215, [1030, 250, 1730, 505], [880, 1730], &[[270, 302], [322, 406], [425, 458], [477, 512]], [880, 270, 900, 700]);
+    let original = real_source_image(1, 266);
+    let (retained, _) = render_and_band(1, 266, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    let scaled_width = (retained.width() as f32 * source_strip_scale(&retained, 1.2023952)).round() as u32;
+    assert!(scaled_width <= TrimGeom::default().content_width());
+    let mut changed = retained.clone();
+    changed.put_pixel(100, 600, Luma([255 - changed.get_pixel(100, 600).0[0]]));
+    assert_eq!(source_strip_scale(&changed, 1.2023952), 1.2023952);
+    for (top, bottom) in [(260, 293), (309, 345), (360, 400), (413, 447), (464, 500)] {
+        let missing_edge_ink = (1708..1730)
+            .flat_map(|x| (top..bottom).map(move |y| (x, y)))
+            .filter(|&(x, y)| original.get_pixel(x, y).0[0] < 200)
+            .count();
+        assert!(missing_edge_ink > 0, "right-edge source ink must be present on each reviewed line");
+        assert_sheared_source_region_pixels_survive(
+            &original, &retained, 1350, 0.03745928338762215, 20, 880, &[],
+            [1708, top, 1730, bottom],
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn tomus6_quidem_line_complete() {
+    let (column, kept) =
+        render_and_band(1, 231, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    assert_eq!(column.dimensions(), (810, 2844));
+    let band = Band { top: 2224, bottom: 2317 };
+    assert!(cut_points(&kept).windows(2).any(|pair| pair == [band.top, band.bottom]));
+    let original = real_source_image(1, 231);
+    let trace = RetainedSourcePageTrace {
+        source: 1,
+        page: 231,
+        retained_index: Some(0),
+        crop: [1019, 1829],
+        bands: kept.iter().map(|b| [b.top, b.bottom]).collect(),
+        deleted_rows: vec![],
+    };
+    assert_source_region_pixels_survive(&original, &column, &trace, [1040, 2220, 1700, 2290]);
+    assert!(((band.bottom - band.top) as f32 * 1.2023952).round() as u32 <= TrimGeom::default().body_budget());
+}
+
+#[test]
+#[ignore = "requires source PDFs and production-DPI renders"]
+fn tomus6_consi_continuation_gap_closed() {
+    let (column, kept) =
+        render_and_band(1, 398, &|s, p| Ok(real_source_image(s, p))).unwrap();
+    assert_eq!(column.dimensions(), (818, 2835));
+    let band = Band { top: 1022, bottom: 1837 };
+    assert!(cut_points(&kept).windows(2).any(|pair| pair == [band.top, band.bottom]));
+    assert!(is_known_whole_source_strip(&column, &band));
+    assert!(((band.bottom - band.top) as f32 * 1.2023952).round() as u32 <= TrimGeom::default().body_budget());
+    let original = real_source_image(1, 398);
+    let trace = RetainedSourcePageTrace {
+        source: 1,
+        page: 398,
+        retained_index: Some(0),
+        crop: [880, 1698],
+        bands: kept.iter().map(|b| [b.top, b.bottom]).collect(),
+        deleted_rows: vec![],
+    };
+    assert_source_region_pixels_survive(&original, &column, &trace, [910, 1330, 1690, 1422]);
 }
 
 #[test]

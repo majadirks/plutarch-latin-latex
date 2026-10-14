@@ -90,9 +90,12 @@ re-derived downstream.
   is around raw y2141. Remeasure the crop and heading retention after shear.
 - **Defect 2 — Philopoemen victory-line skew (v1 p448):** `shear`. Raw raster
   `1988×3007`, SHA-256 `9b7175759d9ad807a93052779c05387e8f567fe9d5b0776842c170a995487cd3`.
-  Same inter-line gap: `[868,886)` at x `1083`, `[841,873)` at x `1739`.
-  Slope `-0.03048780487804878`, `x0_px=1400`, shifts `[-43,18]`,
-  `top_pad=43`. Raw fingerprint rectangle `[1100,600,1700,750)` hashes to
+  The initially recorded left interval `[868,886)` came from the following
+  line's gap. The same gap lies at `[822,840)` at x `1083` and `[841,873)` at
+  x `1739`; the source lines rise to the right by about 20–30 px across the
+  Latin column. The tested slope is `0.03048780487804878`,
+  `x0_px=1400`, shifts `[-18,43]`, `top_pad=18`. Raw fingerprint rectangle
+  `[1100,600,1700,750)` hashes to
   `852199dd3ab488b25f83a7d74e3beeb99d03a8148961068de1ccba083b477ccf`.
   Production crop `[909,1988)` has giant bands `[300,1501)` and `[1527,2663)`.
   Reader Tomus III p121 ends after `… sed propter victoriam` with Greek scraps
@@ -115,9 +118,10 @@ re-derived downstream.
   `top_pad=20`. Raw fingerprint rectangle `[1050,600,1650,750)` hashes to
   `fcf1065d83486979a6e6f9d4ddbcf50f0e20b107cdd7aafa48f507246edc5d2c`.
   Production crop `[880,1708)` clips the source `sive` ending, which reaches
-  x1720; the first merged band is `[239,441)`. Reader Tomus VI p158 also
-  loses the reviewed right-edge glyphs. Remeasure crop after shear before
-  deciding whether a source-pixel patch is needed.
+  x1720; the first merged band is `[239,441)`. Shear alone leaves that crop
+  unchanged. A fingerprint-guarded `preserve_known_body_crop_edge` entry extends
+  it to `[880,1730)`, retaining the source pixels of all five right endings.
+  The widened column is capped to the safe text width by `source_strip_scale`.
 - **Defect 5 — `consi-` continuation (v2 p398):** `whole_strip`. Raw raster
   `1840×2835`, SHA-256 `dbb4326a4d1e66391555e81b8ee0716a850e83b3cf5f7594e9ecfe0fac30d572`.
   The source has local gaps of 20 px at x `[950,1050)` and 18 px at
@@ -498,11 +502,13 @@ the complete source line; check `quidem` occurs once in its proper place.
 
 ### 2.4 Angled v2 p266
 
-Use shear if it restores all five right-edge glyphs without losing other Latin.
-Mask Greek bleed only outside reviewed Latin. If shear does not restore a glyph,
-use the word-patch contract for the specific remaining source pixels. Add tests
+Use shear and mask Greek bleed only outside reviewed Latin. The sheared crop
+still ends at x1708, so extend it to x1730 with a fingerprint-guarded
+`preserve_known_body_crop_edge` entry. Cap this reviewed column with
+`source_strip_scale` so its scaled width fits the safe text measure. If a full
+word cannot be recovered through that crop, use the word-patch contract and add
 `source_word_patch_replaces_overlap_once` and
-`source_word_patch_rejects_changed_source_identity` if the patch is used.
+`source_word_patch_rejects_changed_source_identity`.
 `tomus6_p266_right_glyphs_restored` checks exact source-pixel presence once for
 `sive`, `praeter`, `(3)`, `auferro,`, and `idem`, plus line order and crop width.
 

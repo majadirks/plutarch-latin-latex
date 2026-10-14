@@ -3,12 +3,74 @@
   "description": "Reviewed facsimile repairs for the 2026-10-13 Tomi I-III and Tomus VI gap/split/skew work. Each `repairs` record pins one source-scoped fix identified by `disposition`: a `mask` whitens a Greek/Latin divider or scan-edge streak so the Latin column bands normally; a `shear` straightens a uniformly tilted scan with an integer per-column vertical shift before banding; a `whole_strip` wraps a reviewed cut-point strip whole instead of letting the composer fill-split it across a page break; a `word_patch` restores real source pixels of a glyph the crop dropped; and `source_spacing_retained` records a genuine gap that is left unchanged. Every record carries source identity, raw dimensions, and reviewed Latin regions that must survive byte-identically. Mask coordinates are normalized full-source fractions matching SOURCE_FURNITURE_MASKS unless `coordinate_space` is `sheared`; shear records carry the raw fingerprint, matched gap rows, `x0_px`, `baseline_slope`, shift range, and padding; whole-strip records carry the cropped column dimensions, the exact band, and the strip fingerprint. The top-level `diagnoses` array is measurement-phase evidence only and is not installed: only `repairs` records drive production.",
   "diagnoses": [
     {"defect": "romulus_chapter_break", "unit_id": "romulus", "source": 0, "source_page": 34, "raw_dims": [1982, 3008], "raw_sha256": "7d4b205db97b3a77abc3f53a281391e47f5898a174e68b4747577b9acef1d3b4", "source_line_boxes": [[1080, 2130, 1750, 2180]], "reader": "tomus_1_inner.pdf", "reader_page": 58, "baseline_symptom": "III. Ceterum chapter opening is displaced and left-gutter fragments appear.", "disposition": "shear", "crop_edges": [945, 1773], "raw_bands_near_body": [[907, 2633]], "matched_gaps": {"left_x": 1080, "left_rows": [544, 571], "right_x": 1733, "right_rows": [535, 559]}, "baseline_slope": -0.016079632465543646, "x0_px": 1400, "shift_range": [-23, 9], "top_pad": 23, "fingerprint_region": [1100, 600, 1700, 750], "fingerprint": "6a72bab3264a4a88ccdb988d4d138a383f7dcf140366be63192fd99740a3f204", "evidence": "Matched gaps descend right; crop bands merge [907,2633], and the divider overlaps glyphs. Straighten before banding; remeasure crop and body filtering after shear."},
-    {"defect": "philopoemen_victory", "unit_id": "philopoemen", "source": 0, "source_page": 448, "raw_dims": [1988, 3007], "raw_sha256": "9b7175759d9ad807a93052779c05387e8f567fe9d5b0776842c170a995487cd3", "source_line_boxes": [[1000, 315, 1755, 365]], "reader": "tomus_3_inner.pdf", "reader_page": 121, "baseline_symptom": "Inflated gap after sed propter victoriam and Greek fragments in left margin.", "disposition": "shear", "crop_edges": [909, 1988], "raw_bands_near_body": [[300, 1501], [1527, 2663]], "matched_gaps": {"left_x": 1083, "left_rows": [868, 886], "right_x": 1739, "right_rows": [841, 873]}, "baseline_slope": -0.03048780487804878, "x0_px": 1400, "shift_range": [-43, 18], "top_pad": 43, "fingerprint_region": [1100, 600, 1700, 750], "fingerprint": "852199dd3ab488b25f83a7d74e3beeb99d03a8148961068de1ccba083b477ccf", "evidence": "Matched gaps descend right; production crop reaches the raw right edge and merges body lines into two giant bands. Straighten before crop and banding."},
+    {"defect": "philopoemen_victory", "unit_id": "philopoemen", "source": 0, "source_page": 448, "raw_dims": [1988, 3007], "raw_sha256": "9b7175759d9ad807a93052779c05387e8f567fe9d5b0776842c170a995487cd3", "source_line_boxes": [[1000, 315, 1755, 365]], "reader": "tomus_3_inner.pdf", "reader_page": 121, "baseline_symptom": "Inflated gap after sed propter victoriam and Greek fragments in left margin.", "disposition": "shear", "crop_edges": [909, 1988], "raw_bands_near_body": [[300, 1501], [1527, 2663]], "matched_gaps": {"left_x": 1083, "left_rows": [822, 840], "right_x": 1739, "right_rows": [841, 873]}, "baseline_slope": 0.03048780487804878, "x0_px": 1400, "shift_range": [-18, 43], "top_pad": 18, "fingerprint_region": [1100, 600, 1700, 750], "fingerprint": "852199dd3ab488b25f83a7d74e3beeb99d03a8148961068de1ccba083b477ccf", "evidence": "The initially paired left interval [868,886) belonged to the next line's gap and gave the wrong slope sign. The corrected same-line gaps rise to the right; the tested positive slope separates the merged bands. The original crop reaches the raw right edge."},
     {"defect": "quidem_straddle", "unit_id": "alexander", "source": 1, "source_page": 231, "raw_dims": [1900, 2844], "raw_sha256": "0d773276f23f73d593426e75a36a74bdce147d02c61106044f4d9bc424cdd3f6", "source_line_boxes": [[1040, 2220, 1700, 2290]], "reader": "tomus_6_inner.pdf", "reader_page": 86, "adjacent_reader_page": 87, "baseline_symptom": "Reported quidem page straddle is absent in current PDF: p86 has the complete quidem passus Callisthenem line and p87 starts Alexander statim.", "disposition": "no_repair_required", "crop_edges": [1019, 1829], "raw_bands_near_body": [[2225, 2316]], "cut_points_near_body": [2224, 2317], "composer_strip": [2224, 2317], "composer_class": "Tall", "scaled_strip_height": 112, "body_budget": 1394, "evidence": "The source line is intact and the current reader break falls after the complete quidem line. A Tall strip alone does not justify a whole-strip entry or a word patch; first reproduce an actual mid-line split if this symptom returns."},
     {"defect": "caesar_right_edge", "unit_id": "iulius_caesar", "source": 1, "source_page": 266, "raw_dims": [1878, 2825], "raw_sha256": "b0601cd563d69864e1c34a5f041fa34a4586f16cf45aaf333edaddda8ceb95a0", "source_line_boxes": [[1030, 250, 1730, 505]], "reader": "tomus_6_inner.pdf", "reader_page": 158, "baseline_symptom": "Right crop clips endings of sive, praeter, (3), auferro, and idem; Greek bleeds left.", "disposition": "shear", "crop_edges": [880, 1708], "raw_bands_near_body": [[239, 441]], "matched_gaps": {"left_x": 1026, "left_rows": [630, 658], "right_x": 1640, "right_rows": [654, 680]}, "baseline_slope": 0.03745928338762215, "x0_px": 1350, "shift_range": [-20, 51], "top_pad": 20, "fingerprint_region": [1050, 600, 1650, 750], "fingerprint": "fcf1065d83486979a6e6f9d4ddbcf50f0e20b107cdd7aafa48f507246edc5d2c", "evidence": "Matched gaps rise right; the baseline crop ends at x1708 while sive reaches x1720. Shear may change the detected crop; check every right glyph after shear before considering a source-pixel word patch."},
     {"defect": "consi_continuation", "unit_id": "cleomenes", "source": 1, "source_page": 398, "raw_dims": [1840, 2835], "raw_sha256": "dbb4326a4d1e66391555e81b8ee0716a850e83b3cf5f7594e9ecfe0fac30d572", "source_line_boxes": [[910, 1330, 1690, 1380], [910, 1380, 1690, 1422]], "reader": "tomus_6_inner.pdf", "reader_page": 394, "adjacent_reader_page": 395, "baseline_symptom": "consi- ends reader p394; lioque continues on p395 although both lines are adjacent in source p398.", "disposition": "whole_strip", "crop_edges": [880, 1698], "column_dims": [818, 2835], "raw_bands_near_body": [[1028, 1819]], "cut_points_near_body": [1022, 1837], "composer_strip": [1022, 1837], "composer_class": "Tall", "scaled_strip_height": 980, "body_budget": 1394, "strip_fingerprint_region": [0, 1022, 818, 1837], "strip_fingerprint": "1d7abf778c5458949c6bcedbfd519d7dbf174aab33fa547301aeb3b5cef6e5df", "source_local_gap_px": [20, 18], "evidence": "The source consi-/lioque inter-line gap is 20 px at x [950,1050) and 18 px at x [1550,1650). The 815-px Tall strip spans both lines, fits a full 1394-px page after scaling, and its fill-split places them on reader pp394-395. Wrapping the reviewed strip whole is indicated; no source gap needs removal."}
   ],
   "repairs": [
+    {
+      "unit_id": "romulus", "source": 0, "source_page": 34, "raster": [1982, 3008],
+      "disposition": "mask", "status": "repaired", "backlog_id": "skew_gutter_romulus",
+      "coordinate_space": "sheared", "sheared_raster": [1982, 3040],
+      "mask_rectangles": [[0.47679112008072655, 0.625, 0.4919273461150353, 0.8720394736842105]],
+      "preserved_latin_regions": [[1080, 2130, 1750, 2180]]
+    },
+    {
+      "unit_id": "philopoemen", "source": 0, "source_page": 448, "raster": [1988, 3007],
+      "disposition": "mask", "status": "repaired", "backlog_id": "skew_gutter_philopoemen",
+      "coordinate_space": "sheared", "sheared_raster": [1988, 3068],
+      "mask_rectangles": [[0.45724346076458754, 0.10267275097783572, 0.46730382293762576, 0.3422425032594524]],
+      "preserved_latin_regions": [[1000, 315, 1755, 365]]
+    },
+    {
+      "unit_id": "iulius_caesar", "source": 1, "source_page": 266, "raster": [1878, 2825],
+      "disposition": "mask", "status": "repaired", "backlog_id": "skew_gutter_caesar",
+      "coordinate_space": "sheared", "sheared_raster": [1878, 2896],
+      "mask_rectangles": [[0.4685835995740149, 0.09323204419889503, 0.4792332268370607, 0.24171270718232043]],
+      "preserved_latin_regions": [[1030, 250, 1730, 505]]
+    },
+    {
+      "unit_id": "cleomenes", "source": 1, "source_page": 398, "raster": [1840, 2835],
+      "disposition": "whole_strip", "status": "repaired",
+      "column_dims": [818, 2835], "composer_strip": [1022, 1837],
+      "strip_fingerprint_region": [0, 1022, 818, 1837],
+      "strip_fingerprint": "1d7abf778c5458949c6bcedbfd519d7dbf174aab33fa547301aeb3b5cef6e5df",
+      "preserved_latin_regions": [[910, 1330, 1690, 1422]]
+    },
+    {
+      "unit_id": "romulus", "source": 0, "source_page": 34, "raster": [1982, 3008],
+      "disposition": "shear", "status": "repaired",
+      "fingerprint_region": [1100, 600, 1700, 750],
+      "fingerprint": "6a72bab3264a4a88ccdb988d4d138a383f7dcf140366be63192fd99740a3f204",
+      "matched_gaps": {"left_x": 1080, "left_rows": [544, 571], "right_x": 1733, "right_rows": [535, 559]},
+      "x0_px": 1400, "baseline_slope": -0.016079632465543646,
+      "shift_range": [-23, 9], "top_pad": 23,
+      "crop_edges": [945, 1773], "expected_bands": [[1840, 1878], [2149, 2186]],
+      "preserved_latin_regions": [[1080, 2130, 1750, 2180]]
+    },
+    {
+      "unit_id": "philopoemen", "source": 0, "source_page": 448, "raster": [1988, 3007],
+      "disposition": "shear", "status": "repaired",
+      "fingerprint_region": [1100, 600, 1700, 750],
+      "fingerprint": "852199dd3ab488b25f83a7d74e3beeb99d03a8148961068de1ccba083b477ccf",
+      "matched_gaps": {"left_x": 1083, "left_rows": [822, 840], "right_x": 1739, "right_rows": [841, 873]},
+      "x0_px": 1400, "baseline_slope": 0.03048780487804878,
+      "shift_range": [-18, 43], "top_pad": 18,
+      "crop_edges": [909, 1988], "expected_bands": [[330, 366], [380, 415]],
+      "preserved_latin_regions": [[1000, 315, 1755, 365]]
+    },
+    {
+      "unit_id": "iulius_caesar", "source": 1, "source_page": 266, "raster": [1878, 2825],
+      "disposition": "shear", "status": "repaired",
+      "fingerprint_region": [1050, 600, 1650, 750],
+      "fingerprint": "fcf1065d83486979a6e6f9d4ddbcf50f0e20b107cdd7aafa48f507246edc5d2c",
+      "matched_gaps": {"left_x": 1026, "left_rows": [630, 658], "right_x": 1640, "right_rows": [654, 680]},
+      "x0_px": 1350, "baseline_slope": 0.03745928338762215,
+      "shift_range": [-20, 51], "top_pad": 20,
+      "crop_edges": [880, 1730], "expected_bands": [[270, 302], [322, 406], [425, 458], [477, 512]],
+      "preserved_latin_regions": [[1030, 250, 1730, 505]]
+    },
     {
       "backlog_id": "G1",
       "unit_id": "theseus",

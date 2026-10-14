@@ -33,6 +33,34 @@ struct SourceFurnitureMask {
     bottom: f64,
 }
 
+const SOURCE_SHEARED_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
+    // Sheared-page gutter fragments outside the reviewed Latin text.
+    SourceFurnitureMask {
+        source: 0,
+        page: 34,
+        left: 945.0 / 1982.0,
+        top: 1900.0 / 3040.0,
+        right: 975.0 / 1982.0,
+        bottom: 2651.0 / 3040.0,
+    },
+    SourceFurnitureMask {
+        source: 0,
+        page: 448,
+        left: 909.0 / 1988.0,
+        top: 315.0 / 3068.0,
+        right: 929.0 / 1988.0,
+        bottom: 1050.0 / 3068.0,
+    },
+    SourceFurnitureMask {
+        source: 1,
+        page: 266,
+        left: 880.0 / 1878.0,
+        top: 270.0 / 2896.0,
+        right: 900.0 / 1878.0,
+        bottom: 700.0 / 2896.0,
+    },
+];
+
 const SOURCE_FURNITURE_MASKS: &[SourceFurnitureMask] = &[
     // Source-side vertical rules connect the Latin rows on these two pages.
     SourceFurnitureMask {
@@ -671,12 +699,57 @@ fn apply_source_furniture_mask(mask: &SourceFurnitureMask, img: &mut GrayImage) 
     }
 }
 
+fn apply_raw_source_mask_to_sheared(
+    mask: &SourceFurnitureMask,
+    shear: &SourceShear,
+    img: &mut GrayImage,
+) {
+    let coords = [mask.left, mask.top, mask.right, mask.bottom];
+    if coords.iter().any(|v| !v.is_finite()) || mask.left >= mask.right || mask.top >= mask.bottom {
+        return;
+    }
+    let (width, height) = shear.raw_dims;
+    let x = |v: f64| (v.clamp(0.0, 1.0) * f64::from(width)).round() as u32;
+    let y = |v: f64| (v.clamp(0.0, 1.0) * f64::from(height)).round() as u32;
+    let (left, right, top, bottom) = (x(mask.left), x(mask.right), y(mask.top), y(mask.bottom));
+    let (_, top_pad) = source_shear_shifts(width, shear.x0_px, shear.baseline_slope);
+    for xx in left..right {
+        let offset = source_shear_shift(xx, shear.x0_px, shear.baseline_slope) + i64::from(top_pad);
+        for yy in top..bottom {
+            let dst_y =
+                u32::try_from(i64::from(yy) + offset).expect("masked row inside shear padding");
+            img.put_pixel(xx, dst_y, Luma([255]));
+        }
+    }
+}
+
 fn mask_known_source_furniture(source: usize, page: u32, img: &mut GrayImage) {
+    let shear = SOURCE_SHEARS
+        .iter()
+        .find(|entry| entry.source == source && entry.page == page)
+        .filter(|shear| {
+            let (shifts, top_pad) =
+                source_shear_shifts(shear.raw_dims.0, shear.x0_px, shear.baseline_slope);
+            let bottom_pad = u32::try_from(shifts.into_iter().max().unwrap_or(0).max(0)).unwrap();
+            img.dimensions() == (shear.raw_dims.0, shear.raw_dims.1 + top_pad + bottom_pad)
+        });
     for mask in SOURCE_FURNITURE_MASKS
         .iter()
         .filter(|m| m.source == source && m.page == page)
     {
-        apply_source_furniture_mask(mask, img);
+        if let Some(shear) = shear {
+            apply_raw_source_mask_to_sheared(mask, shear, img);
+        } else {
+            apply_source_furniture_mask(mask, img);
+        }
+    }
+    if shear.is_some() {
+        for mask in SOURCE_SHEARED_FURNITURE_MASKS
+            .iter()
+            .filter(|m| m.source == source && m.page == page)
+        {
+            apply_source_furniture_mask(mask, img);
+        }
     }
 }
 
@@ -835,7 +908,35 @@ impl SourceShear {
     }
 }
 
-const SOURCE_SHEARS: &[SourceShear] = &[];
+const SOURCE_SHEARS: &[SourceShear] = &[
+    SourceShear {
+        source: 0,
+        page: 34,
+        raw_dims: (1982, 3008),
+        fingerprint_region: [1100, 600, 1700, 750],
+        fingerprint: "6a72bab3264a4a88ccdb988d4d138a383f7dcf140366be63192fd99740a3f204",
+        x0_px: 1400,
+        baseline_slope: -0.016079632465543646,
+    },
+    SourceShear {
+        source: 0,
+        page: 448,
+        raw_dims: (1988, 3007),
+        fingerprint_region: [1100, 600, 1700, 750],
+        fingerprint: "852199dd3ab488b25f83a7d74e3beeb99d03a8148961068de1ccba083b477ccf",
+        x0_px: 1400,
+        baseline_slope: 0.03048780487804878,
+    },
+    SourceShear {
+        source: 1,
+        page: 266,
+        raw_dims: (1878, 2825),
+        fingerprint_region: [1050, 600, 1650, 750],
+        fingerprint: "fcf1065d83486979a6e6f9d4ddbcf50f0e20b107cdd7aafa48f507246edc5d2c",
+        x0_px: 1350,
+        baseline_slope: 0.03745928338762215,
+    },
+];
 
 /// The integer vertical shift applied to raw column `x` for a shear centered at
 /// `x0_px` with measured `baseline_slope`. The shift negates the baseline's rise so
@@ -1197,14 +1298,40 @@ fn production_source_column(source: usize, page: u32, masked: &GrayImage) -> Res
 
 /// Raw line evidence and furniture-filtered bands on an owned Latin column.
 fn band_source_column(source: usize, page: u32, cropped: &GrayImage) -> (Vec<Band>, Vec<Band>) {
-    let raw = if source == 0
+    let reviewed_text_window = match (source, page, cropped.dimensions()) {
+        (0, 34, (828, 3040))
+            if matches_source_region_fingerprint(
+                cropped,
+                [100, 600, 600, 750],
+                "b178043dee776247891c4b54e8ad38b3a12e4b91a9b2619e51cebf5d4fde92e5",
+            ) =>
+        {
+            Some((60, 798))
+        }
+        (0, 448, (1079, 3068))
+            if matches_source_region_fingerprint(
+                cropped,
+                [100, 600, 600, 750],
+                "d8fae0659e8f02b3d9204b2335552d853757608cced3da72755b5f5a6c9f2e4d",
+            ) =>
+        {
+            Some((60, 1049))
+        }
+        _ => None,
+    };
+    let raw = if let Some((left, right)) = reviewed_text_window {
+        let text_view =
+            image::imageops::crop_imm(cropped, left, 0, right - left, cropped.height()).to_image();
+        line_bands(&text_view, LINE_MIN_INK)
+    } else if source == 0
         && page == 17
         && cropped.dimensions() == (840, 2975)
         && matches_source_region_fingerprint(
             cropped,
             [0, 672, 40, 2651],
             "cca64e5b02b7f0aba9fc096b1856c223e13da07ab18e3725058a809052f6eb59",
-        ) {
+        )
+    {
         let text_view = image::imageops::crop_imm(cropped, 40, 0, 800, cropped.height()).to_image();
         line_bands(&text_view, LINE_MIN_INK)
     } else {
@@ -1224,6 +1351,42 @@ fn preserve_known_body_crop_edge(
     column: Column,
 ) -> Column {
     match (source, page, raster.dimensions(), column.left, column.right) {
+        (0, 34, (1982, 3040), 950, 1773)
+            if matches_source_region_fingerprint(
+                raster,
+                [1045, 600, 1545, 750],
+                "b178043dee776247891c4b54e8ad38b3a12e4b91a9b2619e51cebf5d4fde92e5",
+            ) =>
+        {
+            Column {
+                left: 945,
+                right: 1773,
+            }
+        }
+        (0, 448, (1988, 3068), 915, 1988)
+            if matches_source_region_fingerprint(
+                raster,
+                [1009, 600, 1509, 750],
+                "d8fae0659e8f02b3d9204b2335552d853757608cced3da72755b5f5a6c9f2e4d",
+            ) =>
+        {
+            Column {
+                left: 909,
+                right: 1988,
+            }
+        }
+        (1, 266, (1878, 2896), 880 | 881, 1708)
+            if matches_source_region_fingerprint(
+                raster,
+                [980, 600, 1480, 750],
+                "97191be5be83c45fd48d15fbedff911430d8ea5fd8a1a0d66cd1243edc54df3d",
+            ) =>
+        {
+            Column {
+                left: 880,
+                right: 1730,
+            }
+        }
         (0, 432, (1948, 2980), 907, 1710) => Column {
             left: 907,
             right: 1711,
@@ -2821,6 +2984,15 @@ type WholeStripSignature = ((u32, u32), Band, [u32; 4], &'static str);
 
 const WHOLE_STRIPS: &[WholeStripSignature] = &[
     (
+        (818, 2835),
+        Band {
+            top: 1022,
+            bottom: 1837,
+        },
+        [0, 1022, 818, 1837],
+        "1d7abf778c5458949c6bcedbfd519d7dbf174aab33fa547301aeb3b5cef6e5df",
+    ),
+    (
         (825, 3033),
         Band {
             top: 2188,
@@ -3215,8 +3387,8 @@ fn retain_body_canvases(canvases: &mut Vec<GrayImage>, scale: f32, metrics: &Lin
     }
 }
 
-/// Fit reviewed wide source columns inside the production canvas while
-/// preserving its layout and every original column pixel through resampling.
+/// Fit reviewed wide source columns inside the production canvas. The retained
+/// unscaled column remains the exact source-pixel record.
 fn source_strip_scale(img: &GrayImage, requested: f32) -> f32 {
     let known = (img.dimensions() == (873, 2836)
         && matches_source_region_fingerprint(
@@ -3224,6 +3396,12 @@ fn source_strip_scale(img: &GrayImage, requested: f32) -> f32 {
             [6, 206, 855, 239],
             "ca1e88fb55367597531166802b72bb1be361c09718cc95e4f5aa1c701e192eeb",
         ))
+        || (img.dimensions() == (850, 2896)
+            && matches_source_region_fingerprint(
+                img,
+                [100, 600, 600, 750],
+                "97191be5be83c45fd48d15fbedff911430d8ea5fd8a1a0d66cd1243edc54df3d",
+            ))
         || (img.dimensions() == (845, 2835)
             && is_known_whole_source_strip(
                 img,
@@ -3472,6 +3650,34 @@ mod tests {
             want.sort_unstable();
             assert_eq!(got, want, "column {x} multiset changed");
         }
+    }
+
+    #[test]
+    fn raw_furniture_mask_follows_source_shear() {
+        let raw = GrayImage::from_fn(80, 60, |x, y| Luma([((x * 7 + y * 3) % 255) as u8]));
+        let mask = SourceFurnitureMask {
+            source: 0,
+            page: 0,
+            left: 0.2,
+            top: 0.25,
+            right: 0.35,
+            bottom: 0.75,
+        };
+        let shear = SourceShear {
+            source: 0,
+            page: 0,
+            raw_dims: raw.dimensions(),
+            fingerprint_region: [0, 0, 1, 1],
+            fingerprint: "",
+            x0_px: 40,
+            baseline_slope: 0.1,
+        };
+        let mut masked_raw = raw.clone();
+        apply_source_furniture_mask(&mask, &mut masked_raw);
+        let expected = shear_image(&masked_raw, shear.x0_px, shear.baseline_slope);
+        let mut actual = shear_image(&raw, shear.x0_px, shear.baseline_slope);
+        apply_raw_source_mask_to_sheared(&mask, &shear, &mut actual);
+        assert_eq!(actual, expected);
     }
 
     #[test]
@@ -5034,6 +5240,9 @@ mod tests {
                     // Fractions are raw full-source coordinates unless marked sheared.
                     if let Some(space) = repair["coordinate_space"].as_str() {
                         assert!(matches!(space, "raw" | "sheared"));
+                        if space == "sheared" {
+                            assert!(ledger_is_u_array(&repair["sheared_raster"], 2));
+                        }
                     }
                 }
                 "shear" => {
@@ -5050,7 +5259,10 @@ mod tests {
                     assert_eq!(repair["shift_range"].as_array().unwrap().len(), 2);
                     assert!(repair["top_pad"].as_u64().is_some());
                     assert!(ledger_is_u_array(&repair["crop_edges"], 2));
-                    assert!(repair["expected_bands"].as_array().is_some());
+                    assert!(repair["expected_bands"]
+                        .as_array()
+                        .is_some_and(|bands| !bands.is_empty()
+                            && bands.iter().all(|band| ledger_is_u_array(band, 2))));
                 }
                 "whole_strip" => {
                     assert_eq!(repair["status"], "repaired");
@@ -5347,6 +5559,55 @@ mod tests {
                     }),
                     "source {source} page {page}: every reviewed rectangle is installed"
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn inner_tomi_sheared_masks_match_reviewed_ledger() {
+        let ledger = tomi_gap_split_repair_ledger();
+        for record in repairs_with_disposition(&ledger, "mask")
+            .into_iter()
+            .filter(|record| record["coordinate_space"] == "sheared")
+        {
+            let source = record["source"].as_u64().unwrap() as usize;
+            let page = record["source_page"].as_u64().unwrap() as u32;
+            let dims = (
+                record["sheared_raster"][0].as_u64().unwrap() as u32,
+                record["sheared_raster"][1].as_u64().unwrap() as u32,
+            );
+            let shear = SOURCE_SHEARS
+                .iter()
+                .find(|entry| entry.source == source && entry.page == page)
+                .expect("sheared mask needs an installed source shear");
+            let (shifts, top_pad) =
+                source_shear_shifts(shear.raw_dims.0, shear.x0_px, shear.baseline_slope);
+            let bottom_pad = u32::try_from(shifts.into_iter().max().unwrap_or(0).max(0)).unwrap();
+            assert_eq!(
+                dims,
+                (shear.raw_dims.0, shear.raw_dims.1 + top_pad + bottom_pad)
+            );
+            let masks: Vec<_> = SOURCE_SHEARED_FURNITURE_MASKS
+                .iter()
+                .filter(|mask| mask.source == source && mask.page == page)
+                .collect();
+            let rectangles = record["mask_rectangles"].as_array().unwrap();
+            assert_eq!(masks.len(), rectangles.len());
+            for rectangle in rectangles {
+                let expected: [f64; 4] = std::array::from_fn(|i| rectangle[i].as_f64().unwrap());
+                let pixels = |r: [f64; 4]| -> [u32; 4] {
+                    std::array::from_fn(|i| {
+                        (r[i] * f64::from(if i % 2 == 0 { dims.0 } else { dims.1 })).round() as u32
+                    })
+                };
+                assert!(masks.iter().any(|mask| {
+                    let actual = [mask.left, mask.top, mask.right, mask.bottom];
+                    actual
+                        .iter()
+                        .zip(expected)
+                        .all(|(a, b)| (a - b).abs() <= 4.0 * f64::EPSILON)
+                        && pixels(actual) == pixels(expected)
+                }));
             }
         }
     }
