@@ -3050,6 +3050,75 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
     (pages, metrics, traces)
 }
 
+/// The frozen `production_body_scale()` for the current source PDFs. Passing this
+/// literal lets a composer-level test pack real canvases without the whole-corpus
+/// column-width sampling that makes `production_body_scale()` take >10 min.
+#[allow(dead_code)]
+const FROZEN_BODY_SCALE: f32 = 1.2023952;
+
+/// Compose one unit's body canvases at [`FROZEN_BODY_SCALE`] and return each
+/// strip's and each canvas's `[top, bottom)` range in the shared scaled-stream
+/// coordinate system, together with the retained-source-page traces. This is the
+/// composer-domain counterpart to `audit_traced_unit`: it packs the production
+/// canvases (`compose_pages`, which applies the final ink floor via
+/// `retain_body_canvases`) so a test can assert where a line lands on a reader page
+/// — a split, an orphaned word, or a page-bottom gap — in ~1 min.
+///
+/// A caller resolves a strip to its source page through the returned traces and
+/// `retained_page`. A canvas index here is a per-unit body-canvas ordinal, not a
+/// physical reader-PDF page number.
+#[allow(dead_code)]
+fn compose_unit_at_frozen_scale(
+    id: &str,
+) -> (
+    Vec<StripRange>,
+    Vec<CanvasRange>,
+    Vec<GrayImage>,
+    Vec<RetainedSourcePageTrace>,
+) {
+    // `mod.rs` stacks a reviewed short ending onto its predecessor after
+    // composition; that shifts the canvas count and the cumulative-range mapping
+    // below. None of the units this helper serves takes that path — guard it so a
+    // future short-ending unit cannot be measured with stale canvas indices.
+    assert!(
+        !REVIEWED_SHORT_ENDINGS
+            .iter()
+            .any(|(reviewed, _, _)| *reviewed == id),
+        "{id} merges a reviewed short ending; model merge_reviewed_short_ending before mapping canvases",
+    );
+    let (pages, metrics, traces) = audit_traced_unit(id);
+    let geom = TrimGeom::default();
+    let canvases = compose_pages(
+        &pages,
+        FROZEN_BODY_SCALE,
+        &geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
+        &metrics,
+    );
+    // `ranges_for_composed_canvases` maps strips onto canvases by accumulating
+    // packed canvas heights, which assumes `compose_pages` kept every packed
+    // canvas. `retain_body_canvases` may drop a low-ink canvas; when it does, the
+    // cumulative mapping is invalid and a caller must match canvases by hash
+    // instead. Require identical counts so that mapping stays sound.
+    let packed = compose_body_canvases(
+        &pages,
+        FROZEN_BODY_SCALE,
+        &geom,
+        geom.first_body_budget(),
+        geom.body_budget(),
+        &metrics,
+    );
+    assert_eq!(
+        canvases.len(),
+        packed.len(),
+        "{id}: retain_body_canvases dropped a canvas; map surviving canvases by image hash",
+    );
+    let (strips, canvas_ranges, canvases) =
+        ranges_for_composed_canvases(&pages, &metrics, FROZEN_BODY_SCALE, &geom, canvases);
+    (strips, canvas_ranges, canvases, traces)
+}
+
 #[test]
 #[ignore = "requires source PDFs and production-DPI renders"]
 fn backlog_short_ending_canvas_fingerprints() {
