@@ -12,10 +12,37 @@ SHEET_SIZES_IN = {
     "tabloid": (17.0, 11.0),
     "a3": (420.0 / 25.4, 297.0 / 25.4),
 }
+ROMAN_NUMERALS = (
+    (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+    (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+    (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+)
 
 
 class DustCoverError(Exception):
     """An invalid dust-cover request or failed generation."""
+
+
+def int_to_roman(n: int) -> str:
+    if n <= 0:
+        raise DustCoverError("tomus must be a positive integer")
+    result = []
+    for value, numeral in ROMAN_NUMERALS:
+        count, n = divmod(n, value)
+        result.append(numeral * count)
+    return "".join(result)
+
+
+def roman_to_int(s: str) -> int:
+    remaining = s
+    value = 0
+    for number, numeral in ROMAN_NUMERALS:
+        while remaining.startswith(numeral):
+            value += number
+            remaining = remaining[len(numeral):]
+    if remaining or not s or int_to_roman(value) != s:
+        raise DustCoverError(f"invalid Roman numeral: {s!r}")
+    return value
 
 
 @dataclass(frozen=True)

@@ -4,7 +4,7 @@ import unittest
 
 from tools.dust_cover import (
     SHEET_SIZES_IN, DustCoverError, check_printable, compute_layout,
-    validate_exlibris,
+    int_to_roman, roman_to_int, validate_exlibris,
 )
 
 
@@ -50,3 +50,10 @@ class ValidationTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(DustCoverError):
                 validate_exlibris(value)
         self.assertEqual(validate_exlibris(" Alex "), " Alex ")
+
+
+class RomanNumeralTests(unittest.TestCase):
+    def test_int_to_roman_and_back_roundtrips(self):
+        for n in range(1, 13):
+            with self.subTest(n=n):
+                self.assertEqual(roman_to_int(int_to_roman(n)), n)
