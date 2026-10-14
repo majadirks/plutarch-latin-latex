@@ -5863,10 +5863,12 @@ mod tests {
             let slope = record["baseline_slope"].as_f64().unwrap();
             let top_pad = record["top_pad"].as_u64().unwrap() as u32;
             let crop_left = record["crop_edges"][0].as_u64().unwrap() as u32;
-            // The reviewed shear pages carry no row excisions.
-            assert!(!SOURCE_ROW_EXCISIONS
+            let sheared_height = apply_known_source_shear(source, page, raw.clone()).height();
+            let deleted_rows: Vec<[u32; 2]> = SOURCE_ROW_EXCISIONS
                 .iter()
-                .any(|e| e.source == source && e.page == page));
+                .filter(|e| e.source == source && e.page == page)
+                .filter_map(|e| excision_rows(e, sheared_height).map(|(top, bottom)| [top, bottom]))
+                .collect();
             for region in record["preserved_latin_regions"].as_array().unwrap() {
                 assert_sheared_source_region_pixels_survive(
                     &raw,
@@ -5875,7 +5877,7 @@ mod tests {
                     slope,
                     top_pad,
                     crop_left,
-                    &[],
+                    &deleted_rows,
                     ledger_region(region),
                 );
             }
