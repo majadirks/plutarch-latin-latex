@@ -143,8 +143,9 @@ Each band is associated with id, coordinates (four coreners), source page, sourc
 Also, destination volume and page number (these fields may contain numbers, "UNDETERMINED". or "SUPRRESSED").
 Also, an array of "words".
 
-A word (Auto-detected shape) is a region corresponding as closely as possible to whitespace-separated words within a band.
+OCR transcription of individual should be run soon after the bands are separated
 
+A word (Auto-detected shape) is a region corresponding as closely as possible to whitespace-separated words within a band. Run OCR on these as well. Data: id, coordinates, source polygon, source page, OCR transcription.
 
 When compiling text onto pages on tomi, scale the deskewed polygons at global scale factor to get uniform text size throughout.
 After scaling, fit within a rectangular "bounding box". These boxes are then "glued" onto pages Jerfferson Bible-style
@@ -164,5 +165,5 @@ Newly-detected polygons should not overlap with existing polygons; newly-detecte
 We should be able to manually update the sidecar json and have those changes persist in future runs
 (so that eg we could update the sidecar to suppress a scan artifact that otherwise the detection algorithm would treat as text)
 
-- Determine "page types" and quadrilateral / clustering heuristics
+- Determine "page types" and quadrilateral / clustering heuristics. Every page will have a Google Books watermark; include that as a mandatory region to identify.
 - Design data structures
