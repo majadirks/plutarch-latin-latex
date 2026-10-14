@@ -13,7 +13,8 @@ symptoms are either still present or were made worse by those repairs:
    `subito illis nihil tale exspectantibus, sed propter victoriam` has
    **disappeared entirely** from the reader. The text jumps from
    `… superbe Gythium oppugnabat` straight to `secure agentibus`, skipping the
-   intervening line. The installed shear is the cause. **Restoring this line is
+   intervening line. The failure occurs in the sheared-page pipeline, but the
+   exact stage that loses it is not yet established. **Restoring this line is
    the most urgent item in this plan.**
 2. **Tomus I (v1 p34, reader ≈ pdf 57 / folio 43) — not fixed.** The gap
    **before** `III. Ceterum receptissimae` is still present. The installed shear +
@@ -88,16 +89,18 @@ Key facts that this plan depends on:
   the remaining space is **not** split: the current canvas is closed and the strip
   is retried on a fresh canvas (`reflow.rs:3348`), leaving the previous page's
   bottom blank.
-- **The regression blind spot.** Every skew/Tomus VI regression
+- **The regression blind spot.** The skew/Tomus VI regressions
   (`romulus_chapter_break_deskewed`, `philopoemen_victory_line_deskewed`,
   `tomus6_quidem_line_complete`, `tomus6_consi_continuation_gap_closed`,
   `tomus6_p266_right_glyphs_restored`, in `audit_repair_tests.rs`) asserts only in
   the **band / crop / pixel domain** (the output of `render_and_band` and
   `assert_reviewed_sheared_page` at `audit_repair_tests.rs:3873`). **None of them
-  runs `compose_body_canvases`.** That is why all five passed while the composed
-  reader is wrong: a line dropped by `drop_furniture`, a `Tall` fill-split that
-  orphans a word, and a whole-strip bump that leaves a page-bottom gap are all
-  invisible to band-domain assertions. The two existing composer-level tests
+  composes its affected unit.** The current `philopoemen_victory_line_deskewed`
+  test already requires the exact `[330,366]` band; the prior verification note
+  says that same band was dropped. Phase 0 must resolve this contradiction before
+  naming the loss stage. A `Tall` fill-split that orphans a word and a whole-strip
+  bump that leaves a page-bottom gap are invisible to band-domain assertions.
+  The two existing composer-level tests
   (`audit_repair_tests.rs:4553`, `:6110`) run the slow Tier-B
   `assert_reviewed_source_lines_survive` path, which pulls `production_body_scale()`
   (whole-corpus sampling, >10 min), so the skew/Tomus VI repairs deliberately
@@ -155,31 +158,27 @@ Key facts that this plan depends on:
 | C | `quidem` straddle | v2 p231 | Tomus VI pp86–87 | `quidem` orphaned across the page break | `no_repair_required` |
 | D | `consi-` new gap | v2 p398 | Tomus VI p394 | new page-bottom gap after `agerentur pensitantis` | `whole_strip` |
 
-## Root-cause diagnosis
+## Working diagnoses to verify in Phase 0
 
 ### A — Philopoemen victory line dropped (v1 p448) — URGENT
 
 The p448 shear (`SOURCE_SHEARS`, slope `+0.03048780487804878`, `x0=1400`,
-`top_pad=18`) straightens the baselines so `line_bands` now resolves the formerly
-merged column into individual lines. The verification note for the prior plan
-records that the first post-shear band `[330,366]` is "dropped by
-`drop_furniture`", leaving `[380,415]` as the first retained body band — and the
-stale-fixture fix changed `inner_tomi_known_masks_preserve_latin`'s
-`expected_first_band` from `[300,1501]` to `[380,415]` to match. That dropped band
-`[330,366]` is the victory line `subito illis … victoriam`: it is the first body
-line on the page, it sits above a larger-than-median gap after the shear, so
-`drop_gap_outliers` prunes it as a detached leading band.
+`top_pad=18`) straightens the baselines so `line_bands` resolves the formerly
+merged column into individual lines. The prior verification note says the
+post-shear band `[330,366]` is dropped and `[380,415]` becomes the first retained
+body band. But `philopoemen_victory_line_deskewed` already requires both exact
+bands through `assert_reviewed_sheared_page`. These claims cannot both describe
+the same test run. The reviewed region `[909,315,929,1050]` also spans many lines;
+its overlap alone does not identify the missing victory line. The first task is
+to run that ignored test, identify the victory line by its source pixels, and
+trace the band through raw banding, Pass A, Pass B, strip selection, and composition.
 
-`philopoemen_victory_line_deskewed` did not catch this because it asserts only
-that **some** retained band overlaps the reviewed region `[909,315,929,1050]` — a
-tall strip spanning the whole left column, which many bands overlap even with the
-victory-line band gone. It never pins the victory line specifically and never
-composes.
-
-**Fix direction:** keep the shear (it correctly straightens the page) and add a
-reviewed `SOURCE_BODY_BANDS` entry for `(0, 448)` that rescues the victory-line
-band, exactly as that mechanism is designed to do. Then strengthen the regression
-to pin the specific band and to assert the line survives **composition**.
+**Fix direction:** retain the shear if the trace confirms it preserves the
+source pixels. If the victory line exists in raw banding but is dropped in Pass A
+or Pass B, add a reviewed `SOURCE_BODY_BANDS` entry for `(0, 448)` with the exact
+observed and protected bands. If it is absent from raw banding or is present in
+the composed canvas but lost later, repair the measured page-scoped stage instead.
+The regression must prove the specific line survives once in source order.
 
 ### B — gap before `III. Ceterum receptissimae` (v1 p34)
 
@@ -191,82 +190,89 @@ survives as an oversized inter-line gap and the composer reproduces it at scale,
 reading as a gap before the heading. The shear does not change the size of a blank
 band.
 
-**Fix direction:** confirm in Phase 0 whether the gap is (i) an oversized blank
-band between the preceding body line and the heading band, or (ii) a composer
+**Fix direction:** confirm in Phase 0 whether the gap is (i) oversized blank rows
+between the preceding body line and the heading band, or (ii) a composer
 page-fill artifact. If (i), add a page-scoped `SOURCE_ROW_EXCISIONS` entry on p34
-that deletes the excess blank rows down to an ordinary inter-line gap (the same
-mechanism already used for blank slabs), measured in **post-shear** coordinates.
-Do not shrink the gap below a normal inter-line gap and do not touch any Latin row.
+that deletes excess blank rows down to an ordinary inter-line gap, measured in
+**post-shear** coordinates. Row excision changes the cropped height. The existing
+`band_source_column` special case for `(0, 34, (828, 3040))` will therefore stop
+matching; update that guard to the measured post-excision dimensions and a
+fingerprint of unchanged source pixels, retaining its horizontal text window
+`(60, 798)`. Remeasure every affected p34 band and fixture coordinate. Do not
+shrink the gap below a normal inter-line gap or delete any Latin row.
 
 ### C — `quidem` straddle (v2 p231)
 
 Phase 0 of the prior plan found in the band domain that `quidem passus
 Callisthenem` bands as a complete line (strip `[2224,2317]`, ≈112 scaled px) and
-concluded `no_repair_required`. But that line is the **last** line of its page in
-the composer, it is classified `Tall`, and when it does not fit the remaining
-budget `compose_body_canvases` **fill-splits** it at a low-ink row — orphaning
-`quidem` at the bottom of p86 while the rest flows to p87. The band-domain
-completeness check (`tomus6_quidem_line_complete`) is true and irrelevant to the
-composer's cut.
+concluded `no_repair_required`. The reported reader break is consistent with a
+`Tall` fill-split, but its exact cut point and canvas placement have not been
+recorded. The band-domain completeness check (`tomus6_quidem_line_complete`)
+cannot establish whether the composer cuts the line.
 
-**Fix direction:** add the `[2224,2317]` strip to `WHOLE_STRIPS` so it is wrapped
-whole instead of fill-split (its ≈112 scaled px is far below the page budget, so it
-fits a fresh page cleanly and the resulting p86 bottom loses only one line — not a
-visible gap). Guard it with the strip fingerprint like the other `WHOLE_STRIPS`
-entries, and add a composer-level regression that asserts `quidem` is not cut.
+**Fix direction:** if the composed trace confirms that exact strip is fill-split,
+add it to `WHOLE_STRIPS` with a source fingerprint so it wraps whole. It fits a
+fresh body budget, but measure the resulting p86 bottom space rather than assuming
+it is unobtrusive. Add a composer-level regression that identifies the `quidem`
+pixels and proves the whole line occupies one canvas.
 
 ### D — `consi-` new gap (v2 p398)
 
-The installed `WHOLE_STRIPS` entry wraps the strip `(818,2835) [1022,1837]`. That
-band is **815 raw px tall** — at ≈33–40 raw px per line that is roughly **20
-merged lines**, not a single continuation line. The region merged into one `Tall`
-band because a bridge (divider / scan-edge / bled-Greek streak) fills the inter-line
-gaps across part of the width (the prior plan itself noted blank gaps of only
-18–20 px at specific x-ranges, i.e. gaps that exist at some x but not across the
-full width — the classic bridge-merge signature from this branch's other gap
-defects). Wrapping that ≈20-line block whole forces the entire block to the next
-canvas; the previous page (p394) closes after `agerentur pensitantis`, leaving its
-bottom blank — the new gap.
+The installed `WHOLE_STRIPS` entry wraps the strip `(818,2835) [1022,1837]`. Its
+**815 raw px** height suggests many merged lines rather than one continuation
+line. Wrapping a large block can leave substantial unused space on p394. Height
+alone does not prove a removable divider, scan-edge, or bleed bridge caused the
+merge. Phase 0 must measure the bridge and the composed gap before choosing a mask.
 
-**Fix direction:** replace the whole-strip with a `SOURCE_FURNITURE_MASKS` entry
-that removes the bridge, so the block bands into ≈20 individual lines that the
-composer packs naturally across p394/p395. This is the same mask mechanism that
-fixed the other gap defects on this branch (G1/G2/S1), and it removes both the
-original split and the injected gap. The whole-strip entry for `(818,2835)` is then
-**removed** from `WHOLE_STRIPS`. If Phase 0 finds no removable bridge and the block
-is genuinely one or two short lines (it is not, per the height), fall back to a
-narrower whole-strip; otherwise the mask is the fix.
+**Fix direction:** if a non-Latin bridge is found and a trial mask separates the
+lines without erasing Latin pixels, install a guarded `SOURCE_FURNITURE_MASKS`
+entry and remove the `(818,2835) [1022,1837]` whole-strip entry. Verify that the
+new strips pack across p394/p395 without the original mid-word cut or a new large
+gap. If no safe bridge mask exists, use the smallest page-scoped alternative that
+the trace supports; do not assume a narrower whole-strip can be matched until
+the relevant cut-point interval has actually been separated.
 
-> **Cross-cutting note (C vs. D).** Wrapping a strip whole trades a mid-unit split
-> for a page-bottom gap. That trade is acceptable for C (one orphaned line, ≈1-line
-> gap) but not for D (≈20-line block, large gap). This is why C stays a whole-strip
-> and D becomes a mask. Record the reasoning in each ledger entry.
+> **Cross-cutting note (C vs. D).** Wrapping a strip whole can trade a mid-unit
+> split for page-bottom whitespace. Measure both outcomes in the composed reader:
+> C concerns a short strip, while D concerns a much taller one. Record the
+> chosen remedy and its measured spacing in each ledger entry.
 
 ## Phase 0 — confirm root causes and build the composer-level harness (Suggested implementer: Opus)
 
 ### 0.1 Add a fast composer-level assertion helper
 
 Add a shared test helper in `src/facsimile/audit_repair_tests.rs` that composes a
-single unit at the frozen scale and lets a test assert at the reader-page level
+single unit at the frozen scale and lets a test assert at the canvas level
 without `production_body_scale()`. It must:
 
 1. take a unit id, render + band it with `audit_traced_unit(<unit>)` (≈50 s, no
    whole-corpus scale),
-2. build `LineMetrics`/`TrimGeom` for that unit the same way the existing
-   composer tests do,
-3. call `compose_body_canvases(&pages, 1.2023952, &geom, geom.first_body_budget(),
-   geom.body_budget(), &metrics)`,
-4. return the packed canvases plus the per-canvas band/strip provenance
-   (`ranges_for_composed_canvases` already exists and is used at
-   `audit_repair_tests.rs:6121`).
+2. use the `LineMetrics` returned by `audit_traced_unit` and `TrimGeom::default()`,
+3. call `compose_pages(&pages, 1.2023952, &geom, geom.first_body_budget(),
+   geom.body_budget(), &metrics)` so the production canvas ink floor is applied,
+4. return the canvases and their strip/canvas ranges through the existing
+   `ranges_for_composed_canvases` helper (already in the same `reflow::tests`
+   module), together with the retained-source-page traces. Reuse
+   `strip_and_canvas_ranges` where practical rather than duplicating its mapping.
+   Because `compose_pages` may filter a low-ink canvas, compare its output with
+   `compose_body_canvases` and require identical canvas counts for the four units
+   before using the existing cumulative-range mapping. If a canvas is filtered,
+   map surviving canvases by their image hashes instead of shifting provenance.
 
 Name the helper so its intent is clear (e.g. `compose_unit_at_frozen_scale`).
-Do not call `assert_reviewed_source_lines_survive` (that is the slow Tier-B path).
+`src/facsimile/mod.rs` subsequently calls `merge_reviewed_short_ending`; assert
+that none of the four affected units is in `REVIEWED_SHORT_ENDINGS`, or apply
+that step before interpreting canvas indices. Use the retained-source-page trace
+to associate a strip with a source page. A canvas index within one unit is not a
+physical reader PDF page number; resolve the latter during the rebuilt-PDF check.
+Do not call `assert_reviewed_source_lines_survive` (the slow Tier-B path).
 
-**LLM verification:** add a throwaway `#[ignore]` smoke test that composes one
+**LLM verification:** add a temporary `#[ignore]` smoke test that composes one
 small unit through the helper and prints canvas count; run it with
-`cargo test --release <smoke_name> -- --ignored` and confirm it completes in ≈1 min.
-Run `cargo fmt`, `cargo fmt --all --check`,
+`cargo test --release <smoke_name> -- --ignored`, then remove the smoke test.
+Compare canvas hashes with the slow Tier-B path on one already verified unit once
+to confirm the frozen scale and helper path agree. Run `cargo fmt`,
+`cargo fmt --all --check`,
 `cargo clippy --all-targets -- -D warnings`, `cargo test`.
 
 **Human verification:** none (infrastructure only).
@@ -274,61 +280,83 @@ Run `cargo fmt`, `cargo fmt --all --check`,
 ### 0.2 Confirm each defect's mechanism and pin coordinates
 
 Extend the ignored diagnostics in `audit_repair_tests.rs` (reuse
-`skew_and_tomus6_repair_trace`). For each defect record the evidence in the shared
-fixture `src/facsimile/fixtures/inner_tomi_repair_source_trace.json` `diagnoses`
+`skew_and_tomus6_repair_trace`). For each defect record the evidence in
+`src/facsimile/fixtures/tomi_gap_split_repairs_source_trace.json`'s `diagnoses`
 array (do not add to `repairs` until the matching table entry is installed):
 
-- **A (v1 p448):** print the full post-shear `raw` band list and the `kept` list
-  from `band_source_column`; confirm the victory-line band is present in `raw` and
-  absent from `kept`, and whether it is dropped by the top-zone filter or by
-  `drop_gap_outliers`. Record the exact `observed`/`protected` band in
-  `(1079,3068)` coordinates and the OCR'd text of that band to prove it is
-  `subito illis … victoriam`.
+- **A (v1 p448):** run `philopoemen_victory_line_deskewed` first and save its
+  result. Print the post-shear `raw` and Pass-A `kept` lists from
+  `band_source_column`, the Pass-B bands from `audit_traced_unit`, the selected
+  strips, and the composed canvases. Resolve why the existing exact-band test
+  requires `[330,366]` while the prior note reports it dropped. Identify the
+  victory line by a tight source-pixel rectangle and a visual comparison with
+  the scan; OCR may assist but is not the authority. Record the exact
+  `observed`/`protected` bands in `(1079,3068)` coordinates only if a band is
+  actually dropped, and identify the stage that drops it.
 - **B (v1 p34):** print the post-shear bands around the `III.` heading, the gap
-  (in rows) between the preceding body band and the heading band, and the typical
-  inter-line gap on the page. Decide blank-band excision vs. composer artifact and
-  record the row range to excise if (i).
-- **C (v2 p231):** compose the Alexander unit with the 0.1 helper; confirm the
-  `[2224,2317]` line is fill-split across two canvases and that `quidem` is the
-  orphaned piece. Record the strip fingerprint region + hash for a `WHOLE_STRIPS`
-  entry.
-- **D (v2 p398):** print the raw band list for the `[1022,1837]` region to show it
-  is many lines merged into one `Tall` band; locate the bridge (its x-range and ink
-  profile) so a furniture mask can target it; confirm after a trial mask the region
-  bands into individual lines. Record the bridge rectangle as source-fraction
-  coordinates.
+  (in rows) between the preceding body band and heading band, typical inter-line
+  gaps, and the composed canvas boundary and whitespace. Decide blank-row
+  excision vs. composer artifact. If excision applies, record the post-shear
+  `[top,bottom)` deletion, resulting raster/crop dimensions, the unchanged-pixel
+  fingerprint for the `band_source_column` p34 guard, remapped heading and
+  neighboring bands, and every affected fixture expectation.
+- **C (v2 p231):** compose the Alexander unit with the 0.1 helper; locate the
+  `[2224,2317]` strip on the two canvases, record its actual cut row, and use
+  reviewed tight source-pixel regions for `quidem` and its neighboring words to
+  establish which pieces land on each canvas. Record its fingerprint region/hash,
+  the body budget, and before/after bottom whitespace in scaled pixels.
+- **D (v2 p398):** record the actual bands within `[1022,1837]`, the before
+  canvas boundary and blank-space height, and tight source-pixel regions around
+  `agerentur pensitantis`, `consi-`, and its continuation. Locate any connecting
+  non-Latin pixels by x-range and row profile. Trial-mask only those pixels;
+  compare all affected Latin pixels against the unmasked source, then record the
+  new bands, composed boundary, and gap height. Record a source-fraction mask
+  rectangle only if the trial proves the mask safe and effective.
 
-**LLM verification:** `cargo test --release skew_and_tomus6_repair_trace -- --ignored`;
-inspect the printed bands, OCR, and saved PNGs under `tmp/pdfs/skew/`. Run
+**LLM verification:** `cargo test --release philopoemen_victory_line_deskewed -- --ignored`
+and `cargo test --release skew_and_tomus6_repair_trace -- --ignored`; inspect the
+printed bands, canvas measurements, and saved PNGs under `tmp/pdfs/skew/`. Run
 `cargo fmt`, `cargo fmt --all --check`,
 `cargo clippy --all-targets -- -D warnings`, `cargo test`.
 
-**Human verification:** read the OCR'd victory-line band and the four recorded
-mechanism decisions; confirm each against the source scan.
+**Human verification:** compare each tight source-pixel region and its claimed
+word with the source scan, and review the four measured mechanism decisions.
 
 ## Phase 1 — URGENT: restore the Philopoemen victory line (Suggested implementer: Opus)
 
-### 1.1 Rescue the dropped band and prove it survives composition
+### 1.1 Restore the line at its measured loss stage and prove composition
 
 Write the failing regression first, then fix:
 
 1. `philopoemen_victory_line_present` (composer-level, using the 0.1 helper):
-   assert the victory line appears on exactly one reader canvas, in source order
-   between its neighbours, and that no canvas omits it. Confirm it **fails** on the
-   current tree.
-2. Add a `SOURCE_BODY_BANDS` entry for `(0, 448, (1079,3068))` with
-   `observed`/`protected` set to the victory-line band measured in Phase 0.2 and
-   `unit_id` set to the Philopoemen unit. This re-adds the band after
-   `drop_furniture`.
-3. Strengthen `philopoemen_victory_line_deskewed` so its band assertion pins the
-   **specific** victory-line band as retained (not merely overlapped).
-4. Record the repair in the fixture `repairs` with disposition
-   `source_body_band` (or the existing disposition this mechanism already uses in
-   the ledger) and cross-check it in the ledger-shape test.
+   take the tight, reviewed source-pixel rectangle identified in Phase 0.2;
+   compare its scaled pixels with the appropriate composed canvas crop, require
+   exactly one occurrence, and locate the neighboring source strips before and
+   after it in that order. Assert the corresponding source-page provenance and
+   require that no part of the line is on a second canvas. Confirm the test
+   **fails** on the current tree for the reported missing line.
+2. If Phase 0.2 finds a raw band dropped in Pass A or Pass B, add a
+   `SOURCE_BODY_BANDS` entry for `(0, 448, (1079,3068))` with the measured
+   `observed`/`protected` bands and `unit_id: "philopoemen"`. Otherwise implement
+   the page-scoped repair for the measured loss stage and document its test and
+   ledger signature before changing production code.
+3. Keep the existing exact-band assertions in
+   `philopoemen_victory_line_deskewed`; correct any stale expected band only
+   after reconciling the prior verification note with the current ignored test.
+   Add a tight victory-line pixel assertion, so an unrelated retained band cannot
+   satisfy the test.
+4. If the repair uses `SOURCE_BODY_BANDS`, add a `source_body_band` record to
+   `tomi_gap_split_repairs_source_trace.json` with `unit_id`, source/page, raw
+   `raster`, `preserved_latin_regions`, `column_dims`, and exact `observed` and
+   `protected` `[top,bottom)` bands. Extend
+   `tomi_gap_split_ledger_has_expected_shape` to validate these fields and add
+   `inner_tomi_source_body_bands_match_reviewed_ledger` to compare this record
+   with `SOURCE_BODY_BANDS` in both directions for the new p448 entry.
 
 **LLM verification:** `cargo test --release philopoemen_victory_line_present -- --ignored`
 (now passes), `philopoemen_victory_line_deskewed`,
-`inner_tomi_known_masks_preserve_latin`, the ledger-shape test, `cargo fmt`,
+`inner_tomi_known_masks_preserve_latin`, the new table/ledger check, the
+ledger-shape test, `cargo fmt`,
 `cargo fmt --all --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`.
 
 **Human verification:** in the rebuilt Tomus III, confirm
@@ -339,14 +367,22 @@ victoriam / secure agentibus …` reads in order with the line present once.
 
 ### 2.1 Wrap the `quidem` line whole
 
-1. Write `tomus6_quidem_not_split` (composer-level): assert the `quidem passus
-   Callisthenem` strip lands on a single canvas and `quidem` is not the sole
-   content of a canvas boundary. Confirm it **fails** on the current tree.
-2. Add the `[2224,2317]` strip to `WHOLE_STRIPS` with the fingerprint from
-   Phase 0.2; assert its scaled height fits the page budget (it does, ≈112 px).
-3. Add the matching `repairs` record (disposition `whole_strip`) and cross-check
-   with `inner_tomi_whole_strips_match_reviewed_ledger`.
-4. Keep `tomus6_quidem_line_complete` (band-domain completeness) as-is.
+1. Write `tomus6_quidem_not_split` (composer-level): match the scaled pixels
+   of the reviewed `quidem` and following-word source regions to the composed
+   canvases. Require the complete `[2224,2317]` strip on exactly one canvas,
+   with no part on the preceding canvas; assert its source-page provenance and
+   neighbors' order. Confirm it **fails** on the current tree.
+2. If Phase 0.2 confirms a fill-split of that strip, add `[2224,2317]` to
+   `WHOLE_STRIPS` with the fingerprint measured there; assert its scaled height
+   fits a fresh page budget. If the split is elsewhere, repair that measured
+   page-scoped cause and update the test and ledger disposition accordingly.
+3. For the whole-strip remedy, add the matching `repairs` record (disposition
+   `whole_strip`) and cross-check with
+   `inner_tomi_whole_strips_match_reviewed_ledger`.
+4. Keep `tomus6_quidem_line_complete` (band-domain completeness) as-is. Measure
+   the resulting bottom whitespace on the preceding canvas and require it to
+   be no greater than two median complete-strip heights for that unit; record
+   the measurement in the ledger and verification note.
 
 **LLM verification:** `cargo test --release tomus6_quidem_not_split -- --ignored`
 (passes), `tomus6_quidem_line_complete`, the whole-strip ledger test, `cargo fmt`,
@@ -359,17 +395,25 @@ on Tomus VI p86 (or p87), with `quidem` not orphaned.
 
 ### 3.1 Replace the whole-strip with a furniture mask
 
-1. Write `tomus6_consi_page_reads_continuously` (composer-level): assert reader
-   p394 contains `agerentur pensitantis` immediately followed by its successor with
-   no page-bottom gap, and that `… consi-` and its continuation are present in
-   order. Confirm it **fails** on the current tree.
-2. Add a `SOURCE_FURNITURE_MASKS` entry for `(1, 398)` targeting the bridge
-   rectangle measured in Phase 0.2 (source fractions, matching the
-   `SourceFurnitureMask` format bit-for-bit). Verify the region now bands into
-   individual lines.
-3. **Remove** the `(818,2835) [1022,1837]` entry from `WHOLE_STRIPS` and its
-   `repairs` whole-strip record; replace the `repairs` record with a `mask` record
-   and its `mask_rectangles`.
+1. Write `tomus6_consi_page_reads_continuously` (composer-level): match tight
+   scaled source-pixel regions for `agerentur pensitantis`, `consi-`, and its
+   continuation against canvases exactly once and in source order. Locate their
+   strips and require that no word is divided across canvases. For the canvas
+   ending after `agerentur pensitantis` on the baseline, measure unused body
+   height; after repair require no more than two median complete-strip heights
+   unless that text has moved to the next canvas without an abnormal gap.
+   Confirm the test **fails** on the current tree.
+2. Only if Phase 0.2 proved a removable non-Latin bridge, add a page-scoped
+   `SOURCE_FURNITURE_MASKS` entry for `(1, 398)` using its measured source-fraction
+   rectangle. Check every Latin source pixel in the affected `[1022,1837]` region
+   against the post-mask retained image, and verify the new individual bands.
+3. Once the safe mask and composed-page regression pass, **remove** the
+   `(818,2835) [1022,1837]` entry from `WHOLE_STRIPS` and its current `repairs`
+   record; add a `mask` record with `mask_rectangles`, preserved Latin regions,
+   and before/after gap measurements. Assert the removed signature is absent
+   from `WHOLE_STRIPS`, since the existing ledger test checks installed records
+   in only one direction. If no safe mask exists, document the
+   measured alternative and its exact ledger/test change before implementing it.
 4. Keep `tomus6_consi_continuation_gap_closed` only if it still describes a true
    post-mask expectation; otherwise replace its body with the continuous-read
    assertion. Do not leave a whole-strip assertion that no longer matches the
@@ -377,7 +421,8 @@ on Tomus VI p86 (or p87), with `quidem` not orphaned.
 
 **LLM verification:** `cargo test --release tomus6_consi_page_reads_continuously -- --ignored`
 (passes), `inner_tomi_masks_match_reviewed_ledger`,
-`inner_tomi_known_masks_preserve_latin`, the ledger-shape test, `cargo fmt`,
+`inner_tomi_known_masks_preserve_latin`,
+`inner_tomi_whole_strips_match_reviewed_ledger`, the ledger-shape test, `cargo fmt`,
 `cargo fmt --all --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`.
 
 **Human verification:** confirm Tomus VI p394 reads continuously from
@@ -390,23 +435,38 @@ with no injected gap and no mid-word page split.
 
 Implement the mechanism Phase 0.2 chose:
 
-- **If an oversized blank band (case i):** write `romulus_chapter_break_gap_normal`
-  (composer-level): assert the gap before the `III. Ceterum` heading is comparable
-  to an ordinary inter-line gap and the heading survives once with no gutter marks.
-  Confirm it fails, then add a `SOURCE_ROW_EXCISIONS` entry on `(0, 34)` deleting
-  the excess blank rows (post-shear coordinates) down to a normal gap. Add the
-  matching `repairs` record (disposition `row_excision`).
+- **If oversized blank rows (case i):** write `romulus_chapter_break_gap_normal`
+  (composer-level). Match tight scaled source-pixel regions for the preceding
+  Latin line and `III. Ceterum` exactly once and in order. Require the heading
+  either at the top of the next canvas or separated from the preceding line by
+  no more than twice the median ordinary inter-line gap in the same unit; verify
+  the left gutter remains blank. Confirm it fails, then add a
+  `SOURCE_ROW_EXCISIONS` entry on `(0, 34)` deleting the Phase 0.2 post-shear
+  `[top,bottom)` blank interval. Update the `(0, 34, (828, 3040))` guarded
+  `band_source_column` case to the measured new crop dimensions and an
+  unchanged-pixel fingerprint, preserving the `(60, 798)` horizontal window.
+  Update the p34 shear fixture's `expected_bands` and every older mask-fixture
+  band expectation affected by the shifted rows. Keep raw-source coordinates
+  for `preserved_latin_regions` and map them through shear plus excision when
+  asserting the retained image. Add a `row_excision` `repairs` record in
+  `tomi_gap_split_repairs_source_trace.json` with source/page, raw `raster`,
+  `sheared_raster`, normalized post-shear `top`/`bottom` fractions, exact deleted
+  rows, resulting crop dimensions, before/after gap rows, and preserved Latin
+  regions. Extend `tomi_gap_split_ledger_has_expected_shape` for these fields
+  and add `inner_tomi_row_excisions_match_reviewed_ledger` to compare the exact
+  new record with `SOURCE_ROW_EXCISIONS` in both directions.
 - **If a composer page-fill artifact (case ii):** add a suffixed Phase 4.1a
   specifying the exact composer interaction observed and the smallest page-scoped
   fix, with its own failing composer-level regression. Do not change global
   composer policy.
 
-Do not reduce the gap below an ordinary inter-line gap and do not excise any Latin
-row; `romulus_chapter_break_deskewed` must still pass (heading + preceding line
-survive once, no gutter fragments).
+Do not reduce the gap below an ordinary inter-line gap or excise any Latin row.
+`romulus_chapter_break_deskewed` must still pass with updated post-excision
+coordinates (heading and preceding line survive once, no gutter fragments).
 
 **LLM verification:** the applicable new regression, `romulus_chapter_break_deskewed`,
-`inner_tomi_known_masks_preserve_latin`, the ledger-shape test, `cargo fmt`,
+`inner_tomi_known_masks_preserve_latin`, the new table/ledger check, the
+ledger-shape test, `cargo fmt`,
 `cargo fmt --all --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`.
 
 **Human verification:** in rebuilt Tomus I, confirm `III. Ceterum receptissimae`
@@ -432,8 +492,8 @@ cargo run --release --bin facsimile -- --v1 Ploutarchou_Bioi_v1.pdf \
 ```
 
 Record before/after inner-PDF page counts for Tomi I, III, and VI and explain any
-change (the D mask will reflow p394/p395; a one-page count change there is
-expected and acceptable if the text reads continuously). Save a dated
+change (a D mask, if used, may reflow p394/p395; a page-count change is acceptable
+only when all affected Latin survives once and the spacing is resolved). Save a dated
 `llm_artifacts/<ts>_SKEW_TOMUS_VI_REGRESSION_REPAIRS_VERIFICATION.md` with
 per-defect before/after evidence, commands/results, and the page-count table. Keep
 both this plan and the note as historical records. Commit each defect's fix in its
@@ -450,22 +510,21 @@ with the gaps resolved. This human sign-off is the faithfulness gate for the pha
 
 ## Risks & open questions
 
-- **Which filter drops the victory line (A).** Phase 0.2 must confirm whether
-  `drop_furniture`'s zone filter or `drop_gap_outliers` removes `[330,366]`. The
-  `SOURCE_BODY_BANDS` rescue fixes either, but the regression must assert the
-  specific band so the cause is pinned.
-- **Whole-strip ↔ gap trade (C).** Wrapping the `quidem` line whole shortens p86 by
-  one line. Phase 0.2's compose trace must confirm this is a ≈1-line bottom, not a
-  visible gap; if it is visible, treat C like D (diagnose a bridge-merge / mask)
-  rather than accepting the gap.
-- **No removable bridge on p398 (D).** If Phase 0.2 finds the merge is not a
-  maskable bridge, the mask fix does not apply; fall back to a narrower whole-strip
-  covering only the `consi-`/continuation pair and document why the larger block
-  cannot be separated.
-- **Composer-helper fidelity (0.1).** The fast helper must compose exactly as
-  production does (same scale, geom, budgets, strip ordering). Cross-check its
-  canvas hashes against the slow Tier-B path on one already-verified unit before
-  trusting its reader-level assertions.
+- **Which stage loses the victory line (A).** First reconcile the current exact
+  `[330,366]` assertion with the prior note that reports it dropped. Trace Pass A,
+  Pass B, strip selection, composition, and final PDF placement. Use
+  `SOURCE_BODY_BANDS` only if a measured raw/retained band is dropped.
+- **Whole-strip ↔ gap trade (C).** If the short strip wraps whole, measure the
+  preceding canvas's unused height and apply the two-median-strip bound. If it
+  exceeds the bound, diagnose the source strip before accepting the wrap.
+- **No removable bridge on p398 (D).** If Phase 0.2 cannot prove a mask removes
+  only non-Latin pixels and separates the merged lines, do not install it. A
+  narrower whole-strip is possible only after a measured page-scoped change
+  creates a matching shorter cut-point interval; specify and test that change.
+- **Composer-helper fidelity (0.1).** The fast helper must use `compose_pages`
+  with production scale, geom, budgets, strip ordering, and canvas retention.
+  Cross-check its canvas hashes against the slow Tier-B path on one already
+  verified unit before trusting its canvas-level assertions.
 - Do **not** add a global deskew, change global thresholds, the body scale, the
   Latin-column detector, the composer's packing policy, or the transcription cache.
   Every fix stays page-scoped and ledger-recorded.
