@@ -39,6 +39,15 @@
       "preserved_latin_regions": [[910, 1330, 1690, 1422]]
     },
     {
+      "unit_id": "alexander", "source": 1, "source_page": 231, "raster": [1900, 2844],
+      "disposition": "whole_strip", "status": "repaired",
+      "column_dims": [810, 2844], "composer_strip": [2224, 2317],
+      "strip_fingerprint_region": [0, 2224, 810, 2317],
+      "strip_fingerprint": "29bcac098db09c33bc986f1c029283d9c5e23e04e1f0c46eb318350d187350ae",
+      "preceding_canvas_bottom_gap_px": 53, "two_median_strip_bound_px": 96,
+      "preserved_latin_regions": [[1040, 2220, 1700, 2290]]
+    },
+    {
       "unit_id": "romulus", "source": 0, "source_page": 34, "raster": [1982, 3008],
       "disposition": "shear", "status": "repaired",
       "fingerprint_region": [1100, 600, 1700, 750],

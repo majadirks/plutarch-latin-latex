@@ -3159,6 +3159,19 @@ const WHOLE_STRIPS: &[WholeStripSignature] = &[
         [0, 412, 801, 502],
         "f31a373625ac795614f07c68557c2668890af5776d7ffa456e981994c61b7068",
     ),
+    // C (alexander, v2 source page 231): the complete Tall line
+    // "quidem passus Callisthenem" (the page-foot body line) was fill-split across
+    // reader pp86/87 (canvases 78->79). Wrap it whole (scaled 112 <= 1394 budget) so
+    // it reads as one line.
+    (
+        (810, 2844),
+        Band {
+            top: 2224,
+            bottom: 2317,
+        },
+        [0, 2224, 810, 2317],
+        "29bcac098db09c33bc986f1c029283d9c5e23e04e1f0c46eb318350d187350ae",
+    ),
 ];
 
 /// Recognize reviewed source strips by dimensions, cut-point interval, and original
