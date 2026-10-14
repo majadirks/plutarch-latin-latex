@@ -1,6 +1,7 @@
 """Generate a parameterized dust-jacket LaTeX sheet + PDF for one facsimile Tomus."""
 
 import argparse
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -56,6 +57,39 @@ class Layout:
     spine_x: float
     front_x: float
     right_flap_x: float
+
+
+@dataclass(frozen=True)
+class InnerTitle:
+    center_block: str
+    lives: list[str]
+
+
+def parse_inner_tex(path: Path, expected_tomus: int) -> InnerTitle:
+    try:
+        source = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise DustCoverError(f"cannot read inner TeX {path}: {exc}") from exc
+    anchor = source.find("% Tomus title page")
+    start = source.find(r"\begin{center}", anchor) if anchor >= 0 else -1
+    end = source.find(r"\end{center}", start) if start >= 0 else -1
+    if end < 0:
+        raise DustCoverError(f"{path} has no Tomus title page")
+    center_block = source[start + len(r"\begin{center}"):end]
+    match = re.search(r"\\large\s+TOMUS\s+([IVXLCDM]+)", center_block)
+    if not match:
+        raise DustCoverError(f"{path} has no Tomus number on its title page")
+    actual_tomus = roman_to_int(match.group(1))
+    if actual_tomus != expected_tomus:
+        raise DustCoverError(
+            f"{path} title page is Tomus {actual_tomus}, expected Tomus {expected_tomus}"
+        )
+    lives = re.findall(
+        r"\\mbox\{\\textsc\{\\MakeLowercase\{(.*?)\}\}\}", center_block
+    )
+    if not lives:
+        raise DustCoverError(f"{path} title page lists no Lives")
+    return InnerTitle(center_block, lives)
 
 
 def compute_layout(total_width: float, total_height: float,

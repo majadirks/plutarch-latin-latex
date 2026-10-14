@@ -1,10 +1,12 @@
 """Tests for the standalone dust-cover generator."""
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from tools.dust_cover import (
     SHEET_SIZES_IN, DustCoverError, check_printable, compute_layout,
-    int_to_roman, roman_to_int, validate_exlibris,
+    int_to_roman, parse_inner_tex, roman_to_int, validate_exlibris,
 )
 
 
@@ -57,3 +59,40 @@ class RomanNumeralTests(unittest.TestCase):
         for n in range(1, 13):
             with self.subTest(n=n):
                 self.assertEqual(roman_to_int(int_to_roman(n)), n)
+
+
+TITLE_FIXTURE = r"""% Tomus title page
+\unitrecto
+\begin{center}
+{\LARGE\bfseries PLUTARCHI}\\[0.55em]
+{\LARGE\bfseries VITÆ}\\[1.4em]
+{\large TOMUS II}\\[2.6em]
+\parbox{0.86\textwidth}{\centering \mbox{\textsc{\MakeLowercase{THESEUS}}} \textbullet\ \mbox{\textsc{\MakeLowercase{ROMULUS}}}\par}
+\end{center}
+\begin{center}EX LIBRIS\\ ALEX\end{center}
+"""
+
+
+class InnerTitleTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.path = Path(self.temp.name) / "tomus_2_inner.tex"
+        self.path.write_text(TITLE_FIXTURE, encoding="utf-8")
+
+    def test_lives_parsed_from_inner_tex(self):
+        self.assertEqual(parse_inner_tex(self.path, 2).lives, ["THESEUS", "ROMULUS"])
+
+    def test_center_block_excludes_exlibris_plate(self):
+        title = parse_inner_tex(self.path, 2)
+        self.assertIn("PLUTARCHI", title.center_block)
+        self.assertNotIn("EX LIBRIS", title.center_block)
+
+    def test_tomus_mismatch_between_arg_and_tex_raises(self):
+        with self.assertRaisesRegex(DustCoverError, "Tomus 2.*Tomus 1"):
+            parse_inner_tex(self.path, 1)
+
+    def test_missing_title_page_raises(self):
+        self.path.write_text(r"\begin{center}No title\end{center}", encoding="utf-8")
+        with self.assertRaisesRegex(DustCoverError, "no Tomus title page"):
+            parse_inner_tex(self.path, 2)
