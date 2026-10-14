@@ -277,6 +277,44 @@ for the verified counts, identities, and remaining limitations.
 
 ---
 
+## Dust covers
+
+[`tools/dust_cover.py`](tools/dust_cover.py) generates a parameterized dust
+jacket (`.tex` and compiled `.pdf`) for one Tomus. It reads the Lives and title
+page block from `build_facsimile/tomus_N_inner.tex`, so run the facsimile build
+first. The sheet runs left to right as flap, back cover, spine, front cover,
+flap. The front reproduces the inner title block, and the back lists its Lives.
+
+From the repository root in PowerShell:
+
+```powershell
+python tools/dust_cover.py --tomus 1 --total-width 15.5 --total-height 9.5 --spine-width 1.25 --cover-width 5.5 --paper-size tabloid --exlibris "Alex Smith" --out build_facsimile
+```
+
+| Argument | Meaning | Required | Default |
+|----------|---------|----------|---------|
+| `--tomus` | Tomus number, 1 through 8 | Yes | — |
+| `--total-width` | Finished jacket width, inches | Yes | — |
+| `--total-height` | Finished jacket height, inches | Yes | — |
+| `--spine-width` | Spine width, inches | Yes | — |
+| `--cover-width` | Width of each front/back cover, inches | Yes | — |
+| `--paper-size` | Landscape sheet: `tabloid` (11 × 17 in) or `a3` | No | `tabloid` |
+| `--exlibris` | Owner name printed at the spine foot | No | None |
+| `--printable-margin` | Unprintable margin on each sheet edge, inches | No | `0.25` |
+| `--out` | Directory containing the inner `.tex` and receiving cover output | No | `build_facsimile` |
+| `--inner-tex` | Explicit path to the inner `.tex` | No | `<out>/tomus_N_inner.tex` |
+| `--no-compile` | Write the cover `.tex` without running `lualatex` | No | Compile PDF |
+
+The width is `2 × flap + 2 × cover + spine`; the two flaps expand or shrink
+equally and must each be at least 1.5 inches. The jacket width and height must
+fit the printable sheet (sheet size minus twice `--printable-margin`). Short
+fold ticks at the four seams sit outside the cut rectangle, so the height check
+also reserves 0.12 inches above and below the jacket for those marks. The tool
+errors before writing output when these dimensions do not fit. See
+[`tools/README-dust-cover.md`](tools/README-dust-cover.md) for usage notes.
+
+---
+
 ## Dependencies
 
 | Tool | Purpose | Override env var |
