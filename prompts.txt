@@ -127,10 +127,29 @@ Hardcoding logic for a one-off fix is a valid solution if appropriate.
 This code already produces readers that are pretty good; at this point getting these last details right
 in a cheap-and-dirty way is probably better than adding complexity or tuning parameters.
 
+----
+
+On a new branch, let's write an implementation plan to generate parameterized dust covers for these readers.
+This will be a new Python script, not built into the Rust scripts.
+- Similar to the facsimile build path, include a paper size command line option (default to 11" x 17", but provide A3 as an option) for the paper on which this will be printed.
+- Required Command line arguments specify dust cover total width and height. Cut lines will be printed on the output sheet to allow cutting to this size.
+- Required Command line arguments further specify spine width, and cover width. 
+	> Flap width expands or shrinks to match the overall total, minimum 1.5 " 
+	> Sum is (2 x flap width + 2 x cover width + spine width)
+	> If sizes are too big (flaps cannot shrink without going below minimum), throw an error and stop
+- Layout: [Flap][Back Cover][Spine][Front Cover][Flap]
+- Front cover: Same as Tomus cover, no "Ex Libris" tag
+- Spine: "PLUTARCHI VITÆ" (one word per line, horizontal), then "TOMUS N" (relevant number) (centered on spine).
+		At the bottom of the spine, an Ex Libris tag if such is specified by command line argument: "EX LIBRIS ALEX SMITH" (EX LIBRIS on one line, name on following line)
+- Back cover: The names of the lives in the tomus, each on an individual line
+- Command line argument --exlibris (similar to Rust script) takes name of book owner and capitalizes it.
+- Output LaTeX and PDF files
+
 
 -----
 
 Notes for Orlando Furioso:
+Poppler and Tesseract available for pdf rendering and OCR transcription.
 Sidecar classifies all pages in volume.
 Different page types are tied to different algorithms to detect Latin polygons (quadrilaterals).
 So every page has ID and array of Polygons (regions to keep).

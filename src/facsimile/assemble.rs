@@ -379,17 +379,17 @@ pub(in crate::facsimile) mod tests {
                 let titles: Vec<_> = texts
                     .iter()
                     .enumerate()
-                    .filter(|(_, text)| text.contains("GVILIELMO XYLANDRO"))
+                    .filter(|(_, text)| text.contains("GUILIELMO XYLANDRO"))
                     .collect();
                 assert_eq!(titles.len(), 1);
                 let title_index = titles[0].0;
                 let title_text = normalize(titles[0].1);
                 for phrase in [
-                    "PLVTARCHI",
+                    "PLUTARCHI",
                     "VITÆ",
-                    "A GVILIELMO XYLANDRO",
+                    "A GUILIELMO XYLANDRO",
                     "LATINE REDDITÆ,",
-                    "ATQVE",
+                    "ATQUE",
                     "A THEODORO DŒHNERO",
                     "RECOGNITÆ, EMENDATÆ",
                     "ET ORDINATÆ.",
@@ -494,7 +494,7 @@ pub(in crate::facsimile) mod tests {
         let (texts, _) = compiled_fixture(dir.path(), 2);
         let title_pages: Vec<_> = texts
             .iter()
-            .filter(|text| text.contains("GVILIELMO XYLANDRO"))
+            .filter(|text| text.contains("GUILIELMO XYLANDRO"))
             .collect();
         assert_eq!(title_pages.len(), 1);
         let title_text = normalize(title_pages[0]);
@@ -1054,7 +1054,7 @@ pub(in crate::facsimile) mod tests {
             vec![unit("theseus", &["facsimile_theseus_1.png"])],
         );
         let doc = inner_document(&vol, &Fonts::default(), None);
-        let title = doc.find("PLVTARCHI").unwrap();
+        let title = doc.find("PLUTARCHI").unwrap();
         let qr = doc.find("front_qr_s0.png").unwrap();
         let volumen = doc.find("front_volumen_s0.png").unwrap();
         let colophon = doc.find("front_colophon.png").unwrap();
@@ -1102,7 +1102,7 @@ pub(in crate::facsimile) mod tests {
         assert!(region.contains("% Embedded front-matter scan pair\n\\clearpage\n"));
         assert!(!region.contains("% Embedded front-matter scan pair\n\\unitrecto"));
         let (title, qr, volumen, colophon, prose) = (
-            region.find("PLVTARCHI").unwrap(),
+            region.find("PLUTARCHI").unwrap(),
             region.find("front_qr_s0.png").unwrap(),
             region.find("front_volumen_s0.png").unwrap(),
             region.find("front_colophon.png").unwrap(),
@@ -1131,7 +1131,7 @@ pub(in crate::facsimile) mod tests {
         assert!(!region.contains("front_colophon.png"));
         assert!(!region.contains("% Embedded front-matter scan pair"));
         let (title, qr, volumen, prose) = (
-            region.find("PLVTARCHI").unwrap(),
+            region.find("PLUTARCHI").unwrap(),
             region.find("front_qr_s1.png").unwrap(),
             region.find("front_volumen_s1.png").unwrap(),
             region.find("PRAEFATIO PROSE MARKER").unwrap(),
@@ -1150,7 +1150,7 @@ pub(in crate::facsimile) mod tests {
         assert_eq!(region.matches(scan_recto).count(), 1);
         assert!(!region.contains("front_volumen_s0.png"));
         assert!(!region.contains("front_colophon.png"));
-        assert!(region.find("PLVTARCHI").unwrap() < region.find("front_qr_s0.png").unwrap());
+        assert!(region.find("PLUTARCHI").unwrap() < region.find("front_qr_s0.png").unwrap());
     }
 
     #[test]

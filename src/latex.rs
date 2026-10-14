@@ -461,17 +461,19 @@ pub(crate) fn tomus_title_page(
 ) -> String {
     let plate = exlibris.map(exlibris_plate).unwrap_or_default();
     let roman = to_roman(tomus as u32);
-    let display = [
-        "{\\LARGE\\bfseries PLVTARCHI}",
-        "{\\LARGE\\bfseries VITÆ}",
-        "{\\large A GVILIELMO XYLANDRO}",
+    let title =
+        ["{\\LARGE\\bfseries PLUTARCHI}", "{\\LARGE\\bfseries VITÆ}"].join("\\\\[0.55em]\n\x20 ");
+    let attribution = [
+        "{\\large A GUILIELMO XYLANDRO}",
         "{\\large LATINE REDDITÆ,}",
-        "{\\large ATQVE}",
+        "{\\large ATQUE}",
         "{\\large A THEODORO DŒHNERO}",
         "{\\large RECOGNITÆ, EMENDATÆ}",
         "{\\large ET ORDINATÆ.}",
     ]
     .join("\\\\[0.55em]\n\x20 ");
+    // A wider gap sets the attribution apart from the VITÆ title above it.
+    let display = [title, attribution].join("\\\\[1.4em]\n\x20 ");
     let mut lines = vec![display, format!("{{\\large TOMUS {roman}}}")];
     if !life_latin_titles.is_empty() {
         // Each name is an unbreakable box (no mid-name hyphenation); the bullet
@@ -492,7 +494,9 @@ pub(crate) fn tomus_title_page(
             "\\parbox{{0.86\\textwidth}}{{\\centering {lives}\\par}}"
         ));
     }
-    let body = lines.join("\\\\[1.3em]\n\x20 ");
+    // A generous gap isolates the volume number, setting it apart from the title
+    // block above and the list of Lives below.
+    let body = lines.join("\\\\[2.6em]\n\x20 ");
     // The title block sits in the upper third; the owner's `EX LIBRIS` plate is
     // pushed to the bottom, separated from the title by the larger flexible gap.
     format!(
@@ -912,7 +916,7 @@ mod tests {
         for absent in ["EX LIBRIS", "\\fbox", "phantom"] {
             assert!(!page.contains(absent));
         }
-        assert!(page.contains("PLVTARCHI"));
+        assert!(page.contains("PLUTARCHI"));
         assert!(page.contains("VIT\u{c6}"));
         assert!(page.ends_with("\\clearpage\n\n"));
         // The title page opens on a recto, not a verso.
@@ -1329,11 +1333,11 @@ mod tests {
         let page = tomus_title_page(1, &["THESEUS".to_string(), "C. MARIUS".to_string()], None);
         let mut previous = 0;
         for line in [
-            "PLVTARCHI",
+            "PLUTARCHI",
             "VITÆ",
-            "A GVILIELMO XYLANDRO",
+            "A GUILIELMO XYLANDRO",
             "LATINE REDDITÆ,",
-            "ATQVE",
+            "ATQUE",
             "A THEODORO DŒHNERO",
             "RECOGNITÆ, EMENDATÆ",
             "ET ORDINATÆ.",
@@ -1343,7 +1347,8 @@ mod tests {
             assert!(position >= previous, "{line} is out of order");
             previous = position + line.len();
         }
-        assert_eq!(page.matches("\\\\[0.55em]").count(), 7);
+        assert_eq!(page.matches("\\\\[0.55em]").count(), 6);
+        assert_eq!(page.matches("\\\\[1.4em]").count(), 1);
         assert!(!page.contains("SECUNDUM CODICES PARISINOS RECOGNOVIT"));
         assert!(page.contains("TOMUS I"));
         // Small caps via lower-casing; abbreviated praenomen kept verbatim.
