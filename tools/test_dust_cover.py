@@ -2,14 +2,15 @@
 
 import unittest
 import re
+from subprocess import CompletedProcess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from tools.dust_cover import (
     SHEET_SIZES_IN, DustCoverError, InnerTitle, back_cover_body, check_printable,
-    compute_layout, escape_latex, front_cover_body, int_to_roman, panel_box,
-    parse_inner_tex, render_cover, render_preamble, roman_to_int, spine_body,
-    validate_exlibris,
+    compile_cover, compute_layout, escape_latex, front_cover_body,
+    int_to_roman, panel_box, parse_inner_tex, render_cover, render_preamble,
+    roman_to_int, spine_body, validate_exlibris, write_cover_tex,
 )
 
 
@@ -204,3 +205,34 @@ class RenderCoverTests(unittest.TestCase):
         tex = render_cover(self.layout, 17, 11, self.title, "III", "alex smith")
         self.assertEqual(tex.count("EX LIBRIS"), 1)
         self.assertIn("ALEX SMITH", tex)
+
+
+class OutputTests(unittest.TestCase):
+    def test_write_cover_tex_creates_file(self):
+        with TemporaryDirectory() as directory:
+            path = write_cover_tex(Path(directory), 1, "COVER")
+            self.assertEqual(path.name, "tomus_1_cover.tex")
+            self.assertEqual(path.read_text(encoding="utf-8"), "COVER")
+
+    def test_compile_invokes_lualatex(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "tomus_1_cover.tex"
+            calls = []
+
+            def runner(command, **kwargs):
+                calls.append((command, kwargs))
+                return CompletedProcess(command, 0)
+
+            self.assertEqual(compile_cover(path, runner), path.with_suffix(".pdf"))
+            self.assertEqual(calls[0][0][0], "lualatex")
+            self.assertEqual(calls[0][1]["cwd"], path.parent)
+
+    def test_compile_failure_raises(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "tomus_1_cover.tex"
+
+            def runner(command, **kwargs):
+                return CompletedProcess(command, 1, stderr="TeX failed")
+
+            with self.assertRaisesRegex(DustCoverError, "lualatex failed"):
+                compile_cover(path, runner)

@@ -2,6 +2,7 @@
 
 import argparse
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -205,6 +206,31 @@ def render_cover(layout: Layout, sheet_long_in: float, sheet_short_in: float,
         )
     lines.extend((r"\end{tikzpicture}", r"\end{document}"))
     return "\n".join(lines) + "\n"
+
+
+def write_cover_tex(out_dir: Path, tomus: int, tex: str) -> Path:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"tomus_{tomus}_cover.tex"
+    path.write_text(tex, encoding="utf-8")
+    return path
+
+
+def compile_cover(tex_path: Path, runner=subprocess.run) -> Path:
+    try:
+        result = runner(
+            ["lualatex", "--interaction=nonstopmode", tex_path.name],
+            cwd=tex_path.parent, capture_output=True, text=True, check=False,
+        )
+    except OSError as exc:
+        raise DustCoverError(f"cannot run lualatex: {exc}") from exc
+    if result.returncode != 0:
+        log_path = tex_path.with_suffix(".log")
+        if log_path.exists():
+            detail = "\n".join(log_path.read_text(encoding="utf-8", errors="replace").splitlines()[-20:])
+        else:
+            detail = (result.stderr or result.stdout or "").strip()
+        raise DustCoverError(f"lualatex failed for {tex_path}:\n{detail}")
+    return tex_path.with_suffix(".pdf")
 
 
 def compute_layout(total_width: float, total_height: float,
