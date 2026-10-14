@@ -3053,7 +3053,6 @@ fn audit_traced_unit(id: &str) -> (Vec<PageBands>, LineMetrics, Vec<RetainedSour
 /// The frozen `production_body_scale()` for the current source PDFs. Passing this
 /// literal lets a composer-level test pack real canvases without the whole-corpus
 /// column-width sampling that makes `production_body_scale()` take >10 min.
-#[allow(dead_code)]
 const FROZEN_BODY_SCALE: f32 = 1.2023952;
 
 /// Compose one unit's body canvases at [`FROZEN_BODY_SCALE`] and return each
@@ -3067,7 +3066,6 @@ const FROZEN_BODY_SCALE: f32 = 1.2023952;
 /// A caller resolves a strip to its source page through the returned traces and
 /// `retained_page`. A canvas index here is a per-unit body-canvas ordinal, not a
 /// physical reader-PDF page number.
-#[allow(dead_code)]
 fn compose_unit_at_frozen_scale(
     id: &str,
 ) -> (
@@ -3935,6 +3933,87 @@ fn skew_and_tomus6_repair_trace() {
         let around: Vec<_> = raw.iter().filter(|b| b.top < target_row + 170 && b.bottom > target_row - 170).copied().collect();
         println!("BREAK {unit} v2 p{page} crop={:?} dims={:?} metrics={metrics:?} raw_bands={around:?} kept={kept:?} cuts={cuts:?} strips={relevant:?} body_budget={}", trace.crop, column.dimensions(), TrimGeom::default().body_budget());
         column.save(dir.join(format!("v2_p{page}_retained_crop.png"))).unwrap();
+    }
+
+    // Composer-level placement: where each defect's target band lands on the packed
+    // reader canvases at the frozen production scale. This localizes the loss/split
+    // stage that band-domain assertions cannot see — a band that survives
+    // render_and_band (Pass A) can still be dropped by the unit's boundary trims
+    // (Pass B), filtered as low-ink at strip selection, or split/stranded by the
+    // packer.
+    let geom = TrimGeom::default();
+    for (unit, source, page, target, label) in [
+        ("philopoemen", 0usize, 448u32, [330u32, 366u32], "victory_line"),
+        ("romulus", 0, 34, [2149, 2186], "iii_ceterum_heading"),
+        ("alexander", 1, 231, [2224, 2317], "quidem_line"),
+        ("cleomenes", 1, 398, [1022, 1837], "consi_block"),
+    ] {
+        // Pass A (single page, render_and_band) vs Pass B (full-unit boundary trims).
+        let (_, pass_a) =
+            render_and_band(source, page, &|s, p| Ok(real_source_image(s, p))).unwrap();
+        let (strips, canvas_ranges, canvases, traces) = compose_unit_at_frozen_scale(unit);
+        let start_page = operational_range(unit).unit.start_page;
+        let trace = retained_page(&traces, source, page).unwrap();
+        let index = trace.retained_index.unwrap();
+        let pass_b: Vec<[u32; 2]> = trace.bands.clone();
+        let near = |t: u32, b: u32| t < target[1] + 220 && b > target[0].saturating_sub(220);
+        let a_near: Vec<[u32; 2]> = pass_a
+            .iter()
+            .filter(|band| near(band.top, band.bottom))
+            .map(|b| [b.top, b.bottom])
+            .collect();
+        let b_near: Vec<[u32; 2]> = pass_b.iter().filter(|b| near(b[0], b[1])).copied().collect();
+        let a_has = pass_a.iter().any(|b| [b.top, b.bottom] == target);
+        let b_has = pass_b.contains(&target);
+        // One-based canvases whose scaled-stream range overlaps a strip's range.
+        let locate = |st: u32, sb: u32| -> Vec<usize> {
+            canvas_ranges
+                .iter()
+                .filter(|(_, t, b)| *t < sb && *b > st)
+                .map(|(i, _, _)| *i)
+                .collect::<Vec<_>>()
+        };
+        let page_strips: Vec<_> = strips
+            .iter()
+            .filter(|(s, _, _)| s.page_img_index == index)
+            .collect();
+        let near_strips: Vec<_> = page_strips
+            .iter()
+            .filter(|(s, _, _)| near(s.band.top, s.band.bottom))
+            .map(|(s, st, sb)| (s.band.top, s.band.bottom, s.class, *st, *sb, locate(*st, *sb)))
+            .collect();
+        let target_strip = page_strips
+            .iter()
+            .find(|(s, _, _)| s.band.top <= target[0] && s.band.bottom >= target[1]);
+        let placement =
+            target_strip.map(|(s, st, sb)| (s.band.top, s.band.bottom, *st, *sb, locate(*st, *sb)));
+        // Bottom whitespace (scaled px) on the canvas that precedes the first canvas
+        // the target lands on, i.e. how much blank the packer left when it closed it.
+        let preceding_gap = placement.as_ref().and_then(|(_, _, _, _, canv)| {
+            canv.first().and_then(|&first| {
+                (first >= 2).then(|| {
+                    let prev = &canvases[first - 2];
+                    geom.body_budget()
+                        .saturating_sub(prev.height().saturating_sub(2 * geom.pad_y))
+                })
+            })
+        });
+        println!(
+            "PLACE {label} {unit} v{} p{page} start_page={start_page} index={index} \
+             pass_a_has_target={a_has} pass_b_has_target={b_has} pass_a_near={a_near:?} \
+             pass_b_near={b_near:?} strips_near={near_strips:?} target_placement={placement:?} \
+             preceding_bottom_gap_px={preceding_gap:?} canvas_count={} body_budget={}",
+            source + 1,
+            canvases.len(),
+            geom.body_budget(),
+        );
+        if let Some((_, _, _, _, canv)) = &placement {
+            for &c in canv {
+                canvases[c - 1]
+                    .save(dir.join(format!("v{}_p{page}_{label}_canvas{c}.png", source + 1)))
+                    .unwrap();
+            }
+        }
     }
 }
 
