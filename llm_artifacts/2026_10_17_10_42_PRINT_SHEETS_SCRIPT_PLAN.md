@@ -94,15 +94,22 @@ failure.
   command line does both:
 
   ```
-  SumatraPDF.exe -print-to-default -print-settings "33-34,duplexshort,monochrome,noscale" -silent -exit-when-done file.pdf
+  SumatraPDF.exe -print-to-default -print-settings "33-34,duplexshort,monochrome,noscale" -silent file.pdf
   ```
 
   `-print-settings` is a comma-separated list. A page range (`33-34`, or a single
   page `65`) limits the pages. `duplexshort` / `simplex` sets the sides.
   `monochrome` requests black and white. `noscale` prints at actual size, which
   the README requires because the trim marks must land at true scale. `-silent`
-  suppresses error dialogs, and `-exit-when-done` closes the app after it hands
-  the job to the spooler.
+  suppresses error dialogs. With `-print-to-default`, SumatraPDF exits by itself
+  once it has handed the job to the Windows spooler, so `subprocess.run` returns
+  as soon as that job is queued. (Do not add `-exit-when-done`: that flag belongs
+  to `-print-dialog` and is not needed here.)
+- **What the exit code means.** A non-zero SumatraPDF exit code means that it
+  could not open the PDF or could not spool the job. A zero exit code means only
+  that the job reached the spooler, not that the sheet printed. A jam or an
+  offline printer after spooling is invisible to the tool, so the operator uses
+  `--resume-from` after reading the printer, not the tool output.
 - **Driver caveat.** SumatraPDF passes `duplexshort` and `monochrome` to the
   printer driver through the standard Windows `DEVMODE` fields. A driver that
   ignores those fields (some do for color) will print in color or single-sided
@@ -172,7 +179,12 @@ Create `tools/print_sheets.py` with:
   `sheets`, it raises `PrintSheetsError(f"--resume-from {resume_from} is outside sheets {sheets[0].number}-{sheets[-1].number}")`.
 
 Create `tools/test_print_sheets.py` (module docstring
-`"""Tests for the sheet-by-sheet print tool."""`) with `class RangeTests` and
+`"""Tests for the sheet-by-sheet print tool."""`). Its imports are
+`contextlib`, `importlib.util`, `io`, `os`, `unittest`,
+`from pathlib import Path`, `from tempfile import TemporaryDirectory`,
+`from unittest.mock import patch`, and `from tools.print_sheets import (...)`
+(the names under test), as in `tools/test_dust_cover.py`. Every test class
+subclasses `unittest.TestCase`. Begin with `class RangeTests` and
 `class PlanTests`:
 
 - `test_parse_single_page`: `"5"` → `(5, 5)`.
@@ -211,6 +223,13 @@ Add to `tools/print_sheets.py`:
   - If opening fails → `PrintSheetsError(f"cannot read PDF {path}: {exc}")`.
   - Otherwise returns `document.page_count`, opening with
     `with pymupdf.open(path) as document:`.
+- Create `tools/requirements-print-sheets.txt`, following the existing
+  `tools/requirements-*.txt` files:
+
+  ```
+  # Runtime dependency of tools/print_sheets.py (page-count validation).
+  PyMuPDF==1.27.2
+  ```
 - `check_range_in_document(last: int, page_count: int) -> None`. If
   `last > page_count`, it raises
   `PrintSheetsError(f"page range ends at {last} but the PDF has {page_count} pages")`.
@@ -258,7 +277,7 @@ Add:
   `f"{sheet.page_label()},{sides},monochrome,noscale"`, where `sides` is
   `"simplex"` for a single-sided sheet and `"duplexshort"` otherwise.
 - `build_command(sumatra: Path, pdf: Path, sheet: Sheet) -> list[str]`. Returns
-  `[str(sumatra), "-print-to-default", "-print-settings", print_settings(sheet), "-silent", "-exit-when-done", str(pdf)]`.
+  `[str(sumatra), "-print-to-default", "-print-settings", print_settings(sheet), "-silent", str(pdf)]`.
 
 Tests (`class SumatraTests`). Use `patch.dict(os.environ, {...}, clear=True)` and
 temp files standing in for `SumatraPDF.exe`:
@@ -267,7 +286,9 @@ temp files standing in for `SumatraPDF.exe`:
 - `test_explicit_missing_is_error_not_fallthrough`: an env var points to a real file,
   but the explicit path is missing → error naming `--sumatra`.
 - `test_env_var_missing_is_error`.
-- `test_falls_back_to_localappdata`: patch `shutil.which` to return `None`.
+- `test_falls_back_to_localappdata`: patch `tools.print_sheets.shutil.which` to
+  return `None`, create `<tmp>/SumatraPDF/SumatraPDF.exe` (an empty file), and set
+  only `LOCALAPPDATA=<tmp>` in the cleared environment. Expect that path back.
 - `test_not_found_message_mentions_env_var`.
 - `test_settings_duplex_sheet`: `"33-34,duplexshort,monochrome,noscale"`.
 - `test_settings_single_page_sheet`: `"65,simplex,monochrome,noscale"`.
@@ -386,9 +407,15 @@ where needed:
     default printer).
   - Install SumatraPDF, then optionally set
     `$env:PLUTARCH_SUMATRA = "$env:LOCALAPPDATA\SumatraPDF\SumatraPDF.exe"`.
-  - PyMuPDF requirement: `python -m pip install PyMuPDF==1.27.2`.
+  - PyMuPDF requirement:
+    `python -m pip install -r tools/requirements-print-sheets.txt`.
   - PowerShell examples: a full Tomus range, a dry run, a delay, and a resume after a jam.
   - The argument table, in the existing `| Argument | Meaning | Required | Default |` format.
+  - Exit codes: `0` all jobs sent (or a dry run finished); `1` a SumatraPDF job
+    failed (the message gives the `--resume-from` value); `2` invalid input or
+    setup, with nothing sent.
+  - "Sent" means "handed to the Windows spooler". After a jam, look at which
+    sheet the printer actually finished, and resume from the next one.
   - Page and sheet numbering: sheet *k* = pages 2k−1, 2k; odd start required;
     an odd end prints the final page single-sided.
   - Caveats: set the desired printer as the Windows default before running.
@@ -402,6 +429,7 @@ where needed:
 **LLM verification**
 - `grep -n "Printing sheets" README.md` → one match.
 - `grep -n "resume-from" tools/README-print-sheets.md` → at least one match.
+- `grep -n "Exit codes" tools/README-print-sheets.md` → one match.
 - Every argument in `main` appears in the README table (compare against the
   `--help` output).
 
