@@ -20,7 +20,7 @@ default, or on A4 with `--paper-size a4`.
 For a full PDF build on this Windows checkout, run the following from the project
 root in PowerShell. MiKTeX must be installed with the `oldstandard` package; the
 explicit executable path avoids relying on `PATH`. The command uses the cached
-front-matter prose and compiles all eight tomi, including their printing wrappers.
+front-matter prose and compiles all ten tomi, including their printing wrappers.
 
 ```powershell
 $env:PLUTARCH_LUALATEX = "$env:LOCALAPPDATA\Programs\MiKTeX\miktex\bin\x64\lualatex.exe"
@@ -31,8 +31,8 @@ if ($LASTEXITCODE -ne 0) { throw "The facsimile build failed; inspect the error 
 Get-ChildItem build_facsimile/tomus*.pdf
 ```
 
-The completed build produces `tomus_1_inner.pdf` through `tomus_8_inner.pdf` (book
-pages) and `tomus_1.pdf` through `tomus_8.pdf` (imposed US Letter printing PDFs
+The completed build produces `tomus_1_inner.pdf` through `tomus_10_inner.pdf` (book
+pages) and `tomus_1.pdf` through `tomus_10.pdf` (imposed US Letter printing PDFs
 by default).
 If MiKTeX is installed elsewhere, change `PLUTARCH_LUALATEX` accordingly. When
 running through Codex's restricted filesystem sandbox, allow the build access to
@@ -156,7 +156,7 @@ capture, adjudication, calibration, full offline runs, capped optional review,
 scope verification and immutable archiving. Processing completion does not
 certify complete Latin coverage.
 
-[`tools/audit_inner_tomi.py`](tools/audit_inner_tomi.py) inspects the eight
+[`tools/audit_inner_tomi.py`](tools/audit_inner_tomi.py) inspects the ten
 facsimile inner PDFs against the original bilingual scans and reports suspected
 **duplicated passages, unique missing source occurrences, displaced or reversed
 passages, and incomplete starts or endings**. Image checks look for **surviving
@@ -285,8 +285,10 @@ for the verified counts, identities, and remaining limitations.
 [`tools/dust_cover.py`](tools/dust_cover.py) generates a parameterized dust
 jacket (`.tex` and compiled `.pdf`) for one Tomus. It reads the Lives and title
 page block from `build_facsimile/tomus_N_inner.tex`, so run the facsimile build
-first. The sheet runs left to right as flap, back cover, spine, front cover,
-flap. The front reproduces the inner title block, and the back lists its Lives.
+first. Covers run 1 through 10, one per Tomus the build produced; the tool itself
+accepts up to Tomus 20. The sheet runs left to right as flap, back cover, spine,
+front cover, flap. The front reproduces the inner title block, and the back lists
+its Lives.
 
 From the repository root in PowerShell:
 
@@ -296,7 +298,7 @@ python tools/dust_cover.py --tomus 1 --total-width 15.5 --total-height 9.5 --spi
 
 | Argument | Meaning | Required | Default |
 |----------|---------|----------|---------|
-| `--tomus` | Tomus number, 1 through 8 | Yes | — |
+| `--tomus` | Tomus number — any Tomus the build produced | Yes | — |
 | `--total-width` | Finished jacket width, inches | Yes | — |
 | `--total-height` | Finished jacket height, inches | Yes | — |
 | `--spine-width` | Spine width, inches | Yes | — |

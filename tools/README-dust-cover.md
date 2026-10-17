@@ -2,8 +2,8 @@
 
 Build the facsimile first so `build_facsimile/tomus_N_inner.tex` exists for the
 chosen Tomus. The script copies its title-page center block to the front panel
-and its Lives to the back; it does not change the source text. Run from the
-repository root:
+and its Lives to the back; it does not change the source text. It renders a cover
+for any Tomus the build produced, up to Tomus 20. Run from the repository root:
 
 ```powershell
 python tools/dust_cover.py --tomus 1 --total-width 15.5 --total-height 9.5 --spine-width 1.25 --cover-width 5.5 --paper-size tabloid --exlibris "Alex Smith" --out build_facsimile
@@ -17,7 +17,7 @@ visible before trimming and leave no marks on the finished jacket.
 
 | Argument | Meaning | Required | Default |
 |----------|---------|----------|---------|
-| `--tomus` | Tomus number, 1 through 8 | Yes | — |
+| `--tomus` | Tomus number — any Tomus the build produced | Yes | — |
 | `--total-width` | Finished jacket width, inches | Yes | — |
 | `--total-height` | Finished jacket height, inches | Yes | — |
 | `--spine-width` | Spine width, inches | Yes | — |
