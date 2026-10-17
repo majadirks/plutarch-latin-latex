@@ -1,4 +1,4 @@
-# Retarget Tomus Page Count to 10–11 Signatures
+# Retarget Tomus Page Count to a 10-Signature Target, 12-Signature Cap
 
 ## Context
 
@@ -10,8 +10,11 @@ each tomus toward a **target** page count and never letting one exceed a **max**
 
 Today those are `TARGET_PAGES = 400` and `MAX_PAGES = 500`, which yields **eight
 tomi**. The desired physical format is smaller, thinner volumes: a target of **10
-signatures (320 pages)** and a hard cap of **11 signatures (352 pages)**. Thinner
-targets mean more, smaller tomi — almost certainly **10 to 12** instead of 8.
+signatures (320 pages)** and a hard cap of **12 signatures (384 pages)**. Thinner
+targets mean more, smaller tomi — almost certainly **10 to 12** instead of 8. The
+cap sits one signature above the original 11-signature request so that any single
+indivisible Life-pair fits under it without a special case (see the pair-group
+note under "Current state of the world").
 
 Growing past eight tomi touches two numeral-aware pieces of code that assume at
 most eight volumes:
@@ -35,8 +38,8 @@ the documentation to match.
 
 **`src/signatures.rs`** — `PAGES_PER_SIGNATURE = 32` and
 `pad_to_multiple_of_32(pages)` round a volume's page count up to a whole
-signature. Both target (320) and cap (352) requested here are exact signature
-multiples (10 × 32 and 11 × 32), so the cap coincides with a signature boundary.
+signature. Both target (320) and cap (384) are exact signature multiples
+(10 × 32 and 12 × 32), so the cap coincides with a signature boundary.
 
 **`src/volumes.rs`** — the splitter and its constants:
 
@@ -57,8 +60,11 @@ multiples (10 × 32 and 11 × 32), so the cap coincides with a signature boundar
   only applies the `over_max` guard when the current tomus is non-empty, so a
   single pair-group whose own content + minimum overhead exceeds `max` is emitted
   alone in an oversized tomus — the splitter cannot break it. At `max = 500` no
-  real pair-group hits this. At the new `max = 352` the headroom is much smaller,
-  so this plan must verify no single pair-group overflows 11 signatures.
+  real pair-group hits this. The new `max = 384` (12 signatures) is set one
+  signature above the 320 target precisely to preserve this headroom: today's
+  largest *pair-group* is far under 384, so no single group overflows the cap and
+  no special-case split of a pair-group is needed. Phase 0 confirms this cheaply
+  before any rebuild.
 
 Constants are consumed in exactly four non-test sites plus tests:
 
@@ -113,14 +119,13 @@ it requires that build directory to be regenerated after the split changes.
 
 ## Desired end state
 
-- `src/volumes.rs` has `TARGET_PAGES = 320` and `MAX_PAGES = 352`, with doc
-  comments stating these are 10 and 11 whole 32-page signatures.
+- `src/volumes.rs` has `TARGET_PAGES = 320` and `MAX_PAGES = 384`, with doc
+  comments stating these are 10 and 12 whole 32-page signatures.
 - `cargo test`, `cargo clippy --all-targets -- -D warnings`, and
   `cargo fmt --all --check` are green.
 - A full offline facsimile build produces **N tomi** (expected 10–12), every one
-  of which is at most 11 signatures (352 book pages) after padding, and no single
-  pair-group overflows the cap. N is recorded in the plan's verification notes and
-  used to update the docs.
+  of which is at most 12 signatures (384 book pages) after padding. N is recorded
+  in the plan's verification notes and used to update the docs.
 - `tools/dust_cover.py` accepts and renders Tomus numbers across the full produced
   range (and comfortably beyond), parsing and emitting Roman numerals
   algorithmically rather than from an 8-entry tuple, with an explicit, documented
@@ -128,15 +133,18 @@ it requires that build directory to be regenerated after the split changes.
 - `README.md` and `tools/README-dust-cover.md` describe the new signature target,
   the real tomi count N, the `tomus_1 … tomus_N` range, and the dust-cover
   `--tomus` bound — rewritten in place (no "update note" blocks), per AGENTS.md.
+  The `--tomus` wording follows the hybrid chosen below: prose names the real
+  range `1 … N`, and the argument table says "a Tomus the build produced" rather
+  than hard-coding a numeral that a later re-split could falsify.
 
 ## Tech Learnings
 
 - **Signatures and padding.** A signature is one folded sheet-stack of 32 book
   pages. `pad_to_multiple_of_32` uses `u32::div_ceil` — integer division that
   rounds up — so `pad_to_multiple_of_32(321)` is `352`. Because the new `max`
-  (352) is itself `11 × 32`, a tomus whose pre-padding content + overhead is `≤
-  352` pads to **exactly** `≤ 352`; the cap and the signature grid line up, which
-  is why 352 (not, say, 350) is the right number to encode.
+  (384) is itself `12 × 32`, a tomus whose pre-padding content + overhead is `≤
+  384` pads to **exactly** `≤ 384`; the cap and the signature grid line up, which
+  is why 384 (not, say, 370) is the right number to encode.
 - **Subtractive Roman numerals.** The classic algorithm walks a descending table
   of (value, symbol) pairs — `(1000,"M") … (9,"IX") (5,"V") (4,"IV") (1,"I")` —
   emitting each symbol while the remaining value is ≥ its weight. `src/latex.rs`
@@ -177,25 +185,27 @@ trim count with the regex already used by the ignored QA test
 
 Build `UnitPages` for each unit by joining those counts to the unit metadata in
 `facsimile_units.json` (`id`, `group`, `kind`, `source`), then call
-`volumes::split_into_volumes(&units, 320, 352)` and, for each resulting tomus,
+`volumes::split_into_volumes(&units, 320, 384)` and, for each resulting tomus,
 `volumes::volume_physical_pages(content, source, is_first_of_source,
 is_tomus_one)`. Do this with a short throwaway Rust test or a `tmp/` binary that
 imports the crate — the pure split logic needs no build artifacts. Report:
 
 - **N** — the predicted number of tomi (expect 10–12).
-- Each tomus's padded physical page count, confirming every one is `≤ 352`.
-- **Overflow check:** whether any single pair-group's content + minimum overhead
-  already exceeds 352. Because a pair-group is never divided (`split_source` only
-  applies the `over_max` guard to a non-empty tomus), such a group would be emitted
-  alone in an over-cap tomus. If one exists, **stop and surface it to the user** —
-  that Life-pair alone needs more than 11 signatures — rather than raising the cap.
+- Each tomus's padded physical page count, confirming every one is `≤ 384`.
+- **Headroom sanity check:** the 12-signature cap was chosen so that no single
+  pair-group overflows it (a pair-group is never divided — `split_source` applies
+  the `over_max` guard only to a non-empty tomus — so an over-cap group would be
+  emitted alone in an over-cap tomus). Confirm no pair-group's content + minimum
+  overhead exceeds 384. This should hold with wide margin; if it somehow does not,
+  **stop and surface it to the user** rather than raising the cap further, since
+  that would mean a single Life-pair needs more than 12 signatures.
 
-If the overflow check is clean, proceed. If not, the plan pauses here for a
-decision before any code or rebuild.
+If the sanity check holds (it is expected to), proceed. The common, expected
+outcome is that every tomus lands comfortably under 384.
 
 **LLM verification:**
 - The throwaway harness prints N and the per-tomus padded counts; every count is a
-  multiple of 32 and `≤ 352`.
+  multiple of 32 and `≤ 384`.
 - No pair-group is reported as over-cap (or, if one is, the run stops for a user
   decision).
 
@@ -219,8 +229,8 @@ In `src/volumes.rs`, change the two constants and their doc comments:
 ```rust
 /// Target physical pages per volume: ten whole 32-page signatures.
 pub const TARGET_PAGES: u32 = 320;
-/// Hard cap on physical pages per volume: eleven whole 32-page signatures.
-pub const MAX_PAGES: u32 = 352;
+/// Hard cap on physical pages per volume: twelve whole 32-page signatures.
+pub const MAX_PAGES: u32 = 384;
 ```
 
 Do not change `split_source`, `volume_physical_pages`, `front_overhead`, or any
@@ -229,12 +239,12 @@ intentional fixtures of the balancing algorithm and must keep their values
 (renumbering/rewriting them would break what they pin down). The only test that
 reads the constant, `each_volume_within_max_pages`, continues to assert against
 `pad_to_multiple_of_32(MAX_PAGES)` and needs no edit: its `regular_units`
-content pads well under 352.
+content pads well under 384.
 
 **LLM verification:**
 - `cargo build`
 - `cargo test --lib volumes::` — all `volumes` unit tests pass.
-- `grep -n "TARGET_PAGES\|MAX_PAGES" src/volumes.rs` shows `320` / `352`.
+- `grep -n "TARGET_PAGES\|MAX_PAGES" src/volumes.rs` shows `320` / `384`.
 
 **Human verification:** None (constant change; behavior is verified end-to-end in
 Phase 3).
@@ -329,11 +339,11 @@ Leave `TITLE_FIXTURE` (Tomus II) and the other test classes unchanged.
 
 ## Phase 3 — Regenerate the build and verify the real tomi count and cap
 
-*Suggested implementer: Opus.* Requires running the long offline build, reading
-the real split, and judging whether any pair-group overflows the 11-signature cap
-— a correctness call, not a mechanical edit. Run long commands inside a Monitor
-(see memory `long-runs-use-monitor`); the full facsimile build and the
-compose-domain tests are slow.
+*Suggested implementer: Opus.* Requires running the long offline build and
+reading the real split against Phase 0's prediction — a correctness check, not a
+mechanical edit. Run long commands inside a Monitor (see memory
+`long-runs-use-monitor`); the full facsimile build and the compose-domain tests
+are slow.
 
 ### Step 3.1 — Full offline facsimile build
 
@@ -351,22 +361,23 @@ Record the printed `Volumes: N` line and the list of `tomus_1 … tomus_N`.
 - The build exits 0 and emits `tomus_1_inner.pdf … tomus_N_inner.pdf` and
   `tomus_1.pdf … tomus_N.pdf`.
 - For each `tomus_k_inner.pdf`, confirm its page count is a multiple of 32 and
-  `≤ 352` (11 signatures). Read the page counts from the lualatex logs or
-  `pdfinfo`; equivalently assert the imposition wrapper placed `≤ 11` signatures.
-- **Cap check:** if any inner PDF exceeds 352 pages, a single pair-group
-  overflowed the cap (the splitter cannot divide a pair-group). Do **not** paper
-  over it by raising `MAX_PAGES`; surface it to the user as a binding constraint —
-  that Life-pair alone needs more than 11 signatures — and stop for a decision.
+  `≤ 384` (12 signatures). Read the page counts from the lualatex logs or
+  `pdfinfo`; equivalently assert the imposition wrapper placed `≤ 12` signatures.
+- **Cap check:** confirm the per-tomus page counts match Phase 0's prediction. If
+  any inner PDF unexpectedly exceeds 384 pages, a single pair-group overflowed even
+  the 12-signature cap — do **not** raise `MAX_PAGES` further; surface it to the
+  user as a binding constraint (that Life-pair alone needs more than 12
+  signatures) and stop for a decision. Phase 0 is expected to have ruled this out.
 
 **Human verification:** Open two or three `tomus_k.pdf` imposition PDFs and the
 corresponding `tomus_k_inner.pdf`; confirm the Tomus title page shows the correct
 Roman numeral (including X, XI, XII where applicable), the Lives list is right,
 and the final signature's trailing blanks look reasonable. Confirm the total tomi
 count is in the expected 10–12 range, matching Phase 0's prediction. Because the
-target (320) and cap (352) are only one signature apart and pair-groups are lumpy,
+target (320) and cap (384) are only two signatures apart and pair-groups are lumpy,
 **expect several tomi well below the 320 target** — target is a balancing goal,
-not a floor, and most tomi will hold a single pair-group that cannot be paired with
-a neighbor without crossing the 352 cap. A spread of sizes is correct, not a sign
+not a floor, and a tomus often holds a single pair-group that cannot take on a
+neighbor without crossing the 384 cap. A spread of sizes is correct, not a sign
 of an unbalanced split.
 
 ### Step 3.2 — Run the full suite; optionally refresh the ignored QA test
@@ -435,31 +446,37 @@ Rewrite in place (no revision blocks), substituting the real N from Phase 3:
   "compiles all N tomi"; "`tomus_1_inner.pdf` through `tomus_8_inner.pdf`" and
   "`tomus_1.pdf` through `tomus_8.pdf`" → `… through tomus_N…`.
 - The audit line (~159): "inspects the eight …" → "inspects the N …".
-- The **Dust covers** section (~283–317): change "Tomus number, 1 through 8" to
-  "1 through N" (or "1 through MAX_TOMUS" if you prefer to document the tool's full
-  supported range rather than the current build's count — state whichever you
-  choose consistently).
+- The **Dust covers** section (~283–317): in the prose, describe the covers as
+  running "1 through N" (matching the `tomus_1 … tomus_N` ranges above). In the
+  `--tomus` argument-table row, change "Tomus number, 1 through 8" to **"Tomus
+  number — any Tomus the build produced"** rather than hard-coding a numeral, so
+  the doc does not go stale if a later re-split changes N. (This is the hybrid
+  chosen in the decisions section: a concrete range in prose, a drift-proof
+  description in the table.)
 - If the README states the target/cap page counts anywhere, update them to "10
-  signatures (320 pages) … 11 signatures (352 pages)". (As of this plan the README
+  signatures (320 pages) … 12 signatures (384 pages)". (As of this plan the README
   does not print `400`/`500`, but confirm with a grep.)
 
 **LLM verification:**
 - `grep -niE "eight|tomus_8|1 through 8| 8 tomi" README.md` returns nothing stale.
-- `grep -nE "signature|320|352" README.md` shows the new figures where relevant.
+- `grep -nE "signature|320|384" README.md` shows the new figures where relevant.
 
 **Human verification:** Read the edited README sections; confirm the counts and
 ranges read correctly and no "eight" survives.
 
 ### Step 4.2 — `tools/README-dust-cover.md`
 
-Rewrite in place: the `--tomus` row "Tomus number, 1 through 8" → the new bound
-(matching the choice made in Step 4.1), and any other "1 through 8" phrasing.
+Rewrite in place: the `--tomus` row "Tomus number, 1 through 8" → the same
+drift-proof wording chosen in Step 4.1 ("Tomus number — any Tomus the build
+produced"), and any other "1 through 8" phrasing. The surrounding prose may note
+that the tool itself accepts up to `MAX_TOMUS`, but the table row should not pin a
+specific count.
 
 **LLM verification:**
 - `grep -niE "1 through 8|eight" tools/README-dust-cover.md` returns nothing.
 
-**Human verification:** Read the table row; confirm it matches
-`tools/dust_cover.py`'s actual bound (`MAX_TOMUS`) and the README.
+**Human verification:** Read the table row; confirm the wording matches the README
+and does not hard-code a numeral that `tools/dust_cover.py` could outlive.
 
 ### Step 4.3 — Clear the backlog item (optional)
 
@@ -474,14 +491,19 @@ backlog items unprompted.
 
 ---
 
-## Open questions / decisions for the user
+## Resolved decisions
 
-1. **Dust-cover `--tomus` bound wording in the docs:** document the tool's full
-   supported range (`MAX_TOMUS`, 20) or the current build's real count (N)? The
-   code supports 20; the build produces N. The plan assumes you prefer the docs to
-   name the real count N for the `tomus_1 … tomus_N` ranges but may mention the
-   tool accepts up to `MAX_TOMUS`. Confirm.
-2. **Pair-group overflow (Step 3.1 cap check):** if a single Life-pair exceeds 11
-   signatures on its own, the splitter cannot divide it. The plan stops for your
-   decision rather than silently raising the cap. Confirm that is the behavior you
-   want.
+Both open questions from the first review were decided by the user and are
+reflected throughout the plan above:
+
+1. **Dust-cover `--tomus` wording in the docs — hybrid.** Prose names the real
+   range "1 through N" (matching the `tomus_1 … tomus_N` inner-PDF ranges); the
+   argument-table rows in `README.md` and `tools/README-dust-cover.md` say "any
+   Tomus the build produced" rather than hard-coding a numeral, so the docs do not
+   drift if a later re-split changes N. The tool's own ceiling stays `MAX_TOMUS`
+   (20) and may be mentioned in prose. (Steps 4.1, 4.2.)
+2. **Cap raised to 12 signatures (384).** Rather than halting when a single Life-
+   pair would exceed 11 signatures, `MAX_PAGES` is set to `384` (12 × 32) so every
+   indivisible pair-group fits under the cap with room to spare. The target stays
+   `320` (10 signatures). Phase 0 still performs a cheap headroom sanity check and
+   only escalates in the unexpected event that a pair-group exceeds even 384.
