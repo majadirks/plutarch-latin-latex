@@ -8,8 +8,8 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from tools.dust_cover import (
-    SHEET_SIZES_IN, DustCoverError, InnerTitle, back_cover_body, check_printable,
-    compile_cover, compute_layout, escape_latex, front_cover_body,
+    MAX_TOMUS, SHEET_SIZES_IN, DustCoverError, InnerTitle, back_cover_body,
+    check_printable, compile_cover, compute_layout, escape_latex, front_cover_body,
     int_to_roman, main, panel_box, parse_inner_tex, render_cover, render_preamble,
     roman_to_int, spine_body, validate_exlibris, write_cover_tex,
 )
@@ -65,15 +65,18 @@ class ValidationTests(unittest.TestCase):
 
 class RomanNumeralTests(unittest.TestCase):
     def test_int_to_roman_and_back_roundtrips(self):
-        for n in range(1, 9):
+        for n in range(1, MAX_TOMUS + 1):
             with self.subTest(n=n):
                 self.assertEqual(roman_to_int(int_to_roman(n)), n)
+        self.assertEqual(int_to_roman(12), "XII")
 
-    def test_tomus_outside_eight_volumes_raises(self):
-        with self.assertRaisesRegex(DustCoverError, "between 1 and 8"):
-            int_to_roman(9)
+    def test_tomus_outside_valid_range_raises(self):
+        with self.assertRaisesRegex(DustCoverError, f"between 1 and {MAX_TOMUS}"):
+            int_to_roman(MAX_TOMUS + 1)
+        with self.assertRaisesRegex(DustCoverError, f"between 1 and {MAX_TOMUS}"):
+            int_to_roman(0)
         with self.assertRaisesRegex(DustCoverError, "invalid Tomus numeral"):
-            roman_to_int("IX")
+            roman_to_int("nonsense")
 
 
 TITLE_FIXTURE = r"""% Tomus title page
