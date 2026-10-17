@@ -16,7 +16,13 @@ SHEET_SIZES_IN = {
     "tabloid": (17.0, 11.0),
     "a3": (420.0 / 25.4, 297.0 / 25.4),
 }
-TOMUS_ROMANS = ("I", "II", "III", "IV", "V", "VI", "VII", "VIII")
+MAX_TOMUS = 20
+
+_ROMAN_TABLE = (
+    (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+    (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+    (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+)
 
 
 class DustCoverError(Exception):
@@ -24,16 +30,21 @@ class DustCoverError(Exception):
 
 
 def int_to_roman(n: int) -> str:
-    if not 1 <= n <= len(TOMUS_ROMANS):
-        raise DustCoverError("tomus must be between 1 and 8")
-    return TOMUS_ROMANS[n - 1]
+    if not 1 <= n <= MAX_TOMUS:
+        raise DustCoverError(f"tomus must be between 1 and {MAX_TOMUS}")
+    out = []
+    for value, symbol in _ROMAN_TABLE:
+        while n >= value:
+            out.append(symbol)
+            n -= value
+    return "".join(out)
 
 
 def roman_to_int(s: str) -> int:
-    try:
-        return TOMUS_ROMANS.index(s) + 1
-    except ValueError as exc:
-        raise DustCoverError(f"invalid Tomus numeral: {s!r}") from exc
+    for n in range(1, MAX_TOMUS + 1):
+        if int_to_roman(n) == s:
+            return n
+    raise DustCoverError(f"invalid Tomus numeral: {s!r}")
 
 
 @dataclass(frozen=True)

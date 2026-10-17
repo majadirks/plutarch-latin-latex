@@ -15,10 +15,10 @@ pub const LINES_PER_PAGE: u32 = 28;
 /// Vertical allowance, in lines, for a unit's heading (each unit starts fresh).
 pub const HEADING_LINES: u32 = 6;
 
-/// Target physical pages per volume.
-pub const TARGET_PAGES: u32 = 400;
-/// Hard cap on physical pages per volume.
-pub const MAX_PAGES: u32 = 500;
+/// Target physical pages per volume: ten whole 32-page signatures.
+pub const TARGET_PAGES: u32 = 320;
+/// Hard cap on physical pages per volume: twelve whole 32-page signatures.
+pub const MAX_PAGES: u32 = 384;
 
 /// Front-matter pages on **every** tomus: the Tomus title page + the QR page.
 pub const FRONT_PER_TOMUS_PAGES: u32 = 2;
