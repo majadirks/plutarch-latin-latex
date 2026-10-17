@@ -48,7 +48,7 @@ failure.
 | Platform | Windows only. |
 | Print backend | SumatraPDF's command line (details below). |
 | Batch size | Exactly one sheet (two PDF pages) per print job. |
-| Between batches | No prompt. An optional `--delay SECONDS` (default `0`) sleeps between jobs. |
+| Between batches | No prompt. The tool waits `--delay SECONDS` between consecutive jobs (sheets), **2 seconds by default**; `--delay 0` disables the wait. |
 | Page numbering | 1-based physical PDF page numbers, inclusive range. |
 | Alignment | The range's **start page must be odd** (the front of a sheet); otherwise it is an error. An odd **end** page is allowed. The last job then holds one page and prints single-sided. |
 | Printer | Always the Windows default printer. No `--printer` option. |
@@ -63,14 +63,17 @@ failure.
   ```
 
   sends 16 separate print jobs to the default printer (pages 33–34, 35–36, …,
-  63–64). Each job is duplex flip-on-short-edge, monochrome, at actual size. It
-  prints one line per job, for example `sheet 17: pages 33-34 ... sent`.
+  63–64), waiting 2 seconds between consecutive jobs. Each job is duplex
+  flip-on-short-edge, monochrome, at actual size. It prints one line per job, for
+  example `sheet 17: pages 33-34 ... sent`.
 - `--dry-run` prints the same per-sheet lines plus the exact SumatraPDF command
   for each, and sends nothing.
 - `--resume-from 25` skips sheets before sheet 25 (sheet numbers are absolute:
   sheet *k* is PDF pages 2k−1 and 2k).
-- `--delay 20` waits 20 seconds between consecutive jobs. It does not wait before
-  the first job or after the last.
+- `--delay 20` waits 20 seconds between consecutive jobs instead of the default
+  2, and `--delay 0` sends them back-to-back. The tool never waits before the
+  first job or after the last. The delay is per job, and each job is one sheet
+  (two pages); there is no wait between the two pages of a sheet.
 - Bad input (even start page, end before start, range past the PDF's last page,
   resume sheet outside the range, missing PDF, SumatraPDF not found, negative
   delay) gives a one-line `error: ...` on stderr and exit code `2`, **before any
@@ -128,6 +131,11 @@ failure.
   on the exact argument lists without anything being printed. Patch
   `tools.print_sheets.time.sleep` the same way, so delay tests run instantly and
   can assert on the sleep calls.
+- **Why a default delay.** SumatraPDF returns as soon as a job is spooled, so
+  without a pause the tool would queue a whole range in a second or two. The
+  2-second default spaces the jobs out in the Windows print queue. That makes the
+  queue easier to watch and lets the operator stop the run (Ctrl+C) close to the
+  sheet where a problem appears.
 
 ## Implementation
 
@@ -144,6 +152,8 @@ Create `tools/print_sheets.py` with:
   `"""Print a PDF page range one duplex sheet (two pages) per print job via SumatraPDF."""`
 - Imports: `argparse`, `os`, `shutil`, `subprocess`, `sys`, `time`,
   `from dataclasses import dataclass`, `from pathlib import Path`.
+- `DEFAULT_DELAY_SECONDS = 2.0`: a module-level constant, like
+  `DEFAULT_PRINTABLE_MARGIN_IN` in `tools/dust_cover.py`.
 - `class PrintSheetsError(Exception): """An invalid print request or failed print job."""`
 - A frozen dataclass:
 
@@ -219,10 +229,13 @@ Add to `tools/print_sheets.py`:
   (as `tools/audit_inner_tomi.py` does), so the module and the Phase 1 tests
   import without PyMuPDF. Behavior:
   - If `path` is not a file → `PrintSheetsError(f"no such PDF: {path}")`.
-  - If `import pymupdf` fails → `PrintSheetsError("PyMuPDF is required to read the page count; install it with: python -m pip install PyMuPDF==1.27.2")`.
+  - If `import pymupdf` fails → `PrintSheetsError("PyMuPDF is required to read the page count; install it with: python -m pip install -r tools/requirements-print-sheets.txt")`.
   - If opening fails → `PrintSheetsError(f"cannot read PDF {path}: {exc}")`.
   - Otherwise returns `document.page_count`, opening with
     `with pymupdf.open(path) as document:`.
+- `check_range_in_document(last: int, page_count: int) -> None`. If
+  `last > page_count`, it raises
+  `PrintSheetsError(f"page range ends at {last} but the PDF has {page_count} pages")`.
 - Create `tools/requirements-print-sheets.txt`, following the existing
   `tools/requirements-*.txt` files:
 
@@ -230,9 +243,6 @@ Add to `tools/print_sheets.py`:
   # Runtime dependency of tools/print_sheets.py (page-count validation).
   PyMuPDF==1.27.2
   ```
-- `check_range_in_document(last: int, page_count: int) -> None`. If
-  `last > page_count`, it raises
-  `PrintSheetsError(f"page range ends at {last} but the PDF has {page_count} pages")`.
 
 Tests (`class PageCountTests`):
 - `test_range_within_document_accepted`: `check_range_in_document(64, 64)` does not raise.
@@ -307,7 +317,8 @@ temp files standing in for `SumatraPDF.exe`:
 Add:
 
 - `run_jobs(sumatra: Path, pdf: Path, sheets: list[Sheet], delay: float, dry_run: bool) -> int`.
-  For each sheet, in order:
+  Loop with `for index, sheet in enumerate(sheets):` and build
+  `command = build_command(sumatra, pdf, sheet)`. For each sheet, in order:
   - `prefix = f"sheet {sheet.number}: pages {sheet.page_label()}"`, with
     `" (single-sided)"` appended when `sheet.single_sided`.
   - **Dry run:** print `prefix`, then on the next line two spaces followed by
@@ -318,7 +329,7 @@ Add:
     `subprocess.run(command, check=False, capture_output=True, text=True)`.
     - An `OSError` (for example, the exe vanished) or a non-zero `returncode`:
       print `f"{prefix} ... FAILED"` to stdout, and to stderr print
-      `f"error: SumatraPDF exited with {code} for sheet {n}"`, adding stderr text
+      `f"error: SumatraPDF exited with {result.returncode} for sheet {sheet.number}"`, adding stderr text
       if there is any (for `OSError`, use `f"error: cannot run SumatraPDF: {exc}"`).
       Then print
       `f"resume with: --resume-from {sheet.number}"` to stderr and return `1`
@@ -359,7 +370,7 @@ Add `main(argv: list[str] | None = None) -> int` in the `dust_cover.py` style:
 |---|---|---|
 | `pdf` (positional) | `Path` | The PDF to print. |
 | `--pages` | `str`, **required** | `N` or `N-M`, 1-based, inclusive, with an odd start. |
-| `--delay` | `float`, default `0.0` | Seconds to wait between jobs. |
+| `--delay` | `float`, default `DEFAULT_DELAY_SECONDS` (2.0) | Seconds to wait between consecutive jobs; `0` disables the wait. |
 | `--resume-from` | `int`, default `None` | The absolute sheet number to start from. |
 | `--dry-run` | flag | Show the jobs and commands, and send nothing. |
 | `--sumatra` | `Path`, default `None` | Explicit path to `SumatraPDF.exe`. |
@@ -384,6 +395,10 @@ where needed:
 - `test_main_even_start_exit_2_no_jobs`: `run_jobs` is not called, and the return value is `2`.
 - `test_main_range_past_end_exit_2`.
 - `test_main_negative_delay_exit_2`.
+- `test_main_default_delay_is_two_seconds`: no `--delay` → `run_jobs` receives
+  `delay == 2.0`.
+- `test_main_delay_zero_accepted`: `--delay 0` → `run_jobs` receives `0.0`, with
+  return value `0`.
 - `test_main_missing_sumatra_exit_2_even_on_dry_run`.
 - `test_main_returns_runner_status`: `run_jobs` returns `1` → `main` returns `1`.
 
@@ -409,7 +424,8 @@ where needed:
     `$env:PLUTARCH_SUMATRA = "$env:LOCALAPPDATA\SumatraPDF\SumatraPDF.exe"`.
   - PyMuPDF requirement:
     `python -m pip install -r tools/requirements-print-sheets.txt`.
-  - PowerShell examples: a full Tomus range, a dry run, a delay, and a resume after a jam.
+  - PowerShell examples: a full Tomus range (default 2 s delay), a dry run, a
+    longer delay, `--delay 0`, and a resume after a jam.
   - The argument table, in the existing `| Argument | Meaning | Required | Default |` format.
   - Exit codes: `0` all jobs sent (or a dry run finished); `1` a SumatraPDF job
     failed (the message gives the `--resume-from` value); `2` invalid input or
@@ -445,8 +461,9 @@ No code. On the operator's Windows machine:
    sheet comes out with both sides printed, in black and white, and the back
    upright when flipped on the short edge. Check that the trim border measures
    21 × 16 cm (actual size, not scaled).
-2. `--pages 1-5 --delay 10` → three separate jobs appear in the Windows print
-   queue about 10 s apart. The third sheet is single-sided.
+2. `--pages 1-5` (default delay) → three separate jobs appear in the Windows
+   print queue about 2 s apart. The third sheet is single-sided. Repeat with
+   `--delay 10` and confirm the jobs arrive about 10 s apart.
 3. Pause the printer or take it offline mid-run and confirm the behavior.
    SumatraPDF usually still succeeds, because spooling works, so this mainly
    confirms that jobs queue separately. Then try `--resume-from` to reprint one
