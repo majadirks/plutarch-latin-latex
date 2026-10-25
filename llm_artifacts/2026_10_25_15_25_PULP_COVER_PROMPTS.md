@@ -26,9 +26,13 @@ can read the passage the picture is drawn from.
   the Internet Archive with direct image addresses and a note on what to borrow
   from each (see [Reference covers](#reference-covers)). Attach them to the
   generation request, and give the illustrator the same set.
-- **Lettering.** Generators garble text. Each prompt asks for a plain colour band
-  across the top for the masthead, to be lettered in layout. An optional
-  lettering line is included for generators that can render text.
+- **Lettering.** Each prompt specifies the cover's text, to be painted into
+  the image: the masthead "PLUTARCHI VITÆ" (one design for all ten volumes), a
+  "TOMUS" seal, a banner naming the Lives, and the reader's title-page credit
+  to Xylander and Dœhner. The words are taken from the reader's own title page
+  (`src/latex.rs`) and the Lives' Latin running titles in
+  `facsimile_units.json`, so cover and book agree. Check the spelling in each
+  generated image, especially the Æ and Œ ligatures.
 - **Shape.** The book trims to 10.5 × 16 cm (about 2:3 portrait), and the sample
   dust-cover front panel in `tools/README-dust-cover.md` is 5.5 × 9.5 in. Generate
   at 2:3 portrait and keep faces and key action out of the outer 5% so the image
@@ -129,8 +133,8 @@ one can be pasted on its own:
 > no photographic rendering, no modern digital gloss. Ancient Greek and Roman
 > dress, arms and architecture drawn with period-pulp flair rather than museum
 > exactness: crested bronze helmets, red cloaks, round hoplite shields, Roman
-> scuta and pila, triremes with bronze rams. Keep the top 18% of the picture a
-> flat, slightly mottled colour band for the masthead.
+> scuta and pila, triremes with bronze rams. The lettering is part of the
+> painting: crisp, correctly spelled, hand-lettered pulp display type.
 
 ---
 
@@ -176,8 +180,18 @@ Style references (attach these cover images; each is a direct image address):
 3. Adventure, 20 January 1926: a square-rigged ship under orange sails in a gunsmoke sea; borrow the sail shapes, the spray and the cannon smoke.
    https://archive.org/download/adventure-v-056-n-05-1926-01-20-dtsg-0318-sas/page/cover_w600.jpg
 
-Optional lettering (only if the generator renders text well): masthead
-"PLUTARCHI VITÆ"; a round yellow corner badge reading "TOMUS I".
+LETTERING (paint these words exactly as spelled here, in capitals, including
+the Æ and Œ ligatures; add no other words, no prices and no dates):
+- Masthead across the top fifth of the cover, the same design on all ten
+  volumes: "PLUTARCHI VITÆ" in heavy hand-lettered pulp display capitals,
+  cream-yellow with a thick black drop shadow, set in a gentle arch on a deep
+  red band.
+- Corner seal, upper right, overlapping the masthead band: a round yellow badge
+  with a black rim reading "TOMUS I".
+- Contents banner, a slanted black ribbon across the lower part of the picture,
+  in white condensed capitals: "THESEUS • ROMULUS • LYCURGUS • NUMA • SOLON • POPLICOLA".
+- Credit line in small cream capitals along the very foot of the cover:
+  "A GUILIELMO XYLANDRO LATINE REDDITÆ, ATQUE A THEODORO DŒHNERO RECOGNITÆ, EMENDATÆ ET ORDINATÆ."
 
 Style: an American pulp-magazine cover painting of the 1930s–1950s, oil or
 gouache on board, reproduced in four-colour process with slightly coarse
@@ -190,8 +204,8 @@ cloaks. A diagonal composition that pushes the main action toward the viewer;
 secondary scenes recede into smoke, cloud or flame behind it in the montage
 manner of the period's covers. Visible brushwork, no photographic rendering, no
 modern digital gloss. Ancient Greek and Roman dress, arms and architecture drawn
-with period-pulp flair rather than museum exactness. Keep the top 18% of the
-picture a flat, slightly mottled colour band for the masthead.
+with period-pulp flair rather than museum exactness. The lettering is part of the
+painting: crisp, correctly spelled, hand-lettered pulp display type.
 ```
 
 ### Scene sources
@@ -268,7 +282,18 @@ Style references (attach these cover images; each is a direct image address):
 3. Adventure, 15 October 1929: spearmen behind huge painted shields in tall grass; borrow the shield shapes and the diagonal spears.
    https://archive.org/download/adventure-v-072-n-03-1929-10-15-ibc/page/cover_w600.jpg
 
-Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS II".
+LETTERING (paint these words exactly as spelled here, in capitals, including
+the Æ and Œ ligatures; add no other words, no prices and no dates):
+- Masthead across the top fifth of the cover, the same design on all ten
+  volumes: "PLUTARCHI VITÆ" in heavy hand-lettered pulp display capitals,
+  cream-yellow with a thick black drop shadow, set in a gentle arch on a deep
+  red band.
+- Corner seal, upper right, overlapping the masthead band: a round yellow badge
+  with a black rim reading "TOMUS II".
+- Contents banner, a slanted black ribbon across the lower part of the picture,
+  in white condensed capitals: "THEMISTOCLES • CAMILLUS • PERICLES • FABIUS MAXIMUS • ALCIBIADES • MARCIUS CORIOLANUS".
+- Credit line in small cream capitals along the very foot of the cover:
+  "A GUILIELMO XYLANDRO LATINE REDDITÆ, ATQUE A THEODORO DŒHNERO RECOGNITÆ, EMENDATÆ ET ORDINATÆ."
 
 Style: an American pulp-magazine cover painting of the 1930s–1950s, oil or
 gouache on board, reproduced in four-colour process with slightly coarse
@@ -281,8 +306,8 @@ cloaks. A diagonal composition that pushes the main action toward the viewer;
 secondary scenes recede into smoke, cloud or flame behind it in the montage
 manner of the period's covers. Visible brushwork, no photographic rendering, no
 modern digital gloss. Ancient Greek and Roman dress, arms and architecture drawn
-with period-pulp flair rather than museum exactness. Keep the top 18% of the
-picture a flat, slightly mottled colour band for the masthead.
+with period-pulp flair rather than museum exactness. The lettering is part of the
+painting: crisp, correctly spelled, hand-lettered pulp display type.
 ```
 
 ### Scene sources
@@ -358,7 +383,18 @@ Style references (attach these cover images; each is a direct image address):
 3. Blue Book, April 1930: a hulking club-swinging giant facing a lean fighter; borrow the muscular modelling and the face-off.
    https://archive.org/download/blue-book-v-050-n-06-1930-04/page/cover_w600.jpg
 
-Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS III".
+LETTERING (paint these words exactly as spelled here, in capitals, including
+the Æ and Œ ligatures; add no other words, no prices and no dates):
+- Masthead across the top fifth of the cover, the same design on all ten
+  volumes: "PLUTARCHI VITÆ" in heavy hand-lettered pulp display capitals,
+  cream-yellow with a thick black drop shadow, set in a gentle arch on a deep
+  red band.
+- Corner seal, upper right, overlapping the masthead band: a round yellow badge
+  with a black rim reading "TOMUS III".
+- Contents banner, a slanted black ribbon across the lower part of the picture,
+  in white condensed capitals: "TIMOLEON • AEMILIUS PAULUS • PELOPIDAS • MARCELLUS • ARISTIDES • CATO MAJOR".
+- Credit line in small cream capitals along the very foot of the cover:
+  "A GUILIELMO XYLANDRO LATINE REDDITÆ, ATQUE A THEODORO DŒHNERO RECOGNITÆ, EMENDATÆ ET ORDINATÆ."
 
 Style: an American pulp-magazine cover painting of the 1930s–1950s, oil or
 gouache on board, reproduced in four-colour process with slightly coarse
@@ -371,8 +407,8 @@ cloaks. A diagonal composition that pushes the main action toward the viewer;
 secondary scenes recede into smoke, cloud or flame behind it in the montage
 manner of the period's covers. Visible brushwork, no photographic rendering, no
 modern digital gloss. Ancient Greek and Roman dress, arms and architecture drawn
-with period-pulp flair rather than museum exactness. Keep the top 18% of the
-picture a flat, slightly mottled colour band for the masthead.
+with period-pulp flair rather than museum exactness. The lettering is part of the
+painting: crisp, correctly spelled, hand-lettered pulp display type.
 ```
 
 ### Scene sources
@@ -444,7 +480,18 @@ Style references (attach these cover images; each is a direct image address):
 3. Weird Tales, October 1930: pale ghostly figures among autumn trees; borrow the glowing apparition tones for the haunted dark room.
    https://archive.org/download/Weird_Tales_v16n04_1930-10_sas/page/cover_w600.jpg
 
-Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS IV".
+LETTERING (paint these words exactly as spelled here, in capitals, including
+the Æ and Œ ligatures; add no other words, no prices and no dates):
+- Masthead across the top fifth of the cover, the same design on all ten
+  volumes: "PLUTARCHI VITÆ" in heavy hand-lettered pulp display capitals,
+  cream-yellow with a thick black drop shadow, set in a gentle arch on a deep
+  red band.
+- Corner seal, upper right, overlapping the masthead band: a round yellow badge
+  with a black rim reading "TOMUS IV".
+- Contents banner, a slanted black ribbon across the lower part of the picture,
+  in white condensed capitals: "PHILOPOEMEN • T. QUINCTIUS FLAMININUS • PYRRHUS • C. MARIUS • LYSANDER • SYLLA".
+- Credit line in small cream capitals along the very foot of the cover:
+  "A GUILIELMO XYLANDRO LATINE REDDITÆ, ATQUE A THEODORO DŒHNERO RECOGNITÆ, EMENDATÆ ET ORDINATÆ."
 
 Style: an American pulp-magazine cover painting of the 1930s–1950s, oil or
 gouache on board, reproduced in four-colour process with slightly coarse
@@ -457,8 +504,8 @@ cloaks. A diagonal composition that pushes the main action toward the viewer;
 secondary scenes recede into smoke, cloud or flame behind it in the montage
 manner of the period's covers. Visible brushwork, no photographic rendering, no
 modern digital gloss. Ancient Greek and Roman dress, arms and architecture drawn
-with period-pulp flair rather than museum exactness. Keep the top 18% of the
-picture a flat, slightly mottled colour band for the masthead.
+with period-pulp flair rather than museum exactness. The lettering is part of the
+painting: crisp, correctly spelled, hand-lettered pulp display type.
 ```
 
 ### Scene sources
@@ -536,7 +583,18 @@ Style references (attach these cover images; each is a direct image address):
 3. Weird Tales, June 1927: white spectral figures against a deep blue field; borrow the ghost tones for the haunted bath-house.
    https://archive.org/download/WeirdTalesV09N06192706/page/cover_w600.jpg
 
-Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS V".
+LETTERING (paint these words exactly as spelled here, in capitals, including
+the Æ and Œ ligatures; add no other words, no prices and no dates):
+- Masthead across the top fifth of the cover, the same design on all ten
+  volumes: "PLUTARCHI VITÆ" in heavy hand-lettered pulp display capitals,
+  cream-yellow with a thick black drop shadow, set in a gentle arch on a deep
+  red band.
+- Corner seal, upper right, overlapping the masthead band: a round yellow badge
+  with a black rim reading "TOMUS V".
+- Contents banner, a slanted black ribbon across the lower part of the picture,
+  in white condensed capitals: "CIMON • LUCULLUS".
+- Credit line in small cream capitals along the very foot of the cover:
+  "A GUILIELMO XYLANDRO LATINE REDDITÆ, ATQUE A THEODORO DŒHNERO RECOGNITÆ, EMENDATÆ ET ORDINATÆ."
 
 Style: an American pulp-magazine cover painting of the 1930s–1950s, oil or
 gouache on board, reproduced in four-colour process with slightly coarse
@@ -549,8 +607,8 @@ cloaks. A diagonal composition that pushes the main action toward the viewer;
 secondary scenes recede into smoke, cloud or flame behind it in the montage
 manner of the period's covers. Visible brushwork, no photographic rendering, no
 modern digital gloss. Ancient Greek, Roman and Persian dress, arms and
-architecture drawn with period-pulp flair rather than museum exactness. Keep the
-top 18% of the picture a flat, slightly mottled colour band for the masthead.
+architecture drawn with period-pulp flair rather than museum exactness. The lettering is part of the
+painting: crisp, correctly spelled, hand-lettered pulp display type.
 ```
 
 ### Scene sources
@@ -620,7 +678,18 @@ Style references (attach these cover images; each is a direct image address):
 3. Argosy, 25 October 1930: a pale snake-bodied woman among cloaked onlookers; borrow the coiled-serpent drawing for Spartacus' omen.
    https://archive.org/download/argosy-all-story-weekly-1930-10-25/page/cover_w600.jpg
 
-Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS VI".
+LETTERING (paint these words exactly as spelled here, in capitals, including
+the Æ and Œ ligatures; add no other words, no prices and no dates):
+- Masthead across the top fifth of the cover, the same design on all ten
+  volumes: "PLUTARCHI VITÆ" in heavy hand-lettered pulp display capitals,
+  cream-yellow with a thick black drop shadow, set in a gentle arch on a deep
+  red band.
+- Corner seal, upper right, overlapping the masthead band: a round yellow badge
+  with a black rim reading "TOMUS VI".
+- Contents banner, a slanted black ribbon across the lower part of the picture,
+  in white condensed capitals: "NICIAS • CRASSUS • SERTORIUS • EUMENES • AGESILAUS • POMPEIUS".
+- Credit line in small cream capitals along the very foot of the cover:
+  "A GUILIELMO XYLANDRO LATINE REDDITÆ, ATQUE A THEODORO DŒHNERO RECOGNITÆ, EMENDATÆ ET ORDINATÆ."
 
 Style: an American pulp-magazine cover painting of the 1930s–1950s, oil or
 gouache on board, reproduced in four-colour process with slightly coarse
@@ -633,8 +702,8 @@ cloaks. A diagonal composition that pushes the main action toward the viewer;
 secondary scenes recede into smoke, cloud or flame behind it in the montage
 manner of the period's covers. Visible brushwork, no photographic rendering, no
 modern digital gloss. Ancient Greek, Roman and Parthian dress, arms and
-architecture drawn with period-pulp flair rather than museum exactness. Keep the
-top 18% of the picture a flat, slightly mottled colour band for the masthead.
+architecture drawn with period-pulp flair rather than museum exactness. The lettering is part of the
+painting: crisp, correctly spelled, hand-lettered pulp display type.
 ```
 
 ### Scene sources
@@ -712,7 +781,18 @@ Style references (attach these cover images; each is a direct image address):
 3. Weird Tales, December 1927: a dancer beneath a winged-bull relief and a golden moon; borrow the ancient-Eastern ornament and the dancer's pose for Thaïs.
    https://archive.org/download/WeirdTalesV10N06192712/page/cover_w600.jpg
 
-Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS VII".
+LETTERING (paint these words exactly as spelled here, in capitals, including
+the Æ and Œ ligatures; add no other words, no prices and no dates):
+- Masthead across the top fifth of the cover, the same design on all ten
+  volumes: "PLUTARCHI VITÆ" in heavy hand-lettered pulp display capitals,
+  cream-yellow with a thick black drop shadow, set in a gentle arch on a deep
+  red band.
+- Corner seal, upper right, overlapping the masthead band: a round yellow badge
+  with a black rim reading "TOMUS VII".
+- Contents banner, a slanted black ribbon across the lower part of the picture,
+  in white condensed capitals: "ALEXANDER • C. JULIUS CAESAR • PHOCION • CATO MINOR".
+- Credit line in small cream capitals along the very foot of the cover:
+  "A GUILIELMO XYLANDRO LATINE REDDITÆ, ATQUE A THEODORO DŒHNERO RECOGNITÆ, EMENDATÆ ET ORDINATÆ."
 
 Style: an American pulp-magazine cover painting of the 1930s–1950s, oil or
 gouache on board, reproduced in four-colour process with slightly coarse
@@ -725,8 +805,8 @@ cloaks. A diagonal composition that pushes the main action toward the viewer;
 secondary scenes recede into smoke, cloud or flame behind it in the montage
 manner of the period's covers. Visible brushwork, no photographic rendering, no
 modern digital gloss. Ancient Greek, Persian and Roman dress, arms and
-architecture drawn with period-pulp flair rather than museum exactness. Keep the
-top 18% of the picture a flat, slightly mottled colour band for the masthead.
+architecture drawn with period-pulp flair rather than museum exactness. The lettering is part of the
+painting: crisp, correctly spelled, hand-lettered pulp display type.
 ```
 
 The bedding-sack vignette: Plutarch has Cleopatra stretched out inside a
@@ -808,7 +888,18 @@ Style references (attach these cover images; each is a direct image address):
 3. Argosy, 28 September 1929: a man caged in a bamboo cage; borrow the captive-in-a-frame composition for the doomed orators.
    https://archive.org/download/argosy-all-story-weekly-1929-09-28/page/cover_w600.jpg
 
-Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS VIII".
+LETTERING (paint these words exactly as spelled here, in capitals, including
+the Æ and Œ ligatures; add no other words, no prices and no dates):
+- Masthead across the top fifth of the cover, the same design on all ten
+  volumes: "PLUTARCHI VITÆ" in heavy hand-lettered pulp display capitals,
+  cream-yellow with a thick black drop shadow, set in a gentle arch on a deep
+  red band.
+- Corner seal, upper right, overlapping the masthead band: a round yellow badge
+  with a black rim reading "TOMUS VIII".
+- Contents banner, a slanted black ribbon across the lower part of the picture,
+  in white condensed capitals: "AGIS • CLEOMENES • TIB. GRACCHUS • C. GRACCHUS • DEMOSTHENES • CICERO".
+- Credit line in small cream capitals along the very foot of the cover:
+  "A GUILIELMO XYLANDRO LATINE REDDITÆ, ATQUE A THEODORO DŒHNERO RECOGNITÆ, EMENDATÆ ET ORDINATÆ."
 
 Style: an American pulp-magazine cover painting of the 1930s–1950s, oil or
 gouache on board, reproduced in four-colour process with slightly coarse
@@ -821,8 +912,8 @@ cloaks. A diagonal composition that pushes the main action toward the viewer;
 secondary scenes recede into smoke, cloud or flame behind it in the montage
 manner of the period's covers. Visible brushwork, no photographic rendering, no
 modern digital gloss. Ancient Greek and Roman dress, arms and architecture drawn
-with period-pulp flair rather than museum exactness. Keep the top 18% of the
-picture a flat, slightly mottled colour band for the masthead.
+with period-pulp flair rather than museum exactness. The lettering is part of the
+painting: crisp, correctly spelled, hand-lettered pulp display type.
 ```
 
 ### Scene sources
@@ -897,7 +988,18 @@ Style references (attach these cover images; each is a direct image address):
 3. Weird Tales, February 1927: a single shaft of white light in a dark room; borrow the light for the phantom in Brutus' tent.
    https://archive.org/download/Weird_Tales_v09n02_1927-02/page/cover_w600.jpg
 
-Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS IX".
+LETTERING (paint these words exactly as spelled here, in capitals, including
+the Æ and Œ ligatures; add no other words, no prices and no dates):
+- Masthead across the top fifth of the cover, the same design on all ten
+  volumes: "PLUTARCHI VITÆ" in heavy hand-lettered pulp display capitals,
+  cream-yellow with a thick black drop shadow, set in a gentle arch on a deep
+  red band.
+- Corner seal, upper right, overlapping the masthead band: a round yellow badge
+  with a black rim reading "TOMUS IX".
+- Contents banner, a slanted black ribbon across the lower part of the picture,
+  in white condensed capitals: "DEMETRIUS • ANTONIUS • DIO • BRUTUS".
+- Credit line in small cream capitals along the very foot of the cover:
+  "A GUILIELMO XYLANDRO LATINE REDDITÆ, ATQUE A THEODORO DŒHNERO RECOGNITÆ, EMENDATÆ ET ORDINATÆ."
 
 Style: an American pulp-magazine cover painting of the 1930s–1950s, oil or
 gouache on board, reproduced in four-colour process with slightly coarse
@@ -910,8 +1012,8 @@ cloaks. A diagonal composition that pushes the main action toward the viewer;
 secondary scenes recede into smoke, cloud or flame behind it in the montage
 manner of the period's covers. Visible brushwork, no photographic rendering, no
 modern digital gloss. Ancient Greek, Roman and Egyptian dress, arms and
-architecture drawn with period-pulp flair rather than museum exactness. Keep the
-top 18% of the picture a flat, slightly mottled colour band for the masthead.
+architecture drawn with period-pulp flair rather than museum exactness. The lettering is part of the
+painting: crisp, correctly spelled, hand-lettered pulp display type.
 ```
 
 ### Scene sources
@@ -985,7 +1087,18 @@ Style references (attach these cover images; each is a direct image address):
 3. Weird Tales, October 1929: a guillotine against a yellow ground; borrow the flat bright ground for the Forum murders.
    https://archive.org/download/WeirdTalesV14N04192910/page/cover_w600.jpg
 
-Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS X".
+LETTERING (paint these words exactly as spelled here, in capitals, including
+the Æ and Œ ligatures; add no other words, no prices and no dates):
+- Masthead across the top fifth of the cover, the same design on all ten
+  volumes: "PLUTARCHI VITÆ" in heavy hand-lettered pulp display capitals,
+  cream-yellow with a thick black drop shadow, set in a gentle arch on a deep
+  red band.
+- Corner seal, upper right, overlapping the masthead band: a round yellow badge
+  with a black rim reading "TOMUS X".
+- Contents banner, a slanted black ribbon across the lower part of the picture,
+  in white condensed capitals: "ARTOXERXES • ARATUS • GALBA • OTHO".
+- Credit line in small cream capitals along the very foot of the cover:
+  "A GUILIELMO XYLANDRO LATINE REDDITÆ, ATQUE A THEODORO DŒHNERO RECOGNITÆ, EMENDATÆ ET ORDINATÆ."
 
 Style: an American pulp-magazine cover painting of the 1930s–1950s, oil or
 gouache on board, reproduced in four-colour process with slightly coarse
@@ -998,8 +1111,8 @@ cloaks. A diagonal composition that pushes the main action toward the viewer;
 secondary scenes recede into smoke, cloud or flame behind it in the montage
 manner of the period's covers. Visible brushwork, no photographic rendering, no
 modern digital gloss. Ancient Greek, Persian and Roman dress, arms and
-architecture drawn with period-pulp flair rather than museum exactness. Keep the
-top 18% of the picture a flat, slightly mottled colour band for the masthead.
+architecture drawn with period-pulp flair rather than museum exactness. The lettering is part of the
+painting: crisp, correctly spelled, hand-lettered pulp display type.
 ```
 
 The guard dog in the prompt belongs to Aratus' earlier night raid on Sicyon,
