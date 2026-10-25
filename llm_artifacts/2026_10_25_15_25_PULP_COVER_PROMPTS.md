@@ -22,9 +22,10 @@ can read the passage the picture is drawn from.
   in a few passages, so a quotation may be interrupted there by a note. The same
   text is in Perseus's TEI file for each Life on GitHub (listed in
   [Sources](#sources)).
-- **Reference images.** Image generators generally cannot open web pages. Open
-  each linked Syracuse item page, download the cover image, and attach it to the
-  generation request as a style reference. Give the illustrator the same pages.
+- **Reference images.** Each prompt lists three public-domain pulp covers from
+  the Internet Archive with direct image addresses and a note on what to borrow
+  from each (see [Reference covers](#reference-covers)). Attach them to the
+  generation request, and give the illustrator the same set.
 - **Lettering.** Generators garble text. Each prompt asks for a plain colour band
   across the top for the masthead, to be lettered in layout. An optional
   lettering line is included for generators that can render text.
@@ -58,33 +59,57 @@ committing to art.
 | IX | Demetrius, Antony [ANTONIUS], Dion [DIO], Brutus |
 | X | Artaxerxes [ARTOXERXES], Aratus, Galba, Otho |
 
-## Style references from the Syracuse Pulp Covers Collection
+## Reference covers
 
-The [Pulp Covers Collection](https://digitalcollections.syr.edu/pulp-covers-collection)
-at Syracuse University Libraries holds cover scans of dime novels, pulp
-magazines and juvenile series, mostly Street & Smith publications. The
-collection's site could not be reached from the environment this file was
-written in, so these are item pages found through web search. **They have not
-been viewed:** the per-Tomus picks below go by title only. Look at the
-thumbnails and swap in better matches; the collection's own search will turn up
-pulp magazines (war, adventure, sea and science-fiction titles) that would be
-closer still.
+Each prompt names three reference covers from the **Pulp Magazine Archive** at
+the Internet Archive (<https://archive.org/details/pulpmagazinearchive>). All
+30 are US pulp magazines from 1926–1930. Works first published in the US in
+1930 or earlier are in the US public domain (the 1930 ones since 1 January
+2026), so they are safe to attach to image requests. Each cover was viewed at
+full size before it was chosen. Each prompt line gives the direct image address (a 600-pixel
+scan, which a generator that takes URLs can fetch) and says what to borrow from
+it. The table below gives the issue page for each cover.
 
-| Key | Syracuse item page | Date (from catalogue record) |
+Image generators generally cannot open web pages, so if yours does not accept
+URLs, download the images and attach them.
+
+| Tomus | Cover | Issue page |
 |---|---|---|
-| A | [Jack Harkaway among the Pirates (Round the World Library no. 5)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-among-the-pirates-round-the-world-library-no.-5/19086) | — |
-| B | [Jack Harkaway in Australia (Round the World Library no. 16)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-in-australia-round-the-world-library-no.-16/19110) | — |
-| C | [The Boys of St Aldates (Round the World Library no. 34)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-the-boys-of-st-aldates-round-the-world-library-no.-34/19146) | 1926? |
-| D | [Phil's Rivals (Round the World Library no. 45)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-phils-rivals-round-the-world-library-no.-45/19170) | c. 1903 |
-| E | [Jack Harkaway after Schooldays (Round the World Library no. 120)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-after-schooldays-round-the-world-library-no.-120/19304) | — |
-| F | [Phil's Rivals (Round the World Library no. 162)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-phils-rivals-round-the-world-library-no.-162/19376) | — |
-| G | [George Arnold's Pluck (Round the World Library no. 173)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-george-arnolds-pluck-round-the-world-library-no.-173/19396) | 1931 |
-| H | [The Tour of the Zero Club, or, For Fame and Fortune (Round the World Library no. 180)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-the-tour-of-the-zero-club-or-for-fame-and-fortune-round-the-world-library-no.-180/19410) | 1931 |
-| I | [The Young Railroader's Flyer, or, Astride the Iron Horse (Round the World Library no. 181)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-the-young-railroaders-flyer-or-astride-the-iron-horse-round-the-world-library-no.-181/19412) | — |
-| J | [Frank Merriwell's Trust, or, Never Say Die (Merriwell Series no. 69)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-frank-merriwells-trust-or-never-say-die-merriwell-series-no.-69/17020) | c. 1901 |
-| K | [Dick Merriwell's Western Mission, or, Out for a Record (Merriwell Series no. 97)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-dick-merriwells-western-mission-or-out-for-a-record-merriwell-series-no.-97/17022) | 1903 |
-| L | [Frank Merriwell, Jr's Rivals, or, Team-work (Merriwell Series no. 215)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-frank-merriwell-jrs-rivals-or-team-work-merriwell-series-no.-215/17048) | 1929 |
-| M | [Frank Merriwell's Races, or, Won by Pluck (Burt L. Standish Library no. 11)](https://digitalcollections.syr.edu/Documents/Detail/cover-of-frank-merriwells-races-or-won-by-pluck-burt-l.-standish-library-no.-11/16480) | 1930 |
+| I | Weird Tales, July 1926 | [WeirdTalesV08N01192607](https://archive.org/details/WeirdTalesV08N01192607) |
+| I | Weird Tales, April 1926 | [WeirdTalesV07N04192604](https://archive.org/details/WeirdTalesV07N04192604) |
+| I | Adventure, 20 January 1926 | [adventure-v-056-n-05-1926-01-20-dtsg-0318-sas](https://archive.org/details/adventure-v-056-n-05-1926-01-20-dtsg-0318-sas) |
+| II | Adventure, 15 August 1927 | [adventure-v-063-n-05-1927-08-15](https://archive.org/details/adventure-v-063-n-05-1927-08-15) |
+| II | Sea Stories, August 1929 | [sea-stories-v-18-n-06-1929-08.-street-smith-darwin-ia](https://archive.org/details/sea-stories-v-18-n-06-1929-08.-street-smith-darwin-ia) |
+| II | Adventure, 15 October 1929 | [adventure-v-072-n-03-1929-10-15-ibc](https://archive.org/details/adventure-v-072-n-03-1929-10-15-ibc) |
+| III | Weird Tales, December 1926 | [WeirdTalesV08N06192612](https://archive.org/details/WeirdTalesV08N06192612) |
+| III | Weird Tales, February 1930 | [Weird_Tales_v15n02_1930-02](https://archive.org/details/Weird_Tales_v15n02_1930-02) |
+| III | Blue Book, April 1930 | [blue-book-v-050-n-06-1930-04](https://archive.org/details/blue-book-v-050-n-06-1930-04) |
+| IV | Blue Book, April 1929 | [blue-book-v-048-n-06-1929-04](https://archive.org/details/blue-book-v-048-n-06-1929-04) |
+| IV | Blue Book, July 1928 | [blue-book-v-047-n-03-1928-07](https://archive.org/details/blue-book-v-047-n-03-1928-07) |
+| IV | Weird Tales, October 1930 | [Weird_Tales_v16n04_1930-10_sas](https://archive.org/details/Weird_Tales_v16n04_1930-10_sas) |
+| V | Weird Tales, October 1927 | [WeirdTalesV10N04192710](https://archive.org/details/WeirdTalesV10N04192710) |
+| V | Adventure, 1 December 1930 | [adventure-1930-12-01](https://archive.org/details/adventure-1930-12-01) |
+| V | Weird Tales, June 1927 | [WeirdTalesV09N06192706](https://archive.org/details/WeirdTalesV09N06192706) |
+| VI | Adventure, 15 September 1930 | [adventure-1930-09-15](https://archive.org/details/adventure-1930-09-15) |
+| VI | Weird Tales, July 1930 | [Weird_Tales_v16n01_1930-07](https://archive.org/details/Weird_Tales_v16n01_1930-07) |
+| VI | Argosy, 25 October 1930 | [argosy-all-story-weekly-1930-10-25](https://archive.org/details/argosy-all-story-weekly-1930-10-25) |
+| VII | Adventure, 1 February 1930 | [adventure-1930-02-01](https://archive.org/details/adventure-1930-02-01) |
+| VII | Weird Tales, August 1927 | [WeirdTalesV10N02192708](https://archive.org/details/WeirdTalesV10N02192708) |
+| VII | Weird Tales, December 1927 | [WeirdTalesV10N06192712](https://archive.org/details/WeirdTalesV10N06192712) |
+| VIII | Weird Tales, March 1930 | [Weird_Tales_v15n03_1930-03_sas](https://archive.org/details/Weird_Tales_v15n03_1930-03_sas) |
+| VIII | Weird Tales, August 1930 | [Weird_Tales_v16n02_1930-08_sas](https://archive.org/details/Weird_Tales_v16n02_1930-08_sas) |
+| VIII | Argosy, 28 September 1929 | [argosy-all-story-weekly-1929-09-28](https://archive.org/details/argosy-all-story-weekly-1929-09-28) |
+| IX | Argosy, 11 October 1930 | [argosy-all-story-weekly-1930-10-11](https://archive.org/details/argosy-all-story-weekly-1930-10-11) |
+| IX | Adventure, 15 October 1928 | [adventure-v-068-n-03-1928-10-15-ifc-ibc-bc](https://archive.org/details/adventure-v-068-n-03-1928-10-15-ifc-ibc-bc) |
+| IX | Weird Tales, February 1927 | [Weird_Tales_v09n02_1927-02](https://archive.org/details/Weird_Tales_v09n02_1927-02) |
+| X | Adventure, 1 August 1930 | [adventure-v-075-n-04-1930-08-01](https://archive.org/details/adventure-v-075-n-04-1930-08-01) |
+| X | Weird Tales, November 1929 | [weird-tales-v-14-n-05-1929-11-sas](https://archive.org/details/weird-tales-v-14-n-05-1929-11-sas) |
+| X | Weird Tales, October 1929 | [WeirdTalesV14N04192910](https://archive.org/details/WeirdTalesV14N04192910) |
+
+The Syracuse University Libraries [Pulp Covers Collection](https://digitalcollections.syr.edu/pulp-covers-collection)
+is another source, mostly Street & Smith dime-novel and juvenile-series covers.
+Its site turns away automated visitors, so none of its covers are used above.
+Covers you pick there by hand make good additions.
 
 ## The shared style paragraph
 
@@ -110,8 +135,6 @@ one can be pasted on its own:
 ---
 
 ## Tomus I — Theseus · Romulus · Lycurgus · Numa · Solon · Publicola
-
-**Reference covers:** B, D, J.
 
 ### Prompt
 
@@ -145,10 +168,13 @@ an astonished Etruscan king (Mucius Scaevola).
 Colour key: torchlight orange and blood red against labyrinth blue-black; a band
 of storm-green sky at the top.
 
-Style references (attach the cover images from these pages):
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-in-australia-round-the-world-library-no.-16/19110
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-phils-rivals-round-the-world-library-no.-45/19170
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-frank-merriwells-trust-or-never-say-die-merriwell-series-no.-69/17020
+Style references (attach these cover images; each is a direct image address):
+1. Weird Tales, July 1926: a monster rearing out of flames over a terrified heroine; borrow the red-orange firelight and the looming monster silhouette.
+   https://archive.org/download/WeirdTalesV08N01192607/page/cover_w600.jpg
+2. Weird Tales, April 1926: a close-cropped knife struggle in a teal-green gloom; borrow the tight framing and the hair and cloth caught in motion.
+   https://archive.org/download/WeirdTalesV07N04192604/page/cover_w600.jpg
+3. Adventure, 20 January 1926: a square-rigged ship under orange sails in a gunsmoke sea; borrow the sail shapes, the spray and the cannon smoke.
+   https://archive.org/download/adventure-v-056-n-05-1926-01-20-dtsg-0318-sas/page/cover_w600.jpg
 
 Optional lettering (only if the generator renders text well): masthead
 "PLUTARCHI VITÆ"; a round yellow corner badge reading "TOMUS I".
@@ -200,8 +226,6 @@ Other strong scenes in this Tomus, if the illustrator wants substitutes:
 
 ## Tomus II — Themistocles · Camillus · Pericles · Fabius Maximus · Alcibiades · Coriolanus
 
-**Reference covers:** A, K, G.
-
 ### Prompt
 
 ```text
@@ -236,10 +260,13 @@ at him.
 Colour key: sea ultramarine and foam white, sunset gold on the bronze, a band of
 red night-glow over Rome.
 
-Style references (attach the cover images from these pages):
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-among-the-pirates-round-the-world-library-no.-5/19086
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-dick-merriwells-western-mission-or-out-for-a-record-merriwell-series-no.-97/17022
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-george-arnolds-pluck-round-the-world-library-no.-173/19396
+Style references (attach these cover images; each is a direct image address):
+1. Adventure, 15 August 1927: a cutlass-armed sailor on a ship's deck, sea heaving behind; borrow the boarding stance, rail and rigging.
+   https://archive.org/download/adventure-v-063-n-05-1927-08-15/page/cover_w600.jpg
+2. Sea Stories, August 1929: a black square-rigger against a blazing orange sunset; borrow the flat silhouette and the sky colour for the fleet.
+   https://archive.org/download/sea-stories-v-18-n-06-1929-08.-street-smith-darwin-ia/page/cover_w600.jpg
+3. Adventure, 15 October 1929: spearmen behind huge painted shields in tall grass; borrow the shield shapes and the diagonal spears.
+   https://archive.org/download/adventure-v-072-n-03-1929-10-15-ibc/page/cover_w600.jpg
 
 Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS II".
 
@@ -292,8 +319,6 @@ Other strong scenes in this Tomus:
 
 ## Tomus III — Timoleon · Aemilius Paulus · Pelopidas · Marcellus · Aristides · Cato the Elder
 
-**Reference covers:** A, H, L.
-
 ### Prompt
 
 ```text
@@ -325,10 +350,13 @@ full moon going dark and turning strange colours over a sleeping camp.
 Colour key: sea-green and storm-violet; lightning white; gold on the Gaul;
 lamplight amber in the banquet.
 
-Style references (attach the cover images from these pages):
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-among-the-pirates-round-the-world-library-no.-5/19086
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-the-tour-of-the-zero-club-or-for-fame-and-fortune-round-the-world-library-no.-180/19410
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-frank-merriwell-jrs-rivals-or-team-work-merriwell-series-no.-215/17048
+Style references (attach these cover images; each is a direct image address):
+1. Weird Tales, December 1926: a colossal machine-giant towering over a panicking crowd; borrow the scale contrast for Archimedes' engines over the ships.
+   https://archive.org/download/WeirdTalesV08N06192612/page/cover_w600.jpg
+2. Weird Tales, February 1930: cloaked and turbaned figures with drawn blades on flat saturated planes; borrow the shapes for the disguised conspirators.
+   https://archive.org/download/Weird_Tales_v15n02_1930-02/page/cover_w600.jpg
+3. Blue Book, April 1930: a hulking club-swinging giant facing a lean fighter; borrow the muscular modelling and the face-off.
+   https://archive.org/download/blue-book-v-050-n-06-1930-04/page/cover_w600.jpg
 
 Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS III".
 
@@ -378,8 +406,6 @@ Other strong scenes in this Tomus:
 
 ## Tomus IV — Philopoemen · Flamininus · Pyrrhus · Marius · Lysander · Sulla
 
-**Reference covers:** B, K, M.
-
 ### Prompt
 
 ```text
@@ -410,10 +436,13 @@ on the battlefield (Sulla).
 Colour key: elephant grey and dust ochre, dusk magenta sky, firelight on the
 gate.
 
-Style references (attach the cover images from these pages):
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-in-australia-round-the-world-library-no.-16/19110
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-dick-merriwells-western-mission-or-out-for-a-record-merriwell-series-no.-97/17022
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-frank-merriwells-races-or-won-by-pluck-burt-l.-standish-library-no.-11/16480
+Style references (attach these cover images; each is a direct image address):
+1. Blue Book, April 1929: a hero in a tree beside a charging mammoth; borrow the huge beast and the dust-pale yellow ground for the elephants.
+   https://archive.org/download/blue-book-v-048-n-06-1929-04/page/cover_w600.jpg
+2. Blue Book, July 1928: a horseman charging a line of enemies across golden grass; borrow the cavalry rush and the spear-line.
+   https://archive.org/download/blue-book-v-047-n-03-1928-07/page/cover_w600.jpg
+3. Weird Tales, October 1930: pale ghostly figures among autumn trees; borrow the glowing apparition tones for the haunted dark room.
+   https://archive.org/download/Weird_Tales_v16n04_1930-10_sas/page/cover_w600.jpg
 
 Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS IV".
 
@@ -468,8 +497,6 @@ Other strong scenes in this Tomus:
 
 Only two Lives, so the cover can give each a full half.
 
-**Reference covers:** A, E, H.
-
 ### Prompt
 
 ```text
@@ -501,10 +528,13 @@ gallops away.
 Colour key: imperial crimson, gold leaf, ice-blue mail; Aegean blue for the sea
 half; ghost-green steam.
 
-Style references (attach the cover images from these pages):
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-among-the-pirates-round-the-world-library-no.-5/19086
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-after-schooldays-round-the-world-library-no.-120/19304
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-the-tour-of-the-zero-club-or-for-fame-and-fortune-round-the-world-library-no.-180/19410
+Style references (attach these cover images; each is a direct image address):
+1. Weird Tales, October 1927: a robed man and women on red palace steps in a classical setting; borrow the ancient-court costume and the step composition for Monime's chamber.
+   https://archive.org/download/WeirdTalesV10N04192710/page/cover_w600.jpg
+2. Adventure, 1 December 1930: an armoured swordsman mid-stride with a raised blade and billowing cloak; borrow the armour and sword pose for the mail-clad horsemen.
+   https://archive.org/download/adventure-1930-12-01/page/cover_w600.jpg
+3. Weird Tales, June 1927: white spectral figures against a deep blue field; borrow the ghost tones for the haunted bath-house.
+   https://archive.org/download/WeirdTalesV09N06192706/page/cover_w600.jpg
 
 Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS V".
 
@@ -550,8 +580,6 @@ Other strong scenes in this Tomus:
 
 ## Tomus VI — Nicias · Crassus · Sertorius · Eumenes · Agesilaus · Pompey
 
-**Reference covers:** K, B, F.
-
 ### Prompt
 
 ```text
@@ -584,10 +612,13 @@ grappling hand to hand on rearing horses (Eumenes).
 Colour key: bleached sand and white sky against Roman red and Parthian steel;
 night blue for the gladiators; sunset orange for the beach.
 
-Style references (attach the cover images from these pages):
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-dick-merriwells-western-mission-or-out-for-a-record-merriwell-series-no.-97/17022
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-in-australia-round-the-world-library-no.-16/19110
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-phils-rivals-round-the-world-library-no.-162/19376
+Style references (attach these cover images; each is a direct image address):
+1. Adventure, 15 September 1930: a mounted cavalry charge with a pennant; borrow the horses at full gallop and the dust.
+   https://archive.org/download/adventure-1930-09-15/page/cover_w600.jpg
+2. Weird Tales, July 1930: an armoured rider with a blade on a red horse against a night sky; borrow the rider for the Parthian lancer.
+   https://archive.org/download/Weird_Tales_v16n01_1930-07/page/cover_w600.jpg
+3. Argosy, 25 October 1930: a pale snake-bodied woman among cloaked onlookers; borrow the coiled-serpent drawing for Spartacus' omen.
+   https://archive.org/download/argosy-all-story-weekly-1930-10-25/page/cover_w600.jpg
 
 Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS VI".
 
@@ -641,8 +672,6 @@ Other strong scenes in this Tomus:
 
 ## Tomus VII — Alexander · Julius Caesar · Phocion · Cato the Younger
 
-**Reference covers:** I, M, J.
-
 ### Prompt
 
 ```text
@@ -675,10 +704,13 @@ shoulder into a lamplit palace, a woman's dark eyes showing at the opening
 Colour key: inferno orange and gold over midnight blue; marble white and blood
 red for the Senate; dawn rose for the Rubicon.
 
-Style references (attach the cover images from these pages):
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-the-young-railroaders-flyer-or-astride-the-iron-horse-round-the-world-library-no.-181/19412
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-frank-merriwells-races-or-won-by-pluck-burt-l.-standish-library-no.-11/16480
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-frank-merriwells-trust-or-never-say-die-merriwell-series-no.-69/17020
+Style references (attach these cover images; each is a direct image address):
+1. Adventure, 1 February 1930: a black soldier silhouette against a flame-red sky, with “Cry Havoc!” lettering; borrow the silhouette against fire for Persepolis.
+   https://archive.org/download/adventure-1930-02-01/page/cover_w600.jpg
+2. Weird Tales, August 1927: a reclining woman in an Egyptian-style chamber with a looming blue-robed figure; borrow the lamplit interior for Cleopatra.
+   https://archive.org/download/WeirdTalesV10N02192708/page/cover_w600.jpg
+3. Weird Tales, December 1927: a dancer beneath a winged-bull relief and a golden moon; borrow the ancient-Eastern ornament and the dancer's pose for Thaïs.
+   https://archive.org/download/WeirdTalesV10N06192712/page/cover_w600.jpg
 
 Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS VII".
 
@@ -734,8 +766,6 @@ Other strong scenes in this Tomus:
 
 ## Tomus VIII — Agis · Cleomenes · Tiberius Gracchus · Caius Gracchus · Demosthenes · Cicero
 
-**Reference covers:** C, G, L.
-
 ### Prompt
 
 ```text
@@ -770,10 +800,13 @@ birds (Cleomenes).
 Colour key: grey-green dawn woods and cold steel; ochre and blood red on the
 Capitol; a sickly violet sky over Alexandria.
 
-Style references (attach the cover images from these pages):
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-the-boys-of-st-aldates-round-the-world-library-no.-34/19146
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-george-arnolds-pluck-round-the-world-library-no.-173/19396
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-frank-merriwell-jrs-rivals-or-team-work-merriwell-series-no.-215/17048
+Style references (attach these cover images; each is a direct image address):
+1. Weird Tales, March 1930: a woman wound in a python beside an open chest; borrow the serpent coils for the Cleomenes vignette.
+   https://archive.org/download/Weird_Tales_v15n03_1930-03_sas/page/cover_w600.jpg
+2. Weird Tales, August 1930: a huge green serpent head over a carved stone mask; borrow the scale and the strike pose.
+   https://archive.org/download/Weird_Tales_v16n02_1930-08_sas/page/cover_w600.jpg
+3. Argosy, 28 September 1929: a man caged in a bamboo cage; borrow the captive-in-a-frame composition for the doomed orators.
+   https://archive.org/download/argosy-all-story-weekly-1929-09-28/page/cover_w600.jpg
 
 Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS VIII".
 
@@ -823,8 +856,6 @@ Other strong scenes in this Tomus:
 
 ## Tomus IX — Demetrius · Antony · Dion · Brutus
 
-**Reference covers:** A, H, E.
-
 ### Prompt
 
 ```text
@@ -858,10 +889,13 @@ foremost legionary standards.
 Colour key: Egyptian gold and royal purple on Nile-green water; smoke-black and
 ember red over Rhodes; a cold lamp-yellow in the tent.
 
-Style references (attach the cover images from these pages):
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-among-the-pirates-round-the-world-library-no.-5/19086
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-the-tour-of-the-zero-club-or-for-fame-and-fortune-round-the-world-library-no.-180/19410
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-jack-harkaway-after-schooldays-round-the-world-library-no.-120/19304
+Style references (attach these cover images; each is a direct image address):
+1. Argosy, 11 October 1930: an idol-throne at the top of temple steps with tiny figures below; borrow the stepped throne and the scale for the Eastern court.
+   https://archive.org/download/argosy-all-story-weekly-1930-10-11/page/cover_w600.jpg
+2. Adventure, 15 October 1928: a robed ruler before a gold dragon; borrow the silk robes and the coiled ornament for Cleopatra's barge.
+   https://archive.org/download/adventure-v-068-n-03-1928-10-15-ifc-ibc-bc/page/cover_w600.jpg
+3. Weird Tales, February 1927: a single shaft of white light in a dark room; borrow the light for the phantom in Brutus' tent.
+   https://archive.org/download/Weird_Tales_v09n02_1927-02/page/cover_w600.jpg
 
 Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS IX".
 
@@ -911,8 +945,6 @@ Other strong scenes in this Tomus:
 
 ## Tomus X — Artaxerxes · Aratus · Galba · Otho
 
-**Reference covers:** I, F, D.
-
 ### Prompt
 
 ```text
@@ -945,10 +977,13 @@ their swords on themselves (the soldiers of Otho).
 Colour key: moonlight blue and silver for the raid; Persian lamp-amber and
 emerald; harsh noon white and red for the Forum.
 
-Style references (attach the cover images from these pages):
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-the-young-railroaders-flyer-or-astride-the-iron-horse-round-the-world-library-no.-181/19412
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-phils-rivals-round-the-world-library-no.-162/19376
-https://digitalcollections.syr.edu/Documents/Detail/cover-of-phils-rivals-round-the-world-library-no.-45/19170
+Style references (attach these cover images; each is a direct image address):
+1. Adventure, 1 August 1930: a man lit from below by a glowing object, in the dark; borrow the night lighting for the Acrocorinth raid.
+   https://archive.org/download/adventure-v-075-n-04-1930-08-01/page/cover_w600.jpg
+2. Weird Tales, November 1929: a murder scene under a ghostly skull; borrow the lamplit menace for the poisoning.
+   https://archive.org/download/weird-tales-v-14-n-05-1929-11-sas/page/cover_w600.jpg
+3. Weird Tales, October 1929: a guillotine against a yellow ground; borrow the flat bright ground for the Forum murders.
+   https://archive.org/download/WeirdTalesV14N04192910/page/cover_w600.jpg
 
 Optional lettering: masthead "PLUTARCHI VITÆ"; corner badge "TOMUS X".
 
@@ -1062,6 +1097,6 @@ notorious atrocity but too grisly to show; it is left out.
   chapter.section numbers: the Scaife viewer links above, and Bill Thayer's
   LacusCurtius edition at
   <https://penelope.uchicago.edu/Thayer/E/Roman/Texts/Plutarch/Lives/home.html>.
-- **Cover references:** the [Syracuse University Libraries Pulp Covers
-  Collection](https://digitalcollections.syr.edu/pulp-covers-collection); item
-  pages as listed above.
+- **Cover references:** the Internet Archive's [Pulp Magazine
+  Archive](https://archive.org/details/pulpmagazinearchive); issue pages are in
+  the [reference table](#reference-covers).
