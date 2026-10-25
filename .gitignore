@@ -38,6 +38,7 @@ rustc-ice-*.txt
 
 *.pdf
 *.png
+!/pulp_cover_example/*.png
 *.zip
 secrets.json
 /tmp/exlibris_preview/
