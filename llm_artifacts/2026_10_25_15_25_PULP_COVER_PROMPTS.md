@@ -17,12 +17,11 @@ can read the passage the picture is drawn from.
   LacusCurtius site (<https://penelope.uchicago.edu/Thayer/E/Roman/Texts/Plutarch/Lives/home.html>),
   and on Perseus/Scaife, so any copy of Perrin will do.
 - **Links.** Each citation links to the passage in the Scaife viewer by its
-  Perseus CTS identifier. Scaife could not be reached from the environment this
-  file was written in, so those links are built from the identifiers in the
-  source files rather than test-opened. If one fails, use the chapter.section
-  in any copy of Perrin, or the Perseus TEI file for that Life on GitHub
-  (listed in [Sources](#sources)); those files were read to check every
-  quotation.
+  Perseus CTS identifier. Every link was checked to open the cited passage and
+  every quotation was checked against it. Scaife shows Perrin's footnotes inline
+  in a few passages, so a quotation may be interrupted there by a note. The same
+  text is in Perseus's TEI file for each Life on GitHub (listed in
+  [Sources](#sources)).
 - **Reference images.** Image generators generally cannot open web pages. Open
   each linked Syracuse item page, download the cover image, and attach it to the
   generation request as a style reference. Give the illustrator the same pages.
