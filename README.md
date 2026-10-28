@@ -320,6 +320,28 @@ errors before writing output when these dimensions do not fit. See
 
 ---
 
+## Printing sheets
+
+[`tools/print_sheets.py`](tools/print_sheets.py) prints a page range of an
+imposed `build_facsimile/tomus_N.pdf` to the Windows default printer as a series
+of separate two-page jobs, one job per physical sheet, each duplex
+flip-on-short-edge, monochrome, and at actual size. Printing one sheet per job
+means a jam ruins only that sheet, and a damaged signature can be reprinted on
+its own. It needs [SumatraPDF](https://www.sumatrapdfreader.org/) and PyMuPDF
+(`python -m pip install -r tools/requirements-print-sheets.txt`).
+
+From the repository root in PowerShell:
+
+```powershell
+python tools/print_sheets.py build_facsimile/tomus_1.pdf --pages 145-160
+```
+
+The range must start on an odd page (the front of a sheet). See
+[`tools/README-print-sheets.md`](tools/README-print-sheets.md) for the full
+argument table, SumatraPDF setup, exit codes, and driver caveats.
+
+---
+
 ## Dependencies
 
 | Tool | Purpose | Override env var |
