@@ -140,11 +140,13 @@ mention the two wrapper sheets.
   `\imposedsheetside` `#3=1` branch. It is not a new or larger rectangle: the
   whole point is that the guillotine, following this book-trim rectangle, cuts
   the oversized endpaper tucked inside the wrapper down to the book's trim size.
-- Wrapper sides reference **no book page**: both `left` and `right` are the
-  sentinel `0`, so the `\ifnum#1>\innercount\else` guard always skips
-  `\includegraphics` and nothing from `tomus_N_inner.pdf` is drawn on them. The
-  body sides are byte-for-byte unchanged, so no facsimile page is renumbered or
-  shifted.
+- Wrapper sides reference **no real book page**: both `left` and `right` are the
+  sentinel `inner_count + 1`, one past the last real page. The imposition macro
+  draws a page only when `#1 ≤ \innercount` (its guard is
+  `\ifnum#1>\innercount\else <draw> \fi` — the *else* branch draws), so a page
+  number strictly greater than `\innercount` draws nothing. Nothing from
+  `tomus_N_inner.pdf` is drawn on the wrappers, and the body sides are
+  byte-for-byte unchanged, so no facsimile page is renumbered or shifted.
 - For a volume with `S` body signatures, `tomus_N.tex` emits `16*S + 4`
   `\imposedsheetside` calls (was `16*S`) — one call per imposed sheet side — so
   the compiled imposed `tomus_N.pdf` has `16*S + 4` pages: the imposed PDF gains
@@ -161,13 +163,14 @@ mention the two wrapper sheets.
 
 ### Concrete emission layout (the contract the implementer must hit)
 
-Using sentinel page `0` and flags `{cut}{fold}`:
+Using the sentinel page `inner_count + 1` (shown below as `33` for a
+one-signature `inner_count = 32` volume) and flags `{cut}{fold}`:
 
 Front wrapper (first physical sheet, printed first):
 
 ```
-\imposedsheetside{0}{0}{1}{1}   % recto: faces front cover — cut border + fold line + sew marks
-\imposedsheetside{0}{0}{0}{0}   % verso: faces the endpaper / body — blank
+\imposedsheetside{33}{33}{1}{1}   % recto: faces front cover — cut border + fold line + sew marks
+\imposedsheetside{33}{33}{0}{0}   % verso: faces the endpaper / body — blank
 ```
 
 Body: `sheet_sides(signatures)` exactly as today.
@@ -175,8 +178,8 @@ Body: `sheet_sides(signatures)` exactly as today.
 Back wrapper (last physical sheet, printed last):
 
 ```
-\imposedsheetside{0}{0}{0}{0}   % recto: faces the endpaper / body — blank
-\imposedsheetside{0}{0}{1}{1}   % verso: faces back cover — cut border + fold line + sew marks
+\imposedsheetside{33}{33}{0}{0}   % recto: faces the endpaper / body — blank
+\imposedsheetside{33}{33}{1}{1}   % verso: faces back cover — cut border + fold line + sew marks
 ```
 
 Rationale for the back wrapper's side order: the marked side should face the
@@ -190,12 +193,15 @@ paper dummy can fully confirm — see the human-verification note in Phase 1.
 
 ## Tech Learnings
 
-- **LaTeX `\ifnum`.** `\ifnum#1>\innercount … \else … \fi` is a plain-TeX integer
-  comparison. `\innercount` is set via `\newcommand{\innercount}{N}`. With the
-  sentinel `0`, `\ifnum0>N` is false for every `N ≥ 0`, so control always falls
-  to the `\else` branch and no `\includegraphics` runs — the side is blank. This
-  is why a "no book page" sentinel of `0` is safe and needs no special-casing in
-  the macro.
+- **LaTeX `\ifnum`.** `\ifnum#1>\innercount <true> \else <false> \fi` is a
+  plain-TeX integer comparison; `\innercount` is set via
+  `\newcommand{\innercount}{N}`. In the imposition macro the *true* branch is
+  empty and the *false* branch (after `\else`) runs `\includegraphics`, so a page
+  is drawn exactly when `#1 ≤ N` and left blank when `#1 > N`. A blank wrapper
+  side therefore needs a page number **strictly greater** than `\innercount`;
+  `inner_count + 1` is the smallest such value and is always safe (page `0` would
+  be ≤ N and wrongly request a nonexistent inner page). Keep the sentinel well
+  under TeX's integer ceiling (2^31−1); `inner_count + 1` always is.
 - **Imposition / signatures.** A *signature* is a stack of sheets folded
   together and sewn through the common fold. The body uses 32-page signatures (8
   sheets). A *one-sheet signature* is a single folded sheet = 4 book pages; here
@@ -219,38 +225,37 @@ right, and judgment about which existing tests to extend vs. leave alone.
 
 In `src/latex.rs`:
 
-1. Add a `const` for the sentinel, near `PAGES_PER_SIGNATURE`:
-   ```rust
-   /// Book-page number used on the endpaper-wrapper sheets, which carry no book
-   /// content: it never satisfies `\ifnum#1>\innercount`, so the imposition macro
-   /// draws nothing from the inner PDF on those sides.
-   const WRAPPER_BLANK_PAGE: u32 = 0;
-   ```
-2. Add a small helper returning the two sides of one wrapper sheet, parameterized
-   by which side carries the marks:
+1. Add a small helper returning the two sides of one wrapper sheet, parameterized
+   by the inner page count (for the blank sentinel) and by which side carries the
+   marks:
    ```rust
    /// One blank endpaper-wrapper sheet: a single folded sheet that carries the
    /// fold line, sew marks, and cut border on the face toward the cover board and
    /// is blank on the face toward the endpaper. `marks_first` selects whether the
    /// marked (outer) side is the sheet's recto (front wrapper) or verso (back
-   /// wrapper). Both sides reference no book page, so they never draw inner
-   /// content and never affect the book's page numbering.
-   fn endpaper_wrapper_sides(marks_first: bool) -> [Side; 2] {
-       let marked = Side { left: WRAPPER_BLANK_PAGE, right: WRAPPER_BLANK_PAGE, cut: true, fold: true };
-       let blank = Side { left: WRAPPER_BLANK_PAGE, right: WRAPPER_BLANK_PAGE, cut: false, fold: false };
+   /// wrapper). Both sides reference book page `inner_count + 1`, one past the
+   /// last real page, so the macro's `\ifnum#1>\innercount` guard draws no inner
+   /// content on them and the wrappers never affect the book's page numbering.
+   fn endpaper_wrapper_sides(inner_count: u32, marks_first: bool) -> [Side; 2] {
+       let blank_page = inner_count + 1;
+       let marked = Side { left: blank_page, right: blank_page, cut: true, fold: true };
+       let blank = Side { left: blank_page, right: blank_page, cut: false, fold: false };
        if marks_first { [marked, blank] } else { [blank, marked] }
    }
    ```
-3. In `wrapper_document_for_paper`, replace
+   The sentinel must be **greater** than `\innercount`: the macro draws a page
+   only on the `\else` (false) branch, i.e. when `#1 ≤ \innercount`. A sentinel
+   of `0` would request nonexistent inner page 0 and fail the lualatex compile.
+2. In `wrapper_document_for_paper`, replace
    ```rust
    let sides = sheet_sides(signatures);
    ```
    with an assembly that brackets the body with the two wrapper sheets:
    ```rust
-   let mut sides = Vec::new();
-   sides.extend(endpaper_wrapper_sides(true));   // front wrapper: marked recto, blank verso
-   sides.extend(sheet_sides(signatures));        // body, unchanged
-   sides.extend(endpaper_wrapper_sides(false));  // back wrapper: blank recto, marked verso
+   let mut sides = Vec::with_capacity((signatures * 16 + 4) as usize);
+   sides.extend(endpaper_wrapper_sides(inner_count, true));   // front: marked recto, blank verso
+   sides.extend(sheet_sides(signatures));                     // body, unchanged
+   sides.extend(endpaper_wrapper_sides(inner_count, false));  // back: blank recto, marked verso
    ```
    Leave the `for side in &sides { … \imposedsheetside … }` loop untouched — it
    already emits every side in order.
@@ -285,13 +290,22 @@ Add to `mod tests` in `src/latex.rs` (new tests; do not renumber existing ones):
   `\imposedsheetside}`, so it is not counted).
 
 - `endpaper_wrapper_sides_carry_no_book_pages`
-  Assert `endpaper_wrapper_sides(true)` == `[Side{0,0,cut:true,fold:true},
-  Side{0,0,cut:false,fold:false}]` and `endpaper_wrapper_sides(false)` ==
-  `[Side{0,0,cut:false,fold:false}, Side{0,0,cut:true,fold:true}]`.
+  With sentinel `inner_count + 1 = 33` for `inner_count = 32`, assert
+  `endpaper_wrapper_sides(32, true)` == `[Side{33,33,cut:true,fold:true},
+  Side{33,33,cut:false,fold:false}]` and `endpaper_wrapper_sides(32, false)` ==
+  `[Side{33,33,cut:false,fold:false}, Side{33,33,cut:true,fold:true}]`.
+
+- `endpaper_wrapper_pages_exceed_inner_count_so_they_draw_blank`
+  For several `inner_count` values (`0, 5, 32, 33, 128`), assert both sides of
+  both `endpaper_wrapper_sides(inner, true)` and `endpaper_wrapper_sides(inner,
+  false)` have `left > inner` and `right > inner`. This encodes the invariant
+  that wrapper pages are always past the inner count (so they never draw and the
+  lualatex compile never requests a nonexistent page).
 
 - `endpaper_wrappers_emit_marked_blank_sides`
-  Assert `wrapper_document(1, 32)` contains both `\imposedsheetside{0}{0}{1}{1}`
-  (marked wrapper side) and `\imposedsheetside{0}{0}{0}{0}` (blank wrapper side).
+  Assert `wrapper_document(1, 32)` contains both `\imposedsheetside{33}{33}{1}{1}`
+  (marked wrapper side) and `\imposedsheetside{33}{33}{0}{0}` (blank wrapper
+  side).
 
 - `endpaper_wrappers_do_not_renumber_inner_pages`
   Assert `wrapper_document(1, 32)` still contains the unchanged body sides
@@ -302,12 +316,13 @@ Add to `mod tests` in `src/latex.rs` (new tests; do not renumber existing ones):
   Build `wrapper_document(1, 32)`, collect the ordered `\imposedsheetside{…}`
   call lines (e.g. `doc.lines().filter(|l| l.starts_with("\\imposedsheetside{"))`,
   which excludes the `\newcommand{\imposedsheetside}` definition because that
-  renders as `\imposedsheetside}`), and assert on the ends of that ordered list:
-  - `calls[0] == "\\imposedsheetside{0}{0}{1}{1}"` (front wrapper marked recto),
-  - `calls[1] == "\\imposedsheetside{0}{0}{0}{0}"` (front wrapper blank verso),
-  - `calls[calls.len()-2] == "\\imposedsheetside{0}{0}{0}{0}"` (back wrapper
+  renders as `\imposedsheetside}`), and assert on the ends of that ordered list
+  (sentinel `33` for the `inner_count = 32` document):
+  - `calls[0] == "\\imposedsheetside{33}{33}{1}{1}"` (front wrapper marked recto),
+  - `calls[1] == "\\imposedsheetside{33}{33}{0}{0}"` (front wrapper blank verso),
+  - `calls[calls.len()-2] == "\\imposedsheetside{33}{33}{0}{0}"` (back wrapper
     blank recto),
-  - `calls[calls.len()-1] == "\\imposedsheetside{0}{0}{1}{1}"` (back wrapper
+  - `calls[calls.len()-1] == "\\imposedsheetside{33}{33}{1}{1}"` (back wrapper
     marked verso).
   This pins the exact bracketing order in one test.
 

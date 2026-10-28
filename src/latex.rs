@@ -43,12 +43,6 @@ const SEW_HALFTAPE_CM: &str = "0.7408"; // 21 pt (half of a 42 pt tape width)
 /// Book pages per signature (8 sheets × 4 book pages per sheet).
 const PAGES_PER_SIGNATURE: u32 = 32;
 
-/// Book-page number stamped on the endpaper-wrapper sheet sides, which carry no
-/// book content. It never satisfies `\ifnum#1>\innercount`, so the imposition
-/// macro draws nothing from the inner PDF on those sides, keeping the wrappers
-/// independent of the book's page numbering.
-const WRAPPER_BLANK_PAGE: u32 = 0;
-
 /// Blank flyleaves at each end of every volume, counted in whole leaves (two PDF
 /// pages each), keeping the verso/recto parity the imposition mapping depends on.
 pub const FLYLEAVES_PER_END: u32 = 2;
@@ -765,18 +759,20 @@ fn sheet_sides(num_signatures: u32) -> Vec<Side> {
 /// carries the fold line, sew marks, and cut border on the face toward the cover
 /// board and is blank on the face toward the endpaper; `marks_first` puts the
 /// marked side on the sheet's recto (the front wrapper) or its verso (the back
-/// wrapper). Both sides reference no book page, so they never draw inner content
-/// and never affect the book's page numbering.
-fn endpaper_wrapper_sides(marks_first: bool) -> [Side; 2] {
+/// wrapper). Both sides reference book page `inner_count + 1`, one past the last
+/// real page, so the imposition macro's `\ifnum#1>\innercount` guard draws no
+/// inner content on them and the wrappers never affect the book's page numbering.
+fn endpaper_wrapper_sides(inner_count: u32, marks_first: bool) -> [Side; 2] {
+    let blank_page = inner_count + 1;
     let marked = Side {
-        left: WRAPPER_BLANK_PAGE,
-        right: WRAPPER_BLANK_PAGE,
+        left: blank_page,
+        right: blank_page,
         cut: true,
         fold: true,
     };
     let blank = Side {
-        left: WRAPPER_BLANK_PAGE,
-        right: WRAPPER_BLANK_PAGE,
+        left: blank_page,
+        right: blank_page,
         cut: false,
         fold: false,
     };
@@ -798,9 +794,9 @@ pub fn wrapper_document(tomus: usize, inner_count: u32) -> String {
 pub fn wrapper_document_for_paper(tomus: usize, inner_count: u32, paper_size: PaperSize) -> String {
     let signatures = inner_count.div_ceil(PAGES_PER_SIGNATURE).max(1);
     let mut sides = Vec::with_capacity((signatures * 16 + 4) as usize);
-    sides.extend(endpaper_wrapper_sides(true));
+    sides.extend(endpaper_wrapper_sides(inner_count, true));
     sides.extend(sheet_sides(signatures));
-    sides.extend(endpaper_wrapper_sides(false));
+    sides.extend(endpaper_wrapper_sides(inner_count, false));
     let pdf = format!("tomus_{tomus}_inner.pdf");
     let geometry = paper_size.geometry();
 
@@ -1772,40 +1768,54 @@ mod tests {
 
     #[test]
     fn endpaper_wrapper_sides_carry_no_book_pages() {
+        // The sentinel is `inner_count + 1` = 33 for a one-signature volume.
         assert_eq!(
-            endpaper_wrapper_sides(true),
+            endpaper_wrapper_sides(32, true),
             [
                 Side {
-                    left: 0,
-                    right: 0,
+                    left: 33,
+                    right: 33,
                     cut: true,
                     fold: true
                 },
                 Side {
-                    left: 0,
-                    right: 0,
+                    left: 33,
+                    right: 33,
                     cut: false,
                     fold: false
                 },
             ]
         );
         assert_eq!(
-            endpaper_wrapper_sides(false),
+            endpaper_wrapper_sides(32, false),
             [
                 Side {
-                    left: 0,
-                    right: 0,
+                    left: 33,
+                    right: 33,
                     cut: false,
                     fold: false
                 },
                 Side {
-                    left: 0,
-                    right: 0,
+                    left: 33,
+                    right: 33,
                     cut: true,
                     fold: true
                 },
             ]
         );
+    }
+
+    #[test]
+    fn endpaper_wrapper_pages_exceed_inner_count_so_they_draw_blank() {
+        for inner in [0u32, 5, 32, 33, 128] {
+            for side in endpaper_wrapper_sides(inner, true)
+                .iter()
+                .chain(endpaper_wrapper_sides(inner, false).iter())
+            {
+                assert!(side.left > inner, "left {} !> {inner}", side.left);
+                assert!(side.right > inner, "right {} !> {inner}", side.right);
+            }
+        }
     }
 
     #[test]
@@ -1818,8 +1828,8 @@ mod tests {
     #[test]
     fn endpaper_wrappers_emit_marked_blank_sides() {
         let doc = wrapper_document(1, 32);
-        assert!(doc.contains("\\imposedsheetside{0}{0}{1}{1}"));
-        assert!(doc.contains("\\imposedsheetside{0}{0}{0}{0}"));
+        assert!(doc.contains("\\imposedsheetside{33}{33}{1}{1}"));
+        assert!(doc.contains("\\imposedsheetside{33}{33}{0}{0}"));
     }
 
     #[test]
@@ -1836,11 +1846,11 @@ mod tests {
             .lines()
             .filter(|l| l.starts_with("\\imposedsheetside{"))
             .collect();
-        assert_eq!(calls[0], "\\imposedsheetside{0}{0}{1}{1}");
-        assert_eq!(calls[1], "\\imposedsheetside{0}{0}{0}{0}");
+        assert_eq!(calls[0], "\\imposedsheetside{33}{33}{1}{1}");
+        assert_eq!(calls[1], "\\imposedsheetside{33}{33}{0}{0}");
         let n = calls.len();
-        assert_eq!(calls[n - 2], "\\imposedsheetside{0}{0}{0}{0}");
-        assert_eq!(calls[n - 1], "\\imposedsheetside{0}{0}{1}{1}");
+        assert_eq!(calls[n - 2], "\\imposedsheetside{33}{33}{0}{0}");
+        assert_eq!(calls[n - 1], "\\imposedsheetside{33}{33}{1}{1}");
     }
 
     #[test]
