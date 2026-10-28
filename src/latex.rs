@@ -1,6 +1,9 @@
 //! Emits the per-volume inner `.tex` (trim-size, single-column Old Standard Latin
 //! with re-typeset front matter) and the US Letter imposition wrapper that lays
-//! those pages two-up for 32-page-signature binding.
+//! those pages two-up for 32-page-signature binding. Each volume's imposed sheets
+//! are bracketed by a blank front and back endpaper-wrapper sheet that carries the
+//! fold line, sew marks, and cut border but no book content, so a binder can wrap
+//! an oversized endpaper inside it and guillotine the block to trim size.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -39,6 +42,12 @@ const SEW_HALFTAPE_CM: &str = "0.7408"; // 21 pt (half of a 42 pt tape width)
 
 /// Book pages per signature (8 sheets × 4 book pages per sheet).
 const PAGES_PER_SIGNATURE: u32 = 32;
+
+/// Book-page number stamped on the endpaper-wrapper sheet sides, which carry no
+/// book content. It never satisfies `\ifnum#1>\innercount`, so the imposition
+/// macro draws nothing from the inner PDF on those sides, keeping the wrappers
+/// independent of the book's page numbering.
+const WRAPPER_BLANK_PAGE: u32 = 0;
 
 /// Blank flyleaves at each end of every volume, counted in whole leaves (two PDF
 /// pages each), keeping the verso/recto parity the imposition mapping depends on.
@@ -752,14 +761,46 @@ fn sheet_sides(num_signatures: u32) -> Vec<Side> {
     sides
 }
 
+/// The two sides of one blank endpaper-wrapper sheet. This single folded sheet
+/// carries the fold line, sew marks, and cut border on the face toward the cover
+/// board and is blank on the face toward the endpaper; `marks_first` puts the
+/// marked side on the sheet's recto (the front wrapper) or its verso (the back
+/// wrapper). Both sides reference no book page, so they never draw inner content
+/// and never affect the book's page numbering.
+fn endpaper_wrapper_sides(marks_first: bool) -> [Side; 2] {
+    let marked = Side {
+        left: WRAPPER_BLANK_PAGE,
+        right: WRAPPER_BLANK_PAGE,
+        cut: true,
+        fold: true,
+    };
+    let blank = Side {
+        left: WRAPPER_BLANK_PAGE,
+        right: WRAPPER_BLANK_PAGE,
+        cut: false,
+        fold: false,
+    };
+    if marks_first {
+        [marked, blank]
+    } else {
+        [blank, marked]
+    }
+}
+
 /// Generate the full imposition wrapper `.tex` for one volume.
 pub fn wrapper_document(tomus: usize, inner_count: u32) -> String {
     wrapper_document_for_paper(tomus, inner_count, PaperSize::Letter)
 }
 
+/// Generate the full imposition wrapper `.tex` for one volume on `paper_size`.
+/// The emitted sheet sides are, in order: the front endpaper-wrapper sheet, the
+/// body signatures from [`sheet_sides`], then the back endpaper-wrapper sheet.
 pub fn wrapper_document_for_paper(tomus: usize, inner_count: u32, paper_size: PaperSize) -> String {
     let signatures = inner_count.div_ceil(PAGES_PER_SIGNATURE).max(1);
-    let sides = sheet_sides(signatures);
+    let mut sides = Vec::with_capacity((signatures * 16 + 4) as usize);
+    sides.extend(endpaper_wrapper_sides(true));
+    sides.extend(sheet_sides(signatures));
+    sides.extend(endpaper_wrapper_sides(false));
     let pdf = format!("tomus_{tomus}_inner.pdf");
     let geometry = paper_size.geometry();
 
@@ -1727,6 +1768,79 @@ mod tests {
         for (i, side) in sides.iter().enumerate() {
             assert_eq!(side.cut, i == 0 || i == 16);
         }
+    }
+
+    #[test]
+    fn endpaper_wrapper_sides_carry_no_book_pages() {
+        assert_eq!(
+            endpaper_wrapper_sides(true),
+            [
+                Side {
+                    left: 0,
+                    right: 0,
+                    cut: true,
+                    fold: true
+                },
+                Side {
+                    left: 0,
+                    right: 0,
+                    cut: false,
+                    fold: false
+                },
+            ]
+        );
+        assert_eq!(
+            endpaper_wrapper_sides(false),
+            [
+                Side {
+                    left: 0,
+                    right: 0,
+                    cut: false,
+                    fold: false
+                },
+                Side {
+                    left: 0,
+                    right: 0,
+                    cut: true,
+                    fold: true
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn endpaper_wrappers_bracket_the_body() {
+        let doc = wrapper_document(1, 32);
+        // 16 body sides for one 32-page signature + 4 wrapper sides.
+        assert_eq!(doc.matches("\\imposedsheetside{").count(), 20);
+    }
+
+    #[test]
+    fn endpaper_wrappers_emit_marked_blank_sides() {
+        let doc = wrapper_document(1, 32);
+        assert!(doc.contains("\\imposedsheetside{0}{0}{1}{1}"));
+        assert!(doc.contains("\\imposedsheetside{0}{0}{0}{0}"));
+    }
+
+    #[test]
+    fn endpaper_wrappers_do_not_renumber_inner_pages() {
+        let doc = wrapper_document(1, 32);
+        assert!(doc.contains("\\imposedsheetside{32}{1}{1}{1}"));
+        assert!(doc.contains("\\imposedsheetside{2}{31}{0}{0}"));
+    }
+
+    #[test]
+    fn front_wrapper_is_first_sheet_back_wrapper_is_last() {
+        let doc = wrapper_document(1, 32);
+        let calls: Vec<&str> = doc
+            .lines()
+            .filter(|l| l.starts_with("\\imposedsheetside{"))
+            .collect();
+        assert_eq!(calls[0], "\\imposedsheetside{0}{0}{1}{1}");
+        assert_eq!(calls[1], "\\imposedsheetside{0}{0}{0}{0}");
+        let n = calls.len();
+        assert_eq!(calls[n - 2], "\\imposedsheetside{0}{0}{0}{0}");
+        assert_eq!(calls[n - 1], "\\imposedsheetside{0}{0}{1}{1}");
     }
 
     #[test]
