@@ -11,6 +11,12 @@ reprinted on its own with `--resume-from`.
 Page 1 of the PDF is the front of sheet 1, page 2 its back, page 3 the front of
 sheet 2, and so on. Sheet *k* is PDF pages 2k−1 and 2k.
 
+Every imposed tomus begins and ends with a **blank endpaper-wrapper sheet** —
+the first and last sheets of the PDF. These carry the usual fold line, sew
+marks, and cut border but no text; a binder wraps an oversized endpaper inside
+each one before the block is trimmed to size. They print exactly like any other
+sheet, so a whole-tomus range includes them as its first and last sheets.
+
 ## Setup
 
 1. Install [SumatraPDF](https://www.sumatrapdfreader.org/). Windows has no
@@ -36,7 +42,7 @@ sheet 2, and so on. Sheet *k* is PDF pages 2k−1 and 2k.
 
 ## Examples
 
-Print a whole Tomus range (16 sheets, pages 145–160), 2 s between jobs:
+Print a 16-page range (8 sheets, pages 145–160), 2 s between jobs:
 
 ```powershell
 python tools/print_sheets.py build_facsimile/tomus_1.pdf --pages 145-160
