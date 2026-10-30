@@ -1701,7 +1701,8 @@ mod tests {
                 left: 32,
                 right: 1,
                 cut: true,
-                fold: true
+                fold: true,
+                sew: true
             }
         );
         assert_eq!(
@@ -1710,7 +1711,8 @@ mod tests {
                 left: 2,
                 right: 31,
                 cut: false,
-                fold: false
+                fold: false,
+                sew: true
             }
         );
         assert_eq!(
@@ -1719,7 +1721,8 @@ mod tests {
                 left: 30,
                 right: 3,
                 cut: false,
-                fold: true
+                fold: true,
+                sew: true
             }
         );
         assert_eq!(
@@ -1728,7 +1731,8 @@ mod tests {
                 left: 4,
                 right: 29,
                 cut: false,
-                fold: false
+                fold: false,
+                sew: true
             }
         );
         let two = sheet_sides(2);
@@ -1738,7 +1742,8 @@ mod tests {
                 left: 64,
                 right: 33,
                 cut: true,
-                fold: true
+                fold: true,
+                sew: true
             }
         );
     }
@@ -1759,13 +1764,23 @@ mod tests {
     }
 
     #[test]
-    fn fold_and_sew_only_on_outer_sides() {
+    fn fold_line_outer_only_sew_on_every_side() {
         for (i, side) in sheet_sides(2).iter().enumerate() {
             assert_eq!(side.fold, i % 2 == 0);
+            assert!(side.sew, "side {i} should carry sew marks");
         }
         let doc = wrapper_document(1, 32);
         assert!(doc.contains("\\drawsewmarks"));
         assert!(doc.contains("\\draw[dotted,thick] (\\Mx,\\By) -- (\\Mx,\\Ty);"));
+    }
+
+    #[test]
+    fn sew_marks_emitted_on_inner_sheet_sides() {
+        let doc = wrapper_document(1, 32);
+        // An inner body side: no cut, no fold line, but the sew flag is set.
+        assert!(doc.contains("\\imposedsheetside{2}{31}{0}{0}{1}"));
+        // No four-group body call survives the arity bump.
+        assert!(!doc.contains("\\imposedsheetside{2}{31}{0}{0}\n"));
     }
 
     #[test]
@@ -1786,13 +1801,15 @@ mod tests {
                     left: 33,
                     right: 33,
                     cut: true,
-                    fold: true
+                    fold: true,
+                    sew: true
                 },
                 Side {
                     left: 33,
                     right: 33,
                     cut: false,
-                    fold: false
+                    fold: false,
+                    sew: false
                 },
             ]
         );
@@ -1803,13 +1820,15 @@ mod tests {
                     left: 33,
                     right: 33,
                     cut: false,
-                    fold: false
+                    fold: false,
+                    sew: false
                 },
                 Side {
                     left: 33,
                     right: 33,
                     cut: true,
-                    fold: true
+                    fold: true,
+                    sew: true
                 },
             ]
         );
@@ -1838,15 +1857,15 @@ mod tests {
     #[test]
     fn endpaper_wrappers_emit_marked_blank_sides() {
         let doc = wrapper_document(1, 32);
-        assert!(doc.contains("\\imposedsheetside{33}{33}{1}{1}"));
-        assert!(doc.contains("\\imposedsheetside{33}{33}{0}{0}"));
+        assert!(doc.contains("\\imposedsheetside{33}{33}{1}{1}{1}"));
+        assert!(doc.contains("\\imposedsheetside{33}{33}{0}{0}{0}"));
     }
 
     #[test]
     fn endpaper_wrappers_do_not_renumber_inner_pages() {
         let doc = wrapper_document(1, 32);
-        assert!(doc.contains("\\imposedsheetside{32}{1}{1}{1}"));
-        assert!(doc.contains("\\imposedsheetside{2}{31}{0}{0}"));
+        assert!(doc.contains("\\imposedsheetside{32}{1}{1}{1}{1}"));
+        assert!(doc.contains("\\imposedsheetside{2}{31}{0}{0}{1}"));
     }
 
     #[test]
@@ -1856,11 +1875,11 @@ mod tests {
             .lines()
             .filter(|l| l.starts_with("\\imposedsheetside{"))
             .collect();
-        assert_eq!(calls[0], "\\imposedsheetside{33}{33}{1}{1}");
-        assert_eq!(calls[1], "\\imposedsheetside{33}{33}{0}{0}");
+        assert_eq!(calls[0], "\\imposedsheetside{33}{33}{1}{1}{1}");
+        assert_eq!(calls[1], "\\imposedsheetside{33}{33}{0}{0}{0}");
         let n = calls.len();
-        assert_eq!(calls[n - 2], "\\imposedsheetside{33}{33}{0}{0}");
-        assert_eq!(calls[n - 1], "\\imposedsheetside{33}{33}{1}{1}");
+        assert_eq!(calls[n - 2], "\\imposedsheetside{33}{33}{0}{0}{0}");
+        assert_eq!(calls[n - 1], "\\imposedsheetside{33}{33}{1}{1}{1}");
     }
 
     #[test]
@@ -1868,7 +1887,7 @@ mod tests {
         let doc = wrapper_document(1, 5);
         assert!(doc.contains("\\newcommand{\\innercount}{5}"));
         assert!(doc.contains("\\ifnum#1>\\innercount\\else"));
-        assert!(doc.contains("\\imposedsheetside{32}{1}{1}{1}"));
+        assert!(doc.contains("\\imposedsheetside{32}{1}{1}{1}{1}"));
     }
 
     #[test]
@@ -1919,9 +1938,9 @@ mod tests {
         let letter = wrapper_document_for_paper(2, 33, PaperSize::Letter);
         let a4 = wrapper_document_for_paper(2, 33, PaperSize::A4);
         for expected in [
-            "\\imposedsheetside{32}{1}{1}{1}",
-            "\\imposedsheetside{2}{31}{0}{0}",
-            "\\imposedsheetside{64}{33}{1}{1}",
+            "\\imposedsheetside{32}{1}{1}{1}{1}",
+            "\\imposedsheetside{2}{31}{0}{0}{1}",
+            "\\imposedsheetside{64}{33}{1}{1}{1}",
             "\\drawsewmarks",
             "\\draw[dotted,thick] (\\Mx,\\By) -- (\\Mx,\\Ty)",
             "\\draw[dotted,thick] (\\Lx,\\By) rectangle (\\Rx,\\Ty)",
