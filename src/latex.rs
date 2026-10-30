@@ -718,21 +718,23 @@ pub fn write_imposition_wrappers_for_paper(
     Ok(paths)
 }
 
-/// One imposed sheet side: which book pages sit left and right, and whether this
-/// side carries the cut border and the fold line + sew marks.
+/// One imposed sheet side: which book pages sit left and right, whether this
+/// side carries the cut border, and two independent spine flags — `fold` draws
+/// the dotted fold line, `sew` draws the sew marks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Side {
     left: u32,
     right: u32,
     cut: bool,
     fold: bool,
+    sew: bool,
 }
 
 /// The ordered sheet sides for `num_signatures` nested 32-page signatures: for
 /// sheet *i* (1 = outermost) of signature *s* (base `32s`), the outer/recto side
-/// carries `34−2i | 2i−1`, the inner/verso side `2i | 33−2i`. The fold line and
-/// sew marks fall on every outer side; the cut border only on the first recto of
-/// each signature.
+/// carries `34−2i | 2i−1`, the inner/verso side `2i | 33−2i`. The fold line falls
+/// on every outer side; the sew marks fall on every side, both faces; the cut
+/// border only on the first recto of each signature.
 fn sheet_sides(num_signatures: u32) -> Vec<Side> {
     let mut sides = Vec::with_capacity((num_signatures * 16) as usize);
     for s in 0..num_signatures {
@@ -743,12 +745,14 @@ fn sheet_sides(num_signatures: u32) -> Vec<Side> {
                 right: base + 2 * i - 1,
                 cut: i == 1,
                 fold: true,
+                sew: true,
             });
             sides.push(Side {
                 left: base + 2 * i,
                 right: base + 33 - 2 * i,
                 cut: false,
                 fold: false,
+                sew: true,
             });
         }
     }
@@ -757,11 +761,12 @@ fn sheet_sides(num_signatures: u32) -> Vec<Side> {
 
 /// The two sides of one blank endpaper-wrapper sheet. This single folded sheet
 /// carries the fold line, sew marks, and cut border on the face toward the cover
-/// board and is blank on the face toward the endpaper; `marks_first` puts the
-/// marked side on the sheet's recto (the front wrapper) or its verso (the back
-/// wrapper). Both sides reference book page `inner_count + 1`, one past the last
-/// real page, so the imposition macro's `\ifnum#1>\innercount` guard draws no
-/// inner content on them and the wrappers never affect the book's page numbering.
+/// board and is blank on the face toward the endpaper; the `sew` flag tracks the
+/// marked face. `marks_first` puts the marked side on the sheet's recto (the front
+/// wrapper) or its verso (the back wrapper). Both sides reference book page
+/// `inner_count + 1`, one past the last real page, so the imposition macro's
+/// `\ifnum#1>\innercount` guard draws no inner content on them and the wrappers
+/// never affect the book's page numbering.
 fn endpaper_wrapper_sides(inner_count: u32, marks_first: bool) -> [Side; 2] {
     let blank_page = inner_count + 1;
     let marked = Side {
@@ -769,12 +774,14 @@ fn endpaper_wrapper_sides(inner_count: u32, marks_first: bool) -> [Side; 2] {
         right: blank_page,
         cut: true,
         fold: true,
+        sew: true,
     };
     let blank = Side {
         left: blank_page,
         right: blank_page,
         cut: false,
         fold: false,
+        sew: false,
     };
     if marks_first {
         [marked, blank]
@@ -828,11 +835,12 @@ pub fn wrapper_document_for_paper(tomus: usize, inner_count: u32, paper_size: Pa
     doc.push_str("\\begin{document}\n\n");
     for side in &sides {
         doc.push_str(&format!(
-            "\\imposedsheetside{{{}}}{{{}}}{{{}}}{{{}}}\n",
+            "\\imposedsheetside{{{}}}{{{}}}{{{}}}{{{}}}{{{}}}\n",
             side.left,
             side.right,
             u8::from(side.cut),
             u8::from(side.fold),
+            u8::from(side.sew),
         ));
     }
     doc.push_str("\n\\end{document}\n");
@@ -841,8 +849,8 @@ pub fn wrapper_document_for_paper(tomus: usize, inner_count: u32, paper_size: Pa
 
 fn wrapper_sheet_macro(pdf: &str, geometry: &WrapperGeometry) -> String {
     format!(
-        "% #1 left book page, #2 right book page, #3 cut flag, #4 fold flag\n\
-         \\newcommand{{\\imposedsheetside}}[4]{{%\n\
+        "% #1 left book page, #2 right book page, #3 cut flag, #4 fold flag, #5 sew flag\n\
+         \\newcommand{{\\imposedsheetside}}[5]{{%\n\
          \x20 \\begin{{tikzpicture}}[x=1cm,y=1cm]\n\
          \x20   \\useasboundingbox (0,0) rectangle ({},{});\n\
          \x20   \\ifnum#1>\\innercount\\else\n\
@@ -855,6 +863,8 @@ fn wrapper_sheet_macro(pdf: &str, geometry: &WrapperGeometry) -> String {
          \x20   \\fi\n\
          \x20   \\ifnum#4=1\n\
          \x20     \\draw[dotted,thick] (\\Mx,\\By) -- (\\Mx,\\Ty);\n\
+         \x20   \\fi\n\
+         \x20   \\ifnum#5=1\n\
          \x20     \\drawsewmarks\n\
          \x20   \\fi\n\
          \x20   \\ifnum#3=1\n\
