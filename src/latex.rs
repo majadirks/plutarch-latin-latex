@@ -42,6 +42,16 @@ const SEW_MARGIN_CM: &str = "2.5400"; // 72 pt
 const SEW_TAPES: u32 = 2;
 const SEW_HALFTAPE_CM: &str = "0.7408"; // 21 pt (half of a 42 pt tape width)
 
+/// Collation-mark ("back mark") geometry, in centimetres. Each gathered unit —
+/// the two endpaper wrappers and every body signature — gets one thick stripe
+/// straddling the spine fold, stepped down per unit so a gathered block shows a
+/// diagonal staircase on the spine. The band of stripes runs from the sheet top
+/// (above the top cutline, in the waste) down to `COLLATION_GAP_CM` above the top
+/// sew mark, so the marks never touch the sewing holes and never survive into the
+/// trimmed book.
+const COLLATION_HALFWIDTH_CM: &str = "0.30"; // half of a 6 mm stripe across the fold
+const COLLATION_GAP_CM: &str = "0.50"; // clearance kept above the top sew mark
+
 /// Book pages per signature (4 sheets × 4 book pages per sheet).
 const PAGES_PER_SIGNATURE: u32 = 16;
 
