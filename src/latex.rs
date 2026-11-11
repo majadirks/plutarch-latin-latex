@@ -1,6 +1,8 @@
 //! Emits the per-volume inner `.tex` (trim-size, single-column Old Standard Latin
 //! with re-typeset front matter) and the US Letter imposition wrapper that lays
-//! those pages two-up for 32-page-signature binding. Each volume's imposed sheets
+//! those pages two-up for 16-page-signature binding (four sheets per signature),
+//! with the final signature of each volume truncated to the whole sheets it needs
+//! (at least two). Each volume's imposed sheets
 //! are bracketed by a blank front and back endpaper-wrapper sheet that carries the
 //! fold line, sew marks, and cut border but no book content, so a binder can wrap
 //! an oversized endpaper inside it and guillotine the block to trim size.
@@ -40,8 +42,8 @@ const SEW_MARGIN_CM: &str = "2.5400"; // 72 pt
 const SEW_TAPES: u32 = 2;
 const SEW_HALFTAPE_CM: &str = "0.7408"; // 21 pt (half of a 42 pt tape width)
 
-/// Book pages per signature (8 sheets × 4 book pages per sheet).
-const PAGES_PER_SIGNATURE: u32 = 32;
+/// Book pages per signature (4 sheets × 4 book pages per sheet).
+const PAGES_PER_SIGNATURE: u32 = 16;
 
 /// Blank flyleaves at each end of every volume, counted in whole leaves (two PDF
 /// pages each), keeping the verso/recto parity the imposition mapping depends on.
@@ -730,31 +732,53 @@ struct Side {
     sew: bool,
 }
 
-/// The ordered sheet sides for `num_signatures` nested 32-page signatures: for
-/// sheet *i* (1 = outermost) of signature *s* (base `32s`), the outer/recto side
-/// carries `34−2i | 2i−1`, the inner/verso side `2i | 33−2i`. The fold line falls
-/// on every outer side; the sew marks fall on every side, both faces; the cut
-/// border only on the first recto of each signature.
-fn sheet_sides(num_signatures: u32) -> Vec<Side> {
-    let mut sides = Vec::with_capacity((num_signatures * 16) as usize);
-    for s in 0..num_signatures {
-        let base = s * PAGES_PER_SIGNATURE;
-        for i in 1..=8u32 {
-            sides.push(Side {
-                left: base + 34 - 2 * i,
-                right: base + 2 * i - 1,
-                cut: i == 1,
-                fold: true,
-                sew: true,
-            });
-            sides.push(Side {
-                left: base + 2 * i,
-                right: base + 33 - 2 * i,
-                cut: false,
-                fold: false,
-                sew: true,
-            });
-        }
+/// Push the sheet sides of one signature spanning book pages
+/// `base + 1 ..= base + 4 * sheets`, folding `sheets` nested sheets. For sheet *i*
+/// (1 = outermost) the outer/recto side carries `span+2−2i | 2i−1` and the
+/// inner/verso side `2i | span+1−2i` (span = `4 * sheets`), both offset by `base`.
+/// The fold line falls on every outer side; the sew marks on every side, both
+/// faces; the cut border only on the signature's first recto.
+fn push_signature(sides: &mut Vec<Side>, base: u32, sheets: u32) {
+    let span = 4 * sheets;
+    for i in 1..=sheets {
+        sides.push(Side {
+            left: base + span + 2 - 2 * i,
+            right: base + 2 * i - 1,
+            cut: i == 1,
+            fold: true,
+            sew: true,
+        });
+        sides.push(Side {
+            left: base + 2 * i,
+            right: base + span + 1 - 2 * i,
+            cut: false,
+            fold: false,
+            sew: true,
+        });
+    }
+}
+
+/// The ordered sheet sides that impose `inner_count` book pages: as many full
+/// 16-page signatures (four sheets each) as the count allows, followed by a final
+/// signature truncated to the whole sheets the remainder needs, floored at two
+/// sheets so no signature is a lone folio. Each signature is folded around its own
+/// page span by [`push_signature`]. When the final signature's span runs past
+/// `inner_count` (because the count is not a whole-sheet multiple, or the two-sheet
+/// floor bumped the span past the real content), the wrapper's `\ifnum#1>\innercount`
+/// guard blanks the referenced pages.
+fn sheet_sides(inner_count: u32) -> Vec<Side> {
+    let full = inner_count / PAGES_PER_SIGNATURE;
+    let rem = inner_count % PAGES_PER_SIGNATURE;
+    let mut sides = Vec::with_capacity((inner_count / 2 + 2) as usize);
+    let mut base = 0;
+    for _ in 0..full {
+        push_signature(&mut sides, base, PAGES_PER_SIGNATURE / 4);
+        base += PAGES_PER_SIGNATURE;
+    }
+    if rem > 0 {
+        // Whole sheets for the tail, never fewer than two.
+        let sheets = rem.div_ceil(4).max(2);
+        push_signature(&mut sides, base, sheets);
     }
     sides
 }
@@ -799,10 +823,9 @@ pub fn wrapper_document(tomus: usize, inner_count: u32) -> String {
 /// The emitted sheet sides are, in order: the front endpaper-wrapper sheet, the
 /// body signatures from [`sheet_sides`], then the back endpaper-wrapper sheet.
 pub fn wrapper_document_for_paper(tomus: usize, inner_count: u32, paper_size: PaperSize) -> String {
-    let signatures = inner_count.div_ceil(PAGES_PER_SIGNATURE).max(1);
-    let mut sides = Vec::with_capacity((signatures * 16 + 4) as usize);
+    let mut sides = Vec::with_capacity((inner_count / 2 + 4) as usize);
     sides.extend(endpaper_wrapper_sides(inner_count, true));
-    sides.extend(sheet_sides(signatures));
+    sides.extend(sheet_sides(inner_count));
     sides.extend(endpaper_wrapper_sides(inner_count, false));
     let pdf = format!("tomus_{tomus}_inner.pdf");
     let geometry = paper_size.geometry();
@@ -810,7 +833,7 @@ pub fn wrapper_document_for_paper(tomus: usize, inner_count: u32, paper_size: Pa
     let mut doc = String::new();
     doc.push_str(&format!(
         "% Imposition wrapper: landscape, two book pages per sheet side in\n\
-         % 32-page-signature folding order. Compile once with lualatex after the inner\n\
+         % 16-page-signature folding order. Compile once with lualatex after the inner\n\
          % PDF exists.\n\
          \\documentclass{{article}}\n\
          \\usepackage[paperwidth={},paperheight={},margin=0pt]{{geometry}}\n\
@@ -1693,12 +1716,12 @@ mod tests {
 
     #[test]
     fn imposition_orders_pages_for_signature() {
-        let sides = sheet_sides(1);
-        assert_eq!(sides.len(), 16);
+        let sides = sheet_sides(16);
+        assert_eq!(sides.len(), 8);
         assert_eq!(
             sides[0],
             Side {
-                left: 32,
+                left: 16,
                 right: 1,
                 cut: true,
                 fold: true,
@@ -1709,7 +1732,7 @@ mod tests {
             sides[1],
             Side {
                 left: 2,
-                right: 31,
+                right: 15,
                 cut: false,
                 fold: false,
                 sew: true
@@ -1718,7 +1741,7 @@ mod tests {
         assert_eq!(
             sides[2],
             Side {
-                left: 30,
+                left: 14,
                 right: 3,
                 cut: false,
                 fold: true,
@@ -1729,18 +1752,18 @@ mod tests {
             sides[3],
             Side {
                 left: 4,
-                right: 29,
+                right: 13,
                 cut: false,
                 fold: false,
                 sew: true
             }
         );
-        let two = sheet_sides(2);
+        let two = sheet_sides(32);
         assert_eq!(
-            two[16],
+            two[8],
             Side {
-                left: 64,
-                right: 33,
+                left: 32,
+                right: 17,
                 cut: true,
                 fold: true,
                 sew: true
@@ -1750,8 +1773,8 @@ mod tests {
 
     #[test]
     fn imposition_places_odd_book_pages_on_right() {
-        for signatures in [1, 2, 4, 11] {
-            let sides = sheet_sides(signatures);
+        for inner_count in [16, 32, 64, 176] {
+            let sides = sheet_sides(inner_count);
             let mut pages = Vec::new();
             for side in sides {
                 assert_eq!(side.right % 2, 1);
@@ -1759,54 +1782,84 @@ mod tests {
                 pages.extend([side.left, side.right]);
             }
             pages.sort_unstable();
-            assert_eq!(pages, (1..=32 * signatures).collect::<Vec<_>>());
+            assert_eq!(pages, (1..=inner_count).collect::<Vec<_>>());
         }
     }
 
     #[test]
     fn fold_line_outer_only_sew_on_every_side() {
-        for (i, side) in sheet_sides(2).iter().enumerate() {
+        for (i, side) in sheet_sides(32).iter().enumerate() {
             assert_eq!(side.fold, i % 2 == 0);
             assert!(side.sew, "side {i} should carry sew marks");
         }
-        let doc = wrapper_document(1, 32);
+        let doc = wrapper_document(1, 16);
         assert!(doc.contains("\\drawsewmarks"));
         assert!(doc.contains("\\draw[dotted,thick] (\\Mx,\\By) -- (\\Mx,\\Ty);"));
     }
 
     #[test]
     fn sew_marks_emitted_on_inner_sheet_sides() {
-        let doc = wrapper_document(1, 32);
+        let doc = wrapper_document(1, 16);
         // An inner body side: no cut, no fold line, but the sew flag is set.
-        assert!(doc.contains("\\imposedsheetside{2}{31}{0}{0}{1}"));
+        assert!(doc.contains("\\imposedsheetside{2}{15}{0}{0}{1}"));
         // No four-group body call survives the arity bump.
-        assert!(!doc.contains("\\imposedsheetside{2}{31}{0}{0}\n"));
+        assert!(!doc.contains("\\imposedsheetside{2}{15}{0}{0}\n"));
     }
 
     #[test]
     fn cut_border_only_on_first_recto_of_each_signature() {
-        let sides = sheet_sides(2);
+        let sides = sheet_sides(32);
         for (i, side) in sides.iter().enumerate() {
-            assert_eq!(side.cut, i == 0 || i == 16);
+            assert_eq!(side.cut, i == 0 || i == 8);
         }
     }
 
     #[test]
-    fn endpaper_wrapper_sides_carry_no_book_pages() {
-        // The sentinel is `inner_count + 1` = 33 for a one-signature volume.
+    fn final_signature_truncates_to_whole_sheets() {
+        // 24 pages = one full 16-page signature (8 sides) + a truncated two-sheet
+        // final signature spanning pages 17–24 (4 sides).
+        let sides = sheet_sides(24);
+        assert_eq!(sides.len(), 12);
         assert_eq!(
-            endpaper_wrapper_sides(32, true),
+            sides[8],
+            Side {
+                left: 24,
+                right: 17,
+                cut: true,
+                fold: true,
+                sew: true
+            }
+        );
+        let mut pages: Vec<u32> = sides.iter().flat_map(|s| [s.left, s.right]).collect();
+        pages.sort_unstable();
+        assert_eq!(pages, (1..=24).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn final_signature_keeps_minimum_two_sheets() {
+        // 20 pages leaves a four-page remainder (one sheet); the floor bumps the
+        // final signature to two sheets spanning pages 17–24, so it is never a lone
+        // folio. One full signature (8 sides) + two-sheet final signature (4 sides).
+        let sides = sheet_sides(20);
+        assert_eq!(sides.len(), 12);
+    }
+
+    #[test]
+    fn endpaper_wrapper_sides_carry_no_book_pages() {
+        // The sentinel is `inner_count + 1` = 17 for a one-signature volume.
+        assert_eq!(
+            endpaper_wrapper_sides(16, true),
             [
                 Side {
-                    left: 33,
-                    right: 33,
+                    left: 17,
+                    right: 17,
                     cut: true,
                     fold: true,
                     sew: true
                 },
                 Side {
-                    left: 33,
-                    right: 33,
+                    left: 17,
+                    right: 17,
                     cut: false,
                     fold: false,
                     sew: false
@@ -1814,18 +1867,18 @@ mod tests {
             ]
         );
         assert_eq!(
-            endpaper_wrapper_sides(32, false),
+            endpaper_wrapper_sides(16, false),
             [
                 Side {
-                    left: 33,
-                    right: 33,
+                    left: 17,
+                    right: 17,
                     cut: false,
                     fold: false,
                     sew: false
                 },
                 Side {
-                    left: 33,
-                    right: 33,
+                    left: 17,
+                    right: 17,
                     cut: true,
                     fold: true,
                     sew: true
@@ -1849,37 +1902,37 @@ mod tests {
 
     #[test]
     fn endpaper_wrappers_bracket_the_body() {
-        let doc = wrapper_document(1, 32);
-        // 16 body sides for one 32-page signature + 4 wrapper sides.
-        assert_eq!(doc.matches("\\imposedsheetside{").count(), 20);
+        let doc = wrapper_document(1, 16);
+        // 8 body sides for one 16-page signature + 4 wrapper sides.
+        assert_eq!(doc.matches("\\imposedsheetside{").count(), 12);
     }
 
     #[test]
     fn endpaper_wrappers_emit_marked_blank_sides() {
-        let doc = wrapper_document(1, 32);
-        assert!(doc.contains("\\imposedsheetside{33}{33}{1}{1}{1}"));
-        assert!(doc.contains("\\imposedsheetside{33}{33}{0}{0}{0}"));
+        let doc = wrapper_document(1, 16);
+        assert!(doc.contains("\\imposedsheetside{17}{17}{1}{1}{1}"));
+        assert!(doc.contains("\\imposedsheetside{17}{17}{0}{0}{0}"));
     }
 
     #[test]
     fn endpaper_wrappers_do_not_renumber_inner_pages() {
-        let doc = wrapper_document(1, 32);
-        assert!(doc.contains("\\imposedsheetside{32}{1}{1}{1}{1}"));
-        assert!(doc.contains("\\imposedsheetside{2}{31}{0}{0}{1}"));
+        let doc = wrapper_document(1, 16);
+        assert!(doc.contains("\\imposedsheetside{16}{1}{1}{1}{1}"));
+        assert!(doc.contains("\\imposedsheetside{2}{15}{0}{0}{1}"));
     }
 
     #[test]
     fn front_wrapper_is_first_sheet_back_wrapper_is_last() {
-        let doc = wrapper_document(1, 32);
+        let doc = wrapper_document(1, 16);
         let calls: Vec<&str> = doc
             .lines()
             .filter(|l| l.starts_with("\\imposedsheetside{"))
             .collect();
-        assert_eq!(calls[0], "\\imposedsheetside{33}{33}{1}{1}{1}");
-        assert_eq!(calls[1], "\\imposedsheetside{33}{33}{0}{0}{0}");
+        assert_eq!(calls[0], "\\imposedsheetside{17}{17}{1}{1}{1}");
+        assert_eq!(calls[1], "\\imposedsheetside{17}{17}{0}{0}{0}");
         let n = calls.len();
-        assert_eq!(calls[n - 2], "\\imposedsheetside{33}{33}{0}{0}{0}");
-        assert_eq!(calls[n - 1], "\\imposedsheetside{33}{33}{1}{1}{1}");
+        assert_eq!(calls[n - 2], "\\imposedsheetside{17}{17}{0}{0}{0}");
+        assert_eq!(calls[n - 1], "\\imposedsheetside{17}{17}{1}{1}{1}");
     }
 
     #[test]
@@ -1887,7 +1940,7 @@ mod tests {
         let doc = wrapper_document(1, 5);
         assert!(doc.contains("\\newcommand{\\innercount}{5}"));
         assert!(doc.contains("\\ifnum#1>\\innercount\\else"));
-        assert!(doc.contains("\\imposedsheetside{32}{1}{1}{1}{1}"));
+        assert!(doc.contains("\\imposedsheetside{8}{1}{1}{1}{1}"));
     }
 
     #[test]
@@ -1938,9 +1991,10 @@ mod tests {
         let letter = wrapper_document_for_paper(2, 33, PaperSize::Letter);
         let a4 = wrapper_document_for_paper(2, 33, PaperSize::A4);
         for expected in [
-            "\\imposedsheetside{32}{1}{1}{1}{1}",
-            "\\imposedsheetside{2}{31}{0}{0}{1}",
-            "\\imposedsheetside{64}{33}{1}{1}{1}",
+            "\\imposedsheetside{16}{1}{1}{1}{1}",
+            "\\imposedsheetside{2}{15}{0}{0}{1}",
+            "\\imposedsheetside{32}{17}{1}{1}{1}",
+            "\\imposedsheetside{40}{33}{1}{1}{1}",
             "\\drawsewmarks",
             "\\draw[dotted,thick] (\\Mx,\\By) -- (\\Mx,\\Ty)",
             "\\draw[dotted,thick] (\\Lx,\\By) rectangle (\\Rx,\\Ty)",
