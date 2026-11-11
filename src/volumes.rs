@@ -15,9 +15,13 @@ pub const LINES_PER_PAGE: u32 = 28;
 /// Vertical allowance, in lines, for a unit's heading (each unit starts fresh).
 pub const HEADING_LINES: u32 = 6;
 
-/// Target physical pages per volume: ten whole 32-page signatures.
+/// Target pages per volume, in 32-page budgeting units (ten units). A planning
+/// target, not a physical signature count: the book binds in 16-page signatures
+/// with a truncated final signature (see `src/latex.rs`), so the real page total
+/// comes from the compiled PDF.
 pub const TARGET_PAGES: u32 = 320;
-/// Hard cap on physical pages per volume: twelve whole 32-page signatures.
+/// Hard cap on pages per volume, in 32-page budgeting units (twelve units). A
+/// planning ceiling, not a physical signature count.
 pub const MAX_PAGES: u32 = 384;
 
 /// Front-matter pages on **every** tomus: the Tomus title page + the QR page.
@@ -107,9 +111,11 @@ pub fn unit_pages(sidecar: &Sidecar, lives: &[LifeBoundary]) -> Vec<UnitPages> {
         .collect()
 }
 
-/// The physical page count of a volume: its content pages plus the blank leaves and
-/// the per-tomus front-matter overhead ([`front_overhead`]), padded to a whole
-/// 32-page signature.
+/// The estimated page budget of a volume: its content pages plus the blank leaves
+/// and the per-tomus front-matter overhead ([`front_overhead`]), rounded up to a
+/// whole 32-page budgeting unit. This is a planning estimate used to size volumes,
+/// not the exact physical page count — the book binds in 16-page signatures with a
+/// truncated final signature, so the true total comes from the compiled PDF.
 pub fn volume_physical_pages(
     content_pages: u32,
     source: usize,

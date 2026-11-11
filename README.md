@@ -3,7 +3,7 @@
 Generates a Loeb-size (10.5 × 16 cm), Latin-only reader of Plutarch's *Lives* in
 the Didot bilingual recension (Dœhner, Paris 1857) from the two Google Books scans,
 and imposes it onto US Letter or A4 PDFs, ready to print double-sided, fold into
-32-page signatures, sew, and trim to pocket size.
+16-page signatures, sew, and trim to pocket size.
 
 The build (`cargo run --bin facsimile -- …`) makes body pages from the **original
 1857 Didot Latin column** itself, cropped from the scans and reflowed into the trim
@@ -375,10 +375,11 @@ For each volume the build writes, into `--out`:
 - `tomus_N.tex` — the imposition wrapper: US Letter by default, A4 when
   `--paper-size a4` is given.
 
-With lualatex available they compile both: the inner once (it self-pads to a whole
-32-page signature), reads the real page count from the lualatex log, then emits and
-compiles the wrapper, which pulls inner pages two-up via
-`\includegraphics[page=N]{tomus_N_inner.pdf}` in signature-folding order. Without
+With lualatex available they compile both: the inner once (it self-pads to whole
+sheets, then binds into 16-page signatures with the final signature truncated to
+the whole sheets it needs — at least two), reads the real page count from the
+lualatex log, then emits and compiles the wrapper, which pulls inner pages two-up
+via `\includegraphics[page=N]{tomus_N_inner.pdf}` in signature-folding order. Without
 lualatex (or with `--no-compile`) it writes the wrappers from an estimated page count
 and prints the manual compile commands. Fold lines are drawn on each outer/recto
 sheet side only; sew marks on every sheet side (both faces); a cut border on the
