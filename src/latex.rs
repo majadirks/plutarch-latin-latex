@@ -873,6 +873,15 @@ pub fn wrapper_document_for_paper(tomus: usize, inner_count: u32, paper_size: Pa
          \\def\\sewhalftape{{{SEW_HALFTAPE_CM}}}\n"
     ));
     doc.push_str(WRAPPER_SEWMACRO);
+    let collation_total = sides.iter().filter(|s| s.cut).count();
+    doc.push_str(&format!(
+        "\\def\\collationtop{{{}}}\n\
+         \\def\\collationhalf{{{COLLATION_HALFWIDTH_CM}}}\n\
+         \\def\\collationgap{{{COLLATION_GAP_CM}}}\n\
+         \\newcommand{{\\collationtotal}}{{{collation_total}}}\n",
+        geometry.bounding_height
+    ));
+    doc.push_str(WRAPPER_COLLATIONMACRO);
     doc.push_str(&wrapper_sheet_macro(&pdf, &geometry));
     doc.push_str("\\begin{document}\n\n");
     for side in &sides {
