@@ -933,6 +933,15 @@ const WRAPPER_SEWMACRO: &str = "\
 \x20 }%\n\
 }\n";
 
+const WRAPPER_COLLATIONMACRO: &str = "\
+\\newcommand{\\drawcollationmark}[1]{%\n\
+\x20 \\pgfmathsetmacro{\\colbot}{\\Ty-\\sewmargin+\\collationgap}%\n\
+\x20 \\pgfmathsetmacro{\\colslot}{(\\collationtop-\\colbot)/\\collationtotal}%\n\
+\x20 \\pgfmathsetmacro{\\colyhi}{\\collationtop-(#1-1)*\\colslot}%\n\
+\x20 \\pgfmathsetmacro{\\colylo}{\\collationtop-#1*\\colslot}%\n\
+\x20 \\fill (\\Mx-\\collationhalf,\\colylo) rectangle (\\Mx+\\collationhalf,\\colyhi);%\n\
+}\n";
+
 // ---- Helpers -------------------------------------------------------------
 
 /// Escape LaTeX special characters, leaving UTF-8 (accents, the long s,
