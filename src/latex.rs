@@ -2002,6 +2002,44 @@ mod tests {
     }
 
     #[test]
+    fn collation_step_increments_once_per_gathered_unit() {
+        let doc = wrapper_document(1, 16);
+        // Front wrapper marked side -> 1, signature 1 first recto -> 2,
+        // back wrapper marked side -> 3; inner body sides carry no mark.
+        assert!(doc.contains("\\imposedsheetside{17}{17}{1}{1}{1}{1}"));
+        assert!(doc.contains("\\imposedsheetside{16}{1}{1}{1}{1}{2}"));
+        assert!(doc.contains("\\imposedsheetside{17}{17}{1}{1}{1}{3}"));
+        assert!(doc.contains("\\imposedsheetside{2}{15}{0}{0}{1}{0}"));
+    }
+
+    #[test]
+    fn collation_total_counts_gathered_units() {
+        // One body signature + two endpaper wrappers.
+        assert!(wrapper_document(1, 16).contains("\\newcommand{\\collationtotal}{3}"));
+        // Two full + one truncated signature + two wrappers.
+        assert!(wrapper_document(1, 33).contains("\\newcommand{\\collationtotal}{5}"));
+    }
+
+    #[test]
+    fn collation_macro_defines_band_above_top_sew_mark() {
+        let doc = wrapper_document(1, 16);
+        assert!(doc.contains("\\newcommand{\\drawcollationmark}[1]"));
+        assert!(doc.contains("\\ifnum#6>0"));
+        // The band floor is held \collationgap above the top sew mark (\yt).
+        assert!(doc.contains("\\pgfmathsetmacro{\\colbot}{\\Ty-\\sewmargin+\\collationgap}"));
+    }
+
+    #[test]
+    fn collation_top_tracks_paper_size() {
+        // The stripe band starts at the sheet top, above the top cutline \Ty.
+        assert!(wrapper_document_for_paper(1, 32, PaperSize::Letter)
+            .contains("\\def\\collationtop{21.59}"));
+        assert!(
+            wrapper_document_for_paper(1, 32, PaperSize::A4).contains("\\def\\collationtop{21}")
+        );
+    }
+
+    #[test]
     fn pages_past_inner_count_blank() {
         let doc = wrapper_document(1, 5);
         assert!(doc.contains("\\newcommand{\\innercount}{5}"));
