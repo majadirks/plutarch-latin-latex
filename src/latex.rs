@@ -884,14 +884,22 @@ pub fn wrapper_document_for_paper(tomus: usize, inner_count: u32, paper_size: Pa
     doc.push_str(WRAPPER_COLLATIONMACRO);
     doc.push_str(&wrapper_sheet_macro(&pdf, &geometry));
     doc.push_str("\\begin{document}\n\n");
+    let mut collation_step = 0u32;
     for side in &sides {
+        let step = if side.cut {
+            collation_step += 1;
+            collation_step
+        } else {
+            0
+        };
         doc.push_str(&format!(
-            "\\imposedsheetside{{{}}}{{{}}}{{{}}}{{{}}}{{{}}}\n",
+            "\\imposedsheetside{{{}}}{{{}}}{{{}}}{{{}}}{{{}}}{{{}}}\n",
             side.left,
             side.right,
             u8::from(side.cut),
             u8::from(side.fold),
             u8::from(side.sew),
+            step,
         ));
     }
     doc.push_str("\n\\end{document}\n");
@@ -900,8 +908,8 @@ pub fn wrapper_document_for_paper(tomus: usize, inner_count: u32, paper_size: Pa
 
 fn wrapper_sheet_macro(pdf: &str, geometry: &WrapperGeometry) -> String {
     format!(
-        "% #1 left book page, #2 right book page, #3 cut flag, #4 fold flag, #5 sew flag\n\
-         \\newcommand{{\\imposedsheetside}}[5]{{%\n\
+        "% #1 left book page, #2 right book page, #3 cut flag, #4 fold flag, #5 sew flag, #6 collation step\n\
+         \\newcommand{{\\imposedsheetside}}[6]{{%\n\
          \x20 \\begin{{tikzpicture}}[x=1cm,y=1cm]\n\
          \x20   \\useasboundingbox (0,0) rectangle ({},{});\n\
          \x20   \\ifnum#1>\\innercount\\else\n\
@@ -917,6 +925,9 @@ fn wrapper_sheet_macro(pdf: &str, geometry: &WrapperGeometry) -> String {
          \x20   \\fi\n\
          \x20   \\ifnum#5=1\n\
          \x20     \\drawsewmarks\n\
+         \x20   \\fi\n\
+         \x20   \\ifnum#6>0\n\
+         \x20     \\drawcollationmark{{#6}}\n\
          \x20   \\fi\n\
          \x20   \\ifnum#3=1\n\
          \x20     \\draw[dotted,thick] (\\Lx,\\By) rectangle (\\Rx,\\Ty);\n\
@@ -1983,11 +1994,11 @@ mod tests {
             .lines()
             .filter(|l| l.starts_with("\\imposedsheetside{"))
             .collect();
-        assert_eq!(calls[0], "\\imposedsheetside{17}{17}{1}{1}{1}");
-        assert_eq!(calls[1], "\\imposedsheetside{17}{17}{0}{0}{0}");
+        assert_eq!(calls[0], "\\imposedsheetside{17}{17}{1}{1}{1}{1}");
+        assert_eq!(calls[1], "\\imposedsheetside{17}{17}{0}{0}{0}{0}");
         let n = calls.len();
-        assert_eq!(calls[n - 2], "\\imposedsheetside{17}{17}{0}{0}{0}");
-        assert_eq!(calls[n - 1], "\\imposedsheetside{17}{17}{1}{1}{1}");
+        assert_eq!(calls[n - 2], "\\imposedsheetside{17}{17}{0}{0}{0}{0}");
+        assert_eq!(calls[n - 1], "\\imposedsheetside{17}{17}{1}{1}{1}{3}");
     }
 
     #[test]
