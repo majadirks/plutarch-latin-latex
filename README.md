@@ -383,7 +383,9 @@ via `\includegraphics[page=N]{tomus_N_inner.pdf}` in signature-folding order. Wi
 lualatex (or with `--no-compile`) it writes the wrappers from an estimated page count
 and prints the manual compile commands. Fold lines are drawn on each outer/recto
 sheet side only; sew marks on every sheet side (both faces); a cut border on the
-first recto of each signature.
+first recto of each signature; and a collation stripe on each gathered unit's
+spine (the two endpaper wrappers and every signature), stepped down per unit so
+the gathered block shows a diagonal down the spine, clear of the sew marks.
 
 ## Files
 
