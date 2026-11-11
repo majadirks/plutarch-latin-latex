@@ -146,14 +146,23 @@ pub(crate) fn blank_pages(pages: u32) -> String {
 }
 
 /// Blank-page padding issued at document end so the inner page count reaches a
-/// whole 32-page signature, after the back flyleaves, leaving the final verso
-/// blank.
+/// whole sheet (four book pages), after the back flyleaves, and then — if that
+/// would leave the final 16-page signature as a single sheet — one more sheet, so
+/// the final signature spans at least two sheets and is never a lone folio. The
+/// final even (verso) page is left blank.
 pub(crate) const SIGNATURE_PADDING: &str = "\
-% Pad to a whole 32-page signature after the back flyleaves; the final even\n\
-% (verso) page is left blank.\n\
-\\loop\\unless\\ifnum\\numexpr(\\value{page}-1)-((\\value{page}-1)/32)*32\\relax=0\n\
+% Pad to whole sheets (four book pages each) after the back flyleaves, then\n\
+% ensure the final 16-page signature spans at least two sheets so no signature\n\
+% is a lone folio. The final even (verso) page is left blank.\n\
+\\loop\\unless\\ifnum\\numexpr(\\value{page}-1)-((\\value{page}-1)/4)*4\\relax=0\n\
 \x20 \\thispagestyle{empty}\\null\\clearpage\n\
-\\repeat\n\n";
+\\repeat\n\
+\\ifnum\\numexpr(\\value{page}-1)-((\\value{page}-1)/16)*16\\relax=4\n\
+\x20 \\thispagestyle{empty}\\null\\clearpage\n\
+\x20 \\thispagestyle{empty}\\null\\clearpage\n\
+\x20 \\thispagestyle{empty}\\null\\clearpage\n\
+\x20 \\thispagestyle{empty}\\null\\clearpage\n\
+\\fi\n\n";
 
 /// Geometry options for the transcription inner: no reserved head band.
 const GEOMETRY_OPTS_PLAIN: &str = "top=1cm,bottom=1.5cm,inner=1.2cm,outer=0.9cm,footskip=0.8cm";
@@ -1845,6 +1854,24 @@ mod tests {
     }
 
     #[test]
+    fn inner_document_pads_to_whole_sheets() {
+        let pages = vec![body_page(
+            0,
+            14,
+            vec![
+                block(BlockKind::Heading, "ROMULUS"),
+                block(BlockKind::Paragraph, "Romulus"),
+            ],
+        )];
+        let sc = sidecar(pages, vec![life("romulus", LifeKind::Life, 0, 0)]);
+        let doc = inner_document(&sc, &plan(1, 0, true, &["romulus"]), &Fonts::default());
+        // The whole-sheet padding loop pads N up to a multiple of 4 book pages.
+        assert!(doc.contains("((\\value{page}-1)/4)*4"));
+        // The one-shot guard bumps a single-sheet final signature to two sheets.
+        assert!(doc.contains("((\\value{page}-1)/16)*16\\relax=4"));
+    }
+
+    #[test]
     fn endpaper_wrapper_sides_carry_no_book_pages() {
         // The sentinel is `inner_count + 1` = 17 for a one-signature volume.
         assert_eq!(
@@ -2122,10 +2149,11 @@ mod tests {
         .unwrap();
         crate::compile::compile(dir.path(), "tomus_1_inner.tex", 1).unwrap();
         let count = crate::compile::inner_page_count(dir.path(), "tomus_1_inner").unwrap();
-        assert_eq!(
-            count % 32,
-            0,
-            "inner self-pads to a whole signature: {count}"
+        assert_eq!(count % 4, 0, "inner self-pads to a whole sheet: {count}");
+        assert_ne!(
+            count % 16,
+            4,
+            "final signature keeps at least two sheets: {count}"
         );
 
         write_imposition_wrappers(1, &[count], dir.path()).unwrap();

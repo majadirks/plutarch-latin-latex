@@ -888,7 +888,7 @@ pub(in crate::facsimile) mod tests {
             "expected front+back flyleaves, found {blanks}"
         );
         // The same end-of-document signature padding as the transcription inner.
-        assert!(doc.contains("Pad to a whole 32-page signature"));
+        assert!(doc.contains("Pad to whole sheets"));
         assert!(doc.contains("\\beginbodynumbering"));
         assert!(doc.trim_end().ends_with("\\end{document}"));
     }
