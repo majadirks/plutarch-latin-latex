@@ -25,6 +25,10 @@ initial documentation step.
 - The prompt document's tomus membership table is derived from an earlier build.
   Its own instructions require checking actual tomus title pages before committing
   to artwork. Do not assume its membership table describes every later build.
+- The owner confirms that the tomi are not machine readable. Determine which
+  Lives each contains from build metadata and visual inspection of title/contents
+  pages; use online texts of those Lives to research and verify individual scenes.
+  Do not require full-text extraction or OCR of the tomi for this art workflow.
 - No scene assets have been generated for this plan; no reference files have
   been moved. Prior visual inspection was representative, not a completed
   scene-by-scene audit of all twenty images.
@@ -122,7 +126,8 @@ existing IDs. Extra components use descriptive names such as
 revisions; never overwrite a selected asset or original reference.
 
 Each `SCENES.md` records actual book/title-page evidence, verified Lives,
-scene IDs and citations to included Lives, source discrepancies and resolutions,
+scene IDs and citations to included Lives (online edition, passage URL, chapter
+and section, and access date), source discrepancies and resolutions,
 component boundaries, intended size/orientation, current selected versions,
 reference move provenance and SHA-256 hashes, and outstanding decisions.
 
@@ -138,13 +143,16 @@ provenance, not a second authoritative style specification.
 
 ### 1.1 Establish the actual contents of each tomus
 
-Locate the intended ten-tomus build and inspect its title pages and relevant
-book metadata. Record exact local evidence paths in each `SCENES.md`. If the
+Locate the intended ten-tomus build and establish its included Lives from relevant
+build metadata and visual inspection of title/contents pages. The tomi are not
+machine readable: do not depend on PDF text search or extract their entire text.
+Record exact local evidence paths and inspected page numbers in each `SCENES.md`. If the
 intended build is unavailable or ambiguous, ask which build to use before
 generating affected assets. Do not regenerate books or alter their split for art.
 
 **LLM verification:** use `rg --files tmp -g '*tomus*' -g '*body_map*'` to locate
-build evidence and inspect the relevant metadata/title pages. Compare with the
+build evidence and inspect the relevant metadata and rendered title/contents pages.
+Use existing rendering tools if necessary; this does not require OCR. Compare with the
 original prompt document's membership table. Record discrepancies explicitly.
 
 **Human verification:** confirm the inventory describes the books being illustrated.
@@ -152,8 +160,8 @@ original prompt document's membership table. Record discrepancies explicitly.
 ### 1.2 Verify episodes and specify components for the next tomus
 
 Work one tomus at a time. Read its full original prompt, including motifs, and
-the relevant passages in the Lives established in 1.1. Consult local source
-material or primary online text as needed; preserve citations. Treat the inventory
+the relevant online passages in the Lives established in 1.1, using the sources
+below. Preserve passage-level citations. Treat the inventory
 below as candidates, not approved historical claims. Exclude the original
 document's optional “Other strong scenes” from initial production unless selected
 as a supported replacement or later requested. Create a component checklist per
@@ -166,6 +174,33 @@ scene has a figures/props and environment disposition (including “not needed�
 with a reason where appropriate).
 
 **Human verification:** review substantive scene corrections and component splits.
+
+### Online texts for scene research
+
+Use [LacusCurtius: Plutarch's Lives](https://penelope.uchicago.edu/Thayer/E/Roman/Texts/Plutarch/Lives/home.html)
+as the first reading source. Verified accessible on 2026-11-17, its index links
+all the Lives needed by the original ten-tomus membership table, including
+Artaxerxes, Aratus, Galba, and Otho. It presents Bernadotte Perrin's English
+translation in readable HTML with chapter and section anchors for passage links.
+This is the same translation cited by the original cover-prompt document.
+
+The [Perseus Digital Library text repository](https://github.com/PerseusDL/canonical-greekLit/tree/master/data/tlg0007)
+provides a structured-text fallback. The original prompt document's Sources
+section already identifies the particular Perrin English TEI XML file for each
+Life; follow those mappings rather than guessing filenames or selecting a Greek
+text by accident. Its existing Scaife passage links provide another reading route.
+Prefer LacusCurtius for routine reading; use the mapped Perseus text when access,
+searchability, or passage checking requires it.
+
+Keep two separate evidence chains: local build/title-page evidence establishes
+**which Lives belong to a tomus**; the online text establishes **what happens in
+an episode of an included Life**. An online edition's volume divisions do not
+establish this project's tomus boundaries. Read the surrounding passage to check
+participants, actions, props, and setting, distinguishing Plutarch's narrative
+from translator/editor notes. Record meaningful uncertainties or edition
+differences instead of inventing precision. English translations guide artwork;
+they do not authorize changes to the cached Latin or establish verbatim identity
+with this project's printed Latin edition.
 
 ## Candidate scene inventory and progress
 
